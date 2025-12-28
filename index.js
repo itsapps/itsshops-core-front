@@ -8,18 +8,19 @@ import priceData from "./shortcodes/priceData.js"
 // Convert current module URL to a directory path
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const coreRoot = path.resolve(__dirname)
 
-export default function shopCoreFrontend(eleventyConfig) {
-  eleventyConfig.addPlugin(shopCoreFrontend)
-
+export const shopCoreFrontendPlugin = (eleventyConfig) => {
   let nunjucksEnvironment = new Nunjucks.Environment(
 		new Nunjucks.FileSystemLoader([
       path.resolve("src/_includes"),
-      path.resolve("node_modules/@itsapps/itsshops-core-front"),
+      coreRoot,
+      // path.resolve("node_modules/@itsapps/itsshops-core-front"),
     ], { noCache: true })
 	);
 	eleventyConfig.setLibrary("njk", nunjucksEnvironment);
 
+  eleventyConfig.addWatchTarget(coreRoot);
   
   // eleventyConfig.addShortcode("priceData", priceData)
   eleventyConfig.addNunjucksGlobal("priceData", priceData)
@@ -30,16 +31,16 @@ export default function shopCoreFrontend(eleventyConfig) {
   const templateContent = fs.readFileSync(templatePath, "utf-8")
 
   eleventyConfig.addTemplate("something.njk", templateContent)
+}
 
-  // return {
-  //   dir: {
-  //     input: 'src',
-  //     output: 'dist',
-  //     // includes: '_includes',
-  //     layouts: '_layouts'
-  //   },
-  //   dataTemplateEngine: 'njk',
-  //   htmlTemplateEngine: 'njk',
-  // };
+export const shopCoreFrontendConfig = {
+  dir: {
+    input: 'src',
+    output: 'dist',
+    // includes: '_includes',
+    layouts: '_layouts'
+  },
+  dataTemplateEngine: 'njk',
+  htmlTemplateEngine: 'njk',
   
 }
