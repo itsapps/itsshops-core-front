@@ -1,0 +1,19 @@
+---
+pagination:
+  data: cms.paginationProducts
+  size: 1
+  alias: product
+  addAllPagesToCollections: true
+permalink: "{{ product.permalink }}"
+eleventyComputed:
+  key: "{{ product._id }}"
+  locale: "{{ product.locale }}"
+  title: "{{ product.title | safe }}"
+---
+{% extends "blocks/product-core.njk" %}
+
+{% set price = priceData(product) %}
+{# {% block product_title %}
+  <h1>{{ product.title }}</h1>
+{% endblock %} #}
+

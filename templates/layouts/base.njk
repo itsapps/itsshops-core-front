@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>grgr</title>
+  <meta name="description" content="asdf">
+</head>
+
+<body>
+  {% block header %}
+    {% include "components/header.njk" %}
+  {% endblock %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}
+    {% include "components/footer.njk" %}
+  {% endblock %}
+</body>
+</html>
