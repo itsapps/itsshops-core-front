@@ -10,8 +10,19 @@ export function resolveFields(
   const removable = new Set(optionalKeys);
   const safeRemove = remove.filter(f => removable.has(f));
 
+  const extraFields =
+    (add ?? []).map(f =>
+      typeof f === 'function' ? f(ctx) : f
+    )
+
   return [
-    ...baseFields,
+    ...Object.keys(baseFields)
+      .map(key => {
+        const field = baseFields[key];
+        return typeof field === 'function'
+          ? field(ctx)
+          : field;
+      }),
     ...optionalKeys
       .filter(key => !safeRemove.includes(key))
       .map(key => {
@@ -20,6 +31,6 @@ export function resolveFields(
           ? field(ctx)
           : field;
       }),
-    ...add,
+    ...extraFields,
   ];
 }

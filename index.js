@@ -115,7 +115,8 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
     apiVersion: sanityApiVersion,
     features,
     queryOptions,
-    overrideFragments: options.fragments
+    overrideFragments: options.fragments,
+    overrideModules: options.modules
   }));
 
   // eleventyConfig.addShortcode("priceData", priceData)

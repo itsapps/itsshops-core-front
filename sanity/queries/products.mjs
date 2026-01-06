@@ -1,15 +1,14 @@
 import { resolveFields } from './resolveFields.mjs';
 
-const SHARED_BASE_FIELDS = [
-  '_id',
-  '_type',
-  '_updatedAt',
-  'title',
-  'price',
-  'compareAtPrice',
-  '"categoryIds": categories[]._ref',
-  // `seo {${seo}}`,
-];
+const SHARED_BASE_FIELDS = {
+  _id: '_id',
+  _type: '_type',
+  _updatedAt: '_updatedAt',
+  title: 'title',
+  price: 'price',
+  compareAtPrice: 'compareAtPrice',
+  categoryIds: '"categoryIds": categories[]._ref',
+};
 const SHARED_OPTIONAL_FIELDS = { 
   productNumber: () => "productNumber",
   images: ({ fragments }) => `"images": images[defined(asset)] { ${fragments.get('localeImage')} }`,
@@ -17,13 +16,14 @@ const SHARED_OPTIONAL_FIELDS = {
   manufacturerId: () => '"manufacturerId": manufacturer->_id',
   stock: () => "stock",
   tagIds: () => '"tagIds": tags[]._ref',
+  seo: ({ fragments }) => `seo { ${fragments.get('seo')} }`,
 };
 
-const VARIANT_BASE_FIELDS = [
-  "featured",
-  "active",
-  '"options": options[]->_id',
-]
+const VARIANT_BASE_FIELDS = {
+  featured: "featured",
+  active :"active",
+  options :'"options": options[]->_id',
+}
 const VARIANT_OPTIONAL_FIELDS = {
   coverImage: "coverImage",
 }
@@ -50,4 +50,29 @@ export function buildProductsQuery({fragments, options}) {
       }
     }
   `;
+}
+
+const variantOption = (fragments) => `
+  _id,
+  title,
+  sort_order,
+  "image": select(
+    defined(image.asset) => image {${fragments.localeImage}},
+    null
+  )
+`
+const variantOptionGroup = (fragments) => `
+  _id,
+  title,
+  description,
+  sort_order,
+  "options": options[]->{${variantOption(fragments)}} | order(sort_order asc)
+`
+
+export function buildVariantOptionGroupsQuery({fragments}) {
+  return `
+    *[_type == "variantOptionGroup"] | order(sort_order asc) {
+      ${variantOptionGroup(fragments)}
+    }
+  `
 }

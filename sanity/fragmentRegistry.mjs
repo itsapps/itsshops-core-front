@@ -3,6 +3,10 @@ import { portableText } from './fragments/portableText.mjs';
 import seo from './fragments/seo.mjs';
 import youtube from './fragments/youtube.mjs';
 import {internalLink} from './fragments/internalLink.mjs';
+import action from './fragments/action.mjs';
+// import column from './fragments/column.mjs';
+import slide from './fragments/slide.mjs';
+import * as nav from './fragments/nav.mjs';
 
 export function localizeFragment(fragment, locales) {
   return locales.map(locale => `${locale}[]{${fragment}}`).join(',');
@@ -18,6 +22,12 @@ export function createFragmentRegistry({
     customImage: customImage(),
     internalLink: internalLink(),
     youtube: youtube(),
+    navPage: nav.navPage(),
+    navLink: nav.navLink(),
+    action: action({internalLink: internalLink()}),
+    // column: column(),
+    slide: slide({localeImage: localeImage()}),
+
     // those need a rebuild
     seo: seo({image: image()}),
     portableText: portableText({
@@ -27,7 +37,7 @@ export function createFragmentRegistry({
     }),
   };
 
-  // 🔥 Allow override or extension
+  // 🔥 Allow override, addition or extension
   for (const key in overrides) {
     registry[key] =
       typeof overrides[key] === 'function'
@@ -42,6 +52,22 @@ export function createFragmentRegistry({
     customImage: registry.customImage,
     youtube: registry.youtube
   })
+
+  // registry.column = localizeFragment(registry.column, locales);
+  // registry.slide = localizeFragment(registry.slide, locales);
+
+  // navigation
+  registry.subMenu = nav.subMenu({
+    navPage: registry.navPage,
+    navLink: registry.navLink,
+  });
+
+  registry.menuLinks = nav.menuLinks({
+    navPage: registry.navPage,
+    navLink: registry.navLink,
+    subMenu: registry.subMenu,
+  });
+
 
   return {
     get(name) {
