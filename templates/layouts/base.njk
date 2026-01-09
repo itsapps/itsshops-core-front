@@ -1,3 +1,6 @@
+---
+includeSideCart: true
+---
 <!doctype html>
 <html lang="de">
 <head>
@@ -7,16 +10,12 @@
 </head>
 
 <body>
-  {% block header %}
-    {% include "components/header.njk" %}
-  {% endblock %}
+  {% include "components/header.njk" %}
 
   <main>
-    {% block content %}{% endblock %}
+    {{ content | safe }}
   </main>
 
-  {% block footer %}
-    {% include "components/footer.njk" %}
-  {% endblock %}
+  {% include "components/footer.njk" %}
 </body>
 </html>

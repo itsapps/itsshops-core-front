@@ -2,10 +2,15 @@ import fs from "fs"
 import path from "path"
 import Nunjucks from "nunjucks"
 import { fileURLToPath } from "url"
+import {EleventyI18nPlugin} from '@11ty/eleventy';
 
+import {createTranslation} from './utils/translation.mjs';
 import priceData from "./shortcodes/priceData.js"
 import cms from "./sanity/cms.mjs"
 import { sanityApiVersion } from './shared/settings.mjs';
+import { createSanityClient } from './sanity/client.mjs'
+import { createImageBuilder } from './sanity/imageBuilder.mjs'
+import { createSanityImageUrls, createSanityImageSeo } from './sanity/imageUrls.mjs'
 
 import {
   languages,
@@ -17,7 +22,28 @@ const __dirname = path.dirname(__filename)
 const coreRoot = path.resolve(__dirname)
 const templatesRoot = path.join(coreRoot, "templates")
 
-export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
+export const shopCoreFrontendPlugin = (eleventyConfig, options = {
+  isDev: false,
+  isPreview: false,
+  locales: ['de', 'en'],
+  sanityClientConfig: {
+    projectId: "",
+    dataset: "",
+    token: "",
+    perspective: "",
+  },
+  features: {
+    products: true,
+    pages: true,
+    checkout: true,
+    blog: false,
+    users: false,
+  },
+  queryOptions: {},
+  fragments: {},
+  modules: {},
+  aggregate: {},
+}) => {
   /**
    * Locales
    * 
@@ -25,12 +51,23 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
   const projectLanguages = options.locales.map((locale) => {
     return languages.find((lang) => lang.code === locale)
   }).filter(Boolean);
-  // first locale is default if customer didn't specify
   const locales = projectLanguages.map((locale) => locale.code);
-  const defaultLocale = locales[0];
+  const defaultLocale = locales[0];// first locale is default
+
   // make globally available
   eleventyConfig.addGlobalData('supportedLocales', locales);
   eleventyConfig.addGlobalData('defaultLocale', defaultLocale);
+  
+  const translate = createTranslation({isDev: options.isDev, locales, defaultLocale});
+  eleventyConfig.addPlugin(EleventyI18nPlugin, {
+    defaultLanguage: defaultLocale,
+    errorMode: 'never'
+  });
+  // template translation
+  eleventyConfig.addFilter('t', function (key, params = {}, locale) {
+    return translate(key, params, locale ?? this.page.lang);
+  });
+  
 
   /*
    * Features
@@ -59,7 +96,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
 		new Nunjucks.FileSystemLoader([
       path.resolve("src/_includes"),
       templatesRoot,
-    ], { noCache: true })
+    ], { noCache: options.isDev })
 	);
 	eleventyConfig.setLibrary("njk", nunjucksEnvironment);
   eleventyConfig.addWatchTarget(templatesRoot);
@@ -79,21 +116,30 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
   //   eleventyConfig.addTemplate(layout.replace(".njk", ""), layoutContent)
   // }
 
-  // eleventyConfig.addLayoutAlias('base', "templates/layouts/base.njk");
-  // eleventyConfig.addGlobalData("layout", path.join(templatesRoot, "layouts", 'base.njk'));
-  // eleventyConfig.addLayoutAlias('base', path.join(templatesRoot, "layouts", 'base.njk'));
+  // layouts
+  const layoutsDir = path.join(templatesRoot, "layouts")
+  for (const file of fs.readdirSync(layoutsDir)) {
+    if (!file.endsWith(".njk")) continue
+    const customerLayoutPath = path.join(process.cwd(), eleventyConfig.directories.layouts, file)
+    if (fs.existsSync(customerLayoutPath)) {
+      // layout exists, so use this one instead of the one from core
+      continue
+    }
 
+    const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
+    let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
+    eleventyConfig.addTemplate(layoutPath, content)
+    // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
+  }
+
+  // templates
   const pageDirs = ["preview", "standard"]
   for (const dir of pageDirs) {
     const pagesDir = path.join(templatesRoot, "pages", dir)
     for (const file of fs.readdirSync(pagesDir)) {
       if (!file.endsWith(".njk")) continue
-      
-      // const content = fs.readFileSync(path.join(pagesDir, file), "utf-8")
-      // eleventyConfig.addTemplate(`${dir}/${file}`, content)
     
-      // const pagesPath = path.join(process.cwd(), "src/pages/preview", file)
-      const pagesPath = path.join(process.cwd(), "src", "pages", dir, file)
+      const pagesPath = path.join(process.cwd(), eleventyConfig.directories.input, "pages", dir, file)
       if (fs.existsSync(pagesPath)) {
         continue
       }
@@ -109,14 +155,25 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {}) => {
   }
 
 
+  const sanityClient = createSanityClient({...options.sanityClientConfig, apiVersion: sanityApiVersion});
+  const imageBuilder = createImageBuilder(sanityClient);
+  const imageUrls = createSanityImageUrls({ imageBuilder });
+  const imageSeo = createSanityImageSeo({ sanityImageUrls: imageUrls });
+
   eleventyConfig.addGlobalData('cms', async () => cms({
     locales,
     defaultLocale,
-    apiVersion: sanityApiVersion,
+    helpers: {
+      translate,
+      imageUrls,
+      imageSeo,
+    },
+    client: sanityClient,
     features,
     queryOptions,
     overrideFragments: options.fragments,
-    overrideModules: options.modules
+    overrideModules: options.modules,
+    aggregate: options.aggregate
   }));
 
   // eleventyConfig.addShortcode("priceData", priceData)

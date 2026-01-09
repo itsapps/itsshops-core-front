@@ -1,0 +1,10 @@
+<div class="price">
+  <span class="price--compare-at">
+  {% if product.compareAtPriceString %}
+    {{ product.compareAtPriceString }}
+  {% endif %}
+  </span>
+  <span class="price--current">
+    {{ product.priceString }}
+  </span>
+</div>

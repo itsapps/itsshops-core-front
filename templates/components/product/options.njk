@@ -1,0 +1,41 @@
+<div class="product--options">
+{% if product.type | isBundleProduct %}
+  <ul>
+    {% for item in product.items %}
+      {% set bundleItemProduct = cms.getProduct(item.productId, locale) -%}
+      <li>{{ item.count }} x <a href="{{ bundleItemProduct.permalink }}">{{bundleItemProduct.titleWithOptions}}</a></li>
+    {% endfor %}
+  </ul>
+{% else %}
+  {% if product.hasMissingVariants %}
+    <div class="option">
+    <div role="radiogroup" class="option--values">
+    {% for productId in product.allVariantIds -%}
+      {% set variant = cms.getProduct(productId, locale) -%}
+      <a role="radio" class="btn" aria-checked="{% if product._id === productId %}true{% else %}false{% endif %}" href="{{ variant.permalink }}">
+        {% if variant.optionsString -%}
+          {{ variant.optionsString }}
+          {%- else -%}
+          {{ variant.title }}
+        {%- endif %}
+      </a>
+    {% endfor %}
+    </div>
+    </div>
+  {% else %}
+    {% for optionGroupDict in product.allOptionGroups %}
+      <div class="option">
+        <div class="option--title">{{ optionGroupDict.title }}</div>
+        <div role="radiogroup" class="option--values">
+          {% for optionDict in optionGroupDict.options %}    
+            {% set otherVariantProduct = cms.getProduct(optionDict.variantId, locale) %}
+            <a role="radio" class="btn" aria-checked="{% if optionDict.selected %}true{% else %}false{% endif %}" href="{{ otherVariantProduct.permalink }}">
+              {{ optionDict.title }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endif %}
+</div>

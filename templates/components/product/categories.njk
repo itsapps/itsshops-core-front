@@ -1,0 +1,9 @@
+<div class="product--categories">
+  <div id="category-heading" class="product--categories-heading">{{ 'product.categories' | t }}</div>
+  <ul class="product--categories-list" aria-labelledby="category-heading">
+    {% for categoryId in product.categoryIds %}
+    {% set category = cms.getCategory(categoryId, locale) %}
+    <li><a class="btn is-primary" href="{{ category.permalink }}">{{ category.title }}</a></li>
+    {% endfor %}
+  </ul>
+</div>

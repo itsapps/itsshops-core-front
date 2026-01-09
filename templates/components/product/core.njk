@@ -1,0 +1,50 @@
+<section class="product">
+  <div class="product--content">
+    <div class="product--gallery">
+      {% include "components/product/carousel.njk" %}
+    </div>
+    <div class="product--details">
+      <div class="product--info">
+        <div class="product--header">
+          <div class="product--title">
+            {% include "components/product/variant.njk" %}
+            {% include "components/product/title.njk" %}
+            {% if product.productNumber %}
+              {% include "components/product/sku.njk" %}
+            {% endif %}
+          </div>
+          {% include "components/product/price.njk" %}
+        </div>
+        {% include "components/product/categories.njk" %}
+        {% include "components/product/options.njk" %}
+        
+        
+        <div class="product--stock">{{ 'product.stock' | t }}: {{ product.stock }}</div>
+        {% if product.stock > 0 %}
+          <div class="product--shipping-duration">{{ 'product.shippingDuration' | t }}</div>
+        {% endif %}
+      </div>
+      <div class="product--actions">
+        {%- from "partials/macros.njk" import productAddCounter -%}
+        {{ productAddCounter(
+          productId=product._id,
+          increaseQuantityTitle='cart.counter.increaseQuantity' | t,
+          decreaseQuantityTitle='cart.counter.decreaseQuantity' | t,
+          manuallySetQuantityTitle='cart.counter.manuallySetQuantity' | t
+        ) }}
+
+        {%- from "partials/macros.njk" import addProductToCartButton -%}
+        {{ addProductToCartButton(product=product,
+          title='product.cartButton.addToCart' | t,
+          titleAdded='product.cartButton.addedToCart' | t,
+          pictureSize=placeholders.productSmall
+        ) }}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+{% include "components/product/title.njk" %}
+{% include "components/product/variant.njk" %}

@@ -3,6 +3,7 @@ import { resolveFields } from './resolveFields.mjs';
 const BASE_FIELDS = {
   _id: '_id',
   _type: '_type',
+  _createdAt: '_createdAt',
   _updatedAt: '_updatedAt',
   title: 'title',
 };
