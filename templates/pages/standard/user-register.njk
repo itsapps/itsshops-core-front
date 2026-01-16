@@ -1,0 +1,15 @@
+---
+layout: base
+pagination:
+  data: static.userRegistrations
+  size: 1
+  alias: item
+  addAllPagesToCollections: true
+permalink: "{{ item.permalink }}"
+noindex: true
+eleventyComputed:
+  key: "{{ item.key }}"
+  locale: "{{ item.locale }}"
+  title: "{{ item.title | safe }}"
+  description: "{{ item.description | safe }}"
+---

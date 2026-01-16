@@ -1,0 +1,16 @@
+---
+layout: base
+pagination:
+  data: static.checkouts
+  size: 1
+  alias: item
+  addAllPagesToCollections: true
+permalink: "{{ item.permalink }}"
+noindex: true
+includeSideCart: false
+eleventyComputed:
+  key: "{{ item.key }}"
+  locale: "{{ item.locale }}"
+  title: '{{ item.title | safe }}'
+  description: "{{ item.description | safe }}"
+---

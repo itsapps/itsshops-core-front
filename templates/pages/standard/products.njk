@@ -1,0 +1,20 @@
+---
+layout: base
+pagination:
+  data: cms.paginationProducts
+  size: 1
+  alias: product
+  addAllPagesToCollections: true
+permalink: "{{ product.permalink }}"
+eleventyComputed:
+  key: "{{ product._id }}"
+  locale: "{{ product.locale }}"
+  title: "{{ product.titleWithOptions | safe }}"
+  metaTitle: "{{ product.metaTitle | safe }}"
+  metaDescription: "{{ product.metaDescription | safe }}"
+  shareTitle: "{{ product.shareTitle | safe }}"
+  shareDescription: "{{ product.shareDescription | safe }}"
+  shareImage: "{{ product.shareImage | safe }}"
+  shareImageAlt: "{{ product.shareImageAlt | safe }}"
+  metaKeywords: "{{ product.seoKeywords | safe }}"
+---

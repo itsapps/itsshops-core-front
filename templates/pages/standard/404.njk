@@ -1,0 +1,26 @@
+---
+layout: base
+pagination:
+  data: static.errorPages
+  size: 1
+  alias: item
+  eleventyExcludeFromCollections: true
+  excludeFromSitemap: true
+permalink: "{{ item.permalink }}"
+noindex: true
+eleventyComputed:
+  key: "{{ item.key }}"
+  locale: "{{ item.locale }}"
+  title: "{{ item.title | safe }}"
+  description: "{{ item.description | safe }}"
+---
+
+<article class="region">
+  <div class="wrapper flow prose pb-2xl">
+    <h1 class="fade-in-bottom">
+      {{ title | safe }}
+    </h1>
+    <div>{{ 'staticPages.errorPage.goToHomepage' | t({url: page.lang}) | safe }}</div>
+    <div>{{ 'staticPages.errorPage.contactSupport' | t({email: settings.supportEmail}) | safe }}</div>
+  </div>
+</article>

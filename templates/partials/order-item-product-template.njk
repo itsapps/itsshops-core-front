@@ -1,0 +1,18 @@
+<template id="order-item-product-template">
+  <li class="order-product-item">
+    <div class="cart-item--photo cart-item--photo-small" data-name="photo">
+      {% placeholderPicture {
+        pictureSize: placeholders.productXS,
+        imageClassNames: "fade-in",
+        loading: "lazy"
+      } %}
+    </div>
+    <div class="cart-item--details">
+      <span class="cart-item--name"><strong data-name="name"></strong></span>
+      <div class="cart-item--variant" data-name="variant"></div>
+    </div>
+    <div class="cart-item--price">
+      <span class="current" data-name="price"></span>
+    </div>
+  </li>
+</template>

@@ -1,0 +1,101 @@
+
+<button
+  data-toggle-sidebar="main-menu"
+  type="button"
+  aria-expanded="false"
+  aria-controls="main-menu"
+  class="btn no-border is-medium"
+  aria-label="{{ 'menus.main.open' | t }}"
+>
+  <span aria-hidden="true" class="hamburger">
+    <span class="hamburger--icon"></span>
+  </span>
+</button>
+<div class="sidebar--backdrop" data-controls="main-menu"></div>
+
+<div id="main-menu" class="sidebar" data-no-flash>
+  <div class="sidebar--inner">
+    <div class="sidebar--header">
+      <span class="h2">{{ 'menus.main.label' | t }}</span>
+      <button
+        data-toggle-sidebar-close="main-menu"
+        type="button"
+        aria-expanded="false"
+        aria-controls="main-menu"
+        class="btn no-border is-medium"
+        aria-label="{{ 'menus.main.close' | t }}"
+      >
+        {% include "icons/x.svg" %}
+      </button>
+    </div>
+    <div class="sidebar--content sidebar--scrollable">
+      <nav class="mainnav" aria-label="{{ 'menus.main.ariaLabel' | t }}">
+        <ul class="mainnav--list flow">
+          <li class="mainnav--dropdown flow">
+            <button aria-haspopup="true" aria-expanded="false">Shop</button>
+            <ul class="mainnav--dropdown-menu flow">
+              {%- for c in cms.categoryTree %}
+              {% set category = cms.getCategory(c._id, locale) %}
+              <li class="mainnav--dropdown flow" data-sort-order="{{ category.sort_order }}">
+                <button aria-haspopup="true" aria-expanded="false">{{ category.title }}</button>
+                <ul class="mainnav--dropdown-menu flow">
+                <li><a
+                  href="{{ category.permalink }}"
+                  {{
+                  helpers.getLinkActiveState(category.permalink,
+                  page.url)
+                  |
+                  safe
+                  }}
+                  >{{ 'menus.main.all' | t }}</a
+                ></li>
+                {% for sc in c.categories %}
+                {% set subcategory = cms.getCategory(sc._id, locale) %}
+                  <li class="mainnav--dropdown" data-sort-order="{{ subcategory.sort_order }}">
+                    <a
+                      href="{{ subcategory.permalink }}"
+                      {{
+                      helpers.getLinkActiveState(subcategory.permalink,
+                      page.url)
+                      |
+                      safe
+                      }}
+                      >{{ subcategory.title }}</a
+                    >
+                  </li>
+                {% endfor %}
+                </ul>
+              </li>
+              {%- endfor %}
+            </ul>
+          </li>
+          {% for menuId in cms.getSiteSettings(locale).mainMenuIds %}
+          {% set menu = cms.getMenu(menuId, locale) %}
+          <li class="mainnav--dropdown flow">
+            <button aria-haspopup="true" aria-expanded="false">{{menu.title}}</button>
+            <ul class="mainnav--dropdown-menu flow">
+              {% for item in menu.items %}
+              <li>
+                <a href="{{ item.url }}" {{ helpers.getLinkActiveState(item.url, page.url) | safe }}>
+                  {{ item.title }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% endfor %}
+          
+          {% set blog = cms.getBlog(locale) %}
+          {% if blog %}
+            <li class="mainnav--dropdown">
+              <a class="mainnav--blog-link" href="{{ blog.permalink }}" {{ helpers.getLinkActiveState(blog.permalink, page.url) | safe }}>
+                {{ blog.title }}
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% include "partials/settings.njk" %}
+  </div>
+</div>

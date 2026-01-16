@@ -1,0 +1,46 @@
+{% from 'components/macros.njk' import stegaTag %}
+
+<section class="region media-hero">
+{% if module.backgroundImage %}
+    <div class="bg-image">
+        {% sanityPicture {
+            image: module.backgroundImage,
+            pictureSize: placeholders.fullscreen,
+            imageClassNames: "fade-in",
+            loading: "eager"
+        } %}
+    </div>
+{% endif %}
+
+    <div class="media-hero__content fade-in-bottom">
+    {% if module.image %}
+        <div>
+            {% sanityPicture {
+                image: module.image,
+                pictureSize: placeholders.heroImage,
+                imageClassNames: "fade-in object-contain",
+                loading: "eager"
+            } %}
+        </div>
+    {% endif %}
+    {% if module.headline %}
+        {{ stegaTag("h2", content=module.headline, classNames="media-hero__title") }}
+    {% endif %}
+    
+    {% if module.actions.length > 0 %}
+    <div class="media-hero__actions">
+        {% for action in module.actions %}
+        {{ action.internalLink | internalLinkToHTML(
+            {id: item._id, type: item._type, title: item.title, module_key: module._key, module_type: module._type, action_key: action._key},
+            locale,
+            action.title,
+            cms.getReferenceMaps,
+            "modules[_key==\"" ~ module._key ~ "\"].actions[_key==\"" ~ action._key ~ "\"]",
+            item._id,
+            item._type
+        ) | safe }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    </div>
+</section>

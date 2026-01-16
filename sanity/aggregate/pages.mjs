@@ -1,5 +1,4 @@
-import { slugifyString, getUniqueSlug } from "../../utils/slugify.mjs";
-import { getSanitySeo } from "../../utils/utils.mjs";
+import { slugify, getUniqueSlug, getSanitySeo } from "../../utils/utils.mjs";
 import { homePermalink, pagePermalink } from "../../shared/urlPaths.mjs";
 
 export function buildPage(
@@ -9,21 +8,19 @@ export function buildPage(
   fragments,
   remove,
   slugSet,
-  isHome,
-  isShop,
-  localeUtils,
-  translate,
+  homeId,
+  shopId,
+  localizers,
   imageUrls,
   imageSeo,
-  buildPage
+  buildHook
 ) {
   const {
     getLocalizedValue,
-    getLocalizedObject,
-    getLocalizedImage,
-    localizeMoney,
-  } = localeUtils;
-  
+  } = localizers;
+  const isHome = p._id == homeId;
+  const isShop = (p._id == shopId) || (!shopId && isHome);
+
   const title = getLocalizedValue(p, "title", locale)
   // const {modules, description} = createModules(p.modules, locale);
   const modules = []
@@ -35,16 +32,17 @@ export function buildPage(
     shareTitle,
     shareDescription,
     shareImage,
-  } = getSanitySeo(title, description, p.seo, locale, localeUtils);
+    keywords,
+  } = getSanitySeo(title, description, p.seo, locale, localizers);
   const images = shareImage ? [shareImage] : []
   const seoImage = shareImage ? imageSeo(shareImage, shareTitle) : {url: "", alt: ""}
   const pageSlug = getLocalizedValue(p, "slug", locale);
-  const baseSlug = slugifyString(pageSlug ? pageSlug.current : title)
+  const baseSlug = slugify(pageSlug ? pageSlug.current : title)
   const slug = getUniqueSlug(baseSlug, slugSet);
 
   const page = {
     _id: p._id,
-    _type: "page",
+    _type: p._type,
     _createdAt: p._createdAt,
     _updatedAt: p._updatedAt,
     title,
@@ -55,6 +53,7 @@ export function buildPage(
     shareDescription,
     shareImage: seoImage.url,
     shareImageAlt: seoImage.alt,
+    seoKeywords: keywords,
     
     locale: locale,
     permalink: isHome ? homePermalink(locale) : pagePermalink(locale, slug),
@@ -72,6 +71,6 @@ export function buildPage(
 
   return {
     ...page,
-    ...buildPage && buildPage(p, { locale, localeUtils, translate })
+    ...buildHook && buildHook(p, { locale, localizers })
   }
 }

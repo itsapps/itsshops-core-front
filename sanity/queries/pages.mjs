@@ -6,6 +6,9 @@ const BASE_FIELDS = {
   _createdAt: '_createdAt',
   _updatedAt: '_updatedAt',
   title: 'title',
+  slug: 'slug',
+  //modules
+  seo: ({ fragments }) => `seo { ${fragments.get('seo')} }`,
 };
 const OPTIONAL_FIELDS = { 
   
@@ -15,12 +18,14 @@ export function buildPagesQuery({fragments, options}) {
   const fields = resolveFields(
     BASE_FIELDS,
     OPTIONAL_FIELDS,
-    options.page ?? {},
+    options.queryOptions ?? {},
     { fragments }
   );
   
+  const filter = options.filter?._id ? `&& _id == "${options.filter._id}"` : '';
+  const limit = options.filter?.limit ? `[0...${options.filter.limit}]` : '';
   return `
-    *[_type == "page"] {
+    *[_type == "page" ${filter}]${limit} {
       ${fields.join(',')}
     }
   `;

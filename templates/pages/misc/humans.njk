@@ -1,0 +1,16 @@
+---
+permalink: /humans.txt
+eleventyExcludeFromCollections: true
+excludeFromSitemap: true
+---
+
+/* TEAM */
+Web designer and developer: {{ settings.publicDeveloperName }} | {{ settings.publicDeveloperWebsite }}
+Owner: {{ cms.getSiteSettings(page.lang).companyName }}
+Contact: {{ cms.getSiteSettings(page.lang).companyEmail }}
+Site: {{ settings.baseUrl }}
+From: {{ cms.getSiteSettings(page.lang).companyCity }}, {{ cms.getSiteSettings(page.lang).companyCountry }}
+
+/* SITE */
+Doctype: HTML5
+Language: {%- for language in settings.languages %}{% if loop.first %} {{ language.long }}{% else %}, {{ language.long }}{% endif %}{%- endfor  %}

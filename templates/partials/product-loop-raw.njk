@@ -1,0 +1,24 @@
+{% if productLoopItems and productLoopItems.length %}
+
+{% set imageLoadingEagerIndexEnd = (-1 if not imageLoadingEagerIndexEnd else imageLoadingEagerIndexEnd) %}
+
+<ul class="product-loop" role="list" aria-label="{{ 'products.loop.ariaLabel' | t }}">
+  {% for productId in productLoopItems %}
+    {% if imageLoadingEagerIndexEnd > -1 %}
+      {% set loading = ('eager' if loop.index0 < imageLoadingEagerIndexEnd else 'lazy') %}
+    {% endif %}
+    {% set product = cms.getProduct(productId, locale) %}
+    {% if product %}
+      <li
+        class="product-card overflow-hidden"
+        style="--flow-space: var(--space-xs);"
+      >
+        {% include "partials/product-card.njk" %}
+      </li>
+    {% else %}
+      {% addError {message: 'Missing product', productId: productId} %}
+    {% endif %}
+  {% endfor %}
+</ul>
+
+{% endif %}

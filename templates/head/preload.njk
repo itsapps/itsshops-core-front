@@ -1,0 +1,19 @@
+<!-- prettier-ignore -->
+{%- if preload %}
+<link rel="preload"
+  as="{{ preload.as }}"
+  {% if preload.href %}
+  href="{{ preload.href }}"
+  {% endif %}
+  {% if preload.type %}
+  type={{ preload.type }}
+  {% endif %}
+  {% if preload.imagesrcset %}
+  imagesrcset="{{ preload.imagesrcset }}"
+  {% endif %}
+  {% if preload.imagesizes %}
+  imagesizes="{{ preload.imagesizes }}"
+  {% endif %}
+  {% if preload.crossorigin %}crossorigin{% endif %}
+>
+{% endif -%}

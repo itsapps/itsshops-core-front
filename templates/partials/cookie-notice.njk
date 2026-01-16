@@ -1,0 +1,116 @@
+<div
+  id="cookie-notice"
+  class="cookie-notice"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cookie-title"
+  aria-describedby="cookie-description"
+  hidden
+  data-gtm-id="{{ cms.getSiteSettings(page.lang).gtmID }}"
+>
+  <div class="cookie-notice--overlay" aria-hidden="true"></div>
+
+  <!-- Main Banner Content -->
+  <div class="cookie-notice--content">
+    <div class="cookie-notice--main">
+      <h2 id="cookie-title" class="cookie-notice--title h4">{{ 'cookies.title' | t }}</h2>
+      <div id="cookie-description" class="cookie-notice--description">
+        <p>{{ 'cookies.description' | t }}</p>
+      </div>
+    </div>
+    <div class="cookie-notice--actions">
+      <button id="cookie-accept-all" class="btn is-primary" type="button">
+        {{ 'cookies.actions.acceptAll' | t }}
+      </button>
+      <button id="cookie-open-settings" class="btn" type="button">
+        {{ 'cookies.actions.settings' | t }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Detailed Settings Popup -->
+  <div class="cookie-notice--details" role="document">
+    <div class="cookie-notice--header">
+      <h2 class="cookie-notice--title h4">{{ 'cookies.settings.title' | t }}</h2>
+      <button id="cookie-close-settings" class="cookie-notice--close" aria-label="{{ 'cookies.close' | t }}" type="button">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="cookie-notice--categories">
+      <!-- Essential Cookies -->
+      <div class="cookie-category">
+        <div class="cookie-category--header">
+          <h3 class="cookie-category--title">{{ 'cookies.essential.title' | t }}</h3>
+          <span class="cookie-category--required">{{ 'cookies.essential.required' | t }}</span>
+        </div>
+        <p class="cookie-category--description">{{ 'cookies.essential.description' | t }}</p>
+      </div>
+
+      <!-- Analytics Cookies -->
+      <div class="cookie-category">
+        <div class="cookie-category--header">
+          <h3 class="cookie-category--title">{{ 'cookies.analytics.title' | t }}</h3>
+          <label class="cookie-toggle">
+            <input
+              type="checkbox"
+              role="switch"
+              aria-checked="false"
+              aria-label="{{ 'cookies.analytics.title' | t }}"
+              id="analytics-consent"
+              class="cookie-consent-checkbox"
+              data-category="analytics"
+            />
+            <span class="cookie-toggle--switch"></span>
+          </label>
+        </div>
+        {%- set policy_page = cms.getPage(cms.getSiteSettings(page.lang).privacyId, page.lang) -%}
+        {%- if policy_page %}
+          {% set privacyPolicy %}
+            <a href="{{ policy_page.permalink }}">{{ 'cookies.analytics.cookiePolicy' | t }}</a>
+          {% endset %}
+        {% else %}
+          {% set privacyPolicy = 'cookies.analytics.cookiePolicy' | t %}
+        {% endif -%}
+
+        <p class="cookie-category--description">
+          {{ 'cookies.analytics.description' | t({ privacyPolicy: privacyPolicy }) | safe }}
+        </p>
+      </div>
+
+      <!-- Marketing Cookies -->
+      <div class="cookie-category">
+        <div class="cookie-category--header">
+          <h3 class="cookie-category--title">{{ 'cookies.marketing.title' | t }}</h3>
+          <label class="cookie-toggle">
+            <input
+              type="checkbox"
+              role="switch"
+              aria-checked="false"
+              aria-label="{{ 'cookies.marketing.title' | t }}"
+              id="marketing-consent"
+              class="cookie-consent-checkbox"
+              data-category="marketing"
+            />
+            <span class="cookie-toggle--switch"></span>
+          </label>
+        </div>
+        <p class="cookie-category--description">{{ 'cookies.marketing.description' | t }}</p>
+      </div>
+    </div>
+
+    <div class="cookie-notice--actions">
+      <button id="cookie-reject-all" class="btn" type="button">
+        {{ 'cookies.actions.rejectAll' | t }}
+      </button>
+      <button id="cookie-save-preferences" class="btn is-primary" type="button">
+        {{ 'cookies.actions.savePreferences' | t }}
+      </button>
+      <button id="cookie-accept-all-settings" class="btn is-primary" type="button">
+        {{ 'cookies.actions.acceptAll' | t }}
+      </button>
+    </div>
+  </div>
+</div>

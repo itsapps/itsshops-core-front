@@ -1,5 +1,4 @@
-import { slugifyString, getUniqueSlug, uniqueFilteredArray, uniqueShuffeledStrings } from "../../utils/slugify.mjs";
-import { getSanitySeo, getExcerpt } from "../../utils/utils.mjs";
+import { slugify, getUniqueSlug, getSanitySeo, getExcerpt } from "../../utils/utils.mjs";
 import { productPermalink } from "../../shared/urlPaths.mjs";
 
 const ProductTypes = {
@@ -10,10 +9,11 @@ const ProductTypes = {
 export function expandProduct(
   p,
   { remove, fragments },
+  categoriesMap,
   optionToGroupMap,
   sortOrderMapGroups,
   sortOrderMapGroupOptions,
-  expand
+  buildHook
 ) {
   // if variants are null, the product has no variants and is a standalone product
   const isSingleProduct = (p.variants === null || p.variants.length === 0);
@@ -34,30 +34,30 @@ export function expandProduct(
       optionGroupIds: [],
       allOptionGroups: [],
       addToSearch: true,
+      seo: p.seo,
+      productNumber: p.productNumber,
+      stock: Math.max(0, (p.stock != null ? p.stock : 0)),
 
       // optional fields (handle not-removed fields)
-      ...!('seo' in remove) && {seo: p.seo},
-      ...!('productNumber' in remove) && {productNumber: p.productNumber},
       ...!('description' in remove) && {description: p.description},
       ...!('images' in remove) && {images: p.images},
       ...!('manufacturerId' in remove) && {manufacturerId: p.manufacturerId},
-      ...!('stock' in remove) && {stock: Math.max(0, (p.stock != null ? p.stock : 0))},
       ...!('tagIds' in remove) && {tagIds: p.tagIds || []},
 
       // expand product callback
-      ...(expand && expand(p, { fragments }))
+      ...(buildHook && buildHook(p, { fragments }))
     };
 
-    // product.categoryIds.forEach(catId => {
-    //   const category = categoriesMap[catId];
-    //   category.productIds.push(product._id);
-    //   if (category.parentId) {
-    //     const parentCategory = categoriesMap[category.parentId];
-    //     if (!parentCategory.productIds.includes(product._id)) {
-    //       parentCategory.productIds.push(product._id);
-    //     }
-    //   }
-    // })
+    product.categoryIds.forEach(catId => {
+      const category = categoriesMap[catId];
+      category.productIds.push(product._id);
+      if (category.parentId) {
+        const parentCategory = categoriesMap[category.parentId];
+        if (!parentCategory.productIds.includes(product._id)) {
+          parentCategory.productIds.push(product._id);
+        }
+      }
+    })
     return [product];
   } else {
     const involvedOptionGroups = {};
@@ -65,20 +65,6 @@ export function expandProduct(
       const description = (v.description && v.description.length > 0) ? v.description : p.description;
       const productImages = p.images || [];
       const variantImages = v.images || [];
-      
-      function getImages() {
-        if (variantImages.length > 0) {
-          return variantImages;
-        } else {
-          if (v.coverImage && productImages.length > 0) {
-            const firstImage = productImages.find(image => image.asset._id === v.coverImage);
-            if (firstImage) {
-              return [firstImage, ...productImages.filter(image => image.asset._id !== v.coverImage)];
-            }
-          }
-          return productImages;
-        }
-      }
       
       var product = {
         _id: v._id,
@@ -95,17 +81,17 @@ export function expandProduct(
         optionGroupIds: [],
         allOptionGroups: [],
         addToSearch: v.featured,
+        seo: v.seo || p.seo,
+        productNumber: v.productNumber || p.productNumber,
+        stock: Math.max(0, (v.stock != null ? v.stock : 0)),
 
-        ...!('seo' in remove) && {seo: v.seo || p.seo},
-        ...!('productNumber' in remove) && {productNumber: v.productNumber || p.productNumber},
         ...!('description' in remove) && {description: description},
-        ...!('images' in remove) && {images: getImages()},
+        ...!('images' in remove) && {images: getVariantImages(v, variantImages, productImages)},
         ...!('manufacturerId' in remove) && {manufacturerId: (v.manufacturerId || p.manufacturerId)},
-        ...!('stock' in remove) && {stock: Math.max(0, (v.stock != null ? v.stock : 0))},
         ...!('tagIds' in remove) && {tagIds: ((v.tagIds || p.tagIds) || [])},
 
         // expand product callback
-        ...(expand && expand(v, { fragments }))
+        ...(buildHook && buildHook(v, { fragments }))
       };
 
       // find optionGroups for this variant
@@ -188,21 +174,35 @@ export function expandProduct(
       currentVariant.allOptionGroups = currentVariantOptionGroups;
     }
 
-    // const mainVariant = variantProducts.find(v => v.addToSearch);
-    // const actualMainVariant = mainVariant ?? variantProducts[0];
-    // actualMainVariant.addToSearch = true;
+    const mainVariant = variantProducts.find(v => v.addToSearch);
+    const actualMainVariant = mainVariant ?? variantProducts[0];
+    actualMainVariant.addToSearch = true;
 
-    // actualMainVariant.categoryIds.forEach(catId => {
-    //   const category = categoriesMap[catId];
-    //   category.productIds.push(actualMainVariant._id);
-    //   if (category.parentId) {
-    //     const parentCategory = categoriesMap[category.parentId];
-    //     if (!parentCategory.productIds.includes(actualMainVariant._id)) {
-    //       parentCategory.productIds.push(actualMainVariant._id);
-    //     }
-    //   }
-    // })
+    actualMainVariant.categoryIds.forEach(catId => {
+      const category = categoriesMap[catId];
+      category.productIds.push(actualMainVariant._id);
+      if (category.parentId) {
+        const parentCategory = categoriesMap[category.parentId];
+        if (!parentCategory.productIds.includes(actualMainVariant._id)) {
+          parentCategory.productIds.push(actualMainVariant._id);
+        }
+      }
+    })
     return variantProducts;
+  }
+}
+
+function getVariantImages(variant, variantImages, productImages) {
+  if (variantImages.length > 0) {
+    return variantImages;
+  } else {
+    if (variant.coverImage && productImages.length > 0) {
+      const firstImage = productImages.find(image => image.asset._id === variant.coverImage);
+      if (firstImage) {
+        return [firstImage, ...productImages.filter(image => image.asset._id !== variant.coverImage)];
+      }
+    }
+    return productImages;
   }
 }
 
@@ -215,8 +215,7 @@ export function buildProduct(
   slugSet,
   optionGroupMapLocalized,
   optionMapLocalized,
-  localeUtils,
-  translate,
+  localizers,
   imageUrls,
   imageSeo,
   buildProduct
@@ -225,7 +224,7 @@ export function buildProduct(
     getLocalizedValue,
     getLocalizedImage,
     localizeMoney,
-  } = localeUtils;
+  } = localizers;
   
   const title = getLocalizedValue(p, "title", locale) || "No Title";
   const description = getLocalizedValue(p, "description", locale) || [];
@@ -242,16 +241,15 @@ export function buildProduct(
     shareDescription,
     shareImage,
     keywords
-  } = getSanitySeo(titleWithOptions, getExcerpt(description).text, p.seo, locale, localeUtils);
+  } = getSanitySeo(titleWithOptions, getExcerpt(description).text, p.seo, locale, localizers);
   const seoImage = (shareImage || localizedImages.length > 0) ? imageSeo(shareImage || localizedImages[0]) : {url: "", alt: ""}
-  // const seoImage = {url: "", alt: ""}
 
-  const baseSlug = slugifyString(`${title}${optionsString ? `-${optionsString}` : ""}`)
+  const baseSlug = slugify(`${title}${optionsString ? `-${optionsString}` : ""}`)
   const slug = getUniqueSlug(baseSlug, slugSet);
 
   const product = {
     ...p,
-    permalink: productPermalink(locale, translate, slug),
+    permalink: productPermalink(locale, localizers.translate, slug),
     title,
     optionsString,
     titleWithOptions,
@@ -294,6 +292,6 @@ export function buildProduct(
   }
   return {
     ...product,
-    ...buildProduct && buildProduct(p, { locale, localeUtils, translate})
+    ...buildProduct && buildProduct(p, { locale, localizers})
   }
 }

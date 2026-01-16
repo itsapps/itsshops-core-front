@@ -1,0 +1,59 @@
+<base href="{{ page.url }}" />
+{%- if metaDescription %}
+<meta name="description" content="{{ metaDescription | safe }}"/>
+{% endif -%}
+{% if settings.doIndexPages -%}
+<!-- All Search Engines -->
+<meta name="robots" content="{% if noindex %}noindex{% else %}index{% endif %},follow" />
+<!-- Google Specific -->
+<meta name="googlebot" content="{% if noindex %}noindex{% else %}index{% endif %},follow" />  
+{% else -%}
+<!-- All Search Engines -->
+<meta name="robots" content="noindex" />
+<!-- Google Specific -->
+<meta name="googlebot" content="noindex" />
+{% endif -%}
+<meta name="generator" content="{{ eleventy.generator }}"/><!-- thank you very much, Zach Leatherman, Lene Saile and other people who share their work and knowledge -->
+<meta name="format-detection" content="telephone=no"/><!-- Disable automatic detection and formatting of possible phone numbers -->
+<link rel="canonical" href="{{ settings.toAbsoluteUrl(page.url) }}"/><!-- Helps prevent duplicate content issues -->
+<link rel="author" href="/humans.txt"/><!-- Links to information about the author(s) of the document -->
+<!-- alternate languages -->
+<link rel="alternate" hreflang="{{ page.lang }}" href="{{ settings.toAbsoluteUrl(page.url) }}" />
+{% for link in page.url | locale_links -%}
+<link rel="alternate" hreflang="{{ link.lang }}" href="{{ settings.toAbsoluteUrl(link.url) }}" />
+{% endfor -%}
+{% set defaultPath = page.url | locale_url(settings.defaultLocale) %}
+<link
+  rel="alternate"
+  hreflang="x-default"
+  href="{{ settings.toAbsoluteUrl(defaultPath) }}"
+/>
+{% if metaKeywords -%}
+<meta name="keywords" content="{{ metaKeywords | safe }}">
+{% endif -%}
+<!-- Open Graph meta -->
+<meta property="og:url" content="{{ settings.toAbsoluteUrl(page.url) }}" />
+<meta property="og:type" content="website" />
+{% if shareTitle -%}
+<meta property="og:title" content="{{ shareTitle | safe }}"/>
+<meta property="twitter:title" content="{{ shareTitle | safe }}"/>
+{%- endif %}
+{% if shareDescription -%}
+<meta property="og:description" content="{{ shareDescription | safe }}"/>
+<meta property="twitter:description" content="{{ shareDescription | safe }}"/>
+{%- endif %}
+{% if shareImage -%}
+<meta property="og:image" content="{{ shareImage }}"/>
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+  {%- set imageAltText = shareImageAlt if shareImageAlt else shareTitle -%}
+  {%- if imageAltText -%}
+  <meta property="og:image:alt" content="{{ imageAltText | safe }}"/>
+  {% endif -%}
+{% endif -%}
+{% set siteName = cms.getSiteSettings(page.lang).siteTitle %}
+<meta property="og:site_name" content="{{ siteName | safe }}" />
+<meta property="og:locale" content="{{ page.lang }}" />
+<meta property="article:author" content="{{ cms.getSiteSettings(page.lang).companyName | safe }}" />
+<meta name="apple-mobile-web-app-title" content="{{ siteName | safe }}" />
+<link rel="manifest" href="{{ '/site.webmanifest' | url }}" />

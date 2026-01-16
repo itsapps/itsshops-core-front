@@ -16,7 +16,7 @@ export function buildMenusQuery({fragments, options}) {
   const fields = resolveFields(
     BASE_FIELDS,
     OPTIONAL_FIELDS,
-    options.menu ?? {},
+    options.queryOptions ?? {},
     { fragments }
   );
   

@@ -2,20 +2,151 @@
 includeSideCart: true
 ---
 <!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <title>grgr</title>
-  <meta name="description" content="asdf">
-</head>
+<html lang="{{ page.lang }}" dir="ltr">
+  <head>
+    <meta whatever={{ "UTF-8The parameters filename and filename* differ only in that filename* uses the encoding defined in RFC 5987, section 3.2. When both filename and filename* are present in a single header field value, filename* is preferred over filename when both are understood. It's recommended to include both for maximum compatibility, and you can convert filename* to filename by substituting non-ASCII characters with ASCII equivalents (such as converting é to e). You may want to avoid percent escape sequences in filename, because they are handled inconsistently across browsers. (Firefox and Chrome decode them, while Safari does not.)" | readingTime }} />
+    <!-- 1 charset/http-equiv/viewport -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<body>
-  {% include "components/header.njk" %}
+    <!-- 2 title -->
+    {%- if not settings.isMaintenanceMode -%}
+    <title>
+      {% set actualTitle = (metaTitle if metaTitle else title) %}
+      {%- if actualTitle -%}
+        {%- if actualTitle.length < 18 -%}
+          {{ actualTitle | safe }} | {{ cms.getSiteSettings(page.lang).siteTitle | safe }}
+        {%- else -%}
+          {{ actualTitle | safe }}
+        {%- endif -%}
+      {%- else -%}
+        {{ cms.getSiteSettings(page.lang).siteTitle | safe }}
+      {%- endif -%}
+    </title>
+    {%- else -%}
+    <title>{{ title | safe }}</title>
+    {%- endif -%}
 
-  <main>
-    {{ content | safe }}
-  </main>
+    {% getBundle "html", "head" %}
 
-  {% include "components/footer.njk" %}
-</body>
+    {% if settings.isPreview -%}
+      <style>{% include "css/global.css" %}</style>
+    {%- elif settings.isMaintenanceMode -%}
+      {% include "head/css-inline.njk" %}
+    {%- else -%}
+      <!-- 3 synchronous js  -->
+      {# {% include "head/js-inline.njk" %} #}
+
+      <!-- 4 include inline schema application/ld+json -->
+      {%- if key != '404' -%}
+        {% set schema = cms.schema.getWebsiteSchema(page.lang, page.url, title) %}
+        {% include "partials/schema.njk" %}
+        {% getBundle "html", "schemas" %}
+      {% endif %}
+      
+      <!-- 5 synchronous css / inline css  -->
+      {% include "head/css-inline.njk" %}
+
+      <!-- 6 preload -->
+      {# {% include "head/preloads.njk" %} #}
+
+      <!-- 7 defered js  -->
+      {# {% include "head/js-defer.njk" %} #}
+
+      {%- if key != '404' -%}
+        <!-- 8 everything else: meta tags, icons, open graph etc.  -->
+        {% include "head/meta-info.njk" %}
+      {%- endif %}
+    {%- endif %}
+    {% include "head/favicons.njk" %}
+  </head>
+  <body
+    class="relative"
+    style="--nav-list-color: {{ navcolor or 'var(--color-text)' }}; --nav-list-bg: {{ navbg or 'var(--color-bg)' }}; --nav-logo-color: {{ logocolor or 'var(--color-text)' }}"
+  >
+    {%- if not settings.isPreview -%}
+      {% include "components/header.njk" %}
+    {%- endif %}
+
+    <main id="main" class="relative">
+      {{ content | safe }}
+    </main>
+
+    {%- if not settings.isPreview and not settings.isMaintenanceMode -%}
+      <div id="notification-toast" class="toastify">
+        <div class="flex flex-col">
+          {% include "icons/exclamation-circle.svg" %}
+          <p role="alert" aria-live="assertive" aria-atomic="true"></p>
+        </div>
+      </div>
+      
+      {% include "components/footer.njk" %}
+
+      <!-- Cookie Notice -->
+      {% include "partials/cookie-notice.njk" %}
+      {% getBundle "html", "data" %}
+    {%- elif settings.isPreview -%}
+      <script type="module">
+        import { enableVisualEditing } from "https://esm.sh/@sanity/visual-editing@3.0.5?bundle";
+
+        enableVisualEditing({
+          history: {
+            subscribe: function (navigate) {
+              function handler(event) {
+                navigate({
+                  type: 'push',
+                  url: location.pathname + location.search
+                });
+              }
+              window.addEventListener('popstate', handler);
+              return function () {
+                window.removeEventListener('popstate', handler);
+              };
+            },
+            update: function (update) {
+              if (update.type === 'push') {
+                window.history.pushState(null, '', update.url);
+              } else if (update.type === 'pop') {
+                window.history.back();
+              } else if (update.type === 'replace') {
+                window.history.replaceState(null, '', update.url);
+              } else {
+                throw new Error('Unknown update type: ' + update.type);
+              }
+            }
+          },
+          refresh: function (payload) {
+            if (payload.source === 'mutation') {
+              window.location.reload()
+              showReloadUI();
+              setTimeout(function() {
+                window.location.reload();
+              }, 500); // small delay to let UI appear
+            }
+            return false
+          }
+        });
+
+        function showReloadUI() {
+          const overlay = document.createElement('div');
+          overlay.id = 'reload-overlay';
+          overlay.style.position = 'fixed';
+          overlay.style.top = 0;
+          overlay.style.left = 0;
+          overlay.style.width = '100vw';
+          overlay.style.height = '100vh';
+          overlay.style.background = 'rgba(0,0,0,0.7)';
+          overlay.style.color = 'white';
+          overlay.style.display = 'flex';
+          overlay.style.alignItems = 'center';
+          overlay.style.justifyContent = 'center';
+          overlay.style.fontSize = '2rem';
+          overlay.style.zIndex = 9999;
+          overlay.innerText = 'Content updated, reloading...';
+          document.body.appendChild(overlay);
+        }
+      </script>
+    {%- endif -%}
+  </body>
 </html>

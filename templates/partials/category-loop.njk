@@ -1,0 +1,41 @@
+{% if categoryLoopItems and categoryLoopItems.length %}
+
+{% set imageLoadingEagerIndexEnd = (-1 if not imageLoadingEagerIndexEnd else imageLoadingEagerIndexEnd) %}
+
+<ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-xs" role="list">
+  {% for categoryId in categoryLoopItems %}
+    {% if imageLoadingEagerIndexEnd > -1 %}
+      {% set loading = ('eager' if loop.index0 < imageLoadingEagerIndexEnd else 'lazy') %}
+    {% endif %}
+    {% set category = cms.getCategory(categoryId, locale) %}
+    {% if category %}
+      <li
+        class="category-card overflow-hidden"
+        style="--flow-space: var(--space-xs);"
+      >
+        <a class="category-card--link" href="{{ category.permalink }}">
+          <div class="category-card--image">
+          {% if category.image %}
+            {% sanityPicture {
+              image: category.image,
+              pictureSize: placeholders.productMedium,
+              fallbackAlt: category.title,
+              imageClassNames: "fade-in object-contain",
+              loading: loading
+            } %}
+          {% else %}
+            {% placeholderPicture {
+              pictureSize: placeholders.productMedium,
+              imageClassNames: "fade-in",
+              loading: "eager"
+            } %}
+          {% endif %}
+          </div>
+          <span class="h3">{{ category.title }}</span>
+        </a>
+      </li>
+    {% endif %}
+  {% endfor %}
+</ul>
+
+{% endif %}

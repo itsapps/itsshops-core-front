@@ -16,10 +16,14 @@ export function createFragmentRegistry({
   locales,
   overrides = {},
 }) {
-  const registry = {
+  const fixedRegistry = {
     image: image(),
     localeImage: localeImage(),
     customImage: customImage(),
+    seo: seo({image: image()}),
+    subMenu: nav.subMenu(nav.navPage(), nav.navLink()),
+  };
+  const overrideRegistry = {
     internalLink: internalLink(),
     youtube: youtube(),
     navPage: nav.navPage(),
@@ -29,7 +33,6 @@ export function createFragmentRegistry({
     slide: slide({localeImage: localeImage()}),
 
     // those need a rebuild
-    seo: seo({image: image()}),
     portableText: portableText({
       internalLink: internalLink(),
       customImage: customImage(),
@@ -39,36 +42,38 @@ export function createFragmentRegistry({
 
   // 🔥 Allow override, addition or extension
   for (const key in overrides) {
-    registry[key] =
+    overrideRegistry[key] =
       typeof overrides[key] === 'function'
-        ? overrides[key](registry)
+        ? overrides[key]({...fixedRegistry, ...overrideRegistry})
         : overrides[key];
   }
 
   // Rebuild fragments with dependencies
-  registry.seo = seo({ image: registry.image });
-  registry.portableText = portableText({
-    internalLink: registry.internalLink,
-    customImage: registry.customImage,
-    youtube: registry.youtube
+  overrideRegistry.portableText = portableText({
+    internalLink: overrideRegistry.internalLink,
+    customImage: fixedRegistry.customImage,
+    youtube: overrideRegistry.youtube
   })
 
   // registry.column = localizeFragment(registry.column, locales);
   // registry.slide = localizeFragment(registry.slide, locales);
 
   // navigation
-  registry.subMenu = nav.subMenu({
-    navPage: registry.navPage,
-    navLink: registry.navLink,
+  fixedRegistry.subMenu = nav.subMenu({
+    navPage: overrideRegistry.navPage,
+    navLink: overrideRegistry.navLink,
   });
 
-  registry.menuLinks = nav.menuLinks({
-    navPage: registry.navPage,
-    navLink: registry.navLink,
-    subMenu: registry.subMenu,
+  fixedRegistry.menuLinks = nav.menuLinks({
+    navPage: overrideRegistry.navPage,
+    navLink: overrideRegistry.navLink,
+    subMenu: fixedRegistry.subMenu,
   });
 
-
+  const registry = {
+    ...fixedRegistry,
+    ...overrideRegistry,
+  };
   return {
     get(name) {
       if (!registry[name]) {

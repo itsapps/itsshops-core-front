@@ -1,0 +1,33 @@
+{% if blogLoopItems and blogLoopItems.length %}
+    
+<ul class="blog-loop" role="list" aria-label="{{ 'products.loop.ariaLabel' | t }}">
+{% for postId in blogLoopItems %}
+  {% if imageLoadingEagerIndexEnd > -1 %}
+    {% set loading = ('eager' if loop.index0 < imageLoadingEagerIndexEnd else 'lazy') %}
+  {% endif %}
+  {% set post = cms.getPost(postId, locale) %}
+  {% if post %}
+    <li
+      class="blog-loop--item overflow-hidden"
+    >
+      {% if post.image %}
+        {% sanityPicture {
+          image: post.image,
+          pictureSize: placeholders.productMedium,
+          fallbackAlt: post.title,
+          imageClassNames: "fade-in",
+          loading: loading
+        } %}
+      {% endif %}
+      <a href="{{ post.permalink }}">
+        <h3>{{ post.title }}</h3>
+      </a>
+      <p>{{ post.preview }}</p>
+    </li>
+  {% else %}
+    {% addError {message: 'Missing post', postId: postId} %}
+  {% endif %}
+{% endfor %}
+</ul>
+
+{% endif %}

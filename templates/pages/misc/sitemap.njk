@@ -1,0 +1,15 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+excludeFromSitemap: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  {%- for sitemap in cms.sitemaps -%}
+    {%- if sitemap.data.length > 0 %}
+      <sitemap>
+        <loc>{{ settings.toAbsoluteUrl(sitemap.permalink) }}</loc>
+      </sitemap>
+    {%- endif %}
+  {%- endfor %}
+</sitemapindex>

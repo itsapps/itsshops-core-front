@@ -1,4 +1,3 @@
-import { slugifyString, getUniqueSlug } from "../../utils/slugify.mjs";
 
 export function buildMenu(
   m,
@@ -6,20 +5,16 @@ export function buildMenu(
   index,
   fragments,
   remove,
-  pageMapLocalized,
-  localeUtils,
-  translate,
+  localizedReferenceMaps,
+  localizers,
   imageUrls,
   imageSeo,
-  buildMenu,
+  buildHook,
   buildFragment,
 ) {
   const {
     getLocalizedValue,
-    getLocalizedObject,
-    getLocalizedImage,
-    localizeMoney,
-  } = localeUtils;
+  } = localizers;
   
   const menu = {
     _id: m._id,
@@ -29,8 +24,8 @@ export function buildMenu(
         return {
           isSubMenu: false,
           title: getLocalizedValue(i, "title", locale),
-          url: pageMapLocalized[locale][i.pageId].permalink,
-          ...buildFragment && buildFragment(i, locale, localeUtils),
+          url: localizedReferenceMaps[locale].page[i.pageId].permalink,
+          ...buildFragment && buildFragment(i, locale, localizers),
         }
         // return {
         //   isSubMenu: false,
@@ -57,8 +52,8 @@ export function buildMenu(
               return {
                 isSubMenu: false,
                 title: getLocalizedValue(ii, "title", locale),
-                url: pageMapLocalized[locale][ii.pageId].permalink,
-                ...buildFragment && buildFragment(i, locale, localeUtils),
+                url: localizedReferenceMaps[locale].page[ii.pageId].permalink,
+                ...buildFragment && buildFragment(i, locale, localizers),
               }
             }
             else if (ii._type == "navLink") {
@@ -76,6 +71,6 @@ export function buildMenu(
 
   return {
     ...menu,
-    ...buildMenu && buildMenu(m, { locale, localeUtils, translate })
+    ...buildHook && buildHook(m, { locale, localizers })
   }
 }

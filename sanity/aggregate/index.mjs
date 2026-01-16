@@ -1,11 +1,18 @@
 import { expandProduct, buildProduct } from './products.mjs';
 import { buildPage } from './pages.mjs';
 import { buildMenu } from './menus.mjs';
+import { buildCategory } from './categories.mjs';
+import { buildSetting } from './settings.mjs';
+import { buildShippingCountries } from './shippingCountries.mjs';
+import { buildBlog } from './blog.mjs';
+import { buildPost } from './posts.mjs';
+// import { buildModule } from './modules.mjs';
 
-export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls, imageSeo }) {
+export function createAggregator({ hooks = {}, localizers, media: { imageUrls, imageSeo }}) {
   return {
     expandProduct(product,
       ctx,
+      categoriesMap,
       optionToGroupMap,
       sortOrderMapGroups,
       sortOrderMapGroupOptions
@@ -13,6 +20,7 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
       const products = expandProduct(
         product,
         ctx,
+        categoriesMap,
         optionToGroupMap,
         sortOrderMapGroups,
         sortOrderMapGroupOptions,
@@ -25,7 +33,7 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
       locale,
       index,
       fragments,
-      remove,
+      remove = [],
       slugSet,
       optionGroupMapLocalized,
       optionMapLocalized,
@@ -39,8 +47,7 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
         slugSet,
         optionGroupMapLocalized,
         optionMapLocalized,
-        localeUtils,
-        translate,
+        localizers,
         imageUrls,
         imageSeo,
         hooks.buildProduct
@@ -53,10 +60,10 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
       locale,
       index,
       fragments,
-      remove,
+      remove = [],
       slugSet,
-      isHome,
-      isShop,
+      homeId,
+      shopId,
     ) {
       const base = buildPage(
         item,
@@ -65,13 +72,123 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
         fragments,
         remove,
         slugSet,
-        isHome,
-        isShop,
-        localeUtils,
-        translate,
+        homeId,
+        shopId,
+        localizers,
         imageUrls,
         imageSeo,
         hooks.buildPage
+      );
+
+      return base;
+    },
+    buildPost(
+      item,
+      locale,
+      index,
+      fragments,
+      remove = [],
+      slugSet,
+      homeId,
+    ) {
+      const base = buildPost(
+        item,
+        locale,
+        index,
+        fragments,
+        remove,
+        slugSet,
+        homeId,
+        localizers,
+        imageUrls,
+        imageSeo,
+        hooks.buildPost
+      );
+
+      return base;
+    },
+    buildBlog(
+      item,
+      locale,
+      fragments,
+      remove = [],
+      blogPostIdsPaginated,
+    ) {
+      const base = buildBlog(
+        item,
+        locale,
+        fragments,
+        remove,
+        blogPostIdsPaginated,
+        localizers,
+        imageUrls,
+        imageSeo,
+        hooks.buildBlog
+      );
+
+      return base;
+    },
+    buildCategory(
+      item,
+      locale,
+      index,
+      fragments,
+      remove = [],
+      slugSet,
+    ) {
+      const base = buildCategory(
+        item,
+        locale,
+        index,
+        fragments,
+        remove,
+        slugSet,
+        localizers,
+        imageUrls,
+        imageSeo,
+        hooks.buildCategory
+      );
+
+      return base;
+    },
+    buildSetting(
+      item,
+      locale,
+      fragments,
+      remove = [],
+      country,
+    ) {
+      const base = buildSetting(
+        item,
+        locale,
+        fragments,
+        remove,
+        country,
+        localizers,
+        imageUrls,
+        imageSeo,
+        hooks.buildSetting
+      );
+
+      return base;
+    },
+    buildShippingCountries(
+      item,
+      locale,
+      fragments,
+      remove = [],
+      getSupportedCountry,
+    ) {
+      const base = buildShippingCountries(
+        item,
+        locale,
+        fragments,
+        remove,
+        getSupportedCountry,
+        localizers,
+        imageUrls,
+        imageSeo,
+        hooks.buildShippingCountries
       );
 
       return base;
@@ -81,8 +198,8 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
       locale,
       index,
       fragments,
-      remove,
-      pageMapLocalized,
+      remove = [],
+      localizedReferenceMaps,
     ) {
       const base = buildMenu(
         item,
@@ -90,9 +207,8 @@ export function createAggregator({ hooks = {}, localeUtils, translate, imageUrls
         index,
         fragments,
         remove,
-        pageMapLocalized,
-        localeUtils,
-        translate,
+        localizedReferenceMaps,
+        localizers,
         imageUrls,
         imageSeo,
         hooks.buildMenu,

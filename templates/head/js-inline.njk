@@ -1,0 +1,8 @@
+
+<!-- inlined for all pages -->
+<!-- load theme toggle first to avoid color flashing on page load and inline render blocking js -->
+<script>{% getBundle "js", "inline" %}
+</script>
+{%- js "inline" %} 
+{% include "scripts/inline/theme-toggle.js" %}
+{% endjs %}

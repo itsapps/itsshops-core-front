@@ -1,0 +1,21 @@
+---
+layout: base
+pagination:
+  data: cms.paginationCategories
+  size: 1
+  alias: category
+  addAllPagesToCollections: true
+permalink: "{{ category.permalink }}"
+eleventyComputed:
+  key: "{{ category._id }}"
+  locale: "{{ category.locale }}"
+  title: "{{ category.title | safe }}"
+  metaTitle: "{{ category.metaTitle | safe }}"
+  metaDescription: "{{ category.metaDescription | safe }}"
+  shareTitle: "{{ category.shareTitle | safe }}"
+  shareDescription: "{{ category.shareDescription | safe }}"
+  shareImage: "{{ category.shareImage | safe }}"
+  shareImageAlt: "{{ category.shareImageAlt | safe }}"
+  metaKeywords: "{{ category.seoKeywords | safe }}"
+---
+

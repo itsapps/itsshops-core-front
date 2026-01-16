@@ -1,6 +1,7 @@
 export function resolveFields(
   baseFields,
-  optionalFields, {
+  optionalFields,
+  {
     add = [],
     remove = [],
   } = {},

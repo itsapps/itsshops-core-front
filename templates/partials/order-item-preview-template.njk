@@ -1,0 +1,19 @@
+<template id="order-item-preview-template">
+  <li class="order-item-preview">
+    <h2 data-name="header" class="order-item-preview--header"></h2>
+    <div class="order-item-preview--row">
+      <div class="order-item-preview--photo-container" data-name="photo-container"></div>
+      <button data-name="details-button" class="btn" aria-haspopup="true" aria-expanded="false">Details</button>
+    </div>
+    <div data-name="order" class="hidden"></div>
+  </li>
+</template>
+<template id="order-item-preview-photo-template">
+  <div class="cart-item--photo" data-name="photo">
+    {% placeholderPicture {
+      pictureSize: placeholders.productSmall,
+      imageClassNames: "fade-in",
+      loading: "lazy"
+    } %}
+  </div>
+</template>
