@@ -16,7 +16,7 @@ export type PreviewParams = {
 }
 
 export const preview = async (props: PreviewParams) => {
-  console.log("projectConfig: ", props.projectConfig);
+  // console.log("projectConfig: ", props.projectConfig);
   // try {
   //   const root = process.cwd();
   //   const srcPath = path.join(root, "src");
