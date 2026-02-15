@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsup';
+import fsExtra from 'fs-extra';
+const { copySync } = fsExtra;
 
 export default defineConfig({
   entry: {
+    itsshops: 'src/bin/itsshops.ts',
     index: 'src/index.ts',
     preview: 'src/netlify/functions/preview.ts',
   },
@@ -9,4 +12,8 @@ export default defineConfig({
   dts: true,        // Generates .d.ts files
   splitting: false, // Often safer for Netlify functions to avoid shared chunks
   clean: true,
+  onSuccess: async () => {
+    copySync('src/templates', 'dist/templates', { overwrite: true });
+    copySync('src/assets', 'dist/assets', { overwrite: true });
+  },
 });

@@ -14,24 +14,15 @@ import { fileURLToPath } from "url"
 // } from '@11ty/eleventy';
 import { someFilter } from './config/filters';
 
-// Convert current module URL to a directory path
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const getPackageRoot = () => {
-  // If we are in 'dist', go up one. If bundled/inlined, we might need a fallback.
-  return __dirname.includes('dist') 
-    ? path.resolve(__dirname, '..') 
-    : path.resolve(__dirname);
-};
-// const coreRoot = path.resolve(__dirname,  '..')
-const coreRoot = getPackageRoot()
-// const assetsRoot = path.join(coreRoot, "assets")
-const templatesRoot = path.join(coreRoot, "templates")
-const layoutsDir = path.join(templatesRoot, "layouts")
+const templatesRoot = path.join(__dirname, 'templates'); // now in dist/
+const layoutsDir = path.join(templatesRoot, 'layouts');
+const corePagesRoot = path.join(templatesRoot, 'pages');
 
 export const shopCoreFrontendPlugin = (eleventyConfig: any, options: any) => {
-  console.log("baseConfig: ", options.baseConfig)
+  // console.log("baseConfig: ", options.baseConfig)
   /*
    * Nunjucks - templates overrides
    */
@@ -96,7 +87,6 @@ export const shopCoreFrontendPlugin = (eleventyConfig: any, options: any) => {
     }
   }
 
-  const corePagesRoot = path.join(templatesRoot, 'pages')
   for (const dir of fs.readdirSync(corePagesRoot)) {
     const dirPath = path.join(corePagesRoot, dir)
     if (!fs.statSync(dirPath).isDirectory()) continue

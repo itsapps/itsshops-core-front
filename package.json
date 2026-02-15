@@ -22,14 +22,14 @@
     "templates/"
   ],
   "bin": {
-    "itsshops": "./bin/itsshops.js"
+    "itsshops": "./dist/itsshops.js"
   },
   "scripts": {
     "build": "tsup",
     "kjhprepare": "npm run build"
   },
   "simple-git-hooks": {
-    "pre-commit": "npm run build && git add dist"
+    "pre-commit": "npm run build"
   },
   "dependencies": {
     "@11ty/eleventy": "^3.1.2",
@@ -43,6 +43,7 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.9",
     "@types/nunjucks": "^3.2.6",
     "simple-git-hooks": "^2.13.1",

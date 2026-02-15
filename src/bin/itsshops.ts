@@ -109,6 +109,7 @@ program
       'src/_includes/scripts',
     ];
 
+    const root = process.cwd();
     foldersToClean.forEach(folder => {
       const fullPath = path.join(root, folder);
       
