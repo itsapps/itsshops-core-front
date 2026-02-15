@@ -10,7 +10,7 @@ import {
 import {createTranslation} from './utils/frontTranslation.mjs';
 
 import cms from "./data/cms.mjs"
-import { createSanityClient, createImageBuilder } from './shared/sanity.mjs'
+import { createSanityClient, createImageBuilder } from './shared/sanity.mts'
 import { createImageSettings } from './data/imageSizes.mjs'
 import { createStaticPages } from './data/static.mjs'
 import { cssConfig } from "./config/tailwind/css-config.mjs";
@@ -294,6 +294,27 @@ export const shopCoreFrontendPlugin = (eleventyConfig, options = {
         !fs.existsSync(customerPath)
       ) {
         eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'))
+      }
+    }
+  }
+
+  // misc templates
+  const coreMiscPagesRoot = path.join(templatesRoot, 'misc')
+  for (const dir of fs.readdirSync(coreMiscPagesRoot)) {
+    const dirPath = path.join(coreMiscPagesRoot, dir)
+    if (!fs.statSync(dirPath).isDirectory()) continue
+
+    for (const file of fs.readdirSync(dirPath)) {
+      if (!file.endsWith('.njk')) continue
+
+      const customerPath = path.join(customerPagesRoot, dir, file)
+      const corePath = path.join(dirPath, file)
+
+      if (!fs.existsSync(customerPath)) {
+        eleventyConfig.addTemplate(`misc/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'))
+      } else {
+        // console.error(`You are not allowed to add templates in misc/: ${customerPath}`)
+        throw new Error(`You are not allowed to add templates in misc/: ${customerPath}`)
       }
     }
   }

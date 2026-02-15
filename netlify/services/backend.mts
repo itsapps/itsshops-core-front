@@ -1,5 +1,5 @@
-import { createClient } from '@sanity/client'
-import {createImageUrlBuilder} from '@sanity/image-url'
+import type { SanityClient } from '@sanity/client'
+import type { ImageUrlBuilder} from '@sanity/image-url'
 import {ProductTypes} from '../../shared/enums.mjs';
 import {
   PageMinimal,
@@ -30,20 +30,7 @@ if (!process.env.SANITY_STUDIO_DATASET) {
   throw new Error("Missing SANITY_STUDIO_DATASET");
 }
 
-export const sanity = createClient({
-  projectId: process.env.SANITY_STUDIO_PROJECT,
-  token: process.env.SANITY_TOKEN,
-  dataset: process.env.SANITY_STUDIO_DATASET,
-  apiVersion: sanityApiVersion,
-  useCdn: false,
-  perspective: 'published',
-  maxRetries: 2,
-  retryDelay: (attempt) => 1000 * 2 ** attempt
-})
-
-export const imageBuilder = createImageUrlBuilder(sanity)
-
-export const sanityReplaceableImageUrl = (image: Image) => {
+export const sanityReplaceableImageUrl = (imageBuilder: ImageUrlBuilder, image: Image) => {
   if (!image) {
     return "";
   }
@@ -63,10 +50,6 @@ export const sanityReplaceableImageUrl = (image: Image) => {
   return output;
 }
 
-export const fetchQuery = async (query: string, vars: Record<string, any>) => {
-  return sanity.fetch(query, vars);
-}
-
 const imagePayload = `
   _type,
   "asset": asset->{url, _id, "dimensions": metadata.dimensions {width, height, aspectRatio}},
@@ -75,6 +58,7 @@ const imagePayload = `
 `;
 
 export const getProductsVariantsVouchersShippings = async ({
+  client,
   withVariantOptions,
   productIds,
   variantIds,
@@ -174,7 +158,7 @@ export const getProductsVariantsVouchersShippings = async ({
     ${userOrderQuery ? `, ${userOrderQuery}` : ''}
     ${userQuery ? `, ${userQuery}` : ''}
   }`;
-  const data = await fetchQuery(query, {
+  const data = await client.fetch(query, {
     productIds,
     variantIds,
     voucherCodes,
@@ -195,8 +179,8 @@ export const getProductsVariantsVouchersShippings = async ({
   return result
 }
 
-export const getOrder = async (paymentIntentId: string) => {
-  return sanity.fetch(
+export const getOrder = async (client: SanityClient, paymentIntentId: string) => {
+  return client.fetch(
     '*[_type == "order" && paymentIntentId == $paymentIntentId][0]', { paymentIntentId }
   );
 }
@@ -245,22 +229,22 @@ const orderPayload = `
   status
 `;
 
-export const getUserOrders = async ({userId, email}: {userId: string, email?: string}): Promise<SanityOrderForClient[]> => {
+export const getUserOrders = async (client: SanityClient, {userId, email}: {userId: string, email?: string}): Promise<SanityOrderForClient[]> => {
   // TODO: think about this
   const allConditions = `(supabaseUserId == $userId || contactEmail == $email)`;
   // const allConditions = `(contactEmail == "${email}")`;
   const query = `
   *[_type == "order" && ${allConditions}] {${orderPayload}}
   `
-  return await sanity.fetch(query, {
+  return await client.fetch(query, {
     userId,
     email
   });
 }
 
-export const getOrderMetaWithPaymentIntentId = async ({paymentIntentId}: {paymentIntentId: string}): Promise<SanityOrderForClient | null> => {
+export const getOrderMetaWithPaymentIntentId = async (client: SanityClient, {paymentIntentId}: {paymentIntentId: string}): Promise<SanityOrderForClient | null> => {
   const query = `*[_type == "orderMeta" && paymentIntentId == $paymentIntentId] {${orderMetaPayload}}`
-  const sanityOrders: SanityOrderForClient[] = await sanity.fetch(query, {
+  const sanityOrders: SanityOrderForClient[] = await client.fetch(query, {
     paymentIntentId
   });
 
@@ -282,54 +266,54 @@ const orderByIdQuery = `
   *[_type == "order" && _id == $orderId][0] {${orderGetPayload}}
 `
 
-export const getSettingsAndOrderById = async ({orderId}: {orderId: string}): Promise<SanitySettingsAndOrderByIdResult> => {
+export const getSettingsAndOrderById = async (client: SanityClient, {orderId}: {orderId: string}): Promise<SanitySettingsAndOrderByIdResult> => {
   const query = `{
     "settings": ${settingsQuery},
     "order": ${orderByIdQuery}
   }
   `
-  return sanity.fetch(query, { orderId });
+  return client.fetch(query, { orderId });
 }
-export const getOrderByPaymentIntentId = async ({paymentIntentId}: {paymentIntentId: string}): Promise<SanityOrderCreateResult> => {
+export const getOrderByPaymentIntentId = async (client: SanityClient, {paymentIntentId}: {paymentIntentId: string}): Promise<SanityOrderCreateResult> => {
   const query = `
   *[_type == "order" && paymentIntentId == $paymentIntentId][0] {${orderGetPayload}}
   `
-  return sanity.fetch(query, {
+  return client.fetch(query, {
     paymentIntentId
   });
 }
 
-export const createOrder = async (order: SanityOrderCreate): Promise<SanityOrderCreateResult> => {
-  return sanity.create(order, {
+export const createOrder = async (client: SanityClient, order: SanityOrderCreate): Promise<SanityOrderCreateResult> => {
+  return client.create(order, {
     autoGenerateArrayKeys: true
   });
 }
 
-export const updateOrderStates = async (orderId: string, data: Record<string, any>, historyStateItem: SanityOrderStatusHistoryItem) => {
+export const updateOrderStates = async (client: SanityClient, orderId: string, data: Record<string, any>, historyStateItem: SanityOrderStatusHistoryItem) => {
   try {
-    await sanity.patch(orderId).set(data).append('statusHistory', [historyStateItem]).commit({ autoGenerateArrayKeys: true, returnDocuments: false });
+    await client.patch(orderId).set(data).append('statusHistory', [historyStateItem]).commit({ autoGenerateArrayKeys: true, returnDocuments: false });
   } catch (error) {
     throw error;
   }
 }
 
-export const getOrderMeta = async (orderMetaId: string): Promise<SanityOrderMetaGet> => {
-  return sanity.getDocument(orderMetaId) as Promise<SanityOrderMetaGet>;
+export const getOrderMeta = async (client: SanityClient, orderMetaId: string): Promise<SanityOrderMetaGet> => {
+  return client.getDocument(orderMetaId) as Promise<SanityOrderMetaGet>;
 }
 
-export const createOrderMeta = async (orderMetaId: string, data: SanityOrderMetaCreate) => {
+export const createOrderMeta = async (client: SanityClient, orderMetaId: string, data: SanityOrderMetaCreate) => {
   const orderMeta = {
     _id: orderMetaId,
     _type: 'orderMeta',
     ...data
   }
-  return sanity.create(orderMeta, {
+  return client.create(orderMeta, {
     autoGenerateArrayKeys: true
   });
 }
 
-export const updateOrderMeta = async (orderMetaId: string, data: SanityOrderMetaUpdate): Promise<string> => {
-  const patch = sanity
+export const updateOrderMeta = async (client: SanityClient, orderMetaId: string, data: SanityOrderMetaUpdate): Promise<string> => {
+  const patch = client
     .patch(orderMetaId)
     .set(data)
 
@@ -352,7 +336,7 @@ export const updateOrderMeta = async (orderMetaId: string, data: SanityOrderMeta
 }
 
 
-export const getUser = async ({externalUserId}: {externalUserId: string}): Promise<SanityUser> => {
+export const getUser = async (client: SanityClient, {externalUserId}: {externalUserId: string}): Promise<SanityUser> => {
   const query = `
     *[_type == "user" && externalUserId == $externalUserId][0] {
       _id,
@@ -364,7 +348,7 @@ export const getUser = async ({externalUserId}: {externalUserId: string}): Promi
       locale
     }
   `
-  return sanity.fetch(query, {
+  return client.fetch(query, {
     externalUserId
   });
 }
@@ -376,7 +360,7 @@ export const getUser = async ({externalUserId}: {externalUserId: string}): Promi
 //   return sanity.fetch(query, params);
 // }
 
-export const createUser = async ({
+export const createUser = async (client: SanityClient, {
   email,
   externalUserId,
   customerNumber,
@@ -400,14 +384,14 @@ export const createUser = async ({
     status,
     locale
   }
-  return sanity.create(user, {
+  return client.create(user, {
     // autoGenerateArrayKeys: true
   });
 }
 
-export const getLatestCustomerNumber = async (): Promise<string> => {
+export const getLatestCustomerNumber = async (client: SanityClient): Promise<string> => {
   const query = `*[_type == "user"] | order(customerNumber desc)[0]{customerNumber}`;
-  const latest = await sanity.fetch(query);
+  const latest = await client.fetch(query);
   
   const lastNumber = latest?.customerNumber || '10000';
   const nextNumber = parseInt(lastNumber, 10) + 1;
@@ -436,28 +420,28 @@ const settingsQuery = `
   }
 `
 
-export const getSettings = async (): Promise<SanitySettings> => {
-    return sanity.fetch(settingsQuery);
+export const getSettings = async (client: SanityClient): Promise<SanitySettings> => {
+    return client.fetch(settingsQuery);
 }
 
-export const updateLastInvoiceNumber = async (lastInvoiceNumber: number) => {
-  return sanity
+export const updateLastInvoiceNumber = async (client: SanityClient, lastInvoiceNumber: number) => {
+  return client
     .patch("generalSettings")
     .set({ lastInvoiceNumber })
     .commit();
 }
 
-export const getPages = async (): Promise<PageMinimal[]> => {
+export const getPages = async (client: SanityClient): Promise<PageMinimal[]> => {
   const query = `*[_type == "page"]{_id,title}`
-  return await sanity.fetch(query);
+  return await client.fetch(query);
 }
 
 type SanityStockLevelProduct = {
   id: string,
   quantity: number
 }
-export const updateStockLevels = async (productStockLevels: SanityStockLevelProduct[]) => {
-  const tx = sanity.transaction();
+export const updateStockLevels = async (client: SanityClient, productStockLevels: SanityStockLevelProduct[]) => {
+  const tx = client.transaction();
   productStockLevels.forEach(({ id, quantity }) => {
     tx.patch(id, p => p.dec({ stock: quantity })); // decrement stock
   });
@@ -479,7 +463,7 @@ type SanityStockInfoResult = {
   products: SanityProductStockInfo[];
   variants: SanityProductVariantStockInfo[];
 }
-export const getLowStockProducts = async (): Promise<SanityStockInfoResult> => {
+export const getLowStockProducts = async (client: SanityClient): Promise<SanityStockInfoResult> => {
   const query = `
   {
     "threshold": *[_type == "generalSettings"][0].stockThreshold,
@@ -501,10 +485,10 @@ export const getLowStockProducts = async (): Promise<SanityStockInfoResult> => {
     }
   }
   `;
-  return await sanity.fetch(query);
+  return await client.fetch(query);
 }
 
-export const getInventoryProducts = async (): Promise<SanityInventoryResult> => {
+export const getInventoryProducts = async (client: SanityClient): Promise<SanityInventoryResult> => {
   const sharedProps = [
     "_id",
     "_type",
@@ -527,5 +511,5 @@ export const getInventoryProducts = async (): Promise<SanityInventoryResult> => 
       ${productProps.join(',')},"variants": variants[]->{${variantProps.join(',')}}
     }
   }`
-  return await sanity.fetch(query);
+  return await client.fetch(query);
 }

@@ -1,7 +1,8 @@
 import { createClient } from '@sanity/client';
+import type { ClientConfig, SanityClient } from '@sanity/client';
 import { createImageUrlBuilder } from '@sanity/image-url'
 
-export function createSanityClient({projectId, dataset, token, apiVersion, perspective, useCdn=false, maxRetries=5, retryDelay=() => 100}) {
+export function createSanityClient({projectId, dataset, token, apiVersion, perspective, useCdn=false, maxRetries=5, retryDelay=() => 100}: ClientConfig) {
   return createClient({
     projectId,
     dataset,
@@ -14,6 +15,6 @@ export function createSanityClient({projectId, dataset, token, apiVersion, persp
   });
 }
 
-export function createImageBuilder(client) {
+export function createImageBuilder(client: SanityClient) {
   return createImageUrlBuilder(client)
 }

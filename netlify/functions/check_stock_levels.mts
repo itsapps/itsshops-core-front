@@ -3,7 +3,7 @@ import { getLowStockProducts } from '../services/backend.mts';
 import { createTranslationFromLocale } from '../translation.mjs';
 import { getLocalizedValue, formatDate } from '../../shared/localize.mjs';
 // import { sendMail } from '../services/mail.mts';
-import { createSanityClient, createImageBuilder } from '../../shared/sanity.mjs'
+import { createSanityClient, createImageBuilder } from '../../shared/sanity.mts'
 
 export const defaultConfig: Config = {
   schedule: "0 5 * * *"
@@ -26,7 +26,7 @@ export const handler = async (request: Request, options: StockCheckOptions) => {
   }
 
   const sanityClient = createSanityClient({...options.sanity, apiVersion: ""});
-  const data = await getLowStockProducts();
+  const data = await getLowStockProducts(sanityClient);
   if (data.products.length == 0 && data.variants.length == 0) {
     return
   }

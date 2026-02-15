@@ -6,6 +6,9 @@
     ".": "./index.js",
     "./functions/*": "./netlify/functions/*.mts"
   },
+  "bin": {
+    "itsshops": "./bin/itsshops.js"
+  },
   "dependencies": {
     "@11ty/eleventy": "^3.1.2",
     "@11ty/eleventy-img": "^6.0.4",
@@ -17,6 +20,7 @@
     "@sindresorhus/slugify": "^3.0.0",
     "@vercel/stega": "0.1.2",
     "autoprefixer": "^10.4.23",
+    "commander": "^14.0.2",
     "cssnano": "^7.1.2",
     "dayjs": "^1.11.19",
     "i18next": "^25.7.4",
@@ -30,6 +34,7 @@
     "postcss-js": "^5.0.3",
     "postcss-load-config": "6.0.1",
     "postcss-nesting": "^13.0.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0"
   }
 }
