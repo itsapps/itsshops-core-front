@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "kjhprepare": "npm run build"
+    "prepare": "npm run build"
   },
   "simple-git-hooks": {
     "pre-commit": "npm run build"
