@@ -1,8 +1,0 @@
-{% if settings.captchaSiteKey %}
-{% html "externalJS" %}
-<script src="https://www.google.com/recaptcha/api.js?render={{ settings.captchaSiteKey }}&hl={{ page.lang }}" async></script>
-{% endhtml %}
-{% html "data" %}
-<div class="hidden" id="captcha-site-key" data-captcha-site-key="{{ settings.captchaSiteKey }}"></div>
-{% endhtml %}
-{% endif %}

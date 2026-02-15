@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "es2020",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM"],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": true,
+    "composite": false,
+    "strict": true,
+    "esModuleInterop": true,       // Helps with default imports
+    "skipLibCheck": true,
+    "outDir": "dist"
+  },
+  "include": ["src/index.ts", "src/netlify/functions/**/*.ts"]
+}

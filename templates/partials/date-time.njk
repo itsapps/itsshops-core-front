@@ -1,5 +1,0 @@
-{% if definedDate %}
-<time class="dt-published" datetime="{{ definedDate | toIsoString }}">
-  {{ definedDate | formatDate(page.lang, 'long', 'short') }}
-</time>
-{% endif %}

@@ -1,8 +1,0 @@
-{% from 'components/macros.njk' import stegaTag %}
-<section class="region wrapper"{% createDataSanity item._id, item._type, "modules[_key==\"" ~ module._key ~ "\"]" %}>
-    {% if module.headline %}
-        {{ stegaTag("h2", content=module.headline, classNames="product-loop--heading") }}
-    {% endif %}
-    {% set productLoopItems = module.productIds %}
-    {% include "partials/product-loop-raw.njk" %}
-</section>
