@@ -1,5 +1,5 @@
 {
-  "name": "@itsapps/itsshops-core-front2",
+  "name": "@itsapps/itsshops-core-front",
   "version": "1.0.1",
   "type": "module",
   "main": "./dist/index.js",
