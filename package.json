@@ -17,7 +17,6 @@
   "files": [
     "bin/",
     "dist/",
-    "assets/",
     "config/",
     "templates/"
   ],

@@ -14,6 +14,6 @@ export default defineConfig({
   clean: true,
   onSuccess: async () => {
     copySync('src/templates', 'dist/templates', { overwrite: true });
-    copySync('src/assets', 'dist/assets', { overwrite: true });
+    // copySync('src/assets', 'dist/assets', { overwrite: true });
   },
 });
