@@ -7,7 +7,7 @@ import { createSanityClient } from './core/clients/sanity';
 import { cssConfig } from './config/css';
 import { createVirtualTemplates } from './templates/virtual';
 
-export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: any) => {
+export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Config) => {
   loadTemplates(eleventyConfig);
 
   createFilters(eleventyConfig);

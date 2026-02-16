@@ -8,7 +8,7 @@ import config from '../../tailwind.config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const cssConfig = (eleventyConfig: any, options: any) => {
+export const cssConfig = (eleventyConfig: any, options?: any) => {
   eleventyConfig.on('eleventy.before', async () => {
     // const tailwindInputPath = path.resolve('./src/assets/css/style.css');
     // const tailwindOutputPath = './dist/styles/index.css';
