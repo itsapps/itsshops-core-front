@@ -34,6 +34,7 @@ export const preview = async (props: PreviewParams) => {
   
   // const coreModulePath = path.join(root, "node_modules", "@itsapps", "itsshops-core-front2");
   // console.log(`coreModulePath at ${coreModulePath} exists?`, fs.existsSync(coreModulePath));
+  process.env.IS_PREVIEW = 'true'
 
   let result = "Nothing here yet blablabla"
   try {

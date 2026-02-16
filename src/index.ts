@@ -11,7 +11,11 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Confi
   loadTemplates(eleventyConfig);
 
   createFilters(eleventyConfig);
-  cssConfig(eleventyConfig, options.tailwind);
+
+  
+  if (!options.preview?.enabled) {
+    cssConfig(eleventyConfig, options.tailwind);
+  }
 
   createVirtualTemplates(eleventyConfig);
 
