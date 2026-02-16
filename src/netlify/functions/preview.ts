@@ -46,7 +46,7 @@ export const preview = async (props: PreviewParams) => {
     // Don’t write to disk — just render in memory
     const results = (await elev.toJSON()) as unknown as ElevResult[]
 
-    result = results[0].content
+    result = results[1].content
   } catch (error) {
     console.error(error);
     if (error instanceof Error) {
