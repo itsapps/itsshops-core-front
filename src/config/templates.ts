@@ -1,12 +1,6 @@
-import * as fs from 'fs';          // Fixes TS1192
-import * as path from 'path';      // Fixes TS1259
-import Nunjucks from 'nunjucks';   // (Or import * as nunjucks from 'nunjucks' if it still complains)
-
-// For local imports (TS5097):
-// In modern TS, you should import the '.mjs' or '.js' equivalent, 
-// or remove the extension entirely if you aren't using "allowImportingTsExtensions"
-// import { someUtil } from './utils';
-
+import * as fs from 'fs';
+import * as path from 'path';
+import Nunjucks from 'nunjucks';
 import { fileURLToPath } from "url"
 // import {
 //   EleventyRenderPlugin,
@@ -16,7 +10,7 @@ import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const templatesRoot = path.join(__dirname, 'templates'); // now in dist/
+const templatesRoot = path.join(__dirname, 'templates');
 const layoutsDir = path.join(templatesRoot, 'layouts');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
@@ -25,7 +19,7 @@ export const loadTemplates = (eleventyConfig: any) => {
   /*
    * Nunjucks - templates overrides
    */
-  let nunjucksEnvironment = new Nunjucks.Environment(
+  const nunjucksEnvironment = new Nunjucks.Environment(
 		new Nunjucks.FileSystemLoader([
       path.resolve("src/_includes"),
       templatesRoot,
@@ -86,6 +80,10 @@ export const loadTemplates = (eleventyConfig: any) => {
     }
   }
 
+  // eleventyConfig.addTemplate("virtual.11ty.js", function(data: any) {
+	// 	return `<h1>Hello</h1>`;
+	// });
+
   for (const dir of fs.readdirSync(corePagesRoot)) {
     const dirPath = path.join(corePagesRoot, dir)
     if (!fs.statSync(dirPath).isDirectory()) continue
@@ -145,6 +143,8 @@ export const loadTemplates = (eleventyConfig: any) => {
   if (fs.existsSync(coreMiscPagesRoot)) {
     walkAndAdd(coreMiscPagesRoot);
   }
+
+  return nunjucksEnvironment
 }
 
 function shouldIgnoreTemplate({
