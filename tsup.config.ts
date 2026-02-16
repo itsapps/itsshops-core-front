@@ -15,6 +15,8 @@ export default defineConfig({
   clean: true,
   bundle: true,
   treeshake: true,
+  external: ['fs', 'path', 'url'],
+  noExternal: ['@sindresorhus/slugify', 'dayjs', 'nunjucks'],
   onSuccess: async () => {
     copySync('src/templates', 'dist/templates', { overwrite: true });
     copySync('src/assets', 'dist/assets', { overwrite: true });
