@@ -14,9 +14,6 @@ export default defineConfig({
   splitting: false, // Often safer for Netlify functions to avoid shared chunks
   clean: true,
   bundle: true,
-  treeshake: true,
-  external: ['fs', 'path', 'url'],
-  noExternal: ['@sindresorhus/slugify', 'dayjs', 'nunjucks'],
   onSuccess: async () => {
     copySync('src/templates', 'dist/templates', { overwrite: true });
     copySync('src/assets', 'dist/assets', { overwrite: true });
