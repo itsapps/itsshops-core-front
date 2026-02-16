@@ -18,7 +18,7 @@ export default {
     screens: {
     xs: '30em',
     sm: '40em',
-    md: '45em',
+    md: '50em',
     tablet: '60em',
     lg: '80em'
   },
