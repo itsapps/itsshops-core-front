@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "dev": "tsup --watch",
     "prepare": "npm run build"
   },
   "simple-git-hooks": {

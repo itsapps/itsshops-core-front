@@ -10,6 +10,7 @@ export function createSanityClient(config: SanityClientConfig) {
   const retryDelay = config.retryDelay ?? (() => 100);
   return createClient({
     ...config,
+    useCdn: false,
     apiVersion: sanityApiVersion,
     maxRetries: config.maxRetries || 5,
     retryDelay,
