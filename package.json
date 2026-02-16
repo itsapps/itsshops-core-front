@@ -17,6 +17,7 @@
   "files": [
     "bin/",
     "dist/",
+    "assets/",
     "templates/"
   ],
   "bin": {
@@ -37,11 +38,16 @@
     "@sanity/client": "^7.14.1",
     "@sanity/image-url": "^2.0.3",
     "@sindresorhus/slugify": "^3.0.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/typography": "^0.5.19",
     "commander": "^14.0.2",
+    "daisyui": "^5.5.18",
     "dayjs": "^1.11.19",
     "fs-extra": "^11.3.3",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
