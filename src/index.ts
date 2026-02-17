@@ -1,6 +1,7 @@
 export * from "./types";
 import type { Config } from "./types";
 
+import { setIgnores } from './config/debug';
 import { loadTemplates } from './config/templates';
 import { createFilters } from './filters';
 import { createSanityClient } from './core/clients/sanity';
@@ -8,7 +9,8 @@ import { cssConfig } from './config/css';
 import { createVirtualTemplates } from './templates/virtual';
 
 export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Config) => {
-  loadTemplates(eleventyConfig);
+  setIgnores(eleventyConfig);
+  // loadTemplates(eleventyConfig);
 
   createFilters(eleventyConfig);
 

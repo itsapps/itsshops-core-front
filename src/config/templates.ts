@@ -19,35 +19,81 @@ export const loadTemplates = (eleventyConfig: any) => {
   /*
    * Nunjucks - templates overrides
    */
-  const nunjucksEnvironment = new Nunjucks.Environment(
-		new Nunjucks.FileSystemLoader([
+  eleventyConfig.amendLibrary("njk", (env: any) => {
+    env.loaders[0].searchPaths.push(
       path.resolve("src/_includes"),
-      templatesRoot,
-    ], { noCache: true })
-	);
-	eleventyConfig.setLibrary("njk", nunjucksEnvironment);
+      templatesRoot
+    );
+  });
+  // const nunjucksEnvironment = new Nunjucks.Environment(
+	// 	new Nunjucks.FileSystemLoader([
+  //     path.resolve("src/_includes"),
+  //     templatesRoot,
+  //   ], { noCache: true })
+	// );
+	// eleventyConfig.setLibrary("njk", nunjucksEnvironment);
   eleventyConfig.setNunjucksEnvironmentOptions({
 		throwOnUndefined: true,
 	});
   
 
+  // const layoutsDirName = eleventyConfig.directories.layouts || "_layouts";
+  // const inputDir = eleventyConfig.dir.input;
+
   // layouts
   if (fs.existsSync(layoutsDir)) {
     for (const file of fs.readdirSync(layoutsDir)) {
       if (!file.endsWith(".njk")) continue
+
       const customerLayoutPath = path.join(process.cwd(), eleventyConfig.directories.layouts, file)
+      // const customerLayoutPath = path.join(inputDir, layoutsDirName, file);
       if (fs.existsSync(customerLayoutPath)) {
-        continue // layout exists, so use this one instead of the one from core
+        continue;
       }
 
       const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
       let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
+      let layoutPat = `src/_layouts/${file}`;
+      console.log("layoutPath: ", layoutPath)
       eleventyConfig.addTemplate(layoutPath, content)
+      eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
+
+      // read core layout from core folder
+      // const coreLayoutFilePath = path.join(layoutsDir, file);
+      // const content = fs.readFileSync(coreLayoutFilePath, "utf-8");
+
+      // // register virtual template inside Eleventy's layout namespace
+      // const virtualLayoutPath = `${layoutsDirName}/${file}`;
+      // eleventyConfig.addTemplate(virtualLayoutPath, content);
+      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), virtualLayoutPath);
+      
+      
+      // const customerLayoutPath = path.join(process.cwd(), layoutsDirName, file)
+      // if (fs.existsSync(customerLayoutPath)) {
+      //   continue // layout exists, so use this one instead of the one from core
+      // }
+      // const coreLayoutFilePath = path.join(layoutsDir, file);
+      // const content = fs.readFileSync(coreLayoutFilePath, "utf-8");
+      // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
+      // const virtualLayoutPath = `${layoutPath}/${file}`;
+      // eleventyConfig.addTemplate(virtualLayoutPath, content);
+      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), virtualLayoutPath);
+      // const layoutPath = path.join(layoutsDir, file);
+      // const content = fs.readFileSync(layoutPath, "utf-8");
+      // // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
+      // // eleventyConfig.addTemplate(layoutPath, content);
+      // const virtualLayoutPath = `_includes/layouts/${file}`;
+      // eleventyConfig.addTemplate(virtualLayoutPath, content);
+
+      // const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
+      // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
+      // eleventyConfig.addTemplate(layoutPath, content)
       // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
     }
   } else {
     console.warn(`No layouts found  at: ${layoutsDir}`)
   }
+  // return
   const buildMode = 'normal'
 
   const customerPagesRoot = path.join(eleventyConfig.directories.input, 'pages')
@@ -74,6 +120,7 @@ export const loadTemplates = (eleventyConfig: any) => {
           file,
           features: {}
         })) {
+          console.log(`🚫 Ignoring template: ${dirPath}/${file}`);
           eleventyConfig.ignores.add(path.join(dirPath, file))
         }
       }
@@ -144,7 +191,7 @@ export const loadTemplates = (eleventyConfig: any) => {
     walkAndAdd(coreMiscPagesRoot);
   }
 
-  return nunjucksEnvironment
+  // return nunjucksEnvironment
 }
 
 function shouldIgnoreTemplate({

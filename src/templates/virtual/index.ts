@@ -1,42 +1,68 @@
+import { Hover } from "../components/hover";
+
 export const createVirtualTemplates = async (eleventyConfig: any) => {
+  const images = ["1", "2"].map((image) => ({
+    src: "https://img.daisyui.com/images/stock/card-1.webp?x",
+    alt: "Tailwind CSS 3D card" + image,
+  }));
   eleventyConfig.addTemplate("virtual.11ty.js", function(data: any) {
-    return `
-    <!doctype html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${ data.item }</title>
-        <link rel="stylesheet" href="/styles/index.css">
-      </head>
-      <body class="prose">
-        <div class="md:p-16 p-8">
-          <button class="btn btn-primary">hallo</button>
-          <button class="btn btn-secondary">secondary</button>
-          <button class="btn btn-accent">accent</button>
-          <button
-  class="inline-block cursor-pointer rounded-md bg-gray-800 px-4 py-3 text-center text-sm font-semibold uppercase text-white transition duration-200 ease-in-out hover:bg-gray-900">
-  Button
-</button>
-<input type="checkbox" value="synthwave" class="toggle theme-controller" />
-        </div>
-      </body>
-    </html>
-    `
+    const body = `
+      <div class="flex">
+        <button class="btn btn-primary">Preview</button>
+        <h1>${data.product.name}</h1>
+      </div>
+      <div class="flex">
+        ${Hover(images)}
+      </div>
+    `;
+
+    return baseLayout({
+      title: data.product.name,
+      content: body
+    });
   }, {
     pagination: {
       data: "testdata",
       size: 1,
-      alias: "item",
+      alias: "product",
     },
     testdata: [
-      "item1",
-      "item2",
-      "item3",
-      "item4"
+      {
+        name: "Product 1",
+        slug: "product-1",
+        images
+      },
+      {
+        name: "Product 2",
+        slug: "product-2",
+        images
+      },
     ],
     permalink: function (data: any) {
-      return `different/${data.item}/index.html`;
+      return `different/${data.product.slug}/index.html`;
     },
   });
+}
+
+type BaseLayoutProps = {
+  title?: string
+  content: string
+}
+export function baseLayout({ title, content }: BaseLayoutProps) {
+  return `
+  <!doctype html>
+  <html lang="de">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="stylesheet" href="/styles/index.css">
+      <title>${title ?? ""}</title>
+    </head>
+    <body>
+      <main class="relative mx-auto max-w-[50em]">
+        ${content}
+      </main>
+    </body>
+  </html>
+  `;
 }

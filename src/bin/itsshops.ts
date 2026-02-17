@@ -21,6 +21,9 @@ program
   .option('-e, --env <path>', 'Path to environment file', '.env')
   .option('--serve', 'Start the local server')
   .option('--watch', 'Watch for file changes')
+  .option('--dev', 'Watch core frontend dist folder in node_modules')
+  // .option('--debug', 'Enable Debug mode')
+  .option('--debug [namespace]', 'Enable Debug mode, optional: * , Benchmark, Watch, "Template,Benchmark,FileSystemSearch,Eleventy", etc.')
   .action((options) => {
     console.log(`\n📦 ITSSHOPS | Run eleventy...\n`);
 
@@ -49,17 +52,41 @@ program
     // 3. Add 11ty specific flags
     if (options.serve) nodeArgs.push('--serve');
     if (options.watch) nodeArgs.push('--watch');
+    // if (options.debug) {
+    //   nodeArgs.unshift('DEBUG=Eleventy*');
+    // }
 
     // debugging attach
     // nodeArgs.unshift("--inspect-brk=9229");
 
     console.log(`🛠️  Running: node ${nodeArgs.join(' ')}\n`);
 
+    // const debugNamespace = options.debug === true
+    //   ? 'Eleventy*'
+    //   : `Eleventy:${options.debug}`;
+    const debugNamespace: string = options.debug === true
+      ? 'Eleventy*'
+      : typeof options.debug === 'string'
+        ? options.debug
+            .split(',')
+            .map((ns: string) => ns.trim())
+            .filter(Boolean)
+            .map((ns: string) => ns.includes('Eleventy:') ? ns : (ns === 'Eleventy' ? 'Eleventy' : `Eleventy:${ns}`))
+            .join(',')
+        : '';
+    console.log(`Debug namespace: ${debugNamespace}\n`);
+
+    const envVars = {
+      ...process.env,
+      ...(options.dev && { ITSSHOPS_CORE_DEBUG: 'true' }),
+      ...(options.debug && { DEBUG: debugNamespace })
+    };
     // 4. Spawn the process
     const child = spawn('node', nodeArgs, { 
       stdio: 'inherit', 
       shell: true,
-      cwd: root 
+      cwd: root,
+      env: envVars
     });
 
     child.on('close', (code) => {
