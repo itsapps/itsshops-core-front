@@ -1,0 +1,7 @@
+{% macro bla(images) %}
+  <div class="grid grid-cols-4 gap-4">
+{% for image in images %}
+  {%- include "components/hover.njk" -%}
+{% endfor %}
+</div>
+{% endmacro %}

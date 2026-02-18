@@ -1,8 +1,14 @@
 ---
 layout: base_simple.njk
-permalink: /
+pagination:
+  data: "cms.products"
+  size: 1
+  alias: "product"
+permalink: "{{ product.slug | slugify }}/"
 ---
 <div>
   <span>core:pages:preview:index.njk</span>
-  {% include "components/bla.njk" %}
+
+  {% from "macros/macro.njk" import bla %}
+  {{ bla(product.images) }}
 </div>

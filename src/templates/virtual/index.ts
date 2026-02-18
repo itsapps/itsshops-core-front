@@ -9,20 +9,21 @@ export const createVirtualTemplates = async (eleventyConfig: any) => {
     const body = `
       <div class="flex">
         <button class="btn btn-primary">Preview</button>
-        <h1>${data.product.name}</h1>
+        <h1>${data.product.title[0].value}</h1>
       </div>
       <div class="flex">
         ${Hover(images)}
       </div>
     `;
-
-    return baseLayout({
-      title: data.product.name,
-      content: body
-    });
+    return body
+    // return baseLayout({
+    //   title: data.product.name,
+    //   content: body
+    // });
   }, {
+    layout: "base_simple.njk",
     pagination: {
-      data: "testdata",
+      data: "cms.products",
       size: 1,
       alias: "product",
     },

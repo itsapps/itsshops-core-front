@@ -19,28 +19,44 @@ export const loadTemplates = (eleventyConfig: any) => {
   /*
    * Nunjucks - templates overrides
    */
+  const { includes, layouts, input } = eleventyConfig.dir
+  const layoutDir = layouts || includes
+
   eleventyConfig.amendLibrary("njk", (env: any) => {
     env.loaders[0].searchPaths.push(
       path.resolve("src/_includes"),
       templatesRoot
     );
   });
+  // const options = {
+  //   autoescape: false,
+  //   lstripBlocks: true,
+  //   trimBlocks: true,
+  //   noCache: true,
+  //   watch: true,
+  //   ...eleventyConfig.nunjucksEnvironmentOptions
+  // }
+
   // const nunjucksEnvironment = new Nunjucks.Environment(
 	// 	new Nunjucks.FileSystemLoader([
+  //     ...(includes ? [path.join(input, includes)] : []),
+  //     ...(layouts ? [path.join(input, layouts)] : []),
+  //     input,
   //     path.resolve("src/_includes"),
   //     templatesRoot,
-  //   ], { noCache: true })
+  //   ], options)
 	// );
 	// eleventyConfig.setLibrary("njk", nunjucksEnvironment);
-  eleventyConfig.setNunjucksEnvironmentOptions({
-		throwOnUndefined: true,
-	});
+  // eleventyConfig.setNunjucksEnvironmentOptions({
+	// 	throwOnUndefined: true,
+	// });
   
 
   // const layoutsDirName = eleventyConfig.directories.layouts || "_layouts";
   // const inputDir = eleventyConfig.dir.input;
 
   // layouts
+
   if (fs.existsSync(layoutsDir)) {
     for (const file of fs.readdirSync(layoutsDir)) {
       if (!file.endsWith(".njk")) continue
@@ -51,12 +67,14 @@ export const loadTemplates = (eleventyConfig: any) => {
         continue;
       }
 
+      // const content = '<main id="main" class="relative">{{ shopConfig.title | safe }}{{ content | safe }}</main>'
       const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
       let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
-      let layoutPat = `src/_layouts/${file}`;
+      // let layoutPat = `src/_layouts/${file}`;
+      // let layoutPath = `${layoutDir}/${file}`;
       console.log("layoutPath: ", layoutPath)
       eleventyConfig.addTemplate(layoutPath, content)
-      eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
+      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
 
       // read core layout from core folder
       // const coreLayoutFilePath = path.join(layoutsDir, file);

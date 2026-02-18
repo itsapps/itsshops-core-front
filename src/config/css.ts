@@ -3,7 +3,7 @@ import path from 'path';
 import postcss from 'postcss';
 import tailwindcss from '@tailwindcss/postcss';
 import { fileURLToPath } from "url";
-import config from '../../tailwind.config';
+// import config from '../../tailwind.config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
