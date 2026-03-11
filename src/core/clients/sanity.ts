@@ -5,8 +5,9 @@ import { createClient } from '@sanity/client';
 import type { SanityClient } from '@sanity/client';
 import { createImageUrlBuilder } from '@sanity/image-url'
 
+export { type SanityClient } from '@sanity/client';
 
-export function createSanityClient(config: SanityClientConfig) {
+export function createSanityClient(config: SanityClientConfig): SanityClient {
   const retryDelay = config.retryDelay ?? (() => 100);
   return createClient({
     ...config,

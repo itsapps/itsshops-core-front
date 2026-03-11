@@ -4,9 +4,10 @@ import type { Config } from "./types";
 import { setIgnores } from './config/debug';
 import { loadTemplates } from './config/templates';
 import { createFilters } from './filters';
-import { createSanityClient } from './core/clients/sanity';
+import { createSanityClient } from './core';
 import { cssConfig } from './config/css';
 import { createVirtualTemplates } from './templates/virtual';
+import { Hover } from './templates/components/hover';
 
 export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Config) => {
   setIgnores(eleventyConfig);
@@ -19,6 +20,9 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Confi
   }
 
   // createVirtualTemplates(eleventyConfig);
+  eleventyConfig.addShortcode("hover", (images: any) => {
+    return Hover(images)
+  })
 
   const client = createSanityClient(options.sanityClient);
   eleventyConfig.addGlobalData("cms", async () => {
@@ -34,7 +38,4 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Confi
       }))
     }
   });
-  // const client = createSanityClient(options.sanityClient);
-  // const products = await client.fetch(`*[_type == 'product']`)
-  // console.log("products: ", products);
 }

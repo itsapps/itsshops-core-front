@@ -4,11 +4,16 @@ pagination:
   data: "cms.products"
   size: 1
   alias: "product"
-permalink: "{{ product.slug | slugify }}/"
+permalink: "{{ product.slug }}/"
 ---
 <div>
   <span>core:pages:preview:index.njk</span>
 
-  {% from "macros/macro.njk" import bla %}
-  {{ bla(product.images) }}
+
+  {# {% from "macros/macro.njk" import bla %}
+  {{ bla(product.images) }} #}
 </div>
+
+{% block product_title %}
+some product title: {{ product.slug }}
+{% endblock %}

@@ -9,6 +9,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./core": {
+      "import": "./dist/core.js"
+    },
     "./functions/preview": {
       "types": "./dist/preview.d.ts",
       "import": "./dist/preview.js"
