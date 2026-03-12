@@ -1,0 +1,11 @@
+<div class="carousel">
+  {% for item in module.images %}
+    <figure class="carousel-item">
+      <img
+        src="{{ item.url }}"
+        alt="{{ item.alt }}"
+        loading="lazy"
+      />
+    </figure>
+  {% endfor %}
+</div>

@@ -1,0 +1,27 @@
+<div class="category-section">
+  {% if module.title %}
+    <h2 class="category-section-title">{{ module.title | localize(_locale, defaultLocale) }}</h2>
+  {% endif %}
+  {% if module.categories.length %}
+    <div class="category-section-grid">
+      {% for cat in module.categories %}
+        {%- set resolvedCat = null -%}
+        {% for c in cms[_locale].categories %}
+          {% if c._id == cat._id %}
+            {%- set resolvedCat = c -%}
+          {% endif %}
+        {% endfor %}
+        {% if resolvedCat %}
+          <a href="{{ resolvedCat.url }}" class="category-card">
+            {% if resolvedCat.image %}
+              <figure class="category-card-image">
+                <img src="{{ resolvedCat.image.url }}" alt="{{ resolvedCat.image.alt }}" loading="lazy" />
+              </figure>
+            {% endif %}
+            <span class="category-card-title">{{ resolvedCat.title }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

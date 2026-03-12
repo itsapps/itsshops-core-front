@@ -1,17 +1,20 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ product.locale or page.lang or defaultLocale }}">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/styles/index.css">
-    <title>{{title}}</title>
+    {% block styles %}
+      <link rel="stylesheet" href="/styles/index.css" />
+    {% endblock %}
+    {% block head %}{% endblock %}
   </head>
   <body>
-
-    <main id="main" class="relative">
+    {% block main %}
       {{ content | safe }}
-    </main>
-    <footer>a footer in core:base_simple</footer>
+    {% endblock %}
+    {% block scripts %}{% endblock %}
+    {% if isPreview %}
+      {% include "core/partials/visual-editing.njk" %}
+    {% endif %}
   </body>
 </html>

@@ -8,14 +8,26 @@ import { createImageUrlBuilder } from '@sanity/image-url'
 export { type SanityClient } from '@sanity/client';
 
 export function createSanityClient(config: SanityClientConfig): SanityClient {
-  const retryDelay = config.retryDelay ?? (() => 100);
+  const retryDelay = config.retryDelay ?? (() => 100)
   return createClient({
     ...config,
     useCdn: false,
     apiVersion: sanityApiVersion,
     maxRetries: config.maxRetries || 5,
     retryDelay,
-  });
+  })
+}
+
+export function createPreviewClient(config: SanityClientConfig): SanityClient {
+  const retryDelay = config.retryDelay ?? (() => 100)
+  return createClient({
+    ...config,
+    useCdn: false,
+    apiVersion: sanityApiVersion,
+    maxRetries: 0,
+    retryDelay,
+    perspective: 'drafts',
+  })
 }
 
 export function createImageBuilder(client: SanityClient) {

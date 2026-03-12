@@ -158,17 +158,15 @@ export const loadTemplates = (eleventyConfig: any) => {
 
       const customerPath = path.join(customerPagesRoot, dir, file)
       const corePath = path.join(dirPath, file)
+      const ignoreTemplate = shouldIgnoreTemplate({
+        mode: buildMode,
+        previewType: "options.preview.documentType",
+        dir,
+        file,
+        features: {}
+      })
 
-      if (
-        !shouldIgnoreTemplate({
-          mode: buildMode,
-          previewType: "options.preview.documentType",
-          dir,
-          file,
-          features: {}
-        }) &&
-        !fs.existsSync(customerPath)
-      ) {
+      if (!ignoreTemplate && !fs.existsSync(customerPath)) {
         eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'))
       }
     }
@@ -219,6 +217,7 @@ function shouldIgnoreTemplate({
   file,
   features
 }: {mode: string, previewType: string, dir: string, file: string, features: any}) {
+  return false
   /* ------------------------------
    * PREVIEW MODE (selected doc only)
    * ------------------------------ */

@@ -1,0 +1,13 @@
+<div class="product-section">
+  {% if module.title %}
+    <h2 class="product-section-title">{{ module.title | localize(_locale, defaultLocale) }}</h2>
+  {% endif %}
+  {%- set sectionProducts = module.products | resolveProductRefs(cms[_locale].products) -%}
+  {% if sectionProducts.length %}
+    <div class="product-section-grid">
+      {% for product in sectionProducts %}
+        {% include "core/components/product/card.njk" %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

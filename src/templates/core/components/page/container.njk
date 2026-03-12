@@ -1,0 +1,15 @@
+<article class="page" data-page-id="{{ cmsPage._id }}">
+
+  {% block page_header %}
+    <header class="page-header">
+      <h1 class="page-title">{{ cmsPage.title }}</h1>
+    </header>
+  {% endblock %}
+
+  {% block page_modules %}
+    {%- set _locale = cmsPage.locale -%}
+    {%- set modules = cmsPage.modules -%}
+    {% include "core/partials/modules.njk" %}
+  {% endblock %}
+
+</article>

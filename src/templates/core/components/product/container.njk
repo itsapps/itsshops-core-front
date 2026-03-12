@@ -1,0 +1,124 @@
+<article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
+
+  {% block product_gallery %}
+    {% if product.image %}
+      <figure class="product-gallery">
+        <img
+          src="{{ product.image.url }}"
+          alt="{{ product.image.alt }}"
+          loading="eager"
+        />
+      </figure>
+    {% endif %}
+  {% endblock %}
+
+  <div class="product-body">
+
+    {% block product_header %}
+      <header class="product-header">
+        {% if product.status != "active" %}
+          <span class="product-status product-status--{{ product.status }}">{{ product.status }}</span>
+        {% endif %}
+        <h1 class="product-title">{{ product.title }}</h1>
+        {% if product.sku %}
+          <p class="product-sku">{{ product.sku }}</p>
+        {% endif %}
+      </header>
+    {% endblock %}
+
+    {% block product_pricing %}
+      <div class="product-pricing">
+        {% if product.compareAtPrice %}
+          <s class="product-price--compare">{{ product.compareAtPrice | formatPrice(product.locale) }}</s>
+        {% endif %}
+        <span class="product-price">{{ product.price | formatPrice(product.locale) }}</span>
+      </div>
+    {% endblock %}
+
+    {% block product_variants %}
+      {% if product.siblings.length %}
+        <nav class="product-variants" aria-label="Variants">
+          {% for sibling in product.siblings %}
+            <a
+              href="{{ sibling.url }}"
+              class="product-variant{% if sibling.status != 'active' %} product-variant--unavailable{% endif %}"
+              aria-current="false"
+            >{{ sibling.title }}</a>
+          {% endfor %}
+        </nav>
+      {% endif %}
+    {% endblock %}
+
+    {% block product_actions %}
+      <div class="product-actions">
+        {% if product.status == "active" %}
+          <button
+            type="button"
+            class="product-add-to-cart"
+            data-product-id="{{ product._id }}"
+            data-sku="{{ product.sku }}"
+            data-price="{{ product.price }}"
+          >
+            Add to cart
+          </button>
+        {% elif product.status == "comingSoon" %}
+          <p class="product-unavailable">Coming soon</p>
+        {% elif product.status == "soldOut" %}
+          <p class="product-unavailable">Sold out</p>
+        {% endif %}
+      </div>
+    {% endblock %}
+
+    {% block product_details %}
+      {% if product.kind == "wine" and product.wine %}
+        <dl class="product-details product-details--wine">
+          {% if product.wine.volume %}
+            <div><dt>Volume</dt><dd>{{ product.wine.volume }}ml</dd></div>
+          {% endif %}
+          {% if product.wine.vintage %}
+            <div><dt>Vintage</dt><dd>{{ product.wine.vintage }}</dd></div>
+          {% endif %}
+        </dl>
+      {% endif %}
+
+      {% if product.kind == "physical" or product.kind == "digital" %}
+        {% if product.options.length %}
+          <ul class="product-options">
+            {% for option in product.options %}
+              <li>{{ option.name }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+
+      {% if product.kind == "bundle" %}
+        {% if product.bundleItems.length %}
+          <ul class="product-bundle-items">
+            {% for item in product.bundleItems %}
+              <li>{{ item.quantity }}x {{ item.variant.title }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    {% endblock %}
+
+    {% block product_meta %}
+      {% if product.categories.length %}
+        <ul class="product-categories">
+          {% for cat in product.categories %}
+            <li><a href="{{ cat.url }}">{{ cat.title }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if product.manufacturers.length %}
+        <ul class="product-manufacturers">
+          {% for m in product.manufacturers %}
+            <li>{{ m.name }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endblock %}
+
+  </div>
+
+</article>

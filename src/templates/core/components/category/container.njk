@@ -1,0 +1,32 @@
+<section class="category" data-category-id="{{ category._id }}">
+
+  {% block category_header %}
+    <header class="category-header">
+      {% if category.image %}
+        <figure class="category-image">
+          <img
+            src="{{ category.image.url }}"
+            alt="{{ category.image.alt }}"
+            loading="eager"
+          />
+        </figure>
+      {% endif %}
+      <h1 class="category-title">{{ category.title }}</h1>
+      {% if category.description %}
+        <p class="category-description">{{ category.description }}</p>
+      {% endif %}
+    </header>
+  {% endblock %}
+
+  {% block category_products %}
+    {%- set categoryProducts = cms[category.locale].products | filterByCategory(category._id) -%}
+    {% if categoryProducts.length %}
+      <div class="category-products">
+        {% for product in categoryProducts %}
+          {% include "core/components/product/card.njk" %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endblock %}
+
+</section>

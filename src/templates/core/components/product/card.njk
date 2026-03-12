@@ -1,0 +1,15 @@
+<a href="{{ product.url }}" class="product-card">
+  {% if product.image %}
+    <figure class="product-card-image">
+      <img
+        src="{{ product.image.url }}"
+        alt="{{ product.image.alt }}"
+        loading="lazy"
+      />
+    </figure>
+  {% endif %}
+  <div class="product-card-body">
+    <h2 class="product-card-title">{{ product.title }}</h2>
+    <span class="product-card-price">{{ product.price | formatPrice(product.locale) }}</span>
+  </div>
+</a>

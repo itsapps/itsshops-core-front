@@ -1,41 +1,38 @@
-export * from "./types";
-import type { Config } from "./types";
+export * from './types'
+export * from './data/types'
 
-import { setIgnores } from './config/debug';
-import { loadTemplates } from './config/templates';
-import { createFilters } from './filters';
-import { createSanityClient } from './core';
-import { cssConfig } from './config/css';
-import { createVirtualTemplates } from './templates/virtual';
-import { Hover } from './templates/components/hover';
+import type { Config } from './types'
+import { setIgnores } from './config/debug'
+import { loadTemplates } from './config/templates'
+import { createFilters } from './filters'
+import { createSanityClient, createPreviewClient } from './core'
+import { cssConfig } from './config/css'
+import { buildPermalinkTranslations } from './i18n/permalinks'
+import { buildCmsData } from './data/resolver'
 
-export const shopCoreFrontendPlugin = async (eleventyConfig: any, options: Config) => {
-  setIgnores(eleventyConfig);
-  loadTemplates(eleventyConfig);
+export const shopCoreFrontendPlugin = async (eleventyConfig: any, config: Config) => {
+  const isPreview = config.preview?.enabled ?? false
+  const permalinks = buildPermalinkTranslations(config.permalinks)
 
-  createFilters(eleventyConfig);
+  // Eleventy setup
+  setIgnores(eleventyConfig)
+  loadTemplates(eleventyConfig)
+  createFilters(eleventyConfig)
 
-  if (!options.preview?.enabled) {
-    cssConfig(eleventyConfig, options.tailwind);
+  // Global template data
+  eleventyConfig.addGlobalData('isPreview', isPreview)
+  eleventyConfig.addGlobalData('defaultLocale', config.defaultLocale)
+  eleventyConfig.addGlobalData('locales', config.locales)
+
+  if (!isPreview) {
+    cssConfig(eleventyConfig, config.tailwind)
   }
 
-  // createVirtualTemplates(eleventyConfig);
-  eleventyConfig.addShortcode("hover", (images: any) => {
-    return Hover(images)
-  })
+  // Sanity client — use draft perspective in preview mode
+  const client = isPreview
+    ? createPreviewClient(config.sanity)
+    : createSanityClient(config.sanity)
 
-  const client = createSanityClient(options.sanityClient);
-  eleventyConfig.addGlobalData("cms", async () => {
-    const products = await client.fetch(`*[_type == 'product']`)
-    return {
-      products: products.map((p:any) => ({
-        ...p,
-        slug: p.title?.[0].value || `unknown-${p._id}`,
-        images: [0, 1, 2, 3, 4,5,6,7,8,9].map(i => ({
-          src: "https://img.daisyui.com/images/stock/card-1.webp?x",
-          alt: "Tailwind CSS 3D card" + i,
-        }))
-      }))
-    }
-  });
+  // CMS global data
+  eleventyConfig.addGlobalData('cms', () => buildCmsData(client, config, permalinks))
 }

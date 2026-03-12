@@ -1,0 +1,9 @@
+---
+layout: base.njk
+pagination:
+  data: cms.products
+  size: 1
+  alias: product
+permalink: "{{ product.url }}"
+---
+{%- include "components/product/container.njk" -%}

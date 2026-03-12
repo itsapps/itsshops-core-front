@@ -1,0 +1,21 @@
+{#
+  Renders a modules array.
+  Requires: modules (array), _locale (string), defaultLocale (global)
+#}
+{% for module in modules %}
+  <div class="module module--{{ module._type }}">
+    {% if module._type == 'hero' %}
+      {% include "core/modules/hero.njk" %}
+    {% elif module._type == 'multiColumns' %}
+      {% include "core/modules/multiColumns.njk" %}
+    {% elif module._type == 'productSection' %}
+      {% include "core/modules/productSection.njk" %}
+    {% elif module._type == 'categorySection' %}
+      {% include "core/modules/categorySection.njk" %}
+    {% elif module._type == 'carousel' %}
+      {% include "core/modules/carousel.njk" %}
+    {% elif module._type == 'youtube' %}
+      {% include "core/modules/youtube.njk" %}
+    {% endif %}
+  </div>
+{% endfor %}

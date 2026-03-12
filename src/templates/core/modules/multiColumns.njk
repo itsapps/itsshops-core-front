@@ -1,0 +1,21 @@
+<div class="multi-columns">
+  {% for column in module.columns %}
+    <div class="multi-columns-item">
+      {% if column.image %}
+        <figure class="multi-columns-image">
+          <img
+            src="{{ column.image.url }}"
+            alt="{{ column.image.alt }}"
+            loading="lazy"
+          />
+        </figure>
+      {% endif %}
+      {% if column.title %}
+        <h3 class="multi-columns-title">{{ column.title | localize(_locale, defaultLocale) }}</h3>
+      {% endif %}
+      {% if column.text %}
+        <p class="multi-columns-text">{{ column.text | localize(_locale, defaultLocale) }}</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
