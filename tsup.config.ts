@@ -7,7 +7,7 @@ export default defineConfig({
     itsshops: 'src/bin/itsshops.ts',
     index: 'src/index.ts',
     core: 'src/core/index.ts',
-    tailwind: 'tailwind.config.ts',
+    // tailwind: 'tailwind.config.ts',
     preview: 'src/netlify/functions/preview.ts',
   },
   format: ['esm'],
@@ -16,6 +16,6 @@ export default defineConfig({
   clean: true,
   onSuccess: async () => {
     copySync('src/templates', 'dist/templates', { overwrite: true });
-    copySync('src/assets', 'dist/assets', { overwrite: true });
+    // copySync('src/assets', 'dist/assets', { overwrite: true });
   },
 });

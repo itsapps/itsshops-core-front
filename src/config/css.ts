@@ -1,43 +1,60 @@
-import fs from 'fs';
-import path from 'path';
-import postcss from 'postcss';
-import tailwindcss from '@tailwindcss/postcss';
-import { fileURLToPath } from "url";
-// import config from '../../tailwind.config';
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import postcss from 'postcss'
+import postcssImport from 'postcss-import'
+import postcssImportExtGlob from 'postcss-import-ext-glob'
+import postcssCustomMedia from 'postcss-custom-media'
+import postcssNesting from 'postcss-nesting'
+import tailwindcss from 'tailwindcss'
+import tailwindcssnesting from 'tailwindcss/nesting/index.js'
+import autoprefixer from 'autoprefixer'
+import cssnano from 'cssnano'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { type Css } from '../types/index.js'
 
-export const cssConfig = (eleventyConfig: any, options?: any) => {
-  eleventyConfig.on('eleventy.before', async () => {
-    // const tailwindInputPath = path.resolve('./src/assets/css/style.css');
-    // const tailwindOutputPath = './dist/styles/index.css';
-    console.log("core in css.ts dirname:", __dirname)
+import { getTailwindConfig } from './tailwind/tailwind.config.js'
 
-    const tailwindInputPath = options.cssPath ?? path.resolve(
-      __dirname,
-      "./assets/css/style.css"
-    );
+export const cssConfig = (eleventyConfig: any, css: Css) => {
+  const { cssPath, ...tailwind } = css || {};
+  eleventyConfig.addTemplateFormats('css');
 
-    // 🔥 output into customer build folder
-    const tailwindOutputPath = path.resolve(
-      process.cwd(),
-      "dist/styles/index.css"
-    );
+  eleventyConfig.addExtension('css', {
+    outputFileExtension: 'css',
+    compile: async (inputContent: string, inputPath: string) => {
+      const paths: string[] = [];
+      if (inputPath.endsWith('/assets/css/global/global.css')) {
+        paths.push('src/_includes/css/global.css');
+      } else {
+        return;
+      }
 
-    const cssContent = fs.readFileSync(tailwindInputPath, 'utf8');
-    const outputDir = path.dirname(tailwindOutputPath);
+      return async () => {
+        const tailwindConfig = getTailwindConfig(tailwind);
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+        const plugins = [
+          postcssImportExtGlob,
+          postcssImport,
+          postcssCustomMedia,
+          postcssNesting,
+          tailwindcssnesting,
+          // tailwindcss(tailwindcssnesting),
+          tailwindcss(tailwindConfig),
+          postcssNesting,
+          autoprefixer,
+        ];
+        if (css.minify) {
+          plugins.push(cssnano);
+        }
+        let result = await postcss(plugins).process(inputContent, {from: inputPath});
+
+        // Write the output to all specified paths
+        for (const outputPath of paths) {
+          await fs.mkdir(path.dirname(outputPath), {recursive: true});
+          await fs.writeFile(outputPath, result.css);
+        }
+
+        return result.css;
+      };
     }
-
-    // const tailwindConfigPath = path.resolve(process.cwd(), 'tailwind.config.js');
-    const result = await postcss([tailwindcss()]).process(cssContent, {
-      from: tailwindInputPath,
-      to: tailwindOutputPath,
-    });
-
-    fs.writeFileSync(tailwindOutputPath, result.css);
   });
-}
+};

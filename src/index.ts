@@ -30,8 +30,9 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: any, config: Config
   eleventyConfig.addGlobalData('locales', config.locales)
 
   if (!isPreview) {
-    cssConfig(eleventyConfig, config.tailwind)
+    cssConfig(eleventyConfig, config.css || {})
   }
+  eleventyConfig.addBundle('css', {hoist: true});
 
   // Sanity client — use draft perspective in preview mode
   const client = isPreview

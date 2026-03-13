@@ -10,6 +10,17 @@ export type Features = {
   users?: boolean
 }
 
+export type Css = {
+  cssPath?: string
+  minify?: boolean
+  viewport?: { min: number; max: number }
+  screens?: Record<string, string>
+  colors?: any[]
+  fontFamilies?: any[]
+  textSizes?: any[]
+  spacings?: any[]
+}
+
 export type SanityClientConfig = Omit<ClientConfig, 'apiVersion'>
 
 export type PermalinkTranslations = {
@@ -65,9 +76,7 @@ export type Config = {
     /** Custom module type projections per document type (page, post, category, ...) */
     modules?: Record<string, Record<string, string>>
   }
-  tailwind?: {
-    cssPath?: string
-  }
+  css?: Css
   preview?: {
     enabled?: boolean
   }

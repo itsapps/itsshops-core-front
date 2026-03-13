@@ -26,6 +26,8 @@
     {% endblock %}
 
     {% block styles %}
+      <style>{% getBundle "css", "global" %}</style>
+	    {% css "global" %}{% include "css/global.css" %}{% endcss %}
       <link rel="stylesheet" href="/styles/index.css" />
     {% endblock %}
 
