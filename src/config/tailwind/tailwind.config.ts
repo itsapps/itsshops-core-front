@@ -1,6 +1,7 @@
 /* © Andy Bell - https://buildexcellentwebsit.es/ */
 
 import plugin from 'tailwindcss/plugin'
+import { type Config } from 'tailwindcss'
 import postcss from 'postcss'
 import postcssJs from 'postcss-js'
 import DefaultTheme from 'tailwindcss/defaultTheme'
@@ -15,20 +16,7 @@ import defaultSpacings from './design-tokens/spacing'
 import defaultTextSizes from './design-tokens/text-sizes'
 import { Css } from '../../types';
 
-// Process design tokens
-// const colors = tokensToTailwind(colorTokens.items);
-// const fontFamily = tokensToTailwind(fontTokens.items);
-// const fontSize = tokensToTailwind(clampGenerator(textSizeTokens.items));
-// const spacing = tokensToTailwind(clampGenerator(spacingTokens.items));
-// const screens = {
-//   xs: '30em',
-//   sm: '40em',
-//   md: '50em',
-//   tablet: '60em',
-//   lg: '80em'
-// }
-
-function mergeByKey(base, overrides, matchKey = "name") {
+function mergeByKey(base: any[], overrides: any[], matchKey = "name") {
   const overrideMap = Object.fromEntries(
     overrides.map(item => [item[matchKey], item])
   );
@@ -40,9 +28,7 @@ function mergeByKey(base, overrides, matchKey = "name") {
   );
 }
 
-
-
-export function getTailwindConfig(css: Css) {
+export function getTailwindConfig(css: Css): Config {
   const {
     viewport = { min: 320, max: 1350 },
     screens = {
@@ -56,7 +42,7 @@ export function getTailwindConfig(css: Css) {
     fontFamilies = [],
     textSizes = [],
     spacings = []
-  } = {}
+  } = css
   
   const colorTokens = tokensToTailwind(mergeByKey(defaultColors.items, colors))
   const fontFamilyTokens = tokensToTailwind(mergeByKey(defaultFontFamilies.items, fontFamilies))
@@ -122,9 +108,9 @@ export function getTailwindConfig(css: Css) {
       fontSize: fontSizeTokens,
       fontFamily: fontFamilyTokens,
       fontWeight: {
-        normal: 400,
-        bold: 700,
-        black: 800
+        normal: '400',
+        bold: '700',
+        black: '800'
       },
       // inset: DefaultTheme.inset,
       zIndex: DefaultTheme.zIndex,
@@ -188,7 +174,7 @@ export function getTailwindConfig(css: Css) {
         ];
 
         groups.forEach(({key, prefix}) => {
-          const group = currentConfig.theme[key];
+          const group = currentConfig.theme?.[key]
 
           if (!group) {
             return;
@@ -217,7 +203,7 @@ export function getTailwindConfig(css: Css) {
         ];
 
         customUtilities.forEach(({key, prefix, property}) => {
-          const group = currentConfig.theme[key];
+          const group = currentConfig.theme?.[key]
 
           if (!group) {
             return;
