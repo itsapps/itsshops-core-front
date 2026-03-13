@@ -6,7 +6,7 @@ import type { SanityImageHotspot, SanityImageCrop, Wine } from '../types/sanity'
  */
 
 export type ResolvedImage = {
-  url: string
+  asset: { _ref: string }
   alt: string
   hotspot?: SanityImageHotspot
   crop?: SanityImageCrop

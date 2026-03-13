@@ -1,45 +1,13 @@
 import type { Config } from '../types'
+import * as proj from './projections'
 
 // ---------------------------------------------------------------------------
-// Shared projections
+// Shared helpers
 // ---------------------------------------------------------------------------
 
-const IMAGE_PROJECTION = `{
-  "image": image[]{ _key, value{ ..., asset-> } },
-  "alt": alt[]{ _key, value }
-}`
-
-const SEO_PROJECTION = `{
-  "metaTitle": metaTitle[]{ _key, value },
-  "metaDescription": metaDescription[]{ _key, value },
-  "shareTitle": shareTitle[]{ _key, value },
-  "shareDescription": shareDescription[]{ _key, value },
-  "keywords": keywords[]{ _key, value },
-  "shareImage": shareImage ${IMAGE_PROJECTION}
-}`
-
-const CATEGORY_PROJECTION = `{
-  _id,
-  "title": title[]{ _key, value },
-  "slug": slug.current
-}`
-
-const MANUFACTURER_PROJECTION = `{
-  _id,
-  "name": name[]{ _key, value }
-}`
-
-// ---------------------------------------------------------------------------
-// Module projections — core module types
-// ---------------------------------------------------------------------------
-
-const CORE_MODULE_PROJECTIONS: Record<string, string> = {
-  hero:            `{ _type, "heading": heading[]{ _key, value }, "subheading": subheading[]{ _key, value }, image ${IMAGE_PROJECTION} }`,
-  multiColumns:    `{ _type, "columns": columns[]{ "title": title[]{ _key, value }, "text": text[]{ _key, value }, image ${IMAGE_PROJECTION} } }`,
-  productSection:  `{ _type, "title": title[]{ _key, value }, "products": products[]->{ _id, "title": title[]{ _key, value } } }`,
-  categorySection: `{ _type, "title": title[]{ _key, value }, "categories": categories[]->{ _id, "title": title[]{ _key, value } } }`,
-  carousel:        `{ _type, images[]${IMAGE_PROJECTION} }`,
-  youtube:         `{ _type, url }`,
+function extraFields(type: string, extensions?: Config['extensions']): string {
+  const extra = extensions?.fields?.[type]
+  return extra ? `,\n  ${extra}` : ''
 }
 
 function buildModulesProjection(docType: string, extensions?: Config['extensions']): string {
@@ -47,17 +15,49 @@ function buildModulesProjection(docType: string, extensions?: Config['extensions
     ...CORE_MODULE_PROJECTIONS,
     ...(extensions?.modules?.[docType] ?? {}),
   }
-
   const conditions = Object.entries(modules)
     .map(([type, projection]) => `_type == '${type}' => ${projection}`)
     .join(',\n    ')
-
   return `modules[]{\n    _type,\n    ${conditions}\n  }`
 }
 
-function extraFields(type: string, extensions?: Config['extensions']): string {
-  const extra = extensions?.fields?.[type]
-  return extra ? `,\n  ${extra}` : ''
+// ---------------------------------------------------------------------------
+// Core module projections
+// ---------------------------------------------------------------------------
+
+const CORE_MODULE_PROJECTIONS: Record<string, string> = {
+  hero: `{
+    _type,
+    "title": title[]{ _key, value },
+    "bgImage": bgImage ${proj.localeImage}
+  }`,
+  multiColumns: `{
+    _type,
+    "columns": columns[]{
+      "title": title[]{ _key, value },
+      "text": text[]{ _key, value },
+      "image": image ${proj.localeImage}
+    }
+  }`,
+  productSection: `{
+    _type,
+    "title": title[]{ _key, value },
+    "products": products[]->{ _id }
+  }`,
+  categorySection: `{
+    _type,
+    "title": title[]{ _key, value },
+    "categories": categories[]->{ _id }
+  }`,
+  carousel: `{
+    _type,
+    autoplay,
+    autoplayDelay,
+    loop,
+    fade,
+    "slides": slides[]${proj.localeAltImage}
+  }`,
+  youtube: `{ _type, url }`,
 }
 
 // ---------------------------------------------------------------------------
@@ -71,10 +71,10 @@ export function buildProductQuery(extensions?: Config['extensions']): string {
   "title": title[]{ _key, value },
   price,
   compareAtPrice,
-  "image": image ${IMAGE_PROJECTION},
-  "seo": seo ${SEO_PROJECTION},
-  "categories": categories[]->${CATEGORY_PROJECTION},
-  "manufacturers": manufacturers[]->${MANUFACTURER_PROJECTION},
+  "image": image ${proj.localeImage},
+  "seo": seo ${proj.seo},
+  "categories": categories[]->${proj.category},
+  "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id }${extraFields('product', extensions)}
 }`
 }
@@ -89,11 +89,11 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   featured,
   price,
   compareAtPrice,
-  "image": image ${IMAGE_PROJECTION},
-  "seo": seo ${SEO_PROJECTION},
+  "image": image ${proj.localeImage},
+  "seo": seo ${proj.seo},
   stock,
-  "categories": categories[]->${CATEGORY_PROJECTION},
-  "manufacturers": manufacturers[]->${MANUFACTURER_PROJECTION},
+  "categories": categories[]->${proj.category},
+  "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id },
   wine,
   "options": options[]->{ _id, "name": name[]{ _key, value } },
@@ -109,8 +109,8 @@ export function buildCategoryQuery(extensions?: Config['extensions']): string {
   "description": description[]{ _key, value },
   sortOrder,
   "parent": parent->{ _id },
-  "image": image ${IMAGE_PROJECTION},
-  "seo": seo ${SEO_PROJECTION}${extraFields('category', extensions)}
+  "image": image ${proj.localeImage},
+  "seo": seo ${proj.seo}${extraFields('category', extensions)}
 }`
 }
 
@@ -120,7 +120,7 @@ export function buildPageQuery(extensions?: Config['extensions']): string {
   "title": title[]{ _key, value },
   "slug": slug.current,
   ${buildModulesProjection('page', extensions)},
-  "seo": seo ${SEO_PROJECTION}${extraFields('page', extensions)}
+  "seo": seo ${proj.seo}${extraFields('page', extensions)}
 }`
 }
 
@@ -130,16 +130,14 @@ export function buildPostQuery(extensions?: Config['extensions']): string {
   "title": title[]{ _key, value },
   "slug": slug.current,
   publishedAt,
-  "author": author->{ _id, "name": name[]{ _key, value }, image ${IMAGE_PROJECTION} },
+  "author": author->{ _id, "name": name[]{ _key, value }, "image": image ${proj.localeAltImage} },
   ${buildModulesProjection('post', extensions)},
-  "seo": seo ${SEO_PROJECTION}${extraFields('post', extensions)}
+  "seo": seo ${proj.seo}${extraFields('post', extensions)}
 }`
 }
 
 export function buildMenuQuery(extensions?: Config['extensions']): string {
   const menuItemFields = extraFields('menuItem', extensions)
-
-  // menuItem is recursive — we handle two levels deep
   const menuItemProjection = `{
     _key,
     "title": title[]{ _key, value },
@@ -154,7 +152,6 @@ export function buildMenuQuery(extensions?: Config['extensions']): string {
       "internal": internal->{ _id, _type, "slug": slug.current }${menuItemFields}
     }
   }`
-
   return `*[_type == 'menu']{
   _id,
   "title": title[]{ _key, value },
@@ -165,9 +162,14 @@ export function buildMenuQuery(extensions?: Config['extensions']): string {
 export function buildSettingsQuery(): string {
   return `*[_type == 'generalSettings'][0]{
   _id,
-  "siteName": siteName[]{ _key, value },
-  "siteDescription": siteDescription[]{ _key, value },
-  "logo": logo ${IMAGE_PROJECTION},
-  "favicon": favicon ${IMAGE_PROJECTION}
+  "siteTitle": siteTitle[]{ _key, value },
+  "siteShortDescription": siteShortDescription[]{ _key, value },
+  "logo": logo ${proj.localeImage},
+  "favicon": favicon ${proj.localeImage},
+  "homePage": homePage->{ _id },
+  "privacyPage": privacyPage->{ _id },
+  "mainMenus": mainMenus[]{ _ref },
+  "footerMenus": footerMenus[]{ _ref },
+  gtmId
 }`
 }

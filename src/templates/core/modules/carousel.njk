@@ -1,11 +1,7 @@
-<div class="carousel">
-  {% for item in module.images %}
-    <figure class="carousel-item">
-      <img
-        src="{{ item.url }}"
-        alt="{{ item.alt }}"
-        loading="lazy"
-      />
+<div class="carousel" data-autoplay="{{ module.autoplay }}" data-loop="{{ module.loop }}" data-fade="{{ module.fade }}"{% if module.autoplay %} data-delay="{{ module.autoplayDelay }}"{% endif %}>
+  {% for slide in module.slides %}
+    <figure class="carousel-slide">
+      <img src="{{ slide | imageUrl(1200) }}" alt="{{ slide.alt }}" loading="lazy" />
     </figure>
   {% endfor %}
 </div>

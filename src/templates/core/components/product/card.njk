@@ -1,11 +1,7 @@
 <a href="{{ product.url }}" class="product-card">
   {% if product.image %}
     <figure class="product-card-image">
-      <img
-        src="{{ product.image.url }}"
-        alt="{{ product.image.alt }}"
-        loading="lazy"
-      />
+      <img src="{{ product.image | imageUrl(400) }}" alt="{{ product.image.alt }}" loading="lazy" />
     </figure>
   {% endif %}
   <div class="product-card-body">

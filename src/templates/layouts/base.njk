@@ -21,7 +21,7 @@
         <meta property="og:description" content="{{ _seo.shareDescription or _seoDesc }}" />
       {% endif %}
       {% if _shareImage %}
-        <meta property="og:image" content="{{ _shareImage.url }}" />
+        <meta property="og:image" content="{{ _shareImage | imageUrl(1200) }}" />
       {% endif %}
     {% endblock %}
 

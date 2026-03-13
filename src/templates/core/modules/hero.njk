@@ -1,17 +1,10 @@
 <div class="hero">
-  {% if module.image %}
+  {% if module.bgImage %}
     <figure class="hero-image">
-      <img
-        src="{{ module.image.url }}"
-        alt="{{ module.image.alt }}"
-        loading="eager"
-      />
+      <img src="{{ module.bgImage | imageUrl(1600) }}" alt="{{ module.bgImage.alt }}" loading="eager" />
     </figure>
   {% endif %}
-  {% if module.heading %}
-    <h2 class="hero-heading">{{ module.heading | localize(_locale, defaultLocale) }}</h2>
-  {% endif %}
-  {% if module.subheading %}
-    <p class="hero-subheading">{{ module.subheading | localize(_locale, defaultLocale) }}</p>
+  {% if module.title %}
+    <h2 class="hero-heading">{{ module.title | localize(_locale, defaultLocale) }}</h2>
   {% endif %}
 </div>

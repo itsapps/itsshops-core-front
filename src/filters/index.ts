@@ -1,6 +1,7 @@
 import { slugify, toIsoString } from "../utils";
 import type { Locale } from "../types";
 import { resolveString } from "../data/locale";
+import { sanityPicture, imageUrl } from "../media";
 
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -29,12 +30,14 @@ function filterByCategory(products: any[], categoryId: string): any[] {
 }
 
 /**
- * Resolve an array of product refs [{_id, ...}] to full products from cms data.
+ * Resolve product refs to full product objects from cms data.
+ * Accepts either [{_id, ...}] objects or plain string IDs.
  * Usage: {% set resolved = module.products | resolveProductRefs(cms[_locale].products) %}
+ *        {% set linked   = cms[locale].products | resolveProductRefs(page.linkedProductIds) %}
  */
 function resolveProductRefs(refs: any[], allProducts: any[]): any[] {
   const map = new Map((allProducts ?? []).map((p: any) => [p._id, p]))
-  return (refs ?? []).map(r => map.get(r._id)).filter(Boolean) as any[]
+  return (refs ?? []).map(r => map.get(typeof r === 'string' ? r : r._id)).filter(Boolean) as any[]
 }
 
 export const createFilters = (eleventyConfig: any) => {
@@ -44,4 +47,6 @@ export const createFilters = (eleventyConfig: any) => {
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory);
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs);
+  eleventyConfig.addFilter("imageUrl", imageUrl);
+  eleventyConfig.addShortcode("sanityPicture", sanityPicture);
 }

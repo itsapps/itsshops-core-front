@@ -16,6 +16,8 @@
       {% include "core/modules/carousel.njk" %}
     {% elif module._type == 'youtube' %}
       {% include "core/modules/youtube.njk" %}
+    {% else %}
+      {% block extra_modules %}{% endblock %}
     {% endif %}
   </div>
 {% endfor %}

@@ -1,5 +1,10 @@
 export * from './types'
 export * from './data/types'
+export * as projections from './data/projections'
+export { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from './data/locale'
+export { resolvePortableText } from './data/portableText'
+export { sanityPicture, imageUrl } from './media'
+export type { PictureSize } from './media'
 
 import type { Config } from './types'
 import { setIgnores } from './config/debug'

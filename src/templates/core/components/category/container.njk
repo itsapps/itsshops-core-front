@@ -5,7 +5,7 @@
       {% if category.image %}
         <figure class="category-image">
           <img
-            src="{{ category.image.url }}"
+            src="{{ category.image | imageUrl(800) }}"
             alt="{{ category.image.alt }}"
             loading="eager"
           />
