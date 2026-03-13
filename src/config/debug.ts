@@ -14,11 +14,9 @@ export const setIgnores = (eleventyConfig: any) => {
   
   const debug = process.env.ITSSHOPS_CORE_DEBUG;
   if (debug) {
-    eleventyConfig.addWatchTarget(
-      "./node_modules/@itsapps/itsshops-core-front/dist/*.{js,njk}", {
-        resetConfig: true
-      }
-    );
-    eleventyConfig.watchIgnores.delete("**/node_modules/**");
+    const pkgPath = path.dirname(new URL(import.meta.url).pathname)
+    const distPath = path.resolve(pkgPath, 'templates')
+    eleventyConfig.addWatchTarget(distPath, { resetConfig: true })
+    eleventyConfig.watchIgnores.delete("**/node_modules/**")
   }
 }

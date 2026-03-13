@@ -7,7 +7,6 @@ export default defineConfig({
     itsshops: 'src/bin/itsshops.ts',
     index: 'src/index.ts',
     core: 'src/core/index.ts',
-    // tailwind: 'tailwind.config.ts',
     preview: 'src/netlify/functions/preview.ts',
   },
   format: ['esm'],
