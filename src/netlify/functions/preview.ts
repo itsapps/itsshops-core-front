@@ -57,7 +57,7 @@ export const preview = async (props: PreviewParams) => {
       throw new Error(`No matching template found for documentId: ${documentId}`);
     }
 
-    return match.content
+    result = match.content
     // result = results?.[0]?.content
   } catch (error) {
     console.error(error);
