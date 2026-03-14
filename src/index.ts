@@ -19,26 +19,10 @@ import { buildCmsData } from './data/resolver'
 import { resolveConfig } from './config/config'
 import { createTranslation } from './i18n/translations/frontTranslation'
 
-// Shared across all Eleventy config instances within one Eleventy invocation.
-// Eleventy v3 calls the plugin once per internal worker — heavy work runs once.
-// Must be reset between requests (see resetPluginState) to prevent worker accumulation.
-let sharedSetup: {
-  client: ReturnType<typeof createSanityClient>
-  config: ReturnType<typeof resolveConfig>
-  permalinks: ReturnType<typeof buildPermalinkTranslations>
-} | null = null
-
-export const resetPluginState = () => { sharedSetup = null }
-
 export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
-  if (!sharedSetup) {
-    const config = resolveConfig(itsshopsConfig)
-    const client = createSanityClient(config.sanity)
-    const permalinks = buildPermalinkTranslations(config.permalinks)
-    sharedSetup = { client, config, permalinks }
-  }
-
-  const { client, config, permalinks } = sharedSetup
+  const config = resolveConfig(itsshopsConfig)
+  const client = createSanityClient(config.sanity)
+  const permalinks = buildPermalinkTranslations(config.permalinks)
   const pluginConfigs: PluginConfigs = { eleventyConfig, config }
 
   setupIgnores(pluginConfigs)
@@ -49,6 +33,6 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, its
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, config, permalinks))
   eleventyConfig.addGlobalData('coreConfig', config)
-  
+
   loadTemplates(pluginConfigs)
 }

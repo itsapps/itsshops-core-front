@@ -1,8 +1,6 @@
-import fs from 'node:fs'
 import type { Context } from '@netlify/functions'
 // @ts-ignore - Importing Eleventy which might lack types
 import Eleventy from '@11ty/eleventy'
-import { resetPluginState } from '../..'
 
 interface ElevResult {
   inputPath: string;
@@ -20,10 +18,6 @@ export const preview = async (props: PreviewParams) => {
   }
 
   const { locale, documentType, documentId } = props.context.params
-  console.log('core preview', props.request.method, props.request.url)
-  console.log('core preview params', locale, documentType, documentId)
-  console.log('core preview referer', props.request.headers.get('referer'))
-  console.log('core preview user-agent', props.request.headers.get('user-agent'))
 
   const url = new URL(props.request.url)
   const perspective = url.searchParams.get('sanity-preview-perspective')
@@ -35,12 +29,6 @@ export const preview = async (props: PreviewParams) => {
 
   const templatePath = `preview/${documentType}s.njk`
 
-  const cssFile = 'src/_includes/css/global.css'
-  const cssBackup = fs.existsSync(cssFile) ? fs.readFileSync(cssFile, 'utf-8') : null
-  console.log('[preview] CSS file exists before run:', cssBackup !== null)
-
-  resetPluginState()
-
   let result = 'Nothing here'
   try {
     const elev = new Eleventy('src', undefined, {
@@ -50,13 +38,6 @@ export const preview = async (props: PreviewParams) => {
 
     const results = (await elev.toJSON()) as unknown as ElevResult[]
     await elev.destroy?.()
-
-    if (cssBackup !== null && !fs.existsSync(cssFile)) {
-      console.log('[preview] CSS file was deleted during run, restoring')
-      fs.mkdirSync('src/_includes/css', { recursive: true })
-      fs.writeFileSync(cssFile, cssBackup)
-    }
-    console.log('[preview] CSS file exists after run:', fs.existsSync(cssFile))
 
     const match = results.find((r) => r.inputPath.endsWith(templatePath))
 
