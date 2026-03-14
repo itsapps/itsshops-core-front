@@ -12,10 +12,12 @@ interface ElevResult {
 export type PreviewParams = {
   request: Request;
   context: Context;
-  projectConfig: any
+  // projectConfig: any
 }
 
 export const preview = async (props: PreviewParams) => {
+  const { locale, documentType, documentId } = props.context.params;
+  console.log('core preview', locale, documentType, documentId);
   // console.log("projectConfig: ", props.projectConfig);
   // try {
   //   const root = process.cwd();
@@ -35,8 +37,8 @@ export const preview = async (props: PreviewParams) => {
   // const coreModulePath = path.join(root, "node_modules", "@itsapps", "itsshops-core-front2");
   // console.log(`coreModulePath at ${coreModulePath} exists?`, fs.existsSync(coreModulePath));
   process.env.IS_PREVIEW = 'true'
-  process.env.PREVIEW_TYPE = 'page'
-  process.env.PREVIEW_LOCALE = 'de'
+  process.env.PREVIEW_TYPE = documentType
+  process.env.PREVIEW_LOCALE = locale
   process.env.PREVIEW_PERSPECTIVE = 'drafts'
 
   let result = "Nothing here"
