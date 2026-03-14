@@ -1,23 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import postcss from 'postcss'
-import postcssImport from 'postcss-import'
-import postcssImportExtGlob from 'postcss-import-ext-glob'
-import postcssCustomMedia from 'postcss-custom-media'
-import postcssNesting from 'postcss-nesting'
-import tailwindcss from 'tailwindcss'
-import tailwindcssnesting from 'tailwindcss/nesting/index.js'
-import autoprefixer from 'autoprefixer'
-import cssnano from 'cssnano'
 
 import { type PluginConfigs } from '../types'
-
-import { getTailwindConfig } from './tailwind/tailwind.config.js'
 
 export const cssConfig = (configs: PluginConfigs) => {
   const { eleventyConfig, config } = configs
   eleventyConfig.addBundle('css', {hoist: true});
-  
+
   if (config.preview.enabled) {
     return
   }
@@ -36,25 +25,46 @@ export const cssConfig = (configs: PluginConfigs) => {
       }
 
       return async () => {
+        const [
+          { default: postcss },
+          { default: postcssImport },
+          { default: postcssImportExtGlob },
+          { default: postcssCustomMedia },
+          { default: postcssNesting },
+          { default: tailwindcss },
+          { default: tailwindcssnesting },
+          { default: autoprefixer },
+          { getTailwindConfig },
+        ] = await Promise.all([
+          import('postcss'),
+          import('postcss-import'),
+          import('postcss-import-ext-glob'),
+          import('postcss-custom-media'),
+          import('postcss-nesting'),
+          import('tailwindcss'),
+          import('tailwindcss/nesting/index.js'),
+          import('autoprefixer'),
+          import('./tailwind/tailwind.config.js'),
+        ])
+
         const tailwindConfig = getTailwindConfig(tailwind);
 
-        const plugins = [
+        const plugins: any[] = [
           postcssImportExtGlob,
           postcssImport,
           postcssCustomMedia,
           postcssNesting,
           tailwindcssnesting,
-          // tailwindcss(tailwindcssnesting),
           tailwindcss(tailwindConfig),
           postcssNesting,
           autoprefixer,
         ];
         if (minify) {
+          const { default: cssnano } = await import('cssnano')
           plugins.push(cssnano);
         }
-        let result = await postcss(plugins).process(inputContent, {from: inputPath});
+        const result = await postcss(plugins).process(inputContent, {from: inputPath});
 
-        // Write the output to all specified paths
         for (const outputPath of paths) {
           await fs.mkdir(path.dirname(outputPath), {recursive: true});
           await fs.writeFile(outputPath, result.css);

@@ -12,7 +12,7 @@ import { setupIgnores } from './config/ignores'
 import { loadTemplates } from './config/templates'
 import { createFilters } from './filters'
 import { createSanityClient } from './core'
-// import { cssConfig } from './config/css'
+import { cssConfig } from './config/css'
 import { buildPermalinkTranslations } from './i18n/permalinks'
 import { buildCmsData } from './data/resolver'
 import { resolveConfig } from './config/config'
@@ -26,7 +26,7 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, its
 
   const translate = createTranslation(config)
 
-  // cssConfig(pluginConfigs)
+  cssConfig(pluginConfigs)
 
   const client = createSanityClient(config.sanity)
   console.log('✅ Sanity client initialized: ', config.sanity.perspective)
