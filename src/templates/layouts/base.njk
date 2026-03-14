@@ -26,11 +26,11 @@
     {% endblock %}
 
     {% block styles %}
-    {% if coreConfig.isPreview %}
-      {% include "css/global.css" %}
+    {% if coreConfig.preview.enabled %}
+      <style>{% include "css/global.css" %}</style>
     {% else %}
       <style>{% getBundle "css", "global" %}</style>
-	    {% css "global" %}{% include "css/global.css" %}{% endcss %}
+      {% css "global" %}{% include "css/global.css" %}{% endcss %}
     {% endif %}
     {% endblock %}
 
@@ -50,7 +50,7 @@ base url : {{coreConfig.baseUrl}}
 
     {% block scripts %}{% endblock %}
 
-    {% if coreConfig.isPreview %}
+    {% if coreConfig.preview.enabled %}
       {% include "core/partials/visual-editing.njk" %}
     {% endif %}
   </body>

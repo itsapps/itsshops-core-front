@@ -29,7 +29,8 @@ export const preview = async (props: PreviewParams) => {
   const templatePath = `preview/${documentType}s.njk`
 
   const cssFile = 'src/_includes/css/global.css'
-  console.log('[preview] CSS file exists before run:', fs.existsSync(cssFile))
+  const cssBackup = fs.existsSync(cssFile) ? fs.readFileSync(cssFile, 'utf-8') : null
+  console.log('[preview] CSS file exists before run:', cssBackup !== null)
 
   resetPluginState()
 
@@ -42,6 +43,12 @@ export const preview = async (props: PreviewParams) => {
 
     const results = (await elev.toJSON()) as unknown as ElevResult[]
     await elev.destroy?.()
+
+    if (cssBackup !== null && !fs.existsSync(cssFile)) {
+      console.log('[preview] CSS file was deleted during run, restoring')
+      fs.mkdirSync('src/_includes/css', { recursive: true })
+      fs.writeFileSync(cssFile, cssBackup)
+    }
     console.log('[preview] CSS file exists after run:', fs.existsSync(cssFile))
 
     const match = results.find((r) => r.inputPath.endsWith(templatePath))
