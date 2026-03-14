@@ -6,39 +6,38 @@ export { resolvePortableText } from './data/portableText'
 export { sanityPicture, imageUrl } from './media'
 export type { PictureSize } from './media'
 
-import type { Config } from './types'
-import { setIgnores } from './config/debug'
+import type { EleventyConfig } from '11ty.ts'
+import type { Config, PluginConfigs } from './types'
+import { setupIgnores } from './config/ignores'
 import { loadTemplates } from './config/templates'
 import { createFilters } from './filters'
-import { createSanityClient, createPreviewClient } from './core'
+import { createSanityClient } from './core'
 import { cssConfig } from './config/css'
 import { buildPermalinkTranslations } from './i18n/permalinks'
 import { buildCmsData } from './data/resolver'
+import { resolveConfig } from './config/config'
+import { createTranslation } from './i18n/translations/frontTranslation'
 
-export const shopCoreFrontendPlugin = async (eleventyConfig: any, config: Config) => {
-  const isPreview = config.preview?.enabled ?? false
-  const permalinks = buildPermalinkTranslations(config.permalinks)
+export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
+  const config = resolveConfig(itsshopsConfig)
+  const pluginConfigs: PluginConfigs = { eleventyConfig, config }
 
-  // Eleventy setup
-  setIgnores(eleventyConfig)
-  loadTemplates(eleventyConfig)
-  createFilters(eleventyConfig)
+  setupIgnores(pluginConfigs)
 
-  // Global template data
-  eleventyConfig.addGlobalData('isPreview', isPreview)
-  eleventyConfig.addGlobalData('defaultLocale', config.defaultLocale)
-  eleventyConfig.addGlobalData('locales', config.locales)
+  const translate = createTranslation(config)
 
-  if (!isPreview) {
-    cssConfig(eleventyConfig, config.css || {})
-  }
-  eleventyConfig.addBundle('css', {hoist: true});
+  cssConfig(pluginConfigs)
 
-  // Sanity client — use draft perspective in preview mode
-  const client = isPreview
-    ? createPreviewClient(config.sanity)
-    : createSanityClient(config.sanity)
+  const client = createSanityClient(config.sanity)
+  console.log('✅ Sanity client initialized: ', config.sanity.perspective)
+
+  createFilters(pluginConfigs)
 
   // CMS global data
+  const permalinks = buildPermalinkTranslations(config.permalinks)
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, config, permalinks))
+
+  // Global template data
+  eleventyConfig.addGlobalData('coreConfig', config)
+  loadTemplates(pluginConfigs)
 }

@@ -1,0 +1,315 @@
+import type { ClientConfig } from '@sanity/client'
+import type { Locale, PermalinkTranslations } from './localization'
+import type { ResolveContext } from './context'
+import type { EleventyConfig } from '11ty.ts'
+
+// ─── Env vars ─────────────────────────────────────────────────────────────────
+
+export type EnvVars = {
+  // Sanity
+  SANITY_PROJECT_ID:    string | undefined  // preferred name
+  SANITY_STUDIO_PROJECT: string | undefined // alias used in some projects
+  SANITY_DATASET:       string | undefined  // preferred name
+  SANITY_STUDIO_DATASET: string | undefined // alias used in some projects
+  SANITY_TOKEN:         string | undefined
+  SANITY_STUDIO_URL:    string | undefined
+
+  // Deployment
+  URL:     string | undefined  // Netlify: production URL
+  DEV_URL: string | undefined  // local dev URL override
+  STAGE:   string | undefined  // 'development' | 'production'
+
+  // Build flags
+  MAINTENANCE:    string | undefined  // 'true' | 'false'
+  DO_INDEX_PAGES: string | undefined  // 'true' | 'false'
+  MAX_PRODUCTS:   string | undefined
+  MINIFY:         string | undefined  // 'true' | 'false'
+  MINIFY_HTML:    string | undefined  // 'true' | 'false'
+  INLINE_CSS:     string | undefined  // 'true' | 'false'
+
+  // Dev server
+  DEV_LIVE_RELOAD: string | undefined  // 'true' | 'false'
+  DEV_SERVER_PORT: string | undefined
+
+  // Preview
+  IS_PREVIEW:          string | undefined  // 'true' | 'false'
+  PREVIEW_PERSPECTIVE: string | undefined  // 'drafts' | 'published'
+  PREVIEW_TYPE:        string | undefined  // document type, e.g. 'page' | 'post'
+  PREVIEW_ID:          string | undefined
+  PREVIEW_LOCALE:      string | undefined
+
+  // Developer / site meta
+  PUBLIC_DEVELOPER_NAME:    string | undefined
+  PUBLIC_DEVELOPER_WEBSITE: string | undefined
+  DEVELOPER_EMAIL:          string | undefined
+  SHOP_ADMIN_EMAIL:         string | undefined
+  SUPPORT_EMAIL:            string | undefined
+
+  // Email — Mailgun
+  MAILGUN_API_KEY:          string | undefined
+  MAILGUN_DOMAIN:           string | undefined
+  MAILGUN_USE_EU_REGION_URL: string | undefined  // 'true' | 'false'
+  SEND_BUILD_EMAIL:         string | undefined   // 'true' | 'false'
+  SEND_LOW_STOCK_EMAIL:     string | undefined   // 'true' | 'false'
+
+  // Stripe
+  STRIPE_PUBLISHABLE_API_KEY: string | undefined
+  STRIPE_SECRET_API_KEY:      string | undefined  // server-side only
+  STRIPE_ENDPOINT_SECRET:     string | undefined  // webhook secret, server-side only
+
+  // Captcha
+  CAPTCHA_SITE_KEY:   string | undefined
+  CAPTCHA_SECRET_KEY: string | undefined  // server-side only
+
+  // Supabase (users feature)
+  SUPABASE_URL:                string | undefined
+  SUPABASE_SECRET_KEY:         string | undefined  // server-side only
+  SUPABASE_EMAIL_HOOKS_SECRET: string | undefined  // server-side only
+
+  // Netlify functions
+  SERVER_FUNCTIONS_ALLOWED_ORIGINS: string | undefined
+  SERVER_FUNCTIONS_SECRET:          string | undefined  // server-side only
+  SERVER_JWT_SECRET:                string | undefined  // server-side only
+
+  // Testing
+  TEST_USER_EMAIL:    string | undefined  // dev only
+  TEST_USER_PASSWORD: string | undefined  // dev only
+}
+
+export type EnvVarName = keyof EnvVars
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv extends EnvVars {}
+  }
+}
+
+// ─── Vinofact ────────────────────────────────────────────────────────────────
+
+export type VinofactConfig = {
+  enabled: boolean
+  integration?: {
+    endpoint: string
+    accessToken: string
+    profileSlug: string
+  }
+}
+
+// ─── Features ────────────────────────────────────────────────────────────────
+
+/** Fully resolved internal feature config — all fields guaranteed present */
+export type Features = {
+  shop: {
+    enabled: boolean
+    checkout: boolean    // frontend-only: Stripe checkout flow
+    manufacturer: boolean
+    stock: boolean
+    category: boolean
+    vinofact: VinofactConfig
+  }
+  blog: boolean
+  users: boolean
+}
+
+/** Customer-facing input — omitting shop = shop disabled, omitting sub-flags = default off */
+export type ItsshopsFeatures = {
+  shop?: {
+    checkout?: boolean
+    manufacturer?: boolean
+    stock?: boolean
+    category?: boolean
+    vinofact?: VinofactConfig
+  }
+  blog?: boolean
+  users?: boolean
+}
+
+// ─── Sanity ───────────────────────────────────────────────────────────────────
+
+export type SanityClientConfig = Omit<ClientConfig, 'apiVersion'>
+
+// ─── CSS / JS ─────────────────────────────────────────────────────────────────
+
+export type Css = {
+  cssPath?: string
+  minify?: boolean
+  inline?: boolean
+  viewport?: { min: number; max: number }
+  screens?: Record<string, string>
+  colors?: any[]
+  fontFamilies?: any[]
+  textSizes?: any[]
+  spacings?: any[]
+}
+
+export type Js = {
+  minify?: boolean
+}
+
+// ─── Extensions ───────────────────────────────────────────────────────────────
+
+export type Extensions = {
+  /** Custom document type queries — results merged into cms global data */
+  queries?: Record<string, string>
+  /** Extra GROQ projection fields on core document/object types */
+  fields?: Record<string, string>
+  /** Custom module type projections per document type (page, post, ...) */
+  modules?: Record<string, Record<string, string>>
+  /**
+   * Resolve hooks — called per locale after core resolution.
+   * Return fields to merge into the final output.
+   *
+   * @example
+   * resolve: {
+   *   variant(raw, { resolveString }) {
+   *     return { isLimited: raw.isLimited ?? false, label: resolveString(raw.label) }
+   *   }
+   * }
+   */
+  resolve?: {
+    variant?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    product?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    category?: (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    page?:     (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    post?:     (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    menuItem?: (raw: any, ctx: ResolveContext) => Record<string, unknown>
+    /** Called for every module after core resolution. Return fields to merge in. */
+    module?:   (module: any, ctx: ResolveContext) => Record<string, unknown>
+  }
+}
+
+// ─── Customer config ──────────────────────────────────────────────────────────
+//
+// What customers pass to the plugin. Fields that have standard env var equivalents
+// are optional here — the core reads the env var and the customer value wins if set.
+//
+// Standard env vars read by core (customer override field):
+//   URL / DEV_URL             → baseUrl
+//   STAGE                     → dev.enabled
+//   DEV_LIVE_RELOAD           → dev.liveReload
+//   DEV_SERVER_PORT           → dev.serverPort
+//   MAINTENANCE               → isMaintenanceMode
+//   DO_INDEX_PAGES            → doIndexPages
+//   MAX_PRODUCTS              → maxProducts
+//   IS_PREVIEW                → preview.enabled
+//   PREVIEW_TYPE              → preview.documentType
+//   PREVIEW_ID                → preview.documentId
+//   PREVIEW_LOCALE            → preview.locale
+//   MINIFY                    → css.minify / js.minify
+//   INLINE_CSS                → css.inline
+//   SANITY_PROJECT_ID         → sanity.projectId
+//   SANITY_DATASET            → sanity.dataset
+//   SANITY_TOKEN              → sanity.token
+//   SANITY_STUDIO_URL         → sanity.studioUrl (from ClientConfig)
+//   STRIPE_PUBLISHABLE_API_KEY → stripe.publishableApiKey
+//   CAPTCHA_SITE_KEY          → captchaSiteKey
+//   SUPPORT_EMAIL             → supportEmail
+
+export type Config = {
+  // required — project-specific, no env var equivalent
+  locales?: Locale[]
+  defaultLocale?: Locale
+
+  // sanity — projectId/dataset/token can come from env vars
+  sanity?: SanityClientConfig
+
+  // features — project-specific
+  features?: ItsshopsFeatures
+
+  // i18n
+  permalinks?: Partial<Record<Locale, PermalinkTranslations>>
+  translations?: Record<string, any>
+
+  // data extensions
+  extensions?: Extensions
+
+  // override env vars if needed
+  baseUrl?: string
+  isMaintenanceMode?: boolean
+  doIndexPages?: boolean
+  maxProducts?: number
+  dev?: {
+    enabled?: boolean
+    liveReload?: boolean
+    serverPort?: number
+  }
+  preview?: {
+    enabled?: boolean
+    documentType?: string
+    documentId?: string
+    locale?: Locale
+  }
+  css?: Css
+  js?: Js
+
+  // project-specific, no env var equivalent
+  imagePlaceholders?: Record<string, string>
+  manifest?: {
+    themeBgColor?: string
+    themeColor?: string
+  }
+  developer?: {
+    name?: string
+    website?: string
+  }
+
+  // override env vars if needed
+  stripe?: {
+    publishableApiKey?: string
+  }
+  captchaSiteKey?: string
+  supportEmail?: string
+}
+
+// ─── Core config ──────────────────────────────────────────────────────────────
+//
+// Fully resolved internal config — built by reading env vars and merging customer
+// config on top. All fields are guaranteed present after resolution.
+
+export type CoreConfig = {
+  buildMode: 'preview' | 'maintenance' | 'normal'
+  sanity: SanityClientConfig & { projectId: string; dataset: string }
+  locales: Locale[]
+  defaultLocale: Locale
+  features: Features
+  permalinks: Partial<Record<Locale, PermalinkTranslations>>
+  translations: Record<string, any>
+  extensions: Extensions
+  baseUrl: string
+  hostname: string
+  isMaintenanceMode: boolean
+  doIndexPages: boolean
+  maxProducts: number
+  dev: {
+    enabled: boolean
+    liveReload: boolean
+    serverPort: number
+  }
+  preview: {
+    enabled: boolean
+    documentType: string | undefined
+    documentId: string | undefined
+    locale: Locale | undefined
+  }
+  css: Css
+  js: Js
+  imagePlaceholders: Record<string, string>
+  manifest: {
+    themeBgColor: string
+    themeColor: string
+  }
+  developer: {
+    name: string | undefined
+    website: string | undefined
+  }
+  stripe: {
+    publishableApiKey: string | undefined
+  }
+  captchaSiteKey: string | undefined
+  supportEmail: string | undefined
+}
+
+export type PluginConfigs = {
+  eleventyConfig: EleventyConfig
+  config: CoreConfig
+}

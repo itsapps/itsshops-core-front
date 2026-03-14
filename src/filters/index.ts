@@ -1,5 +1,5 @@
 import { slugify, toIsoString } from "../utils";
-import type { Locale } from "../types";
+import type { Locale, PluginConfigs } from "../types";
 import { resolveString } from "../data/locale";
 import { sanityPicture, imageUrl } from "../media";
 
@@ -40,7 +40,8 @@ function resolveProductRefs(refs: any[], allProducts: any[]): any[] {
   return (refs ?? []).map(r => map.get(typeof r === 'string' ? r : r._id)).filter(Boolean) as any[]
 }
 
-export const createFilters = (eleventyConfig: any) => {
+export const createFilters = (configs: PluginConfigs) => {
+  const { eleventyConfig } = configs
   eleventyConfig.addFilter("slugify", slugify);
   eleventyConfig.addFilter("toIsoString", toIsoString);
   eleventyConfig.addFilter("formatPrice", formatPrice);

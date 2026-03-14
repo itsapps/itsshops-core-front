@@ -26,9 +26,12 @@
     {% endblock %}
 
     {% block styles %}
+    {% if coreConfig.isPreview %}
+      {% include "css/global.css" %}
+    {% else %}
       <style>{% getBundle "css", "global" %}</style>
 	    {% css "global" %}{% include "css/global.css" %}{% endcss %}
-      <link rel="stylesheet" href="/styles/index.css" />
+    {% endif %}
     {% endblock %}
 
     {% block head %}{% endblock %}
@@ -42,12 +45,12 @@
         {{ content | safe }}
       {% endblock %}
     </main>
-
+base url : {{coreConfig.baseUrl}}
     {% block footer %}{% endblock %}
 
     {% block scripts %}{% endblock %}
 
-    {% if isPreview %}
+    {% if coreConfig.isPreview %}
       {% include "core/partials/visual-editing.njk" %}
     {% endif %}
   </body>

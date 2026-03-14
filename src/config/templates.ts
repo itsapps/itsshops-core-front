@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import Nunjucks from 'nunjucks';
+// import Nunjucks from 'nunjucks';
 import { fileURLToPath } from "url"
+import { PluginConfigs, CoreConfig } from '../types';
 // import {
 //   EleventyRenderPlugin,
 //   EleventyI18nPlugin,
@@ -14,49 +15,21 @@ const templatesRoot = path.join(__dirname, 'templates');
 const layoutsDir = path.join(templatesRoot, 'layouts');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
-export const loadTemplates = (eleventyConfig: any) => {
-  // console.log("baseConfig: ", options.baseConfig)
-  /*
-   * Nunjucks - templates overrides
-   */
-  const { includes, layouts, input } = eleventyConfig.dir
-  const layoutDir = layouts || includes
+const loadedTemplates = [] as string[]
+const ignoredTemplates = [] as string[]
 
+export const loadTemplates = (configs: PluginConfigs) => {
+  const { eleventyConfig, config } = configs
+
+  // add templates to search path
   eleventyConfig.amendLibrary("njk", (env: any) => {
     env.loaders[0].searchPaths.push(
       path.resolve("src/_includes"),
       templatesRoot
     );
   });
-  // const options = {
-  //   autoescape: false,
-  //   lstripBlocks: true,
-  //   trimBlocks: true,
-  //   noCache: true,
-  //   watch: true,
-  //   ...eleventyConfig.nunjucksEnvironmentOptions
-  // }
 
-  // const nunjucksEnvironment = new Nunjucks.Environment(
-	// 	new Nunjucks.FileSystemLoader([
-  //     ...(includes ? [path.join(input, includes)] : []),
-  //     ...(layouts ? [path.join(input, layouts)] : []),
-  //     input,
-  //     path.resolve("src/_includes"),
-  //     templatesRoot,
-  //   ], options)
-	// );
-	// eleventyConfig.setLibrary("njk", nunjucksEnvironment);
-  // eleventyConfig.setNunjucksEnvironmentOptions({
-	// 	throwOnUndefined: true,
-	// });
-  
-
-  // const layoutsDirName = eleventyConfig.directories.layouts || "_layouts";
-  // const inputDir = eleventyConfig.dir.input;
-
-  // layouts
-
+  // 
   if (fs.existsSync(layoutsDir)) {
     for (const file of fs.readdirSync(layoutsDir)) {
       if (!file.endsWith(".njk")) continue
@@ -64,55 +37,19 @@ export const loadTemplates = (eleventyConfig: any) => {
       const customerLayoutPath = path.join(process.cwd(), eleventyConfig.directories.layouts, file)
       // const customerLayoutPath = path.join(inputDir, layoutsDirName, file);
       if (fs.existsSync(customerLayoutPath)) {
+        loadedTemplates.push(customerLayoutPath)
         continue;
       }
 
       // const content = '<main id="main" class="relative">{{ shopConfig.title | safe }}{{ content | safe }}</main>'
       const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
-      let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
-      // let layoutPat = `src/_layouts/${file}`;
-      // let layoutPath = `${layoutDir}/${file}`;
-      console.log("layoutPath: ", layoutPath)
-      eleventyConfig.addTemplate(layoutPath, content)
-      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
-
-      // read core layout from core folder
-      // const coreLayoutFilePath = path.join(layoutsDir, file);
-      // const content = fs.readFileSync(coreLayoutFilePath, "utf-8");
-
-      // // register virtual template inside Eleventy's layout namespace
-      // const virtualLayoutPath = `${layoutsDirName}/${file}`;
-      // eleventyConfig.addTemplate(virtualLayoutPath, content);
-      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), virtualLayoutPath);
-      
-      
-      // const customerLayoutPath = path.join(process.cwd(), layoutsDirName, file)
-      // if (fs.existsSync(customerLayoutPath)) {
-      //   continue // layout exists, so use this one instead of the one from core
-      // }
-      // const coreLayoutFilePath = path.join(layoutsDir, file);
-      // const content = fs.readFileSync(coreLayoutFilePath, "utf-8");
-      // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
-      // const virtualLayoutPath = `${layoutPath}/${file}`;
-      // eleventyConfig.addTemplate(virtualLayoutPath, content);
-      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), virtualLayoutPath);
-      // const layoutPath = path.join(layoutsDir, file);
-      // const content = fs.readFileSync(layoutPath, "utf-8");
-      // // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
-      // // eleventyConfig.addTemplate(layoutPath, content);
-      // const virtualLayoutPath = `_includes/layouts/${file}`;
-      // eleventyConfig.addTemplate(virtualLayoutPath, content);
-
-      // const content = fs.readFileSync(path.join(layoutsDir, file), "utf-8")
-      // let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file);
-      // eleventyConfig.addTemplate(layoutPath, content)
-      // eleventyConfig.addLayoutAlias(file.replace(".njk", ""), file);
+      let layoutPath = eleventyConfig.directories.getLayoutPathRelativeToInputDirectory(file) as string
+      eleventyConfig.addTemplate(layoutPath, content, {})
+      loadedTemplates.push(layoutPath)
     }
   } else {
     console.warn(`No layouts found  at: ${layoutsDir}`)
   }
-  // return
-  const buildMode = 'normal'
 
   const customerPagesRoot = path.join(eleventyConfig.directories.input, 'pages')
   // const projectRoot = process.cwd();
@@ -132,14 +69,14 @@ export const loadTemplates = (eleventyConfig: any) => {
         if (!file.endsWith('.njk')) continue
 
         if (shouldIgnoreTemplate({
-          mode: buildMode,
-          previewType: "options.preview.documentType",
           dir,
           file,
-          features: {}
+          config,
         })) {
           console.log(`🚫 Ignoring template: ${dirPath}/${file}`);
-          eleventyConfig.ignores.add(path.join(dirPath, file))
+          const templatePath = path.join(dir, file)
+          eleventyConfig.ignores.add(templatePath)
+          ignoredTemplates.push(templatePath)
         }
       }
     }
@@ -159,15 +96,16 @@ export const loadTemplates = (eleventyConfig: any) => {
       const customerPath = path.join(customerPagesRoot, dir, file)
       const corePath = path.join(dirPath, file)
       const ignoreTemplate = shouldIgnoreTemplate({
-        mode: buildMode,
-        previewType: "options.preview.documentType",
         dir,
         file,
-        features: {}
+        config
       })
-
-      if (!ignoreTemplate && !fs.existsSync(customerPath)) {
-        eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'))
+      const templatePath = path.join(dir, file)
+      if (ignoreTemplate) {
+        ignoredTemplates.push(templatePath)
+      } else if (!fs.existsSync(customerPath)) {
+        eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'), {})
+        loadedTemplates.push(templatePath)
       }
     }
   }
@@ -191,10 +129,17 @@ export const loadTemplates = (eleventyConfig: any) => {
         if (!fs.existsSync(customerPath)) {
           // Register the virtual template. 
           // We use entryRelativePath to maintain the folder structure in the URL (e.g., misc/sub/page.njk)
-          eleventyConfig.addTemplate(
-            path.join('misc', entryRelativePath), 
-            fs.readFileSync(entryPath, 'utf8')
-          );
+          if (config.buildMode === 'normal') {
+            const templatePath = path.join('misc', entryRelativePath)
+            eleventyConfig.addTemplate(
+              templatePath, 
+              fs.readFileSync(entryPath, 'utf8'),
+              {},
+            );
+            loadedTemplates.push(templatePath)
+          } else {
+            ignoredTemplates.push(entryRelativePath)
+          }
         } else {
           throw new Error(`Conflict detected: You are not allowed to override the core template at: ${customerPath}`);
         }
@@ -207,23 +152,32 @@ export const loadTemplates = (eleventyConfig: any) => {
     walkAndAdd(coreMiscPagesRoot);
   }
 
-  // return nunjucksEnvironment
+  // Log loaded and ignored templates
+  console.log('BUILD MODE: ', config.buildMode.toUpperCase());
+  console.log(`✅ Loaded templates:\n${loadedTemplates.map(t => `   - ${t}`).join('\n')}`);
+  if (ignoredTemplates.length > 0) {
+    console.warn(`⚠️ Ignored templates:\n${ignoredTemplates.map(t => `   - ${t}`).join('\n')}`);
+  }
 }
 
 function shouldIgnoreTemplate({
-  mode,          // 'preview' | 'maintenance' | 'normal'
-  previewType,   // 'page' | 'post'
   dir,
   file,
-  features
-}: {mode: string, previewType: string, dir: string, file: string, features: any}) {
-  return false
+  config
+}: {
+  dir: string,
+  file: string,
+  config: CoreConfig}
+): boolean {
+  const mode = config.buildMode
+
   /* ------------------------------
    * PREVIEW MODE (selected doc only)
    * ------------------------------ */
   if (mode === 'preview') {
     if (dir !== 'preview') return true
-    return file !== `${previewType}s.njk`
+    if (file === 'posts.njk' && !config.features.blog) return true
+    return file !== `${config.preview.documentType}s.njk`
   }
 
   /* ------------------------------
@@ -238,10 +192,18 @@ function shouldIgnoreTemplate({
    * ------------------------------ */
 
   // Feature-gated normal pages
+  const features = config.features
+
   if (dir === 'standard') {
-    return false
+    if (file.startsWith('user-') && !features.users) return true
+    if (file.startsWith('blog-') && !features.blog) return true
+    if (file === 'products.njk' && !features.shop.enabled) return true
+    if (file === 'categories.njk' && !features.shop.category) return true
+    if (file === 'manufacturers.njk' && !features.shop.manufacturer) return true
+    if ((file === 'checkout.njk' || (file === 'order-thanks.njk')) && !features.shop.checkout) return true
   }
   else if (dir === 'preview') {
+    if (file.startsWith('posts') && !features.blog) return true
     return false
   }
 

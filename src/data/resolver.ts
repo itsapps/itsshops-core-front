@@ -1,6 +1,6 @@
 import type { SanityClient } from '@sanity/client'
 import { slugify as coreSlugify } from '../utils/slugify'
-import type { Config, Locale, ResolveContext } from '../types'
+import type { Config, CoreConfig, Locale, ResolveContext } from '../types'
 import type { PermalinkTranslations } from '../types'
 import { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo, initImageBuilder } from './locale'
 import { resolvePortableText } from './portableText'
@@ -301,12 +301,12 @@ function resolveMenuItems(
 
 export async function buildCmsData(
   client: SanityClient,
-  config: Config,
+  config: CoreConfig,
   permalinks: Record<Locale, Required<PermalinkTranslations>>
 ): Promise<CmsData> {
   initImageBuilder(client)
 
-  const features = config.features ?? {}
+  const features = config.features
   const extensions = config.extensions ?? {}
 
   // Fetch all raw data in parallel
@@ -319,9 +319,9 @@ export async function buildCmsData(
     rawMenus,
     rawSettings,
   ] = await Promise.all([
-    features.shop    ? client.fetch(buildProductQuery(extensions))  : Promise.resolve([]),
-    features.shop    ? client.fetch(buildVariantQuery(extensions))  : Promise.resolve([]),
-    features.shop    ? client.fetch(buildCategoryQuery(extensions)) : Promise.resolve([]),
+    features.shop.enabled ? client.fetch(buildProductQuery(extensions))  : Promise.resolve([]),
+    features.shop.enabled ? client.fetch(buildVariantQuery(extensions))  : Promise.resolve([]),
+    features.shop.enabled && features.shop.category ? client.fetch(buildCategoryQuery(extensions)) : Promise.resolve([]),
     client.fetch(buildPageQuery(extensions)),
     features.blog    ? client.fetch(buildPostQuery(extensions))     : Promise.resolve([]),
     client.fetch(buildMenuQuery(extensions)),

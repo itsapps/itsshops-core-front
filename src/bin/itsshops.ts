@@ -78,7 +78,7 @@ program
 
     const envVars = {
       ...process.env,
-      ...(options.dev && { ITSSHOPS_CORE_DEBUG: 'true' }),
+      ...(options.dev && { ITSSHOPS_DEBUG: 'true' }),
       ...(options.debug && { DEBUG: debugNamespace })
     };
     // 4. Spawn the process

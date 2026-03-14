@@ -35,8 +35,11 @@ export const preview = async (props: PreviewParams) => {
   // const coreModulePath = path.join(root, "node_modules", "@itsapps", "itsshops-core-front2");
   // console.log(`coreModulePath at ${coreModulePath} exists?`, fs.existsSync(coreModulePath));
   process.env.IS_PREVIEW = 'true'
+  process.env.PREVIEW_TYPE = 'page'
+  process.env.PREVIEW_LOCALE = 'de'
+  process.env.PREVIEW_PERSPECTIVE = 'drafts'
 
-  let result = "Nothing here yet blablabla"
+  let result = "Nothing here"
   try {
     const elev = new Eleventy('src', undefined, {
       configPath: 'eleventy.config.mts',
@@ -46,7 +49,7 @@ export const preview = async (props: PreviewParams) => {
     // Don’t write to disk — just render in memory
     const results = (await elev.toJSON()) as unknown as ElevResult[]
 
-    result = results[1].content
+    result = results?.[0]?.content
   } catch (error) {
     console.error(error);
     if (error instanceof Error) {

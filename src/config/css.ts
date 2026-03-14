@@ -10,19 +10,26 @@ import tailwindcssnesting from 'tailwindcss/nesting/index.js'
 import autoprefixer from 'autoprefixer'
 import cssnano from 'cssnano'
 
-import { type Css } from '../types/index.js'
+import { type PluginConfigs } from '../types'
 
 import { getTailwindConfig } from './tailwind/tailwind.config.js'
 
-export const cssConfig = (eleventyConfig: any, css: Css) => {
-  const { cssPath, ...tailwind } = css || {};
+export const cssConfig = (configs: PluginConfigs) => {
+  const { eleventyConfig, config } = configs
+  eleventyConfig.addBundle('css', {hoist: true});
+  
+  if (config.preview.enabled) {
+    return
+  }
+
+  const { cssPath, minify, ...tailwind } = config.css || {};
   eleventyConfig.addTemplateFormats('css');
 
   eleventyConfig.addExtension('css', {
     outputFileExtension: 'css',
     compile: async (inputContent: string, inputPath: string) => {
       const paths: string[] = [];
-      if (inputPath.endsWith('/assets/css/global/global.css')) {
+      if (inputPath.endsWith(cssPath || '/assets/css/global/global.css')) {
         paths.push('src/_includes/css/global.css');
       } else {
         return;
@@ -42,7 +49,7 @@ export const cssConfig = (eleventyConfig: any, css: Css) => {
           postcssNesting,
           autoprefixer,
         ];
-        if (css.minify) {
+        if (minify) {
           plugins.push(cssnano);
         }
         let result = await postcss(plugins).process(inputContent, {from: inputPath});
