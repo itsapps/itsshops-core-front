@@ -1,10 +1,10 @@
 /* © Andy Bell - https://buildexcellentwebsit.es/ */
 
-import plugin from 'tailwindcss/plugin'
+import plugin from 'tailwindcss/plugin.js'
 import { type Config } from 'tailwindcss'
 import postcss from 'postcss'
 import postcssJs from 'postcss-js'
-import DefaultTheme from 'tailwindcss/defaultTheme'
+import DefaultTheme from 'tailwindcss/defaultTheme.js'
 
 import {clampGenerator} from './css-utils/clamp-generator'
 import {tokensToTailwind} from './css-utils/tokens-to-tailwind'
