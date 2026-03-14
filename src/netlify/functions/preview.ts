@@ -16,7 +16,10 @@ export type PreviewParams = {
 
 export const preview = async (props: PreviewParams) => {
   const { locale, documentType, documentId } = props.context.params
-  console.log('core preview', locale, documentType, documentId)
+  console.log('core preview', props.request.method, props.request.url)
+  console.log('core preview params', locale, documentType, documentId)
+  console.log('core preview referer', props.request.headers.get('referer'))
+  console.log('core preview user-agent', props.request.headers.get('user-agent'))
 
   const url = new URL(props.request.url)
   const perspective = url.searchParams.get('sanity-preview-perspective')
@@ -69,7 +72,6 @@ export const preview = async (props: PreviewParams) => {
     headers: {
       'content-type': 'text/html',
       'cache-control': 'no-store',
-      'Netlify-Vary': 'query=sanity-preview-perspective',
     }
   })
 }
