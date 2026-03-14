@@ -15,10 +15,9 @@ const templatesRoot = path.join(__dirname, 'templates');
 const layoutsDir = path.join(templatesRoot, 'layouts');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
-const loadedTemplates = [] as string[]
-const ignoredTemplates = [] as string[]
-
 export const loadTemplates = (configs: PluginConfigs) => {
+  const loadedTemplates: string[] = []
+  const ignoredTemplates: string[] = []
   const { eleventyConfig, config } = configs
 
   // add templates to search path
