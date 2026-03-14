@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import type { Context } from "@netlify/functions";
 // @ts-ignore - Importing Eleventy which might lack types
 import Eleventy from '@11ty/eleventy'
@@ -41,6 +42,10 @@ export const preview = async (props: PreviewParams) => {
   process.env.PREVIEW_LOCALE = locale
   process.env.PREVIEW_PERSPECTIVE = 'drafts'
 
+  const cssFile = 'src/_includes/css/global.css'
+  const cssExistsBefore = fs.existsSync(cssFile)
+  console.log('[preview] CSS file exists before run:', cssExistsBefore)
+
   let result = "Nothing here"
   try {
     const elev = new Eleventy('src', undefined, {
@@ -50,6 +55,7 @@ export const preview = async (props: PreviewParams) => {
 
     // Don’t write to disk — just render in memory
     const results = (await elev.toJSON()) as unknown as ElevResult[]
+    console.log('[preview] CSS file exists after run:', fs.existsSync(cssFile))
 
     result = results?.[0]?.content
   } catch (error) {

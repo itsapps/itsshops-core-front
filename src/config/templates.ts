@@ -18,7 +18,12 @@ const corePagesRoot = path.join(templatesRoot, 'pages');
 const loadedTemplates = [] as string[]
 const ignoredTemplates = [] as string[]
 
+const processedConfigs = new WeakSet()
+
 export const loadTemplates = (configs: PluginConfigs) => {
+  if (processedConfigs.has(configs.eleventyConfig)) return
+  processedConfigs.add(configs.eleventyConfig)
+
   const { eleventyConfig, config } = configs
 
   // add templates to search path

@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "outDir": "dist"
   },
-  "include": ["src/index.ts", "src/netlify/functions/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
