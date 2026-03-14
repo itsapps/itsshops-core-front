@@ -19,14 +19,16 @@ import { buildCmsData } from './data/resolver'
 import { resolveConfig } from './config/config'
 import { createTranslation } from './i18n/translations/frontTranslation'
 
-// Shared across all Eleventy config instances created within one process invocation.
-// Eleventy v3 calls the plugin once per internal worker — we only want to do the
-// heavy work (Sanity client, CMS data, CSS, templates) once.
+// Shared across all Eleventy config instances within one Eleventy invocation.
+// Eleventy v3 calls the plugin once per internal worker — heavy work runs once.
+// Must be reset between requests (see resetPluginState) to prevent worker accumulation.
 let sharedSetup: {
   client: ReturnType<typeof createSanityClient>
   config: ReturnType<typeof resolveConfig>
   permalinks: ReturnType<typeof buildPermalinkTranslations>
 } | null = null
+
+export const resetPluginState = () => { sharedSetup = null }
 
 export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   if (!sharedSetup) {
