@@ -20,28 +20,16 @@ export const preview = async (props: PreviewParams) => {
   // const [locale, documentType, documentId] = props.context.params.splat.split('/')
   const { locale, documentType, documentId } = props.context.params;
   console.log('core preview', locale, documentType, documentId);
-  // console.log("projectConfig: ", props.projectConfig);
-  // try {
-  //   const root = process.cwd();
-  //   const srcPath = path.join(root, "src");
-  //   if (!fs.existsSync(srcPath)) {
-  //     throw new Error(`CORE: srcPath at ${srcPath} does not exist!`);
-  //   }
 
-  //   const configPath = path.join(root, "eleventy.config.mts");
-  //   const configExists = fs.existsSync(configPath);
-  //   console.log(`CORE: configPath at ${configPath} exists?`, configExists);
+  const url = new URL(props.request.url);
+  const perspective = url.searchParams.get('sanity-preview-perspective');
 
-  // } catch (err) {
-  //   return new Response(`CORE: ${err}`, { status: 500 });
-  // }
-  
-  // const coreModulePath = path.join(root, "node_modules", "@itsapps", "itsshops-core-front2");
-  // console.log(`coreModulePath at ${coreModulePath} exists?`, fs.existsSync(coreModulePath));
   process.env.IS_PREVIEW = 'true'
   process.env.PREVIEW_TYPE = documentType
   process.env.PREVIEW_LOCALE = locale
-  process.env.PREVIEW_PERSPECTIVE = 'drafts'
+  process.env.PREVIEW_PERSPECTIVE = perspective || 'drafts'
+
+  const templatePath = `preview/${documentType}s.njk`
 
   const cssFile = 'src/_includes/css/global.css'
   const cssExistsBefore = fs.existsSync(cssFile)
@@ -58,7 +46,19 @@ export const preview = async (props: PreviewParams) => {
     const results = (await elev.toJSON()) as unknown as ElevResult[]
     console.log('[preview] CSS file exists after run:', fs.existsSync(cssFile))
 
-    result = results?.[0]?.content
+    // Find matching template
+    const match = results.find((r) => {
+      // if (filter && r.data.slug === filter) return true;
+      if (templatePath && r.inputPath.endsWith(templatePath)) return true;
+      return false;
+    });
+
+    if (!match) {
+      throw new Error(`No matching template found for documentId: ${documentId}`);
+    }
+
+    return match.content
+    // result = results?.[0]?.content
   } catch (error) {
     console.error(error);
     if (error instanceof Error) {
@@ -70,6 +70,8 @@ export const preview = async (props: PreviewParams) => {
   return new Response(result, {
     headers: {
       "content-type": "text/html",
+      "cache-control": "no-store",
+      "Netlify-Vary": "query=sanity-preview-perspective",
     }
   });
 };
