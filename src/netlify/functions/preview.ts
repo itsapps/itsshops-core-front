@@ -17,7 +17,8 @@ export type PreviewParams = {
 }
 
 export const preview = async (props: PreviewParams) => {
-  const { locale, documentType, documentId } = props.context.params;
+  const [locale, documentType, documentId] = props.context.params.splat.split('/')
+  // const { locale, documentType, documentId } = props.context.params;
   console.log('core preview', locale, documentType, documentId);
   // console.log("projectConfig: ", props.projectConfig);
   // try {
