@@ -15,6 +15,10 @@ export type PreviewParams = {
 }
 
 export const preview = async (props: PreviewParams) => {
+  if (props.request.method === 'OPTIONS') {
+    return new Response(null, { status: 204 })
+  }
+
   const { locale, documentType, documentId } = props.context.params
   console.log('core preview', props.request.method, props.request.url)
   console.log('core preview params', locale, documentType, documentId)
