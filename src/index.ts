@@ -13,6 +13,7 @@ import { loadTemplates } from './config/templates'
 import { createFilters } from './filters'
 import { createSanityClient } from './core'
 import { cssConfig } from './config/css'
+import { setupAssets } from './config/assets'
 import { buildPermalinkTranslations } from './i18n/permalinks'
 import { buildCmsData } from './data/resolver'
 import { resolveConfig } from './config/config'
@@ -42,8 +43,10 @@ export const shopCoreFrontendPlugin = async (eleventyConfig: EleventyConfig, its
   createTranslation(config)
   cssConfig(pluginConfigs)
   createFilters(pluginConfigs)
+  setupAssets(pluginConfigs)
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, config, permalinks))
   eleventyConfig.addGlobalData('coreConfig', config)
+  
   loadTemplates(pluginConfigs)
 }
