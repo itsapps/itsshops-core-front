@@ -26,12 +26,7 @@
     {% endblock %}
 
     {% block styles %}
-    {% if coreConfig.isPreview %}
-      {% include "css/global.css" %}
-    {% else %}
-      <style>{% getBundle "css", "global" %}</style>
-	    {% css "global" %}{% include "css/global.css" %}{% endcss %}
-    {% endif %}
+    
     {% endblock %}
 
     {% block head %}{% endblock %}
