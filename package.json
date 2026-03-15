@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.24",
     "@types/node": "^25.0.9",
     "@types/nunjucks": "^3.2.6",
     "@types/postcss-import": "^14.0.3",

@@ -12,35 +12,57 @@
  */
 
 /** localeImage: { image: i18nCropImage[], alt: i18nString[] } */
-export const localeImage = `{
-  "image": image[]{ _key, value{ ..., asset-> } },
-  "alt": alt[]{ _key, value }
-}`
+export const asset = `
+  _id,
+  url,
+  "dimensions": metadata.dimensions {width, height, aspectRatio}
+`
 
-/** localeAltImage: Sanity base image with localized alt text */
-export const localeAltImage = `{ ..., asset->, "alt": alt[]{ _key, value } }`
+export const imageAssetField = `asset->{${asset}}`
+
+export const cropHotspotImage = `
+  _type,
+  ${imageAssetField},
+  crop,
+  hotspot
+`
+
+export const i18nStringField = (fieldName: string) => `${fieldName}[]{ _key, value }`
+export const i18nObjectField = (fieldName: string, subquery: string) => `${fieldName}[]{ _key, value {${subquery}} }`
+
+export const i18nImage = `
+  ${i18nObjectField('image', cropHotspotImage)},
+  ${i18nStringField('alt')}
+`
+export const i18nImageField = (fieldName: string) => `${fieldName} {${i18nImage}}`
+
+export const i18nAltImage = `
+  ${cropHotspotImage},
+  ${i18nStringField('alt')}
+`
+export const i18nAltImageField = (fieldName: string) => `${fieldName} {${i18nAltImage}}`
 
 /** baseImage: Sanity base image with plain string alt */
 export const baseImage = `{ asset->, crop, hotspot, alt }`
 
 export const seo = `{
-  "metaTitle": metaTitle[]{ _key, value },
-  "metaDescription": metaDescription[]{ _key, value },
-  "shareTitle": shareTitle[]{ _key, value },
-  "shareDescription": shareDescription[]{ _key, value },
-  "keywords": keywords[]{ _key, value },
-  "shareImage": shareImage ${localeImage}
+  ${i18nStringField('metaTitle')},
+  ${i18nStringField('metaDescription')},
+  ${i18nStringField('shareTitle')},
+  ${i18nStringField('shareDescription')},
+  ${i18nStringField('keywords')},
+  ${i18nImageField('shareImage')}
 }`
 
 export const category = `{
   _id,
-  "title": title[]{ _key, value },
+  ${i18nStringField('title')},
   "slug": slug.current
 }`
 
 export const manufacturer = `{
   _id,
-  "name": name[]{ _key, value }
+  ${i18nStringField('name')},
 }`
 
 /**
@@ -59,3 +81,9 @@ export const portableText = `[]{
     }
   }
 }`
+
+export const modules = `
+  _type == 'hero' => {
+    _key,${cropHotspotImage}
+  }
+`;

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ product.locale or category.locale or cmsPage.locale or defaultLocale }}">
+<html lang="{{ page.lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
@@ -26,13 +26,10 @@
     {% endblock %}
 
     {% block styles %}
-    {% if coreConfig.preview.enabled %}
-      <style>{% include "css/global.css" %}</style>
-    {% else %}
-      <style>{% getBundle "css", "global" %}</style>
-      {% css "global" %}{% include "css/global.css" %}{% endcss %}
-    {% endif %}
+      {% include "core/head/css.njk" %}
     {% endblock %}
+
+    {% include "core/head/favicons.njk" %}
 
     {% block head %}{% endblock %}
   </head>

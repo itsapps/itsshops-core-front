@@ -1,7 +1,7 @@
 import { slugify, toIsoString } from "../utils";
 import type { Locale, PluginConfigs } from "../types";
 import { resolveString } from "../data/locale";
-import { sanityPicture, imageUrl } from "../media";
+import { imageUrl } from "../media";
 
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -49,5 +49,4 @@ export const createFilters = (configs: PluginConfigs) => {
   eleventyConfig.addFilter("filterByCategory", filterByCategory);
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs);
   eleventyConfig.addFilter("imageUrl", imageUrl);
-  eleventyConfig.addShortcode("sanityPicture", sanityPicture);
 }

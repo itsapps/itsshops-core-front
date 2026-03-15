@@ -1,8 +1,9 @@
 import i18next from 'i18next'
 import _ from 'lodash'
 import { CoreConfig } from '../../types/config';
+import { TranslatorFunction } from '../../types/t9n';
 
-export default function (config: CoreConfig, customerResources: Record<string, any> = {}) {
+export function createTranslator(config: CoreConfig, customerResources: Record<string, any> = {}) {
   const mergedResources: Record<string, any> = {};
   // Respect the locales array
   config.locales.forEach((lng) => {
@@ -35,7 +36,7 @@ export default function (config: CoreConfig, customerResources: Record<string, a
     resources: mergedResources,
   })
 
-  const translate = (key: string, params: Record<string, unknown> = {}, locale: string) => {
+  const translate: TranslatorFunction = (key, params = {}, locale) => {
     try {
       return i18next.t(key, { lng: locale, ...params })
     } catch (err) {
@@ -47,6 +48,9 @@ export default function (config: CoreConfig, customerResources: Record<string, a
     }
   }
 
-  return translate
+  return {
+    i18next,
+    translate,
+  }
 }
 

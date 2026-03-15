@@ -5,12 +5,12 @@ import * as proj from './projections'
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function extraFields(type: string, extensions?: Config['extensions']): string {
+export function extraFields(type: string, extensions?: Config['extensions']): string {
   const extra = extensions?.fields?.[type]
   return extra ? `,\n  ${extra}` : ''
 }
 
-function buildModulesProjection(docType: string, extensions?: Config['extensions']): string {
+export function buildModulesProjection(docType: string, extensions?: Config['extensions']): string {
   const modules = {
     ...CORE_MODULE_PROJECTIONS,
     ...(extensions?.modules?.[docType] ?? {}),
@@ -25,28 +25,28 @@ function buildModulesProjection(docType: string, extensions?: Config['extensions
 // Core module projections
 // ---------------------------------------------------------------------------
 
-const CORE_MODULE_PROJECTIONS: Record<string, string> = {
+export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
   hero: `{
     _type,
-    "title": title[]{ _key, value },
-    "bgImage": bgImage ${proj.localeImage}
+    ${proj.i18nStringField('title')},
+    ${proj.i18nImageField('bgImage')}
   }`,
   multiColumns: `{
     _type,
     "columns": columns[]{
-      "title": title[]{ _key, value },
-      "text": text[]{ _key, value },
-      "image": image ${proj.localeImage}
+      ${proj.i18nStringField('title')},
+      ${proj.i18nStringField('text')},
+      ${proj.i18nImageField('image')}
     }
   }`,
   productSection: `{
     _type,
-    "title": title[]{ _key, value },
+    ${proj.i18nStringField('title')},
     "products": products[]->{ _id }
   }`,
   categorySection: `{
     _type,
-    "title": title[]{ _key, value },
+    ${proj.i18nStringField('title')},
     "categories": categories[]->{ _id }
   }`,
   carousel: `{
@@ -55,7 +55,7 @@ const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     autoplayDelay,
     loop,
     fade,
-    "slides": slides[]${proj.localeAltImage}
+    "slides": slides[]{${proj.i18nAltImage}}
   }`,
   youtube: `{ _type, url }`,
 }
@@ -68,11 +68,11 @@ export function buildProductQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'product']{
   _id,
   kind,
-  "title": title[]{ _key, value },
+  title[]{ _key, value },
   price,
   compareAtPrice,
-  "image": image ${proj.localeImage},
-  "seo": seo ${proj.seo},
+  ${proj.i18nImageField('image')},
+  seo ${proj.seo},
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id }${extraFields('product', extensions)}
@@ -83,14 +83,14 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'productVariant']{
   _id,
   status,
-  "title": title[]{ _key, value },
+  title[]{ _key, value },
   sku,
   kind,
   featured,
   price,
   compareAtPrice,
-  "image": image ${proj.localeImage},
-  "seo": seo ${proj.seo},
+  ${proj.i18nImageField('image')},
+  seo ${proj.seo},
   stock,
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},
@@ -105,34 +105,34 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
 export function buildCategoryQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'category'] | order(sortOrder asc){
   _id,
-  "title": title[]{ _key, value },
-  "description": description[]{ _key, value },
+  title[]{ _key, value },
+  description[]{ _key, value },
   sortOrder,
   "parent": parent->{ _id },
-  "image": image ${proj.localeImage},
-  "seo": seo ${proj.seo}${extraFields('category', extensions)}
+  ${proj.i18nImageField('image')},
+  seo ${proj.seo}${extraFields('category', extensions)}
 }`
 }
 
 export function buildPageQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'page']{
   _id,
-  "title": title[]{ _key, value },
+  title[]{ _key, value },
   "slug": slug.current,
   ${buildModulesProjection('page', extensions)},
-  "seo": seo ${proj.seo}${extraFields('page', extensions)}
+  seo ${proj.seo}${extraFields('page', extensions)}
 }`
 }
 
 export function buildPostQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'post']{
   _id,
-  "title": title[]{ _key, value },
+  title[]{ _key, value },
   "slug": slug.current,
   publishedAt,
-  "author": author->{ _id, "name": name[]{ _key, value }, "image": image ${proj.localeAltImage} },
+  author->{ _id, "name": name[]{ _key, value }, "image": image ${proj.i18nAltImage} },
   ${buildModulesProjection('post', extensions)},
-  "seo": seo ${proj.seo}${extraFields('post', extensions)}
+  seo ${proj.seo}${extraFields('post', extensions)}
 }`
 }
 
@@ -164,8 +164,8 @@ export function buildSettingsQuery(): string {
   _id,
   "siteTitle": siteTitle[]{ _key, value },
   "siteShortDescription": siteShortDescription[]{ _key, value },
-  "logo": logo ${proj.localeImage},
-  "favicon": favicon ${proj.localeImage},
+  ${proj.i18nImageField('logo')},
+  ${proj.i18nImageField('favicon')},
   "homePage": homePage->{ _id },
   "privacyPage": privacyPage->{ _id },
   "mainMenus": mainMenus[]{ _ref },

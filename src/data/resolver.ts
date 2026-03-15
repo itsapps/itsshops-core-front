@@ -4,6 +4,7 @@ import type { Config, CoreConfig, Locale, ResolveContext } from '../types'
 import type { PermalinkTranslations } from '../types'
 import { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo, initImageBuilder } from './locale'
 import { resolvePortableText } from './portableText'
+import { buildPermalinkTranslations } from '../i18n/permalinks'
 
 import type {
   CmsData,
@@ -302,9 +303,10 @@ function resolveMenuItems(
 export async function buildCmsData(
   client: SanityClient,
   config: CoreConfig,
-  permalinks: Record<Locale, Required<PermalinkTranslations>>
 ): Promise<CmsData> {
   initImageBuilder(client)
+
+  const permalinks = buildPermalinkTranslations(config.permalinks)
 
   const features = config.features
   const extensions = config.extensions ?? {}
