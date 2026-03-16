@@ -2,6 +2,8 @@ import type { ClientConfig } from '@sanity/client'
 import type { Locale, PermalinkTranslations } from './localization'
 import type { ResolveContext } from './context'
 import type { EleventyConfig } from '11ty.ts'
+import type { TranslatorFunction } from './t9n'
+import { type ImageUrlBuilder } from '@sanity/image-url'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -309,7 +311,9 @@ export type CoreConfig = {
   supportEmail: string | undefined
 }
 
-export type PluginConfigs = {
+export type CoreContext = {
   eleventyConfig: EleventyConfig
   config: CoreConfig
+  translate: TranslatorFunction
+  imageBuilder: ImageUrlBuilder
 }

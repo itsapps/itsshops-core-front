@@ -3,7 +3,7 @@ import { SanityClientConfig } from '../../types';
 
 import { createClient } from '@sanity/client';
 import type { SanityClient } from '@sanity/client';
-import { createImageUrlBuilder } from '@sanity/image-url'
+import { createImageUrlBuilder, type ImageUrlBuilder } from '@sanity/image-url'
 
 export { type SanityClient } from '@sanity/client';
 
@@ -18,6 +18,6 @@ export function createSanityClient(config: SanityClientConfig): SanityClient {
   })
 }
 
-export function createImageBuilder(client: SanityClient) {
+export function createImageBuilder(client: SanityClient): ImageUrlBuilder {
   return createImageUrlBuilder(client)
 }

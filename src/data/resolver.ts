@@ -1,8 +1,7 @@
 import type { SanityClient } from '@sanity/client'
 import { slugify as coreSlugify } from '../utils/slugify'
-import type { Config, CoreConfig, Locale, ResolveContext } from '../types'
-import type { PermalinkTranslations } from '../types'
-import { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo, initImageBuilder } from './locale'
+import type { Config, CoreConfig, Locale, ResolveContext, TranslatorFunction, PermalinkTranslations, CoreContext } from '../types'
+import { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo } from './localizers'
 import { resolvePortableText } from './portableText'
 import { buildPermalinkTranslations } from '../i18n/permalinks'
 
@@ -16,7 +15,7 @@ import type {
   ResolvedMenu,
   ResolvedMenuItem,
   ResolvedSettings,
-} from './types'
+} from '../types/data'
 import {
   buildProductQuery,
   buildVariantQuery,
@@ -28,15 +27,17 @@ import {
 } from './queries'
 type ResolveHooks = NonNullable<NonNullable<Config['extensions']>['resolve']>
 
-function makeCtx(locale: Locale, defaultLocale: Locale): ResolveContext {
+function makeCtx(locale: Locale, defaultLocale: Locale, translate: TranslatorFunction): ResolveContext {
   return {
     locale,
     defaultLocale,
-    resolveString:        (arr) => resolveString(arr, locale, defaultLocale),
-    resolveImage:         (raw) => resolveImage(raw, locale, defaultLocale),
-    resolveLocaleAltImage:(raw) => resolveLocaleAltImage(raw, locale, defaultLocale),
-    resolveBaseImage:     (raw) => resolveBaseImage(raw),
-    resolvePortableText:  (raw) => resolvePortableText(raw, locale, defaultLocale),
+    resolveString:         (arr) => resolveString(arr, locale, defaultLocale),
+    resolveImage:          (raw) => resolveImage(raw, locale, defaultLocale),
+    resolveLocaleAltImage: (raw) => resolveLocaleAltImage(raw, locale, defaultLocale),
+    resolveBaseImage:      (raw) => resolveBaseImage(raw),
+    resolveSeo:            (raw) => resolveSeo(raw, locale, defaultLocale),
+    resolvePortableText:   (raw) => resolvePortableText(raw, locale, defaultLocale),
+    translate:             (key, params) => translate(key, params, locale),
   }
 }
 
@@ -135,24 +136,22 @@ function resolveModules(
 
 function resolveCategories(
   raw: any[],
-  locale: Locale,
-  defaultLocale: Locale,
+  ctx: ResolveContext,
   permalinks: Record<Locale, Required<PermalinkTranslations>>,
   resolveHook?: ResolveHooks['category']
 ): ResolvedCategory[] {
-  const ctx = makeCtx(locale, defaultLocale)
   return raw.map(c => {
-    const slug = coreSlugify(resolveString(c.title, locale, defaultLocale) || c._id)
+    const slug = coreSlugify(ctx.resolveString(c.title) || c._id)
     return {
       _id: c._id,
-      title: resolveString(c.title, locale, defaultLocale),
-      description: resolveString(c.description, locale, defaultLocale),
+      title: ctx.resolveString(c.title),
+      description: ctx.resolveString(c.description),
       slug,
-      url: `/${locale}/${permalinks[locale].category}/${slug}/`,
+      url: `/${ctx.locale}/${permalinks[ctx.locale].category}/${slug}/`,
       sortOrder: c.sortOrder ?? 0,
       parentId: c.parent?._id ?? null,
-      image: resolveImage(c.image, locale, defaultLocale),
-      seo: resolveSeo(c.seo, locale, defaultLocale),
+      image: ctx.resolveImage(c.image),
+      seo: ctx.resolveSeo(c.seo),
       ...(resolveHook ? resolveHook(c, ctx) : {}),
     }
   })
@@ -161,14 +160,13 @@ function resolveCategories(
 function resolveVariants(
   rawVariants: any[],
   productMap: Map<string, any>,
-  locale: Locale,
-  defaultLocale: Locale,
+  ctx: ResolveContext,
   permalinks: Record<Locale, Required<PermalinkTranslations>>,
   categoryMap: Map<string, ResolvedCategory>,
   siblingsMap: Map<string, any[]>,
   resolveHooks?: ResolveHooks
 ): ResolvedVariant[] {
-  const ctx = makeCtx(locale, defaultLocale)
+  const { locale, defaultLocale } = ctx
   const usedSlugs = new Set<string>()
 
   // First pass: generate slugs
@@ -199,8 +197,7 @@ function resolveVariants(
       .filter((s: any) => s._id !== variant._id)
       .map((s: any) => ({
         _id: s._id,
-        title: resolveString(s.title, locale, defaultLocale)
-          || resolveString(product.title, locale, defaultLocale),
+        title: ctx.resolveString(s.title) || ctx.resolveString(product.title),
         url: variantUrlMap.get(s._id) ?? '',
         status: s.status ?? 'active',
       }))
@@ -210,44 +207,36 @@ function resolveVariants(
       slug,
       url,
       status: variant.status ?? 'active',
-      title:
-        resolveString(variant.title, locale, defaultLocale) ||
-        resolveString(product.title, locale, defaultLocale),
+      title: ctx.resolveString(variant.title) || ctx.resolveString(product.title),
       sku: variant.sku ?? '',
       kind: variant.kind ?? product.kind ?? 'physical',
       featured: variant.featured ?? false,
       price: variant.price ?? product.price ?? 0,
       compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
-      image:
-        resolveImage(variant.image, locale, defaultLocale) ??
-        resolveImage(product.image, locale, defaultLocale),
-      seo: resolveSeo(
-        mergeSeоFallback(variant.seo, product.seo),
-        locale,
-        defaultLocale
-      ),
+      image: ctx.resolveImage(variant.image) ?? ctx.resolveImage(product.image),
+      seo: ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),
       categories,
       manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
         _id: m._id,
-        name: resolveString(m.name, locale, defaultLocale),
+        name: ctx.resolveString(m.name),
       })),
       taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
       stock: variant.stock ?? null,
       wine: variant.wine ?? null,
       options: (variant.options ?? []).map((o: any) => ({
         _id: o._id,
-        name: resolveString(o.name, locale, defaultLocale),
+        name: ctx.resolveString(o.name),
       })),
       bundleItems: (variant.bundleItems ?? []).map((b: any) => ({
         quantity: b.quantity ?? 1,
         variant: {
           _id: b.variant._id,
-          title: resolveString(b.variant.title, locale, defaultLocale),
+          title: ctx.resolveString(b.variant.title),
         },
       })),
       product: {
         _id: product._id,
-        title: resolveString(product.title, locale, defaultLocale),
+        title: ctx.resolveString(product.title),
       },
       siblings,
       // Extended fields from product-level hook (variant hook wins on collision)
@@ -276,22 +265,20 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
 
 function resolveMenuItems(
   items: any[],
-  locale: Locale,
-  defaultLocale: Locale,
+  ctx: ResolveContext,
   resolveHook?: ResolveHooks['menuItem'],
-  ctx?: ResolveContext
 ): ResolvedMenuItem[] {
   return (items ?? []).map(item => {
     const { title, linkType, url, internal, children, _key, ...rest } = item
     return {
       ...rest,
       _key,
-      title: resolveString(title, locale, defaultLocale),
+      title: ctx.resolveString(title),
       linkType: linkType ?? 'internal',
-      url: resolveString(url, locale, defaultLocale) || null,
+      url: ctx.resolveString(url) || null,
       internal: internal ?? null,
-      children: resolveMenuItems(children ?? [], locale, defaultLocale, resolveHook, ctx),
-      ...(resolveHook && ctx ? resolveHook(item, ctx) : {}),
+      children: resolveMenuItems(children ?? [], ctx, resolveHook),
+      ...(resolveHook ? resolveHook(item, ctx) : {}),
     }
   })
 }
@@ -302,9 +289,9 @@ function resolveMenuItems(
 
 export async function buildCmsData(
   client: SanityClient,
-  config: CoreConfig,
+  context: CoreContext,
 ): Promise<CmsData> {
-  initImageBuilder(client)
+  const { config, translate, imageBuilder } = context
 
   const permalinks = buildPermalinkTranslations(config.permalinks)
 
@@ -360,17 +347,17 @@ export async function buildCmsData(
   for (const locale of config.locales) {
     const defaultLocale = config.defaultLocale
     const resolve = extensions.resolve ?? {}
-    const ctx = makeCtx(locale, defaultLocale)
+    const ctx = makeCtx(locale, defaultLocale, translate)
 
-    const categories = resolveCategories(rawCategories, locale, defaultLocale, permalinks, resolve.category)
+    const categories = resolveCategories(rawCategories, ctx, permalinks, resolve.category)
     const categoryMap = new Map(categories.map(c => [c._id, c]))
 
     const products = features.shop
-      ? resolveVariants(rawVariants, productMap, locale, defaultLocale, permalinks, categoryMap, siblingsMap, resolve)
+      ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, resolve)
       : []
 
     const pages: ResolvedPage[] = rawPages.map((p: any) => {
-      const title = resolveString(p.title, locale, defaultLocale)
+      const title = ctx.resolveString(p.title)
       // slug.current is a plain string (not an InternationalizedArray)
       const slug = coreSlugify(title) || p._id
       return {
@@ -379,7 +366,7 @@ export async function buildCmsData(
         slug,
         url: `/${locale}/${permalinks[locale].page}/${slug}/`,
         modules: resolveModules(p.modules, ctx, resolve.module),
-        seo: resolveSeo(p.seo, locale, defaultLocale),
+        seo: ctx.resolveSeo(p.seo),
         ...(resolve.page ? resolve.page(p, ctx) : {}),
       }
     })
@@ -389,12 +376,12 @@ export async function buildCmsData(
           const slug = p.slug || p._id
           return {
             ...p,
-            title: resolveString(p.title, locale, defaultLocale),
+            title: ctx.resolveString(p.title),
             slug,
             url: `/${locale}/${permalinks[locale].blog}/${slug}/`,
             publishedAt: p.publishedAt ?? null,
             modules: resolveModules(p.modules, ctx, resolve.module),
-            seo: resolveSeo(p.seo, locale, defaultLocale),
+            seo: ctx.resolveSeo(p.seo),
             ...(resolve.post ? resolve.post(p, ctx) : {}),
           }
         })
@@ -402,15 +389,15 @@ export async function buildCmsData(
 
     const menus: ResolvedMenu[] = rawMenus.map((m: any) => ({
       _id: m._id,
-      title: resolveString(m.title, locale, defaultLocale),
-      items: resolveMenuItems(m.items ?? [], locale, defaultLocale, resolve.menuItem, ctx),
+      title: ctx.resolveString(m.title),
+      items: resolveMenuItems(m.items ?? [], ctx, resolve.menuItem),
     }))
 
     const settings: ResolvedSettings | null = rawSettings
       ? {
           _id: rawSettings._id,
-          siteTitle: resolveString(rawSettings.siteTitle, locale, defaultLocale),
-          siteShortDescription: resolveString(rawSettings.siteShortDescription, locale, defaultLocale),
+          siteTitle: ctx.resolveString(rawSettings.siteTitle),
+          siteShortDescription: ctx.resolveString(rawSettings.siteShortDescription),
           homePage: rawSettings.homePage?._id ?? null,
           privacyPage: rawSettings.privacyPage?._id ?? null,
           mainMenus: (rawSettings.mainMenus ?? []).map((m: any) => m._ref),

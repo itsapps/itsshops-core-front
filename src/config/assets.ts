@@ -1,7 +1,7 @@
-import { PluginConfigs } from '../types';
+import { CoreContext } from '../types';
 
-export const setupAssets = (configs: PluginConfigs) => {
-  const { eleventyConfig, config } = configs
+export const setupAssets = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
 
   if (!config.preview.enabled) {
     const assetsToCopy = [

@@ -1,7 +1,7 @@
 import { slugify, toIsoString } from "../utils";
-import type { Locale, PluginConfigs } from "../types";
-import { resolveString } from "../data/locale";
-import { imageUrl } from "../media";
+import type { Locale, CoreContext, TranslatorParams } from "../types";
+import { resolveString } from "../data/localizers";
+import { imageUrl } from "../media"
 
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -40,13 +40,24 @@ function resolveProductRefs(refs: any[], allProducts: any[]): any[] {
   return (refs ?? []).map(r => map.get(typeof r === 'string' ? r : r._id)).filter(Boolean) as any[]
 }
 
-export const createFilters = (configs: PluginConfigs) => {
-  const { eleventyConfig } = configs
+export const createFilters = (ctx: CoreContext) => {
+  const { eleventyConfig, config, translate } = ctx
+
+  // translation
+  eleventyConfig.addFilter('trans', function (key: string, params: TranslatorParams = {}) {
+    return translate(key, params, this.page?.lang || config.defaultLocale)
+  })
+
   eleventyConfig.addFilter("slugify", slugify);
   eleventyConfig.addFilter("toIsoString", toIsoString);
-  eleventyConfig.addFilter("formatPrice", formatPrice);
+  // eleventyConfig.addFilter("formatPrice", formatPrice);
+  eleventyConfig.addFilter("formatPrice", function (price: number, locale: string | undefined) {
+    return formatPrice(price, locale || this.page.lang || config.defaultLocale);
+  });
   eleventyConfig.addFilter("localize", localize);
-  eleventyConfig.addFilter("filterByCategory", filterByCategory);
-  eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs);
-  eleventyConfig.addFilter("imageUrl", imageUrl);
+  eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
+  eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
+  eleventyConfig.addFilter("imageUrl", (image, width, height) =>
+    imageUrl(ctx.imageBuilder, image, width, height)
+  );
 }

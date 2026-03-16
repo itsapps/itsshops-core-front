@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import { type PluginConfigs } from '../types'
+import { type CoreContext } from '../types'
 
-export const cssConfig = (configs: PluginConfigs) => {
-  const { eleventyConfig, config } = configs
+export const cssConfig = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
   eleventyConfig.addBundle('css', {hoist: true});
 
   if (config.preview.enabled) {

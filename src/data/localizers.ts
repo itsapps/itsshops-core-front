@@ -1,18 +1,13 @@
-import type { SanityClient } from '@sanity/client'
-import { createImageBuilder } from '../core/clients/sanity'
-import type { Locale } from '../types'
-import type { ResolvedImage, ResolvedSeo } from './types'
+import type { Locale, LocalizedStringArray } from '../types'
+import type { ResolvedImage, ResolvedSeo } from '../types/data'
 
-type LocalizedStringArray = Array<{ _key: string; value?: string }> | undefined
-
-let imageBuilder: ReturnType<typeof createImageBuilder> | null = null
-
-export function initImageBuilder(client: SanityClient) {
-  imageBuilder = createImageBuilder(client)
-}
-
-export function getImageBuilder() {
-  return imageBuilder
+/** Locale-bound localizer functions — pre-applied with (locale, defaultLocale). */
+export type BoundLocalizers = {
+  resolveString:         (arr: LocalizedStringArray) => string
+  resolveImage:          (raw: { image?: any[]; alt?: any[] } | null | undefined) => ResolvedImage | null
+  resolveLocaleAltImage: (raw: any) => ResolvedImage | null
+  resolveBaseImage:      (raw: any) => ResolvedImage | null
+  resolveSeo:            (raw: any) => ResolvedSeo
 }
 
 export function resolveString(

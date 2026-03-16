@@ -29,7 +29,8 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
   hero: `{
     _type,
     ${proj.i18nStringField('title')},
-    ${proj.i18nImageField('bgImage')}
+    ${proj.i18nImageField('bgImage')},
+    ${proj.actionsField()}
   }`,
   multiColumns: `{
     _type,
@@ -55,7 +56,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     autoplayDelay,
     loop,
     fade,
-    "slides": slides[]{${proj.i18nAltImage}}
+    "slides": slides[]${proj.i18nAltImage}
   }`,
   youtube: `{ _type, url }`,
 }
@@ -68,7 +69,7 @@ export function buildProductQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'product']{
   _id,
   kind,
-  title[]{ _key, value },
+  ${proj.i18nStringField('title')},
   price,
   compareAtPrice,
   ${proj.i18nImageField('image')},
@@ -83,7 +84,7 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'productVariant']{
   _id,
   status,
-  title[]{ _key, value },
+  ${proj.i18nStringField('title')},
   sku,
   kind,
   featured,
@@ -105,8 +106,8 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
 export function buildCategoryQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'category'] | order(sortOrder asc){
   _id,
-  title[]{ _key, value },
-  description[]{ _key, value },
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('description')},
   sortOrder,
   "parent": parent->{ _id },
   ${proj.i18nImageField('image')},
@@ -117,7 +118,7 @@ export function buildCategoryQuery(extensions?: Config['extensions']): string {
 export function buildPageQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'page']{
   _id,
-  title[]{ _key, value },
+  ${proj.i18nStringField('title')},
   "slug": slug.current,
   ${buildModulesProjection('page', extensions)},
   seo ${proj.seo}${extraFields('page', extensions)}
@@ -127,10 +128,9 @@ export function buildPageQuery(extensions?: Config['extensions']): string {
 export function buildPostQuery(extensions?: Config['extensions']): string {
   return `*[_type == 'post']{
   _id,
-  title[]{ _key, value },
+  ${proj.i18nStringField('title')},
   "slug": slug.current,
   publishedAt,
-  author->{ _id, "name": name[]{ _key, value }, "image": image ${proj.i18nAltImage} },
   ${buildModulesProjection('post', extensions)},
   seo ${proj.seo}${extraFields('post', extensions)}
 }`
@@ -140,16 +140,16 @@ export function buildMenuQuery(extensions?: Config['extensions']): string {
   const menuItemFields = extraFields('menuItem', extensions)
   const menuItemProjection = `{
     _key,
-    "title": title[]{ _key, value },
+    ${proj.i18nStringField('title')},
     linkType,
     "url": url[]{ _key, value },
-    "internal": internal->{ _id, _type, "slug": slug.current }${menuItemFields},
+    "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${menuItemFields},
     "children": children[]{
       _key,
-      "title": title[]{ _key, value },
+      ${proj.i18nStringField('title')},
       linkType,
       "url": url[]{ _key, value },
-      "internal": internal->{ _id, _type, "slug": slug.current }${menuItemFields}
+      "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${menuItemFields}
     }
   }`
   return `*[_type == 'menu']{
@@ -162,8 +162,8 @@ export function buildMenuQuery(extensions?: Config['extensions']): string {
 export function buildSettingsQuery(): string {
   return `*[_type == 'generalSettings'][0]{
   _id,
-  "siteTitle": siteTitle[]{ _key, value },
-  "siteShortDescription": siteShortDescription[]{ _key, value },
+  ${proj.i18nStringField('siteTitle')},
+  ${proj.i18nStringField('siteShortDescription')},
   ${proj.i18nImageField('logo')},
   ${proj.i18nImageField('favicon')},
   "homePage": homePage->{ _id },

@@ -1,13 +1,12 @@
-import type { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from '../data/locale'
-import { type Locale } from './localization'
+import type { BoundLocalizers } from '../data/localizers'
+import type { Locale } from './localization'
+import type { TranslatorParams } from './t9n'
 
 /** Context passed to resolve hooks so customers can locale-resolve their extended fields */
-export type ResolveContext = {
+export type ResolveContext = BoundLocalizers & {
   locale: Locale
   defaultLocale: Locale
-  resolveString: typeof resolveString
-  resolveImage: typeof resolveImage
-  resolveLocaleAltImage: typeof resolveLocaleAltImage
-  resolveBaseImage: typeof resolveBaseImage
   resolvePortableText: (raw: any) => string
+  /** Translate a key in the current locale. Locale is pre-bound from the resolution context. */
+  translate: (key: string, params?: TranslatorParams) => string
 }

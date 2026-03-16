@@ -1,5 +1,5 @@
-import { getImageBuilder } from './data/locale'
-import type { ResolvedImage } from './data/types'
+import type { ImageUrlBuilder } from '@sanity/image-url'
+import type { ResolvedImage } from './types/data'
 
 export type PictureSize = {
   /** [width, height] pairs for each srcset entry */
@@ -17,22 +17,21 @@ type PictureOptions = {
   pictureClass?: string
 }
 
-function buildUrl(builder: any, image: ResolvedImage, w: number, h: number, format?: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let b: any = builder.image(image).width(w).height(h)
-  if (image.crop)    b = b.crop(image.crop)
-  if (image.hotspot) b = b.focalPoint(image.hotspot.x, image.hotspot.y)
-  if (format)        b = b.format(format)
+function buildUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number, format?: string): string {
+  let b = builder.image(image).width(w).height(h)
+  if (image.crop)    b = b.crop('focalpoint')
+  if (image.hotspot) b = b.focalPoint(image.hotspot.x ?? 0.5, image.hotspot.y ?? 0.5)
+  if (format)        b = b.format(format as any)
   return b.url()
 }
 
 export function sanityPicture(
+  builder: ImageUrlBuilder,
   image: ResolvedImage | null | undefined,
   size: PictureSize,
   options: PictureOptions = {}
 ): string {
-  const builder = getImageBuilder()
-  if (!image || !builder) return ''
+  if (!image) return ''
 
   const formats = size.formats ?? ['webp', 'jpg']
   const { loading = 'lazy', class: imgClass = '', pictureClass = '', alt: altOverride } = options
@@ -61,17 +60,16 @@ export function sanityPicture(
 
 /** Plain URL for a given size — use for og:image, JSON-LD, etc. */
 export function imageUrl(
+  builder: ImageUrlBuilder,
   image: ResolvedImage | null | undefined,
   width?: number,
   height?: number
 ): string {
-  const builder = getImageBuilder()
-  if (!image || !builder) return ''
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let b: any = builder.image(image)
+  if (!image) return ''
+  let b = builder.image(image)
   if (width)         b = b.width(width)
   if (height)        b = b.height(height)
-  if (image.crop)    b = b.crop(image.crop)
-  if (image.hotspot) b = b.focalPoint(image.hotspot.x, image.hotspot.y)
+  if (image.crop)    b = b.crop('focalpoint')
+  if (image.hotspot) b = b.focalPoint(image.hotspot.x ?? 0.5, image.hotspot.y ?? 0.5)
   return b.url()
 }

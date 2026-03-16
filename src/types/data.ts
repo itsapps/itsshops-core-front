@@ -1,4 +1,4 @@
-import type { SanityImageHotspot, SanityImageCrop, Wine } from '../types/sanity'
+import type { SanityImageHotspot, SanityImageCrop, Wine } from './sanity'
 
 /**
  * Resolved types — all localized fields are plain strings, ready for templates.

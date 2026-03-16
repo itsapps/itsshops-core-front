@@ -1,5 +1,5 @@
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
-  
+
   {% block product_gallery %}
     {% if product.image %}
       <figure class="product-gallery">
@@ -27,7 +27,7 @@
         {% if product.compareAtPrice %}
           <s class="product-price--compare">{{ product.compareAtPrice | formatPrice(product.locale) }}</s>
         {% endif %}
-        <span class="product-price">{{ product.price | formatPrice(product.locale) }}</span>
+        <span class="product-price">{{ product.price | formatPrice() }}</span>
       </div>
     {% endblock %}
 

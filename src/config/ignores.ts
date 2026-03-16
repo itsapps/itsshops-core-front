@@ -1,8 +1,8 @@
 import path from 'path'
-import { PluginConfigs } from '../types';
+import { CoreContext } from '../types';
 
-export const setupIgnores = (configs: PluginConfigs) => {
-  const { eleventyConfig, config } = configs
+export const setupIgnores = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
   eleventyConfig.setUseGitIgnore(false);
   
   if (config.dev.enabled) {
