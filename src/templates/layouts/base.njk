@@ -41,7 +41,9 @@
   <body>
     {% include "core/partials/dev-nav.njk" %}
 
-    {% block header %}{% endblock %}
+    {% block header %}
+      {%- include "components/header.njk" -%}
+    {% endblock %}
 
     <main id="main">
       {% block main %}
@@ -49,7 +51,9 @@
       {% endblock %}
     </main>
 
-    {% block footer %}{% endblock %}
+    {% block footer %}
+      {%- include "components/footer.njk" -%}
+    {% endblock %}
 
     {% block scripts %}{% endblock %}
 

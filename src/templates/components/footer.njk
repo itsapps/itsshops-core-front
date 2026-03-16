@@ -1,0 +1,57 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- set _settings = cms[_locale].settings -%}
+<footer class="site-footer">
+  <div class="site-footer__inner">
+
+    {# ── Footer navigation ─────────────────────────────────────────────── #}
+    {%- if _settings and _settings.footerMenus.length -%}
+      <nav class="footer-nav" aria-label="Footer navigation">
+        {%- for _menuId in _settings.footerMenus -%}
+          {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
+          {%- if _menu -%}
+            <div class="footer-nav__group">
+              {%- if _menu.title -%}
+                <p class="footer-nav__title">{{ _menu.title }}</p>
+              {%- endif -%}
+              <ul class="footer-nav__list" role="list">
+                {%- for item in _menu.items -%}
+                  {%- if item.linkType == 'internal' and item.internal -%}
+                    <li>
+                      <a href="{{ cms[_locale].urlMap[item.internal._id] or '#' }}" class="footer-nav__link">{{ item.title }}</a>
+                    </li>
+                  {%- elif item.linkType == 'external' -%}
+                    <li>
+                      <a href="{{ item.url }}" class="footer-nav__link" rel="noopener noreferrer">{{ item.title }}</a>
+                    </li>
+                  {%- endif -%}
+                {%- endfor -%}
+              </ul>
+            </div>
+          {%- endif -%}
+        {%- endfor -%}
+      </nav>
+    {%- endif -%}
+
+    {# ── Company info ──────────────────────────────────────────────────── #}
+    {%- if _settings and _settings.company -%}
+      <div class="site-footer__company">
+        {%- if _settings.company.name -%}
+          <p class="company-name">{{ _settings.company.name }}</p>
+        {%- endif -%}
+        {%- if _settings.company.owner -%}
+          <p class="company-owner">{{ _settings.company.owner }}</p>
+        {%- endif -%}
+        {%- if _settings.company.address -%}
+          {%- set _addr = _settings.company.address -%}
+          <address class="company-address">
+            {{ _addr.line1 }}
+            {%- if _addr.line2 %}, {{ _addr.line2 }}{% endif %}<br>
+            {{ _addr.zip }} {{ _addr.city }}
+            {%- if _addr.country %}, {{ _addr.country }}{% endif %}
+          </address>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+  </div>
+</footer>

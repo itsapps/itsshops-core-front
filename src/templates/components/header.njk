@@ -1,0 +1,118 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- set _settings = cms[_locale].settings -%}
+<header class="site-header">
+  <div class="site-header__inner">
+
+    {# ── Logo ──────────────────────────────────────────────────────────── #}
+    <a href="{{ _settings.homePageUrl or '/' }}" class="site-header__logo" aria-label="{{ _settings.siteTitle }}">
+      {{ _settings.siteTitle }}
+    </a>
+
+    {# ── Mobile menu toggle ────────────────────────────────────────────── #}
+    <button
+      type="button"
+      class="site-header__menu-toggle"
+      aria-label="Toggle menu"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      data-menu-toggle
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    {# ── Main navigation ───────────────────────────────────────────────── #}
+    {% if _settings and _settings.mainMenus.length %}
+      <nav id="site-nav" class="site-nav" aria-label="Main navigation">
+        <ul class="site-nav__list" role="list">
+          {%- for _menuId in _settings.mainMenus -%}
+            {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
+            {%- if _menu -%}
+              {%- for item in _menu.items -%}
+
+                {%- if item.linkType == 'internal' and item.internal -%}
+                  <li class="site-nav__item{% if item.children.length %} site-nav__item--has-children{% endif %}">
+                    <a
+                      href="{{ cms[_locale].urlMap[item.internal._id] or '#' }}"
+                      class="site-nav__link"
+                    >{{ item.title }}</a>
+                    {%- if item.children.length -%}
+                      <ul class="site-nav__submenu" role="list">
+                        {%- for child in item.children -%}
+                          {%- if child.linkType == 'internal' and child.internal -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ cms[_locale].urlMap[child.internal._id] or '#' }}" class="site-nav__sublink">{{ child.title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'external' -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" rel="noopener noreferrer">{{ child.title }}</a>
+                            </li>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </ul>
+                    {%- endif -%}
+                  </li>
+
+                {%- elif item.linkType == 'external' -%}
+                  <li class="site-nav__item">
+                    <a href="{{ item.url }}" class="site-nav__link" rel="noopener noreferrer">{{ item.title }}</a>
+                  </li>
+
+                {%- elif item.linkType == 'submenu' -%}
+                  <li class="site-nav__item site-nav__item--submenu{% if item.children.length %} site-nav__item--has-children{% endif %}">
+                    <button type="button" class="site-nav__trigger" aria-expanded="false" aria-haspopup="true">{{ item.title }}</button>
+                    {%- if item.children.length -%}
+                      <ul class="site-nav__submenu" role="list">
+                        {%- for child in item.children -%}
+                          {%- if child.linkType == 'internal' and child.internal -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ cms[_locale].urlMap[child.internal._id] or '#' }}" class="site-nav__sublink">{{ child.title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'external' -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" rel="noopener noreferrer">{{ child.title }}</a>
+                            </li>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </ul>
+                    {%- endif -%}
+                  </li>
+
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {# ── Actions (locale switcher, cart) ───────────────────────────────── #}
+    <div class="site-header__actions">
+
+      {%- if coreConfig.locales.length > 1 -%}
+        {%- set _currentId = (product or category or cmsPage or post)._id -%}
+        <nav class="locale-switcher" aria-label="Language selection">
+          {%- for _l in coreConfig.locales -%}
+            {%- if _l != _locale -%}
+              <a
+                href="{{ cms[_l].urlMap[_currentId] or '/' }}"
+                hreflang="{{ _l }}"
+                lang="{{ _l }}"
+                class="locale-switcher__link"
+              >{{ _l | upper }}</a>
+            {%- endif -%}
+          {%- endfor -%}
+        </nav>
+      {%- endif -%}
+
+      {%- if coreConfig.features.shop.enabled -%}
+        <button type="button" class="cart-toggle" aria-label="Cart" data-cart-toggle>
+          <span class="cart-toggle__count" aria-hidden="true" data-cart-count>0</span>
+        </button>
+      {%- endif -%}
+
+    </div>
+
+  </div>
+</header>
