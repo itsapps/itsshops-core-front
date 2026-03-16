@@ -175,7 +175,6 @@ function shouldIgnoreTemplate({
    * ------------------------------ */
   if (mode === 'preview') {
     if (dir !== 'preview') return true
-    if (file === 'posts.njk' && !config.features.blog) return true
     return file !== `${config.preview.documentType}s.njk`
   }
 
