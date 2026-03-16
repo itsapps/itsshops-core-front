@@ -16,5 +16,4 @@ export type PermalinkTranslations = {
   product?: string
   category?: string
   blog?: string
-  page?: string
 }

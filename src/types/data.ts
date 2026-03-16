@@ -134,6 +134,8 @@ export type CmsLocaleData = {
   posts: ResolvedPost[]
   menus: ResolvedMenu[]
   settings: ResolvedSettings | null
+  /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
+  urlMap: Record<string, string>
   [key: string]: unknown
 }
 

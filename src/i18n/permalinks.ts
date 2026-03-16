@@ -5,13 +5,11 @@ const defaults: Record<Locale, Required<PermalinkTranslations>> = {
     product:  'produkte',
     category: 'kategorien',
     blog:     'blog',
-    page:     'seiten',
   },
   en: {
     product:  'products',
     category: 'categories',
     blog:     'blog',
-    page:     'pages',
   },
 }
 

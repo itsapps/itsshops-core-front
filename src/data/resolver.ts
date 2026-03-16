@@ -358,13 +358,12 @@ export async function buildCmsData(
 
     const pages: ResolvedPage[] = rawPages.map((p: any) => {
       const title = ctx.resolveString(p.title)
-      // slug.current is a plain string (not an InternationalizedArray)
-      const slug = coreSlugify(title) || p._id
+      const slug = p.slug || coreSlugify(title) || p._id
       return {
         ...p,
         title,
         slug,
-        url: `/${locale}/${permalinks[locale].page}/${slug}/`,
+        url: `/${locale}/${slug}/`,
         modules: resolveModules(p.modules, ctx, resolve.module),
         seo: ctx.resolveSeo(p.seo),
         ...(resolve.page ? resolve.page(p, ctx) : {}),
@@ -406,6 +405,12 @@ export async function buildCmsData(
         }
       : null
 
+    const urlMap: Record<string, string> = {}
+    for (const p of pages)      urlMap[p._id] = p.url
+    for (const c of categories) urlMap[c._id] = c.url
+    for (const v of products)   urlMap[v._id] = v.url
+    for (const p of posts)      urlMap[p._id] = p.url
+
     const localeData: CmsLocaleData = {
       products,
       categories,
@@ -413,6 +418,7 @@ export async function buildCmsData(
       posts,
       menus,
       settings,
+      urlMap,
       ...extensionData,
     }
 
