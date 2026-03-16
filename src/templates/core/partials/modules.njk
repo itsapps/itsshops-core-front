@@ -3,6 +3,7 @@
   Requires: modules (array), _locale (string), defaultLocale (global)
 #}
 {% for module in modules %}
+  {% set _isFirstModule = loop.first %}
   <div class="module module--{{ module._type }}">
     {% if module._type == 'hero' %}
       {% include "core/modules/hero.njk" %}

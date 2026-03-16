@@ -1,7 +1,12 @@
+{% if _isFirstModule and module.bgImage %}
+  {%- html "preloads" -%}
+  <link rel="preload" as="image" href="{{ module.bgImage | imageUrl(1600) }}">
+  {%- endhtml -%}
+{% endif %}
 <div class="hero">
   {% if module.bgImage %}
     <figure class="hero-image">
-      <img src="{{ module.bgImage | imageUrl(1600) }}" alt="{{ module.bgImage.alt }}" loading="eager" />
+      <img src="{{ module.bgImage | imageUrl(1600) }}" alt="{{ module.bgImage.alt }}" loading="eager" fetchpriority="high" />
     </figure>
   {% endif %}
   {% if module.title %}

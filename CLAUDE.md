@@ -9,7 +9,7 @@ npm run build   # build to dist/ (also runs on pre-commit)
 npm run dev     # build in watch mode
 ```
 
-No test suite. Use `yalc publish` / `yalc push` for local development in consumer projects.
+No test suite. Consumer projects use `npm link` — run `npm run dev` (tsup watch) and changes are picked up directly.
 
 ## Architecture
 

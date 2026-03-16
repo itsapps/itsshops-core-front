@@ -14,7 +14,6 @@
       <title>{{ _seoTitle }}</title>
       {% if _seoDesc %}<meta name="description" content="{{ _seoDesc }}" />{% endif %}
       {% if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords }}" />{% endif %}
-      <!-- Open Graph -->
       <meta property="og:type" content="website" />
       <meta property="og:title" content="{{ _seo.shareTitle or _seoTitle }}" />
       {% if _seo.shareDescription or _seoDesc %}
@@ -24,6 +23,11 @@
         <meta property="og:image" content="{{ _shareImage | imageUrl(1200) }}" />
       {% endif %}
     {% endblock %}
+
+    {% if coreConfig.buildMode == 'normal' %}
+      {% include "core/head/schemas.njk" %}
+      {% include "core/head/preloads.njk" %}
+    {% endif %}
 
     {% block styles %}
       {% include "core/head/css.njk" %}
@@ -35,44 +39,7 @@
   </head>
 
   <body>
-    {% if coreConfig.dev.enabled %}
-      <details style="position:fixed;top:0;right:0;z-index:9999;background:#111;color:#eee;font:12px/1.4 monospace;max-height:90vh;overflow-y:auto;padding:8px 12px;border-bottom-left-radius:6px;min-width:220px">
-        <summary style="cursor:pointer;font-weight:bold;padding:2px 0">🗺 Dev nav</summary>
-        {% set _locale = page.lang or coreConfig.defaultLocale %}
-        {% if cms[_locale].pages.length %}
-          <p style="margin:6px 0 2px;opacity:.6">Pages</p>
-          <ul style="margin:0;padding:0 0 0 12px">
-            {% for p in cms[_locale].pages %}
-              <li><a href="{{ p.url }}" style="color:#7dd3fc">{{ p.title or p.slug }}</a></li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% if cms[_locale].products.length %}
-          <p style="margin:6px 0 2px;opacity:.6">Products</p>
-          <ul style="margin:0;padding:0 0 0 12px">
-            {% for p in cms[_locale].products %}
-              <li><a href="{{ p.url }}" style="color:#86efac">{{ p.title }}</a></li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% if cms[_locale].categories.length %}
-          <p style="margin:6px 0 2px;opacity:.6">Categories</p>
-          <ul style="margin:0;padding:0 0 0 12px">
-            {% for c in cms[_locale].categories %}
-              <li><a href="{{ c.url }}" style="color:#fde68a">{{ c.title }}</a></li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% if cms[_locale].posts.length %}
-          <p style="margin:6px 0 2px;opacity:.6">Posts</p>
-          <ul style="margin:0;padding:0 0 0 12px">
-            {% for p in cms[_locale].posts %}
-              <li><a href="{{ p.url }}" style="color:#f9a8d4">{{ p.title }}</a></li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      </details>
-    {% endif %}
+    {% include "core/partials/dev-nav.njk" %}
 
     {% block header %}{% endblock %}
 
