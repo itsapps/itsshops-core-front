@@ -1,10 +1,35 @@
-import type { VinofactConfig } from '../types'
+import type { VinofactConfig, VinofactField } from '../types'
 
 const BASE_FIELDS = 'id slug title'
 
+const FIELD_SELECTIONS: Record<VinofactField, string> = {
+  year:                'year',
+  color:               'color',
+  type:                'type',
+  description:         'description',
+  alcohol:             'alcohol',
+  tartaricAcid:        'tartaricAcid',
+  totalSulfur:         'totalSulfur',
+  freeSulfur:          'freeSulfur',
+  phValue:             'phValue',
+  histamine:           'histamine',
+  varietals:           'varietals { id varietalId name amount trainingSystem }',
+  classifications:     'classifications { id classificationId name }',
+  normClassifications: 'normClassifications { id classificationId name }',
+  awards:              'awards { name value }',
+  bottleImage:         'bottleImage { url alt }',
+  terroir:             'terroir { id name description soils { id name } }',
+}
+
+function buildFieldsSelection(fields: VinofactField[] | undefined): string {
+  if (!fields?.length) return ''
+  return fields.map(f => FIELD_SELECTIONS[f]).join('\n        ')
+}
+
 /**
  * Fetch specific wines from the Vinofact GraphQL API.
- * One request with all required IDs and locales.
+ * One request with all required IDs and locales — locale-keyed fields are
+ * resolved per-locale in the variant resolver using ctx.resolveString.
  * Returns a Map keyed by wine ID for O(1) lookups when enriching variants.
  */
 export async function fetchVinofactWines(
@@ -19,7 +44,7 @@ export async function fetchVinofactWines(
     query ($profileSlug: String!, $locales: [String!]!, $ids: [ID!]) {
       wines(profileSlug: $profileSlug, locales: $locales, ids: $ids) {
         ${BASE_FIELDS}
-        ${config.fields ?? ''}
+        ${buildFieldsSelection(config.fields)}
       }
     }
   `

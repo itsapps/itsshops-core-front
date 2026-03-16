@@ -1,4 +1,5 @@
 import type { SanityImageHotspot, SanityImageCrop } from './sanity'
+import type { VinofactWine } from './vinofact'
 
 /**
  * Resolved types — all localized fields are plain strings, ready for templates.
@@ -109,14 +110,13 @@ export type ResolvedShopSettings = {
 
 /**
  * Resolved wine data: Sanity fields (volume, vintage) merged with Vinofact API data.
- * The base Vinofact fields (id, slug, title) are always present when vinofact is enabled.
- * Additional fields are controlled by VinofactConfig.fields.
+ * Vinofact fields are optional — only present when vinofact is enabled and the field
+ * is included in VinofactConfig.fields.
  */
 export type ResolvedWine = {
   volume: number | null
   vintage: string | null
-  [key: string]: unknown  // vinofact fields: id, slug, title, + customer-configured extras
-}
+} & Partial<VinofactWine>
 
 export type ResolvedVariant = {
   _id: string

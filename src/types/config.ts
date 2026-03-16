@@ -4,6 +4,7 @@ import type { ResolveContext } from './context'
 import type { EleventyConfig } from '11ty.ts'
 import type { TranslatorFunction } from './t9n'
 import { type ImageUrlBuilder } from '@sanity/image-url'
+import type { VinofactField } from './vinofact'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -96,13 +97,13 @@ declare global {
 export type VinofactConfig = {
   enabled: boolean
   /**
-   * Additional GraphQL fields to request from the Vinofact wines query.
-   * The base query always includes: id slug title
+   * Additional fields to request from the Vinofact wines query.
+   * Base fields (id, slug, title) are always fetched.
    *
    * @example
-   * fields: `color alcohol year varietals { id name }`
+   * fields: ['color', 'alcohol', 'year', 'varietals', 'awards']
    */
-  fields?: string
+  fields?: VinofactField[]
   integration?: {
     endpoint: string
     accessToken: string

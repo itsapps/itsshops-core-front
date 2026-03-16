@@ -67,6 +67,50 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
 }
 
 // ---------------------------------------------------------------------------
+// Wine enrichment
+// ---------------------------------------------------------------------------
+
+/**
+ * Recursively resolve locale maps ({ de: '...', en: '...' }) anywhere in a
+ * Vinofact API response — top-level fields, nested objects, and arrays.
+ * Plain scalars pass through unchanged.
+ */
+function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string): unknown {
+  if (value === null || value === undefined) return value
+  if (Array.isArray(value)) {
+    return value.map(item => resolveLocaleMaps(item, locale, defaultLocale))
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value as object)
+    if (keys.length > 0 && keys.every(k => /^[a-z]{2}(-[A-Z]{2})?$/.test(k))) {
+      return (value as any)[locale] ?? (value as any)[defaultLocale] ?? null
+    }
+    const resolved: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as object)) {
+      resolved[k] = resolveLocaleMaps(v, locale, defaultLocale)
+    }
+    return resolved
+  }
+  return value
+}
+
+function resolveWine(
+  sanityWine: any,
+  vinofactMap: Map<string, any>,
+  ctx: ResolveContext,
+): Record<string, unknown> {
+  const vinofactData = sanityWine.vinofactWineId
+    ? (vinofactMap.get(sanityWine.vinofactWineId) ?? {})
+    : {}
+
+  return {
+    volume:  sanityWine.volume  ?? null,
+    vintage: sanityWine.vintage ?? null,
+    ...(resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as object),
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Resolver
 // ---------------------------------------------------------------------------
 
@@ -134,11 +178,7 @@ export function resolveVariants(
       })),
       taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
       stock: variant.stock ?? null,
-      wine: variant.wine ? {
-        volume:  variant.wine.volume  ?? null,
-        vintage: variant.wine.vintage ?? null,
-        ...(variant.wine.vinofactWineId ? (vinofactMap.get(variant.wine.vinofactWineId) ?? {}) : {}),
-      } : null,
+      wine: variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) : null,
       options: (variant.options ?? []).map((o: any) => ({
         _id:  o._id,
         name: ctx.resolveString(o.name),
