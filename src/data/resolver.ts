@@ -15,6 +15,9 @@ import type {
   ResolvedMenu,
   ResolvedMenuItem,
   ResolvedSettings,
+  ResolvedShopSettings,
+  ResolvedCompany,
+  ResolvedAddress,
 } from '../types/data'
 import {
   buildProductQuery,
@@ -24,6 +27,7 @@ import {
   buildPostQuery,
   buildMenuQuery,
   buildSettingsQuery,
+  buildShopSettingsQuery,
 } from './queries'
 type ResolveHooks = NonNullable<NonNullable<Config['extensions']>['resolve']>
 
@@ -263,6 +267,66 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
   }
 }
 
+function resolveSettings(raw: any, ctx: ResolveContext): ResolvedSettings {
+  const company = raw.company
+    ? resolveCompany(raw.company, ctx)
+    : null
+
+  return {
+    _id: raw._id,
+    siteTitle:            ctx.resolveString(raw.siteTitle),
+    siteShortDescription: ctx.resolveString(raw.siteShortDescription),
+    siteDescription:      ctx.resolvePortableText(raw.siteDescription),
+    homePage:             raw.homePage?._id ?? null,
+    privacyPage:          raw.privacyPage?._id ?? null,
+    mainMenus:            (raw.mainMenus ?? []).map((m: any) => m._ref),
+    footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
+    gtmId:                raw.gtmId ?? null,
+    company,
+  }
+}
+
+function resolveCompany(raw: any, ctx: ResolveContext): ResolvedCompany {
+  const addr = raw.address
+  return {
+    name:    ctx.resolveString(raw.name),
+    owner:   raw.owner ?? '',
+    address: addr
+      ? {
+          line1:   addr.line1   ?? '',
+          line2:   addr.line2   ?? '',
+          zip:     addr.zip     ?? '',
+          city:    ctx.resolveString(addr.city),
+          country: addr.country ?? '',
+        } satisfies ResolvedAddress
+      : null,
+  }
+}
+
+function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
+  return {
+    _id:                    raw._id,
+    shopPageId:             raw.shopPage?._id ?? null,
+    defaultCountry:         raw.defaultCountry
+      ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
+      : null,
+    freeShippingCalculation: raw.freeShippingCalculation ?? 'afterDiscount',
+    stockThreshold:         raw.stockThreshold ?? null,
+    defaultTaxCategory:     raw.defaultTaxCategory
+      ? {
+          _id:   raw.defaultTaxCategory._id,
+          title: ctx.resolveString(raw.defaultTaxCategory.title),
+          code:  raw.defaultTaxCategory.code ?? '',
+        }
+      : null,
+    orderNumberPrefix:  raw.orderNumberPrefix  ?? null,
+    invoiceNumberPrefix: raw.invoiceNumberPrefix ?? null,
+    bankAccount:        raw.bankAccount
+      ? { name: raw.bankAccount.name ?? '', bic: raw.bankAccount.bic ?? '', iban: raw.bankAccount.iban ?? '' }
+      : null,
+  }
+}
+
 function resolveMenuItems(
   items: any[],
   ctx: ResolveContext,
@@ -307,6 +371,7 @@ export async function buildCmsData(
     rawPosts,
     rawMenus,
     rawSettings,
+    rawShopSettings,
   ] = await Promise.all([
     features.shop.enabled ? client.fetch(buildProductQuery(extensions))  : Promise.resolve([]),
     features.shop.enabled ? client.fetch(buildVariantQuery(extensions))  : Promise.resolve([]),
@@ -315,6 +380,7 @@ export async function buildCmsData(
     features.blog    ? client.fetch(buildPostQuery(extensions))     : Promise.resolve([]),
     client.fetch(buildMenuQuery(extensions)),
     client.fetch(buildSettingsQuery()),
+    features.shop.enabled ? client.fetch(buildShopSettingsQuery()) : Promise.resolve(null),
   ])
 
   // Run extension queries in parallel
@@ -393,16 +459,11 @@ export async function buildCmsData(
     }))
 
     const settings: ResolvedSettings | null = rawSettings
-      ? {
-          _id: rawSettings._id,
-          siteTitle: ctx.resolveString(rawSettings.siteTitle),
-          siteShortDescription: ctx.resolveString(rawSettings.siteShortDescription),
-          homePage: rawSettings.homePage?._id ?? null,
-          privacyPage: rawSettings.privacyPage?._id ?? null,
-          mainMenus: (rawSettings.mainMenus ?? []).map((m: any) => m._ref),
-          footerMenus: (rawSettings.footerMenus ?? []).map((m: any) => m._ref),
-          gtmId: rawSettings.gtmId ?? null,
-        }
+      ? resolveSettings(rawSettings, ctx)
+      : null
+
+    const shopSettings: ResolvedShopSettings | null = rawShopSettings
+      ? resolveShopSettings(rawShopSettings, ctx)
       : null
 
     const urlMap: Record<string, string> = {}
@@ -418,6 +479,7 @@ export async function buildCmsData(
       posts,
       menus,
       settings,
+      shopSettings,
       urlMap,
       ...extensionData,
     }

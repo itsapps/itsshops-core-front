@@ -68,15 +68,43 @@ export type ResolvedMenu = {
   items: ResolvedMenuItem[]
 }
 
+export type ResolvedAddress = {
+  line1: string
+  line2: string
+  zip: string
+  city: string
+  country: string
+}
+
+export type ResolvedCompany = {
+  name: string
+  owner: string
+  address: ResolvedAddress | null
+}
+
 export type ResolvedSettings = {
   _id: string
   siteTitle: string
   siteShortDescription: string
+  siteDescription: string
   homePage: string | null
   privacyPage: string | null
   mainMenus: string[]
   footerMenus: string[]
   gtmId: string | null
+  company: ResolvedCompany | null
+}
+
+export type ResolvedShopSettings = {
+  _id: string
+  shopPageId: string | null
+  defaultCountry: { _id: string; countryCode: string } | null
+  freeShippingCalculation: 'beforeDiscount' | 'afterDiscount'
+  stockThreshold: number | null
+  defaultTaxCategory: { _id: string; title: string; code: string } | null
+  orderNumberPrefix: string | null
+  invoiceNumberPrefix: string | null
+  bankAccount: { name: string; bic: string; iban: string } | null
 }
 
 export type ResolvedVariant = {
@@ -134,6 +162,7 @@ export type CmsLocaleData = {
   posts: ResolvedPost[]
   menus: ResolvedMenu[]
   settings: ResolvedSettings | null
+  shopSettings: ResolvedShopSettings | null
   /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
   urlMap: Record<string, string>
   [key: string]: unknown

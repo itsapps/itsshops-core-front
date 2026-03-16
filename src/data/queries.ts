@@ -160,16 +160,34 @@ export function buildMenuQuery(extensions?: Config['extensions']): string {
 }
 
 export function buildSettingsQuery(): string {
-  return `*[_type == 'generalSettings'][0]{
+  return `*[_type == 'settings'][0]{
   _id,
   ${proj.i18nStringField('siteTitle')},
   ${proj.i18nStringField('siteShortDescription')},
-  ${proj.i18nImageField('logo')},
-  ${proj.i18nImageField('favicon')},
+  ${proj.i18nTextField('siteDescription')},
   "homePage": homePage->{ _id },
   "privacyPage": privacyPage->{ _id },
   "mainMenus": mainMenus[]{ _ref },
   "footerMenus": footerMenus[]{ _ref },
-  gtmId
+  gtmId,
+  "company": company {
+    ${proj.i18nStringField('name')},
+    owner,
+    "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }
+  }
+}`
+}
+
+export function buildShopSettingsQuery(): string {
+  return `*[_type == 'shopSettings'][0]{
+  _id,
+  "shopPage": shopPage->{ _id },
+  "defaultCountry": defaultCountry->{ _id, countryCode },
+  freeShippingCalculation,
+  stockThreshold,
+  "defaultTaxCategory": defaultTaxCategory->{ _id, ${proj.i18nStringField('title')}, "code": code.current },
+  orderNumberPrefix,
+  invoiceNumberPrefix,
+  bankAccount { name, bic, iban }
 }`
 }
