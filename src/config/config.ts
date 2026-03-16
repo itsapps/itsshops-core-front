@@ -47,6 +47,7 @@ export function resolveConfig(config: Config): CoreConfig {
     permalinks:    config.permalinks    ?? {},
     translations:  config.translations  ?? {},
     extensions:    config.extensions    ?? {},
+    menu:          { maxDepth: config.menu?.maxDepth ?? 1 },
     baseUrl,
     hostname,
     isMaintenanceMode,

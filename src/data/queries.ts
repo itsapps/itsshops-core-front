@@ -136,26 +136,25 @@ export function buildPostQuery(extensions?: Config['extensions']): string {
 }`
 }
 
-export function buildMenuQuery(extensions?: Config['extensions']): string {
-  const menuItemFields = extraFields('menuItem', extensions)
-  const menuItemProjection = `{
+function buildMenuItemProjection(depth: number, extraFields: string): string {
+  const children = depth > 0
+    ? `,\n    "children": children[]${buildMenuItemProjection(depth - 1, extraFields)}`
+    : ''
+  return `{
     _key,
     ${proj.i18nStringField('title')},
     linkType,
     "url": url[]{ _key, value },
-    "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${menuItemFields},
-    "children": children[]{
-      _key,
-      ${proj.i18nStringField('title')},
-      linkType,
-      "url": url[]{ _key, value },
-      "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${menuItemFields}
-    }
+    "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${extraFields}${children}
   }`
+}
+
+export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1): string {
+  const itemProjection = buildMenuItemProjection(maxDepth, extraFields('menuItem', extensions))
   return `*[_type == 'menu']{
   _id,
   "title": title[]{ _key, value },
-  "items": items[]${menuItemProjection}
+  "items": items[]${itemProjection}
 }`
 }
 

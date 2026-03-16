@@ -225,6 +225,11 @@ export type Config = {
   // data extensions
   extensions?: Extensions
 
+  menu?: {
+    /** Maximum nesting depth for menu items. Defaults to 1 (one level of children). */
+    maxDepth?: number
+  }
+
   // override env vars if needed
   baseUrl?: string
   isMaintenanceMode?: boolean
@@ -277,6 +282,7 @@ export type CoreConfig = {
   permalinks: Partial<Record<Locale, PermalinkTranslations>>
   translations: Record<string, any>
   extensions: Extensions
+  menu: { maxDepth: number }
   baseUrl: string
   hostname: string
   isMaintenanceMode: boolean

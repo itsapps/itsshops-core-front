@@ -374,7 +374,7 @@ export async function buildCmsData(
     features.shop.enabled && features.shop.category ? client.fetch(buildCategoryQuery(extensions)) : Promise.resolve([]),
     client.fetch(buildPageQuery(extensions)),
     features.blog    ? client.fetch(buildPostQuery(extensions))     : Promise.resolve([]),
-    client.fetch(buildMenuQuery(extensions)),
+    client.fetch(buildMenuQuery(extensions, config.menu.maxDepth)),
     client.fetch(buildSettingsQuery()),
     features.shop.enabled ? client.fetch(buildShopSettingsQuery()) : Promise.resolve(null),
   ])
