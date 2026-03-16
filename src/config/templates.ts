@@ -206,10 +206,8 @@ function shouldIgnoreTemplate({
     return false
   }
 
-  // All other directories
-  // Preview templates are enabled in normal mode
-  // Maintenance templates ignored in normal mode
   if (dir === 'maintenance') return true
+  if (dir === 'preview') return true
 
   return false
 }

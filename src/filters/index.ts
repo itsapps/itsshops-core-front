@@ -2,6 +2,7 @@ import { slugify, toIsoString } from "../utils";
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
 import { imageUrl } from "../media"
+import { stegaClean } from "@sanity/client/stega"
 
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -40,6 +41,10 @@ function resolveProductRefs(refs: any[], allProducts: any[]): any[] {
   return (refs ?? []).map(r => map.get(typeof r === 'string' ? r : r._id)).filter(Boolean) as any[]
 }
 
+function findById(arr: any[], id: string): any {
+  return (arr ?? []).find((item: any) => item._id === id) ?? null
+}
+
 export const createFilters = (ctx: CoreContext) => {
   const { eleventyConfig, config, translate } = ctx
 
@@ -57,7 +62,9 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
+  eleventyConfig.addFilter("findById", findById as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height) =>
     imageUrl(ctx.imageBuilder, image, width, height)
   );
+  eleventyConfig.addFilter("stegaClean", stegaClean);
 }

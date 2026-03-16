@@ -1,5 +1,6 @@
 import type { SanityClient } from '@sanity/client'
 import { slugify as coreSlugify } from '../utils/slugify'
+import { stegaClean } from '@sanity/client/stega'
 import type { Config, CoreConfig, Locale, ResolveContext, TranslatorFunction, PermalinkTranslations, CoreContext } from '../types'
 import { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo } from './localizers'
 import { resolvePortableText } from './portableText'
@@ -55,10 +56,12 @@ function generateVariantSlug(
   locale: Locale,
   defaultLocale: Locale
 ): string {
-  const title = resolveString(variant.title, locale, defaultLocale)
+  const title = stegaClean(
+    resolveString(variant.title, locale, defaultLocale)
     || resolveString(product.title, locale, defaultLocale)
     || variant.sku
     || variant._id
+  )
 
   const kind = variant.kind ?? product.kind
 
@@ -145,7 +148,7 @@ function resolveCategories(
   resolveHook?: ResolveHooks['category']
 ): ResolvedCategory[] {
   return raw.map(c => {
-    const slug = coreSlugify(ctx.resolveString(c.title) || c._id)
+    const slug = coreSlugify(stegaClean(ctx.resolveString(c.title) || c._id))
     return {
       _id: c._id,
       title: ctx.resolveString(c.title),
@@ -358,6 +361,19 @@ export async function buildCmsData(
   const features = config.features
   const extensions = config.extensions ?? {}
 
+  const isPreview = config.buildMode === 'preview'
+
+  const fetchQuery = <T>(query: string, params?: Record<string, unknown>): Promise<T> =>
+    client.fetch<T>(query, params ?? {}, isPreview && config.sanity.studioUrl ? {
+      resultSourceMap: true,
+      stega: { enabled: true, studioUrl: config.sanity.studioUrl },
+    } : {})
+
+  // In preview mode, filter the target document by _id. All other queries run normally
+  // since any page can contain modules that reference products, categories, etc.
+  const pid = (type: string) =>
+    isPreview && config.preview.documentType === type ? config.preview.documentId : undefined
+
   // Fetch all raw data in parallel
   const [
     rawProducts,
@@ -369,20 +385,21 @@ export async function buildCmsData(
     rawSettings,
     rawShopSettings,
   ] = await Promise.all([
-    features.shop.enabled ? client.fetch(buildProductQuery(extensions))  : Promise.resolve([]),
-    features.shop.enabled ? client.fetch(buildVariantQuery(extensions))  : Promise.resolve([]),
-    features.shop.enabled && features.shop.category ? client.fetch(buildCategoryQuery(extensions)) : Promise.resolve([]),
-    client.fetch(buildPageQuery(extensions)),
-    features.blog    ? client.fetch(buildPostQuery(extensions))     : Promise.resolve([]),
-    client.fetch(buildMenuQuery(extensions, config.menu.maxDepth)),
-    client.fetch(buildSettingsQuery()),
-    features.shop.enabled ? client.fetch(buildShopSettingsQuery()) : Promise.resolve(null),
+    features.shop.enabled ? fetchQuery(buildProductQuery(extensions, pid('product')))       : Promise.resolve([]),
+    features.shop.enabled ? fetchQuery(buildVariantQuery(extensions, pid('productVariant'))): Promise.resolve([]),
+    features.shop.enabled && features.shop.category
+      ? fetchQuery(buildCategoryQuery(extensions, pid('category'))) : Promise.resolve([]),
+    fetchQuery(buildPageQuery(extensions, pid('page'))),
+    features.blog ? fetchQuery(buildPostQuery(extensions, pid('post'))) : Promise.resolve([]),
+    fetchQuery(buildMenuQuery(extensions, config.menu.maxDepth)),
+    fetchQuery(buildSettingsQuery()),
+    features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
   ])
 
   // Run extension queries in parallel
   const extensionKeys = Object.keys(extensions.queries ?? {})
   const extensionResults = await Promise.all(
-    extensionKeys.map(key => client.fetch(extensions.queries![key], { locale: config.defaultLocale }))
+    extensionKeys.map(key => fetchQuery(extensions.queries![key], { locale: config.defaultLocale }))
   )
   const extensionData = Object.fromEntries(
     extensionKeys.map((key, i) => [key, extensionResults[i]])
@@ -406,7 +423,11 @@ export async function buildCmsData(
     posts:      [],
   }
 
-  for (const locale of config.locales) {
+  const localesToProcess = isPreview && config.preview.locale
+    ? [config.preview.locale]
+    : config.locales
+
+  for (const locale of localesToProcess) {
     const defaultLocale = config.defaultLocale
     const resolve = extensions.resolve ?? {}
     const ctx = makeCtx(locale, defaultLocale, translate)
@@ -422,7 +443,7 @@ export async function buildCmsData(
 
     const pages: ResolvedPage[] = rawPages.map((p: any) => {
       const title = ctx.resolveString(p.title)
-      const slug  = p.slug || coreSlugify(title) || p._id
+      const slug  = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
       const url   = p._id === homePageId ? `/${locale}/` : `/${locale}/${slug}/`
       return {
         ...p,
@@ -437,7 +458,7 @@ export async function buildCmsData(
 
     const posts: ResolvedPost[] = features.blog
       ? rawPosts.map((p: any) => {
-          const slug = p.slug || p._id
+          const slug = stegaClean(p.slug || p._id)
           return {
             ...p,
             title: ctx.resolveString(p.title),

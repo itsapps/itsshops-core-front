@@ -24,10 +24,9 @@ export const preview = async (props: PreviewParams) => {
 
   process.env.IS_PREVIEW = 'true'
   process.env.PREVIEW_TYPE = documentType
+  process.env.PREVIEW_ID = documentId
   process.env.PREVIEW_LOCALE = locale
   process.env.PREVIEW_PERSPECTIVE = perspective || 'drafts'
-
-  const templatePath = `preview/${documentType}s.njk`
 
   let result = 'Nothing here'
   try {
@@ -39,13 +38,11 @@ export const preview = async (props: PreviewParams) => {
     const results = (await elev.toJSON()) as unknown as ElevResult[]
     await elev.destroy?.()
 
-    const match = results.find((r) => r.inputPath.endsWith(templatePath))
-
-    if (!match) {
-      throw new Error(`No matching template found for documentId: ${documentId}`)
+    if (!results[0]) {
+      throw new Error(`No preview result for ${documentType} ${documentId}`)
     }
 
-    result = match.content
+    result = results[0].content
   } catch (error) {
     console.error(error)
     if (error instanceof Error) {

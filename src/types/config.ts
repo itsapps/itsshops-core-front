@@ -275,7 +275,7 @@ export type Config = {
 
 export type CoreConfig = {
   buildMode: 'preview' | 'maintenance' | 'normal'
-  sanity: SanityClientConfig & { projectId: string; dataset: string }
+  sanity: SanityClientConfig & { projectId: string; dataset: string; studioUrl: string | undefined }
   locales: Locale[]
   defaultLocale: Locale
   features: Features

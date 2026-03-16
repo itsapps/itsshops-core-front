@@ -65,8 +65,12 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
 // Document queries
 // ---------------------------------------------------------------------------
 
-export function buildProductQuery(extensions?: Config['extensions']): string {
-  return `*[_type == 'product']{
+export function idFilter(id: string | undefined): string {
+  return id ? ` && _id == "${id}"` : ''
+}
+
+export function buildProductQuery(extensions?: Config['extensions'], documentId?: string): string {
+  return `*[_type == 'product'${idFilter(documentId)}]{
   _id,
   kind,
   ${proj.i18nStringField('title')},
@@ -80,8 +84,8 @@ export function buildProductQuery(extensions?: Config['extensions']): string {
 }`
 }
 
-export function buildVariantQuery(extensions?: Config['extensions']): string {
-  return `*[_type == 'productVariant']{
+export function buildVariantQuery(extensions?: Config['extensions'], documentId?: string): string {
+  return `*[_type == 'productVariant'${idFilter(documentId)}]{
   _id,
   status,
   ${proj.i18nStringField('title')},
@@ -103,8 +107,8 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
 }`
 }
 
-export function buildCategoryQuery(extensions?: Config['extensions']): string {
-  return `*[_type == 'category'] | order(sortOrder asc){
+export function buildCategoryQuery(extensions?: Config['extensions'], documentId?: string): string {
+  return `*[_type == 'category'${idFilter(documentId)}] | order(sortOrder asc){
   _id,
   ${proj.i18nStringField('title')},
   ${proj.i18nStringField('description')},
@@ -115,8 +119,8 @@ export function buildCategoryQuery(extensions?: Config['extensions']): string {
 }`
 }
 
-export function buildPageQuery(extensions?: Config['extensions']): string {
-  return `*[_type == 'page']{
+export function buildPageQuery(extensions?: Config['extensions'], documentId?: string): string {
+  return `*[_type == 'page'${idFilter(documentId)}]{
   _id,
   ${proj.i18nStringField('title')},
   "slug": slug.current,
@@ -125,8 +129,8 @@ export function buildPageQuery(extensions?: Config['extensions']): string {
 }`
 }
 
-export function buildPostQuery(extensions?: Config['extensions']): string {
-  return `*[_type == 'post']{
+export function buildPostQuery(extensions?: Config['extensions'], documentId?: string): string {
+  return `*[_type == 'post'${idFilter(documentId)}]{
   _id,
   ${proj.i18nStringField('title')},
   "slug": slug.current,

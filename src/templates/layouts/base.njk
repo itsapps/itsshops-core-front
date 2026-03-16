@@ -11,13 +11,13 @@
       {%- set _seoTitle = _seo.metaTitle or _item.title or title -%}
       {%- set _seoDesc  = _seo.metaDescription or description -%}
       {%- set _shareImage = _seo.shareImage or _item.image -%}
-      <title>{{ _seoTitle }}</title>
-      {% if _seoDesc %}<meta name="description" content="{{ _seoDesc }}" />{% endif %}
-      {% if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords }}" />{% endif %}
+      <title>{{ _seoTitle | stegaClean }}</title>
+      {% if _seoDesc %}<meta name="description" content="{{ _seoDesc | stegaClean }}" />{% endif %}
+      {% if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords | stegaClean }}" />{% endif %}
       <meta property="og:type" content="website" />
-      <meta property="og:title" content="{{ _seo.shareTitle or _seoTitle }}" />
+      <meta property="og:title" content="{{ (_seo.shareTitle or _seoTitle) | stegaClean }}" />
       {% if _seo.shareDescription or _seoDesc %}
-        <meta property="og:description" content="{{ _seo.shareDescription or _seoDesc }}" />
+        <meta property="og:description" content="{{ (_seo.shareDescription or _seoDesc) | stegaClean }}" />
       {% endif %}
       {% if _shareImage %}
         <meta property="og:image" content="{{ _shareImage | imageUrl(1200) }}" />

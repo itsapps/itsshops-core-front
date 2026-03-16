@@ -1,9 +1,7 @@
 ---
 layout: base.njk
-pagination:
-  data: cms.pages
-  size: 1
-  alias: cmsPage
-permalink: "{{ cmsPage.url }}"
+permalink: "/{{ coreConfig.preview.locale }}/preview/"
 ---
+{%- set _locale = coreConfig.preview.locale or coreConfig.defaultLocale -%}
+{%- set cmsPage = cms[_locale].pages | findById(coreConfig.preview.documentId) -%}
 {%- include "components/page/container.njk" -%}

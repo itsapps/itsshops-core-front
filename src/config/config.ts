@@ -14,9 +14,11 @@ export function resolveConfig(config: Config): CoreConfig {
   const sanityDataset   = requireVar('SANITY_DATASET',   config.sanity?.dataset   ?? env.sanity.dataset)
 
   // optional but important — warn if absent
-  const sanityToken = config.sanity?.token ?? env.sanity.token
+  const sanityToken   = config.sanity?.token     ?? env.sanity.token
+  const studioUrl     = config.sanity?.studioUrl ?? env.sanity.studioUrl
   warnMissing({
     'SANITY_TOKEN':              sanityToken,
+    'SANITY_STUDIO_URL':         previewEnabled ? studioUrl : 'skip',
     'URL':                       env.rawUrl,
     'SUPPORT_EMAIL':             config.supportEmail             ?? env.supportEmail,
     'STRIPE_PUBLISHABLE_API_KEY': features.shop.checkout
@@ -39,6 +41,7 @@ export function resolveConfig(config: Config): CoreConfig {
       projectId: sanityProjectId,
       dataset:   sanityDataset,
       token:     sanityToken,
+      studioUrl,
       perspective,
     },
     locales:       config.locales || ['de', 'en'],
@@ -123,6 +126,7 @@ function readEnv() {
       projectId: process.env.SANITY_PROJECT_ID ?? process.env.SANITY_STUDIO_PROJECT,
       dataset:   process.env.SANITY_DATASET    ?? process.env.SANITY_STUDIO_DATASET,
       token:     process.env.SANITY_TOKEN,
+      studioUrl: process.env.SANITY_STUDIO_URL,
     },
     stripe: {
       publishableApiKey: process.env.STRIPE_PUBLISHABLE_API_KEY,
