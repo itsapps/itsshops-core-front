@@ -87,7 +87,7 @@ export type ResolvedSettings = {
   siteTitle: string
   siteShortDescription: string
   siteDescription: string
-  homePage: string | null
+  homePageUrl: string | null
   privacyPage: string | null
   mainMenus: string[]
   footerMenus: string[]

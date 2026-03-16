@@ -267,22 +267,18 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
   }
 }
 
-function resolveSettings(raw: any, ctx: ResolveContext): ResolvedSettings {
-  const company = raw.company
-    ? resolveCompany(raw.company, ctx)
-    : null
-
+function resolveSettings(raw: any, ctx: ResolveContext, urlMap: Record<string, string>): ResolvedSettings {
   return {
-    _id: raw._id,
+    _id:                  raw._id,
     siteTitle:            ctx.resolveString(raw.siteTitle),
     siteShortDescription: ctx.resolveString(raw.siteShortDescription),
     siteDescription:      ctx.resolvePortableText(raw.siteDescription),
-    homePage:             raw.homePage?._id ?? null,
-    privacyPage:          raw.privacyPage?._id ?? null,
-    mainMenus:            (raw.mainMenus ?? []).map((m: any) => m._ref),
+    homePageUrl:  raw.homePage?._id    ? (urlMap[raw.homePage._id] ?? null) : null,
+    privacyPage:  raw.privacyPage?._id ?? null,
+    mainMenus:            (raw.mainMenus  ?? []).map((m: any) => m._ref),
     footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
     gtmId:                raw.gtmId ?? null,
-    company,
+    company:              raw.company ? resolveCompany(raw.company, ctx) : null,
   }
 }
 
@@ -305,8 +301,8 @@ function resolveCompany(raw: any, ctx: ResolveContext): ResolvedCompany {
 
 function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
   return {
-    _id:                    raw._id,
-    shopPageId:             raw.shopPage?._id ?? null,
+    _id:         raw._id,
+    shopPageId:  raw.shopPage?._id ?? null,
     defaultCountry:         raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,
@@ -422,14 +418,17 @@ export async function buildCmsData(
       ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, resolve)
       : []
 
+    const homePageId = rawSettings?.homePage?._id ?? null
+
     const pages: ResolvedPage[] = rawPages.map((p: any) => {
       const title = ctx.resolveString(p.title)
-      const slug = p.slug || coreSlugify(title) || p._id
+      const slug  = p.slug || coreSlugify(title) || p._id
+      const url   = p._id === homePageId ? `/${locale}/` : `/${locale}/${slug}/`
       return {
         ...p,
         title,
         slug,
-        url: `/${locale}/${slug}/`,
+        url,
         modules: resolveModules(p.modules, ctx, resolve.module),
         seo: ctx.resolveSeo(p.seo),
         ...(resolve.page ? resolve.page(p, ctx) : {}),
@@ -458,19 +457,19 @@ export async function buildCmsData(
       items: resolveMenuItems(m.items ?? [], ctx, resolve.menuItem),
     }))
 
-    const settings: ResolvedSettings | null = rawSettings
-      ? resolveSettings(rawSettings, ctx)
-      : null
-
-    const shopSettings: ResolvedShopSettings | null = rawShopSettings
-      ? resolveShopSettings(rawShopSettings, ctx)
-      : null
-
     const urlMap: Record<string, string> = {}
     for (const p of pages)      urlMap[p._id] = p.url
     for (const c of categories) urlMap[c._id] = c.url
     for (const v of products)   urlMap[v._id] = v.url
     for (const p of posts)      urlMap[p._id] = p.url
+
+    const settings: ResolvedSettings | null = rawSettings
+      ? resolveSettings(rawSettings, ctx, urlMap)
+      : null
+
+    const shopSettings: ResolvedShopSettings | null = rawShopSettings
+      ? resolveShopSettings(rawShopSettings, ctx)
+      : null
 
     const localeData: CmsLocaleData = {
       products,
