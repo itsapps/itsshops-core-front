@@ -45,6 +45,26 @@ function findById(arr: any[], id: string): any {
   return (arr ?? []).find((item: any) => item._id === id) ?? null
 }
 
+function formatDate(
+  date: string,
+  locale: string,
+  style: Intl.DateTimeFormatOptions['dateStyle'] = 'medium',
+): string {
+  if (!date) return ''
+  return new Intl.DateTimeFormat(locale, { dateStyle: style }).format(new Date(date))
+}
+
+/** Take the first n items from an array. Usage: {% for x in arr | limit(5) %} */
+function limit(arr: any[], n: number): any[] {
+  return (arr ?? []).slice(0, n)
+}
+
+/** Convert newlines to <br> — pipe result through | safe in templates */
+function nl2br(text: string): string {
+  if (!text) return ''
+  return text.replace(/\r?\n/g, '<br>')
+}
+
 export const createFilters = (ctx: CoreContext) => {
   const { eleventyConfig, config, translate } = ctx
 
@@ -67,4 +87,9 @@ export const createFilters = (ctx: CoreContext) => {
     imageUrl(ctx.imageBuilder, image, width, height)
   );
   eleventyConfig.addFilter("stegaClean", stegaClean);
+  eleventyConfig.addFilter('limit', limit)
+  eleventyConfig.addFilter('formatDate', function (date: string, style?: Intl.DateTimeFormatOptions['dateStyle']) {
+    return formatDate(date, this.page?.lang || config.defaultLocale, style)
+  })
+  eleventyConfig.addFilter('nl2br', nl2br)
 }

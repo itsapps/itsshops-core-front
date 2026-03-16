@@ -99,6 +99,14 @@ export const i18nPortableText = `[]{
 
 export const i18nTextField = (fieldName: string) => `${fieldName} ${i18nPortableText}`
 
+/**
+ * i18nStandardContent — localized rich text stored as i18nStandardContent
+ * (value is a standardContent object wrapping a content[] array).
+ * Flattens to [{ _key, value: blocks[] }] so resolvePortableText handles it directly.
+ */
+export const i18nStandardContentField = (fieldName: string) =>
+  `${fieldName}[]{ _key, "value": value.content ${portableTextBlocks} }`
+
 // ---------------------------------------------------------------------------
 // SEO
 // ---------------------------------------------------------------------------

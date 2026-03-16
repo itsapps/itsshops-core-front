@@ -57,7 +57,7 @@ function renderSpan(span: Span, markDefs: MarkDef[]): string {
 }
 
 function renderBlock(block: Block): string {
-  if (block._type !== 'block') return ''
+  if (!block.children) return ''   // skip custom embeds (images, custom types without children)
   const tag = STYLE_TAG[block.style ?? 'normal'] ?? 'p'
   const inner = (block.children ?? []).map(s => renderSpan(s, block.markDefs ?? [])).join('')
   return `<${tag}>${inner}</${tag}>`

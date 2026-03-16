@@ -1,0 +1,11 @@
+{
+    "search.exclude": {
+      "**/dist/": true,
+      // "**/src/assets/css/": true,
+      "**/.netlify/": true,
+      "**/node_modules/": true,
+    },
+    "editor.quickSuggestions": {
+        "strings": true
+    }
+}

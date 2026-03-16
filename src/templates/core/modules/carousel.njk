@@ -6,8 +6,11 @@
 <div class="carousel" data-autoplay="{{ module.autoplay }}" data-loop="{{ module.loop }}" data-fade="{{ module.fade }}"{% if module.autoplay %} data-delay="{{ module.autoplayDelay }}"{% endif %}>
   {% for slide in module.slides %}
     <figure class="carousel-slide">
-      <img src="{{ slide | imageUrl(1200) }}" alt="{{ slide.alt }}"
-        {% if loop.first %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %} />
+      {% if loop.first and _isFirstModule %}
+        {% sanityPicture slide, imageSizes.carousel, { loading: "eager", fetchpriority: "high" } %}
+      {% else %}
+        {% sanityPicture slide, imageSizes.carousel %}
+      {% endif %}
     </figure>
   {% endfor %}
 </div>

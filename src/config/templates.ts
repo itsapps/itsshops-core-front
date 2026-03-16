@@ -15,10 +15,25 @@ const templatesRoot = path.join(__dirname, 'templates');
 const layoutsDir = path.join(templatesRoot, 'layouts');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
+export const setupTemplates = (configs: PluginConfigs) => {
+  const { eleventyConfig, config } = configs
+
+  // add templates to search path
+  loadTemplates(configs)
+
+  if (config.dev.enabled) {
+    console.log('Debug mode enabled: throwing errors for undefined variables in templates')
+    eleventyConfig.setNunjucksEnvironmentOptions({
+      throwOnUndefined: true,
+    });
+  }
+}
+
 export const loadTemplates = (configs: PluginConfigs) => {
+  const { eleventyConfig, config } = configs
+  
   const loadedTemplates: string[] = []
   const ignoredTemplates: string[] = []
-  const { eleventyConfig, config } = configs
 
   // add templates to search path
   eleventyConfig.amendLibrary("njk", (env: any) => {
@@ -200,11 +215,6 @@ function shouldIgnoreTemplate({
     if (file === 'manufacturers.njk' && !features.shop.manufacturer) return true
     if ((file === 'checkout.njk' || (file === 'order-thanks.njk')) && !features.shop.checkout) return true
   }
-  else if (dir === 'preview') {
-    if (file.startsWith('posts') && !features.blog) return true
-    return false
-  }
-
   if (dir === 'maintenance') return true
   if (dir === 'preview') return true
 

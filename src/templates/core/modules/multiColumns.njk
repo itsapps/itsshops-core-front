@@ -3,11 +3,7 @@
     <div class="multi-columns-item">
       {% if column.image %}
         <figure class="multi-columns-image">
-          <img
-            src="{{ column.image | imageUrl(600) }}"
-            alt="{{ column.image.alt }}"
-            loading="lazy"
-          />
+          {% sanityPicture column.image, imageSizes.card %}
         </figure>
       {% endif %}
       {% if column.title %}

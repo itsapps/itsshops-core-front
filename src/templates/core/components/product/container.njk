@@ -3,7 +3,7 @@
   {% block product_gallery %}
     {% if product.image %}
       <figure class="product-gallery">
-        <img src="{{ product.image | imageUrl(800) }}" alt="{{ product.image.alt }}" loading="eager" />
+        {% sanityPicture product.image, imageSizes.content, { loading: "eager" } %}
       </figure>
     {% endif %}
   {% endblock %}

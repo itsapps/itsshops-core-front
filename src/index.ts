@@ -4,25 +4,28 @@ export * as projections from './data/projections'
 export * as queries from './data/queries'
 export { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from './data/localizers'
 export { resolvePortableText } from './data/portableText'
-export { sanityPicture, imageUrl } from './media'
+export { sanityPicture, imageUrl, imageSizes } from './media'
 export type { PictureSize } from './media'
 
 import type { EleventyConfig } from '11ty.ts'
 import type { Config, CoreContext } from './types'
 import { setupIgnores } from './config/ignores'
-import { loadTemplates } from './config/templates'
+import { setupTemplates } from './config/templates'
 import { createFilters } from './filters'
 import { createSanityClient, createImageBuilder } from './core'
 import { cssConfig } from './config/css'
 import { setupAssets } from './config/assets'
 import { buildCmsData } from './data/resolver'
 import { resolveConfig } from './config/config'
+import { imageSizes } from './media'
 import { setupTranslation } from './i18n/translations/frontTranslation'
 import { createShortcodes } from './shortcodes'
 import { setupPlugins } from './config/plugins'
+import { setupDev } from './config/dev'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
+  setupDev(config)
 
   const client = createSanityClient(config.sanity)
   const imageBuilder = createImageBuilder(client)
@@ -38,6 +41,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
   eleventyConfig.addGlobalData('coreConfig', config)
+  eleventyConfig.addGlobalData('imageSizes', imageSizes)
 
-  loadTemplates(ctx)
+  setupTemplates(ctx)
 }

@@ -4,11 +4,7 @@
     <header class="category-header">
       {% if category.image %}
         <figure class="category-image">
-          <img
-            src="{{ category.image | imageUrl(800) }}"
-            alt="{{ category.image.alt }}"
-            loading="eager"
-          />
+          {% sanityPicture category.image, imageSizes.content, { loading: "eager" } %}
         </figure>
       {% endif %}
       <h1 class="category-title">{{ category.title }}</h1>

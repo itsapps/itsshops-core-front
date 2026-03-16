@@ -6,7 +6,11 @@
 <div class="hero">
   {% if module.bgImage %}
     <figure class="hero-image">
-      <img src="{{ module.bgImage | imageUrl(1600) }}" alt="{{ module.bgImage.alt }}" loading="eager" fetchpriority="high" />
+      {% if _isFirstModule %}
+        {% sanityPicture module.bgImage, imageSizes.hero, { loading: "eager", fetchpriority: "high" } %}
+      {% else %}
+        {% sanityPicture module.bgImage, imageSizes.hero %}
+      {% endif %}
     </figure>
   {% endif %}
   {% if module.title %}

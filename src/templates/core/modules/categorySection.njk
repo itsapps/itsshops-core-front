@@ -15,7 +15,7 @@
           <a href="{{ resolvedCat.url }}" class="category-card">
             {% if resolvedCat.image %}
               <figure class="category-card-image">
-                <img src="{{ resolvedCat.image | imageUrl(400) }}" alt="{{ resolvedCat.image.alt }}" loading="lazy" />
+                {% sanityPicture resolvedCat.image, imageSizes.card %}
               </figure>
             {% endif %}
             <span class="category-card-title">{{ resolvedCat.title }}</span>
