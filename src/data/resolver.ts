@@ -60,11 +60,14 @@ export async function buildCmsData(
     features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
   ])
 
-  const extensionKeys    = Object.keys(extensions.queries ?? {})
-  const extensionResults = await Promise.all(
-    extensionKeys.map(key => fetchQuery(extensions.queries![key], { locale: config.defaultLocale }))
+  // ─── Extension queries (fetched once, resolved per-locale via resolveData) ──
+
+  const rawExtensionEntries = await Promise.all(
+    Object.entries(extensions.queries ?? {}).map(([key, query]) =>
+      fetchQuery(query).then(result => [key, result] as const)
+    )
   )
-  const extensionData = Object.fromEntries(extensionKeys.map((key, i) => [key, extensionResults[i]]))
+  const rawExtensionData = Object.fromEntries(rawExtensionEntries)
 
   // ─── Pre-compute shared maps ───────────────────────────────────────────────
 
@@ -103,6 +106,10 @@ export async function buildCmsData(
     const defaultLocale = config.defaultLocale
     const resolve = extensions.resolve ?? {}
     const ctx = makeCtx(locale, defaultLocale, translate)
+
+    const extensionData = extensions.resolveData
+      ? extensions.resolveData(rawExtensionData, ctx)
+      : rawExtensionData
 
     const categories = resolveCategories(rawCategories, ctx, permalinks, resolve.category)
     const categoryMap = new Map(categories.map(c => [c._id, c]))

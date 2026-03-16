@@ -4,10 +4,28 @@ import type { ResolvedImage, ResolvedSeo } from '../types/data'
 /** Locale-bound localizer functions — pre-applied with (locale, defaultLocale). */
 export type BoundLocalizers = {
   resolveString:         (arr: LocalizedStringArray) => string
+  resolveLocaleValue:    (arr: any) => any
   resolveImage:          (raw: { image?: any[]; alt?: any[] } | null | undefined) => ResolvedImage | null
   resolveLocaleAltImage: (raw: any) => ResolvedImage | null
   resolveBaseImage:      (raw: any) => ResolvedImage | null
   resolveSeo:            (raw: any) => ResolvedSeo
+}
+
+/**
+ * Resolve a locale entry from an i18nObject array `[{ _key, value: T }]`.
+ * Returns the value for the given locale, falling back to defaultLocale, then first entry.
+ * Use when `value` is an object (e.g. i18nStandardContent) rather than a plain string.
+ */
+export function resolveLocaleValue(
+  arr: Array<{ _key: string; value: unknown }> | null | undefined,
+  locale: Locale,
+  defaultLocale: Locale,
+): unknown {
+  return (
+    (arr ?? []).find(e => e._key === locale)
+    ?? (arr ?? []).find(e => e._key === defaultLocale)
+    ?? (arr ?? [])[0]
+  )?.value
 }
 
 export function resolveString(

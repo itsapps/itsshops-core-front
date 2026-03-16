@@ -183,6 +183,12 @@ export type Extensions = {
    * }
    */
   /** Resolved hooks type — use this when typing the resolve extension object. */
+  /**
+   * Per-locale resolution of raw extension query results.
+   * Called once per locale with the raw Sanity data from `queries`.
+   * Return resolved data to merge into cms[locale] — same keys as queries.
+   */
+  resolveData?: (rawData: Record<string, any[]>, ctx: ResolveContext) => Record<string, unknown>
   resolve?: {
     variant?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
     product?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
