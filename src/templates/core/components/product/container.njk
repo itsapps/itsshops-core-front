@@ -74,6 +74,9 @@
           {% if product.wine.vintage %}
             <div><dt>Vintage</dt><dd>{{ product.wine.vintage }}</dd></div>
           {% endif %}
+          {% if product.wine.alcohol %}
+            <div><dt>Alcohol</dt><dd>{{ product.wine.alcohol }}%</dd></div>
+          {% endif %}
         </dl>
       {% endif %}
 

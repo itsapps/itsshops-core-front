@@ -54,6 +54,11 @@ export type EnvVars = {
   SEND_BUILD_EMAIL:         string | undefined   // 'true' | 'false'
   SEND_LOW_STOCK_EMAIL:     string | undefined   // 'true' | 'false'
 
+  // Vinofact
+  VINOFACT_API_URL:      string | undefined
+  VINOFACT_API_TOKEN:    string | undefined
+  VINOFACT_PROFILE_SLUG: string | undefined
+
   // Stripe
   STRIPE_PUBLISHABLE_API_KEY: string | undefined
   STRIPE_SECRET_API_KEY:      string | undefined  // server-side only
@@ -90,6 +95,14 @@ declare global {
 
 export type VinofactConfig = {
   enabled: boolean
+  /**
+   * Additional GraphQL fields to request from the Vinofact wines query.
+   * The base query always includes: id slug title
+   *
+   * @example
+   * fields: `color alcohol year varietals { id name }`
+   */
+  fields?: string
   integration?: {
     endpoint: string
     accessToken: string
@@ -128,7 +141,7 @@ export type ItsshopsFeatures = {
 
 // ─── Sanity ───────────────────────────────────────────────────────────────────
 
-export type SanityClientConfig = Omit<ClientConfig, 'apiVersion'>
+export type SanityClientConfig = Omit<ClientConfig, 'apiVersion'> & { studioUrl?: string }
 
 // ─── CSS / JS ─────────────────────────────────────────────────────────────────
 
@@ -168,6 +181,7 @@ export type Extensions = {
    *   }
    * }
    */
+  /** Resolved hooks type — use this when typing the resolve extension object. */
   resolve?: {
     variant?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
     product?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
@@ -179,6 +193,8 @@ export type Extensions = {
     module?:   (module: any, ctx: ResolveContext) => Record<string, unknown>
   }
 }
+
+export type ResolveHooks = NonNullable<Extensions['resolve']>
 
 // ─── Customer config ──────────────────────────────────────────────────────────
 //

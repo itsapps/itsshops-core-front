@@ -3,7 +3,7 @@ import type { ClientPerspective } from '@sanity/client'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
-  const features = resolveFeatures(config.features)
+  const features = resolveFeatures(config.features, env)
 
   const previewEnabled = config.preview?.enabled ?? env.preview.enabled
   const perspective = (previewEnabled ? (env.preview.perspective || 'drafts') : 'published') as ClientPerspective
@@ -25,6 +25,9 @@ export function resolveConfig(config: Config): CoreConfig {
       ? (config.stripe?.publishableApiKey ?? env.stripe.publishableApiKey)
       : 'skip',
     'CAPTCHA_SITE_KEY':          config.captchaSiteKey ?? env.captchaSiteKey,
+    'VINOFACT_API_URL':          features.shop.vinofact.enabled ? features.shop.vinofact.integration?.endpoint    : 'skip',
+    'VINOFACT_API_TOKEN':        features.shop.vinofact.enabled ? features.shop.vinofact.integration?.accessToken : 'skip',
+    'VINOFACT_PROFILE_SLUG':     features.shop.vinofact.enabled ? features.shop.vinofact.integration?.profileSlug : 'skip',
   })
 
   const baseUrl = config.baseUrl ?? env.baseUrl
@@ -128,6 +131,11 @@ function readEnv() {
       token:     process.env.SANITY_TOKEN,
       studioUrl: process.env.SANITY_STUDIO_URL,
     },
+    vinofact: {
+      endpoint:     process.env.VINOFACT_API_URL,
+      accessToken:  process.env.VINOFACT_API_TOKEN,
+      profileSlug:  process.env.VINOFACT_PROFILE_SLUG,
+    },
     stripe: {
       publishableApiKey: process.env.STRIPE_PUBLISHABLE_API_KEY,
     },
@@ -168,7 +176,14 @@ function parseNum(value: string | undefined, fallback: number): number {
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 
-function resolveFeatures(input?: ItsshopsFeatures): Features {
+function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<typeof readEnv>): Features {
+  const vinofactInput = input?.shop?.vinofact
+  const vinofactIntegration = vinofactInput?.integration ?? (
+    env.vinofact.endpoint && env.vinofact.accessToken && env.vinofact.profileSlug
+      ? { endpoint: env.vinofact.endpoint, accessToken: env.vinofact.accessToken, profileSlug: env.vinofact.profileSlug }
+      : undefined
+  )
+
   return {
     shop: {
       enabled:      !!input?.shop,
@@ -176,7 +191,11 @@ function resolveFeatures(input?: ItsshopsFeatures): Features {
       manufacturer: input?.shop?.manufacturer ?? false,
       stock:        input?.shop?.stock        ?? false,
       category:     input?.shop?.category     ?? false,
-      vinofact:     input?.shop?.vinofact     ?? { enabled: false },
+      vinofact: {
+        enabled:     vinofactInput?.enabled     ?? false,
+        fields:      vinofactInput?.fields,
+        integration: vinofactIntegration,
+      },
     },
     blog:  input?.blog  ?? false,
     users: input?.users ?? false,

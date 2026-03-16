@@ -1,0 +1,165 @@
+import { slugify as coreSlugify } from '../../utils/slugify'
+import { stegaClean } from '@sanity/client/stega'
+import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
+import type { ResolvedCategory, ResolvedVariant } from '../../types/data'
+import { resolveString } from '../localizers'
+
+// ---------------------------------------------------------------------------
+// Slug generation
+// ---------------------------------------------------------------------------
+
+function generateVariantSlug(
+  variant: any,
+  product: any,
+  locale: Locale,
+  defaultLocale: Locale,
+): string {
+  const title = stegaClean(
+    resolveString(variant.title, locale, defaultLocale)
+    || resolveString(product.title, locale, defaultLocale)
+    || variant.sku
+    || variant._id
+  )
+
+  const kind = variant.kind ?? product.kind
+
+  switch (kind) {
+    case 'wine': {
+      const wine = variant.wine
+      const parts = [title]
+      if (wine?.volume)  parts.push(`${wine.volume}ml`)
+      if (wine?.vintage) parts.push(wine.vintage)
+      return coreSlugify(parts.join(' '))
+    }
+    case 'physical':
+    case 'digital': {
+      const optionNames = (variant.options ?? [])
+        .map((o: any) => resolveString(o.name, locale, defaultLocale))
+        .filter(Boolean)
+      return coreSlugify([title, ...optionNames].join(' '))
+    }
+    default:
+      return coreSlugify(title)
+  }
+}
+
+function deduplicateSlug(slug: string, used: Set<string>): string {
+  if (!used.has(slug)) { used.add(slug); return slug }
+  let n = 2
+  while (used.has(`${slug}-${n}`)) n++
+  const unique = `${slug}-${n}`
+  used.add(unique)
+  return unique
+}
+
+function mergeSeоFallback(variantSeo: any, productSeo: any): any {
+  if (!variantSeo && !productSeo) return null
+  if (!variantSeo) return productSeo
+  if (!productSeo) return variantSeo
+  return {
+    metaTitle:        variantSeo.metaTitle?.length        ? variantSeo.metaTitle        : productSeo.metaTitle,
+    metaDescription:  variantSeo.metaDescription?.length  ? variantSeo.metaDescription  : productSeo.metaDescription,
+    shareTitle:       variantSeo.shareTitle?.length       ? variantSeo.shareTitle       : productSeo.shareTitle,
+    shareDescription: variantSeo.shareDescription?.length ? variantSeo.shareDescription : productSeo.shareDescription,
+    keywords:         variantSeo.keywords?.length         ? variantSeo.keywords         : productSeo.keywords,
+    shareImage:       variantSeo.shareImage               ?? productSeo.shareImage,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resolver
+// ---------------------------------------------------------------------------
+
+export function resolveVariants(
+  rawVariants: any[],
+  productMap: Map<string, any>,
+  ctx: ResolveContext,
+  permalinks: Record<Locale, Required<PermalinkTranslations>>,
+  categoryMap: Map<string, ResolvedCategory>,
+  siblingsMap: Map<string, any[]>,
+  vinofactMap: Map<string, any>,
+  resolveHooks?: ResolveHooks,
+): ResolvedVariant[] {
+  const { locale, defaultLocale } = ctx
+  const usedSlugs = new Set<string>()
+
+  // First pass: generate slugs
+  const withSlugs = rawVariants.map(variant => {
+    const product = productMap.get(variant.productId)
+    if (!product) return null
+    const rawSlug = generateVariantSlug(variant, product, locale, defaultLocale)
+    const slug = deduplicateSlug(rawSlug, usedSlugs)
+    const url = `/${locale}/${permalinks[locale].product}/${slug}/`
+    return { variant, product, slug, url }
+  }).filter(Boolean) as Array<{ variant: any; product: any; slug: string; url: string }>
+
+  const variantUrlMap = new Map(withSlugs.map(({ variant, url }) => [variant._id, url]))
+
+  // Second pass: fully resolve
+  return withSlugs.map(({ variant, product, slug, url }) => {
+    const rawCategories: any[] = variant.categories?.length
+      ? variant.categories
+      : (product.categories ?? [])
+
+    const categories = rawCategories
+      .map((c: any) => categoryMap.get(c._id))
+      .filter(Boolean) as ResolvedCategory[]
+
+    const siblings = (siblingsMap.get(product._id) ?? [])
+      .filter((s: any) => s._id !== variant._id)
+      .map((s: any) => ({
+        _id:    s._id,
+        title:  ctx.resolveString(s.title) || ctx.resolveString(product.title),
+        url:    variantUrlMap.get(s._id) ?? '',
+        status: s.status ?? 'active',
+      }))
+
+    const resolved: ResolvedVariant = {
+      _id:            variant._id,
+      slug,
+      url,
+      status:         variant.status ?? 'active',
+      title:          ctx.resolveString(variant.title) || ctx.resolveString(product.title),
+      sku:            variant.sku ?? '',
+      kind:           variant.kind ?? product.kind ?? 'physical',
+      featured:       variant.featured ?? false,
+      price:          variant.price ?? product.price ?? 0,
+      compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
+      image:          ctx.resolveImage(variant.image) ?? ctx.resolveImage(product.image),
+      seo:            ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),
+      categories,
+      manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
+        _id:  m._id,
+        name: ctx.resolveString(m.name),
+      })),
+      taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
+      stock: variant.stock ?? null,
+      wine: variant.wine ? {
+        volume:  variant.wine.volume  ?? null,
+        vintage: variant.wine.vintage ?? null,
+        ...(variant.wine.vinofactWineId ? (vinofactMap.get(variant.wine.vinofactWineId) ?? {}) : {}),
+      } : null,
+      options: (variant.options ?? []).map((o: any) => ({
+        _id:  o._id,
+        name: ctx.resolveString(o.name),
+      })),
+      bundleItems: (variant.bundleItems ?? []).map((b: any) => ({
+        quantity: b.quantity ?? 1,
+        variant: {
+          _id:   b.variant._id,
+          title: ctx.resolveString(b.variant.title),
+        },
+      })),
+      product: {
+        _id:   product._id,
+        title: ctx.resolveString(product.title),
+      },
+      siblings,
+      // Extended fields from product-level hook (variant hook wins on collision)
+      ...(resolveHooks?.product ? resolveHooks.product(product, ctx) : {}),
+      ...(resolveHooks?.variant ? resolveHooks.variant(variant, ctx) : {}),
+    }
+
+    return resolved
+  })
+}
