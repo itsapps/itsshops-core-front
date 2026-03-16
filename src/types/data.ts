@@ -49,6 +49,11 @@ export type ResolvedBundleItem = {
   variant: {
     _id: string
     title: string
+    url: string | null
+    kind: string
+    volume: number | null
+    vintage: string | null
+    options: ResolvedOption[]
   }
 }
 

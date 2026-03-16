@@ -126,6 +126,7 @@ export function resolveVariants(
 ): ResolvedVariant[] {
   const { locale, defaultLocale } = ctx
   const usedSlugs = new Set<string>()
+  const rawVariantMap = new Map(rawVariants.map(v => [v._id, v]))
 
   // First pass: generate slugs
   const withSlugs = rawVariants.map(variant => {
@@ -183,13 +184,26 @@ export function resolveVariants(
         _id:  o._id,
         name: ctx.resolveString(o.name),
       })),
-      bundleItems: (variant.bundleItems ?? []).map((b: any) => ({
-        quantity: b.quantity ?? 1,
-        variant: {
-          _id:   b.variant._id,
-          title: ctx.resolveString(b.variant.title),
-        },
-      })),
+      bundleItems: (variant.bundleItems ?? []).flatMap((b: any) => {
+        const rawV = rawVariantMap.get(b.variantId)
+        if (!rawV) return []
+        const rawP = productMap.get(rawV.productId)
+        return [{
+          quantity: b.quantity ?? 1,
+          variant: {
+            _id:     rawV._id,
+            title:   ctx.resolveString(rawV.title) || ctx.resolveString(rawP?.title),
+            url:     variantUrlMap.get(rawV._id) ?? null,
+            kind:    rawV.kind ?? rawP?.kind ?? 'physical',
+            volume:  rawV.wine?.volume  ?? null,
+            vintage: rawV.wine?.vintage ?? null,
+            options: (rawV.options ?? []).map((o: any) => ({
+              _id:  o._id,
+              name: ctx.resolveString(o.name),
+            })),
+          },
+        }]
+      }),
       product: {
         _id:   product._id,
         title: ctx.resolveString(product.title),

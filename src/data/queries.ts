@@ -101,8 +101,8 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id },
   wine,
-  "options": options[]->{ _id, "name": name[]{ _key, value } },
-  "bundleItems": bundleItems[]{ quantity, "variant": product->{ _id, "title": title[]{ _key, value } } },
+  "options": options[]->{ _id, "name": title[]{ _key, value } },
+  "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
   "productId": product._ref${extraFields('variant', extensions)}
 }`
 }

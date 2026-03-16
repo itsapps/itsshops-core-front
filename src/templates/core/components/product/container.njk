@@ -94,7 +94,23 @@
         {% if product.bundleItems.length %}
           <ul class="product-bundle-items">
             {% for item in product.bundleItems %}
-              <li>{{ item.quantity }}x {{ item.variant.title }}</li>
+              <li>
+                {{ item.quantity }}x
+                {% if item.variant.url %}
+                  <a href="{{ item.variant.url }}" class="bundle-item__link">{{ item.variant.title }}</a>
+                {% else %}
+                  {{ item.variant.title }}
+                {% endif %}
+                {% if item.variant.kind == "wine" and (item.variant.volume or item.variant.vintage) %}
+                  <span class="bundle-item__meta">
+                    {%- if item.variant.volume %}{{ item.variant.volume }}ml{% endif %}
+                    {%- if item.variant.volume and item.variant.vintage %} · {% endif %}
+                    {%- if item.variant.vintage %}{{ item.variant.vintage }}{% endif -%}
+                  </span>
+                {% elif item.variant.options.length %}
+                  <span class="bundle-item__meta">{%- for o in item.variant.options %}{{ o.name }}{% if not loop.last %}, {% endif %}{% endfor -%}</span>
+                {% endif %}
+              </li>
             {% endfor %}
           </ul>
         {% endif %}
