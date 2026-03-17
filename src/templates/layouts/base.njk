@@ -59,9 +59,7 @@
 
     {%- getBundle "html", "externalJS" -%}
 
-    {% if not coreConfig.preview.enabled %}
-      <script src="/assets/scripts/index.js" type="module"></script>
-    {% endif %}
+    <script src="/assets/scripts/index.js" type="module"></script>
 
     {% block scripts %}{% endblock %}
 
