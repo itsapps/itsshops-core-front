@@ -23,6 +23,7 @@ import { createShortcodes } from './shortcodes'
 import { setupPlugins } from './config/plugins'
 import { setupDev } from './config/dev'
 import { setupJs } from './config/js'
+import { setupHeaders } from './config/headers'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
@@ -40,6 +41,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   createShortcodes(ctx)
   setupAssets(ctx)
   setupJs(ctx)
+  setupHeaders(ctx)
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
   eleventyConfig.addGlobalData('coreConfig', config)

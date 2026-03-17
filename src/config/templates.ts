@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 // import Nunjucks from 'nunjucks';
 import { fileURLToPath } from "url"
-import { PluginConfigs, CoreConfig } from '../types';
+import { type CoreContext } from '../types';
 // import {
 //   EleventyRenderPlugin,
 //   EleventyI18nPlugin,
@@ -15,11 +15,11 @@ const templatesRoot = path.join(__dirname, 'templates');
 const layoutsDir = path.join(templatesRoot, 'layouts');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
-export const setupTemplates = (configs: PluginConfigs) => {
-  const { eleventyConfig, config } = configs
+export const setupTemplates = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
 
   // add templates to search path
-  loadTemplates(configs)
+  loadTemplates(ctx)
 
   if (config.dev.enabled) {
     console.log('Debug mode enabled: throwing errors for undefined variables in templates')
@@ -29,8 +29,8 @@ export const setupTemplates = (configs: PluginConfigs) => {
   }
 }
 
-export const loadTemplates = (configs: PluginConfigs) => {
-  const { eleventyConfig, config } = configs
+export const loadTemplates = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
   
   const loadedTemplates: string[] = []
   const ignoredTemplates: string[] = []
@@ -85,7 +85,7 @@ export const loadTemplates = (configs: PluginConfigs) => {
         if (shouldIgnoreTemplate({
           dir,
           file,
-          config,
+          ctx,
         })) {
           console.log(`🚫 Ignoring template: ${dirPath}/${file}`);
           const templatePath = path.join(dir, file)
@@ -112,7 +112,7 @@ export const loadTemplates = (configs: PluginConfigs) => {
       const ignoreTemplate = shouldIgnoreTemplate({
         dir,
         file,
-        config
+        ctx,
       })
       const templatePath = path.join(dir, file)
       if (ignoreTemplate) {
@@ -177,12 +177,13 @@ export const loadTemplates = (configs: PluginConfigs) => {
 function shouldIgnoreTemplate({
   dir,
   file,
-  config
+  ctx
 }: {
   dir: string,
   file: string,
-  config: CoreConfig}
-): boolean {
+  ctx: CoreContext
+}): boolean {
+  const { config } = ctx
   const mode = config.buildMode
 
   /* ------------------------------

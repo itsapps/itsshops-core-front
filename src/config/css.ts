@@ -12,14 +12,17 @@ export const cssConfig = (ctx: CoreContext) => {
   }
 
   const { cssPath, minify, ...tailwind } = config.css || {};
+  const inputDir   = eleventyConfig.directories.input
+  const includesDir = path.join(inputDir, '_includes')
   eleventyConfig.addTemplateFormats('css');
 
   eleventyConfig.addExtension('css', {
     outputFileExtension: 'css',
     compile: async (inputContent: string, inputPath: string) => {
       const paths: string[] = [];
-      if (inputPath.endsWith(cssPath || '/assets/css/global/global.css')) {
-        paths.push('src/_includes/css/global.css');
+      const defaultEntry = path.join(inputDir, 'assets/css/global/global.css')
+      if (inputPath.endsWith(cssPath || defaultEntry)) {
+        paths.push(path.join(includesDir, 'css/global.css'));
       } else {
         return;
       }

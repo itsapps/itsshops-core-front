@@ -14,7 +14,7 @@ export const setupJs = (ctx: CoreContext) => {
   if (config.preview.enabled) return
 
   const minify = config.js?.minify ?? false
-  const scriptsRoot = path.resolve('src/assets/scripts')
+  const scriptsRoot = path.resolve(eleventyConfig.directories.input, 'assets/scripts')
 
   // Use customer's entry if it exists, otherwise fall back to core default
   const customerEntry  = path.join(scriptsRoot, 'index.ts')
@@ -34,7 +34,7 @@ export const setupJs = (ctx: CoreContext) => {
       // esbuild writes directly to dist/assets/scripts/ with code splitting.
       await esbuild.build({
         entryPoints: [deferredEntry],
-        outdir: path.resolve('dist/assets/scripts'),
+        outdir: path.resolve(eleventyConfig.directories.output, 'assets/scripts'),
         bundle: true,
         splitting: true,
         format: 'esm',

@@ -5,11 +5,21 @@ const defaults: Record<Locale, Required<PermalinkTranslations>> = {
     product:  'produkte',
     category: 'kategorien',
     blog:     'blog',
+    checkout: 'warenkorb',
+    account:  'konto',
+    register: 'registrierung',
+    recover:  'passwort-vergessen',
+    login:    'anmelden',
   },
   en: {
     product:  'products',
     category: 'categories',
     blog:     'blog',
+    checkout: 'checkout',
+    account:  'account',
+    register: 'register',
+    recover:  'recover-password',
+    login:    'login',
   },
 }
 

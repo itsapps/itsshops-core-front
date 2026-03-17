@@ -1,20 +1,18 @@
+import path from 'node:path'
 import { CoreContext } from '../types';
 
 export const setupAssets = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
+  if (config.preview.enabled) return
 
-  if (!config.preview.enabled) {
-    const assetsToCopy = [
-      'src/assets/fonts/',
-    ]
-    assetsToCopy.forEach(path => eleventyConfig.addPassthroughCopy(path))
+  const input = eleventyConfig.directories.input
 
-    // favicons to root directory
-    eleventyConfig.addPassthroughCopy({
-      'src/assets/images/static/*': '/assets/images/'
-    });
-    eleventyConfig.addPassthroughCopy({
-      'src/assets/images/favicon/*': '/'
-    });
-  }
+  eleventyConfig.addPassthroughCopy(path.join(input, 'assets/fonts/'))
+
+  eleventyConfig.addPassthroughCopy({
+    [path.join(input, 'assets/images/static/*')]: '/assets/images/'
+  })
+  eleventyConfig.addPassthroughCopy({
+    [path.join(input, 'assets/images/favicon/*')]: '/'
+  })
 }

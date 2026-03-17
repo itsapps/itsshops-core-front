@@ -1,5 +1,6 @@
-import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName } from '../types'
+import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName, CspDirectives, ResolvedCspDirectives } from '../types'
 import type { ClientPerspective } from '@sanity/client'
+import { buildPermalinkTranslations } from '../i18n/permalinks'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
@@ -50,8 +51,16 @@ export function resolveConfig(config: Config): CoreConfig {
     locales:       config.locales || ['de', 'en'],
     defaultLocale: config.defaultLocale || 'de',
     features,
-    permalinks:    config.permalinks    ?? {},
-    translations:  config.translations  ?? {},
+    permalinks:         config.permalinks ?? {},
+    resolvedPermalinks: buildPermalinkTranslations(config.permalinks),
+    translations:       config.translations ?? {},
+    headers: {
+      extra:  resolveCspDirectives(config.headers?.extra),
+      routes: (config.headers?.routes ?? []).map(r => ({
+        path:  r.path,
+        extra: resolveCspDirectives(r.extra),
+      })),
+    },
     extensions:    config.extensions    ?? {},
     menu:          { maxDepth: config.menu?.maxDepth ?? 1 },
     baseUrl,
@@ -175,6 +184,16 @@ function parseNum(value: string | undefined, fallback: number): number {
 }
 
 // ─── Features ─────────────────────────────────────────────────────────────────
+
+function resolveCspDirectives(input: CspDirectives | undefined): ResolvedCspDirectives {
+  return {
+    'script-src':  input?.['script-src']  ?? [],
+    'connect-src': input?.['connect-src'] ?? [],
+    'frame-src':   input?.['frame-src']   ?? [],
+    'img-src':     input?.['img-src']     ?? [],
+    'style-src':   input?.['style-src']   ?? [],
+  }
+}
 
 function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<typeof readEnv>): Features {
   const vinofactInput = input?.shop?.vinofact

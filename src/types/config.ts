@@ -144,6 +144,32 @@ export type ItsshopsFeatures = {
 
 export type SanityClientConfig = Omit<ClientConfig, 'apiVersion'> & { studioUrl?: string }
 
+// ─── Headers / CSP ────────────────────────────────────────────────────────────
+
+export type CspDirectives = Partial<{
+  'script-src':  string[]
+  'connect-src': string[]
+  'frame-src':   string[]
+  'img-src':     string[]
+  'style-src':   string[]
+}>
+
+/** All directives present — used in CoreConfig after normalization */
+export type ResolvedCspDirectives = {
+  'script-src':  string[]
+  'connect-src': string[]
+  'frame-src':   string[]
+  'img-src':     string[]
+  'style-src':   string[]
+}
+
+export type HeadersConfig = {
+  /** Extra CSP sources added to every route */
+  extra?:  CspDirectives
+  /** Additional custom routes with their own extra CSP sources */
+  routes?: Array<{ path: string; extra: CspDirectives }>
+}
+
 // ─── CSS / JS ─────────────────────────────────────────────────────────────────
 
 export type Css = {
@@ -245,6 +271,9 @@ export type Config = {
   permalinks?: Partial<Record<Locale, PermalinkTranslations>>
   translations?: Record<string, any>
 
+  // headers / CSP
+  headers?: HeadersConfig
+
   // data extensions
   extensions?: Extensions
 
@@ -303,7 +332,12 @@ export type CoreConfig = {
   defaultLocale: Locale
   features: Features
   permalinks: Partial<Record<Locale, PermalinkTranslations>>
+  resolvedPermalinks: Record<Locale, Required<PermalinkTranslations>>
   translations: Record<string, any>
+  headers: {
+    extra:  ResolvedCspDirectives
+    routes: Array<{ path: string; extra: ResolvedCspDirectives }>
+  }
   extensions: Extensions
   menu: { maxDepth: number }
   baseUrl: string
