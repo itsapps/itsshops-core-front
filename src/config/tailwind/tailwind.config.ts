@@ -38,18 +38,22 @@ export function getTailwindConfig(css: Css): Config {
       tablet: '60em',
       lg: '80em'
     },
-    colors = [],
-    fontFamilies = [],
-    textSizes = [],
-    spacings = []
+    colors = defaultColors.items,
+    fontFamilies = defaultFontFamilies.items,
+    textSizes = defaultTextSizes.items,
+    spacings = defaultSpacings.items
   } = css
   
-  const colorTokens = tokensToTailwind(mergeByKey(defaultColors.items, colors))
-  const fontFamilyTokens = tokensToTailwind(mergeByKey(defaultFontFamilies.items, fontFamilies))
-  const fontSizeTokens = tokensToTailwind(clampGenerator(mergeByKey(defaultTextSizes.items, textSizes), viewport))
-  const spacingTokens = tokensToTailwind(clampGenerator(mergeByKey(defaultSpacings.items, spacings), viewport))
+  const colorTokens = tokensToTailwind(colors)
+  const fontFamilyTokens = tokensToTailwind(fontFamilies)
+  const fontSizeTokens = tokensToTailwind(clampGenerator(textSizes, viewport))
+  const spacingTokens = tokensToTailwind(clampGenerator(spacings, viewport))
+  // const colorTokens = tokensToTailwind(mergeByKey(defaultColors.items, colors))
+  // const fontFamilyTokens = tokensToTailwind(mergeByKey(defaultFontFamilies.items, fontFamilies))
+  // const fontSizeTokens = tokensToTailwind(clampGenerator(mergeByKey(defaultTextSizes.items, textSizes), viewport))
+  // const spacingTokens = tokensToTailwind(clampGenerator(mergeByKey(defaultSpacings.items, spacings), viewport))
 
-  const screenVariants = Object.keys(screens);
+  // const screenVariants = Object.keys(screens);
 
   return {
     experimental: {
@@ -64,39 +68,39 @@ export function getTailwindConfig(css: Css): Config {
     ],
     // presets: [],
     safelist: [
-      {
-        pattern: /grid-cols-/,
-        variants: screenVariants,
-      },
-      {
-        // pattern: /col-span-(1|2|3)/,
-        pattern: /col-span-/,
-        variants: screenVariants,
-      },
-      {
-        pattern: /col-start-/,
-        variants: screenVariants,
-      },
-      {
-        pattern: /justify-self-/,
-        variants: screenVariants,
-      },
-      {
-        pattern: /self-/,
-        variants: screenVariants,
-      },
-      {
-        pattern: /object-contain/,
-      },
       // {
-      //   pattern: /max-w-/,
+      //   pattern: /grid-cols-/,
+      //   variants: screenVariants,
       // },
       // {
-      //   pattern: /bg-/,
+      //   // pattern: /col-span-(1|2|3)/,
+      //   pattern: /col-span-/,
+      //   variants: screenVariants,
       // },
-      {
-        pattern: /text-(left|center|right)/,
-      },
+      // {
+      //   pattern: /col-start-/,
+      //   variants: screenVariants,
+      // },
+      // {
+      //   pattern: /justify-self-/,
+      //   variants: screenVariants,
+      // },
+      // {
+      //   pattern: /self-/,
+      //   variants: screenVariants,
+      // },
+      // {
+      //   pattern: /object-contain/,
+      // },
+      // // {
+      // //   pattern: /max-w-/,
+      // // },
+      // // {
+      // //   pattern: /bg-/,
+      // // },
+      // {
+      //   pattern: /text-(left|center|right)/,
+      // },
     ],
     theme: {
       screens,
