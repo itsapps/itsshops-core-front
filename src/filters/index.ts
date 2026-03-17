@@ -54,6 +54,28 @@ function formatDate(
   return new Intl.DateTimeFormat(locale, { dateStyle: style }).format(new Date(date))
 }
 
+/**
+ * Format a date or date range in a locale-aware way.
+ * With combine: true (default), a same-month range is collapsed: "15.–17. März 2026" / "March 15–17, 2026"
+ * With combine: false, from and to are formatted fully: "15. März 2026 – 17. März 2026"
+ * Usage: {{ event.from | formatDateRange(event.to) }}
+ *        {{ event.from | formatDateRange(event.to, { combine: false }) }}
+ */
+function formatDateRange(
+  from: string,
+  locale: string,
+  to?: string,
+  { combine = true }: { combine?: boolean } = {},
+): string {
+  if (!from) return ''
+  const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  const f = new Date(from + 'T00:00:00')
+  if (!to || to === from) return fmt.format(f)
+  const t = new Date(to + 'T00:00:00')
+  if (combine) return fmt.formatRange(f, t)
+  return `${fmt.format(f)} – ${fmt.format(t)}`
+}
+
 /** Take the first n items from an array. Usage: {% for x in arr | limit(5) %} */
 function limit(arr: any[], n: number): any[] {
   return (arr ?? []).slice(0, n)
@@ -92,4 +114,7 @@ export const createFilters = (ctx: CoreContext) => {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
+  eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
+    return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)
+  })
 }
