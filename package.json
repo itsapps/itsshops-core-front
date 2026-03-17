@@ -15,6 +15,9 @@
     "./functions/preview": {
       "types": "./dist/preview.d.ts",
       "import": "./dist/preview.js"
+    },
+    "./scripts": {
+      "import": "./dist/scripts/index.ts"
     }
   },
   "files": [
@@ -62,7 +65,8 @@
     "postcss-load-config": "6.0.1",
     "postcss-nesting": "^13.0.1",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "esbuild": "^0.27.3"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",

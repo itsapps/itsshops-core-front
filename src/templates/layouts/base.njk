@@ -35,6 +35,8 @@
 
     {% include "core/head/favicons.njk" %}
 
+    {%- include "core/head/js-inline.njk" -%}
+
     {% block head %}{% endblock %}
   </head>
 
@@ -54,6 +56,12 @@
     {% block footer %}
       {%- include "components/footer.njk" -%}
     {% endblock %}
+
+    {%- getBundle "html", "externalJS" -%}
+
+    {% if not coreConfig.preview.enabled %}
+      <script src="/assets/scripts/index.js" type="module"></script>
+    {% endif %}
 
     {% block scripts %}{% endblock %}
 

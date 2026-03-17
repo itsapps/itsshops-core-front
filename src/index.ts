@@ -22,6 +22,7 @@ import { setupTranslation } from './i18n/translations/frontTranslation'
 import { createShortcodes } from './shortcodes'
 import { setupPlugins } from './config/plugins'
 import { setupDev } from './config/dev'
+import { setupJs } from './config/js'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
@@ -38,6 +39,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   createFilters(ctx)
   createShortcodes(ctx)
   setupAssets(ctx)
+  setupJs(ctx)
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
   eleventyConfig.addGlobalData('coreConfig', config)

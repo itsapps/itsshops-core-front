@@ -1,6 +1,6 @@
 {% if coreConfig.dev.enabled %}
   {% set _locale = page.lang or coreConfig.defaultLocale %}
-  <details style="position:fixed;top:0;right:0;z-index:9999;background:#111;color:#eee;font:12px/1.4 monospace;max-height:90vh;overflow-y:auto;padding:8px 12px;border-bottom-left-radius:6px;min-width:220px">
+  <details style="position:fixed;bottom:0;right:0;z-index:9999;background:#111;color:#eee;font:12px/1.4 monospace;max-height:90vh;overflow-y:auto;padding:8px 12px;border-top-left-radius:6px;min-width:220px">
     <summary style="cursor:pointer;font-weight:bold;padding:2px 0">🗺 Dev nav</summary>
     {% if cms[_locale].pages.length %}
       <p style="margin:6px 0 2px;opacity:.6">Pages</p>
