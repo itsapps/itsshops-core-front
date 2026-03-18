@@ -1,8 +1,13 @@
-import type { Locale, ResolveContext, TranslatorFunction } from '../../types'
+import type { Locale, ResolveContext, TranslatorFunction, Extensions } from '../../types'
 import { resolveString, resolveLocaleValue, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo } from '../localizers'
-import { resolvePortableText } from '../portableText'
+import { resolvePortableText, renderPortableText } from '../portableText'
 
-export function makeCtx(locale: Locale, defaultLocale: Locale, translate: TranslatorFunction): ResolveContext {
+export function makeCtx(
+  locale: Locale,
+  defaultLocale: Locale,
+  translate: TranslatorFunction,
+  extensions: Extensions = {},
+): ResolveContext {
   return {
     locale,
     defaultLocale,

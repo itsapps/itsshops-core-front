@@ -105,7 +105,8 @@ export async function buildCmsData(
   for (const locale of localesToProcess) {
     const defaultLocale = config.defaultLocale
     const resolve = extensions.resolve ?? {}
-    const ctx = makeCtx(locale, defaultLocale, translate)
+
+    const ctx = makeCtx(locale, defaultLocale, translate, extensions)
 
     const extensionData = extensions.resolveData
       ? extensions.resolveData(rawExtensionData, ctx)

@@ -6,7 +6,7 @@ import type { TranslatorParams } from './t9n'
 export type ResolveContext = BoundLocalizers & {
   locale: Locale
   defaultLocale: Locale
-  resolvePortableText: (raw: any) => string
+  resolvePortableText: (raw: any) => any[]
   /** Translate a key in the current locale. Locale is pre-bound from the resolution context. */
   translate: (key: string, params?: TranslatorParams) => string
 }

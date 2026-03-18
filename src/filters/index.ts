@@ -3,6 +3,7 @@ import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
 import { imageUrl } from "../media"
 import { stegaClean } from "@sanity/client/stega"
+import { renderPortableText } from "../data/portableText"
 
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -114,6 +115,11 @@ export const createFilters = (ctx: CoreContext) => {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
+  eleventyConfig.addFilter('portableText', function (blocks: any[]) {
+    const locale = this.page?.lang || config.defaultLocale
+    const urlMap: Record<string, string> = this.ctx?.cms?.[locale]?.urlMap ?? {}
+    return renderPortableText(blocks, urlMap, config.extensions?.portableText as any)
+  })
   eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
     return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)
   })

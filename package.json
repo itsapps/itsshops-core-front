@@ -41,6 +41,7 @@
     "@11ty/eleventy": "^3.1.2",
     "@iarna/toml": "^2.2.5",
     "@netlify/functions": "5.0.0",
+    "@portabletext/to-html": "^5.0.2",
     "@sanity/client": "^7.14.1",
     "@sanity/image-url": "^2.0.3",
     "@sindresorhus/slugify": "^3.0.0",
@@ -51,6 +52,7 @@
     "daisyui": "^5.5.18",
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
+    "esbuild": "^0.27.3",
     "fs-extra": "^11.3.3",
     "i18n-iso-countries": "^7.14.0",
     "i18next": "^25.8.18",
@@ -65,8 +67,7 @@
     "postcss-load-config": "6.0.1",
     "postcss-nesting": "^13.0.1",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.21.0",
-    "esbuild": "^0.27.3"
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",

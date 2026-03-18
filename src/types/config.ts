@@ -5,6 +5,7 @@ import type { EleventyConfig } from '11ty.ts'
 import type { TranslatorFunction } from './t9n'
 import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
+import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -197,6 +198,8 @@ export type Extensions = {
   fields?: Record<string, string>
   /** Custom module type projections per document type (page, post, ...) */
   modules?: Record<string, Record<string, string>>
+  /** Extra toHTML components merged with core — add custom marks, block types, list renderers */
+  portableText?: Partial<PortableTextHtmlComponents>
   /**
    * Resolve hooks — called per locale after core resolution.
    * Return fields to merge into the final output.

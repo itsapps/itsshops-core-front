@@ -3,7 +3,7 @@ export * from './types/data'
 export * as projections from './data/projections'
 export * as queries from './data/queries'
 export { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from './data/localizers'
-export { resolvePortableText } from './data/portableText'
+export { resolvePortableText, renderPortableText } from './data/portableText'
 export { sanityPicture, imageUrl, imageSizes } from './media'
 export type { PictureSize } from './media'
 
