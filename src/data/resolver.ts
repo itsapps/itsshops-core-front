@@ -180,5 +180,7 @@ export async function buildCmsData(
     for (const item of posts)      cms.posts.push({ ...item, locale })
   }
 
+  extensions.onCmsBuilt?.(cms)
+
   return cms
 }

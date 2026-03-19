@@ -6,6 +6,7 @@ import type { TranslatorFunction } from './t9n'
 import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
+import type { CmsData } from './data'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -218,6 +219,14 @@ export type Extensions = {
    * Return resolved data to merge into cms[locale] — same keys as queries.
    */
   resolveData?: (rawData: Record<string, any[]>, ctx: ResolveContext) => Record<string, unknown>
+  /**
+   * Called once after all CMS data has been built and resolved.
+   * Use for debugging — set a breakpoint here to inspect the full cms object.
+   *
+   * @example
+   * onCmsBuilt(cms) { console.log(cms) }
+   */
+  onCmsBuilt?: (cms: CmsData) => void
   resolve?: {
     variant?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
     product?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>

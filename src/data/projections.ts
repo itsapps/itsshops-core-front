@@ -137,6 +137,28 @@ export const action = `{
 export const actionsField = (fieldName = 'actions') => `"${fieldName}": ${fieldName}[] ${action}`
 
 // ---------------------------------------------------------------------------
+// Carousel
+// ---------------------------------------------------------------------------
+
+/** carousel — carousel object field (autoplay settings + localeAltImage slides) */
+export const carousel = `{
+  autoplay,
+  autoplayDelay,
+  loop,
+  fade,
+  "slides": slides[] ${i18nAltImage}
+}`
+
+export const carouselField = (fieldName = 'carousel') => `"${fieldName}": ${fieldName} ${carousel}`
+
+// ---------------------------------------------------------------------------
+// Reference arrays
+// ---------------------------------------------------------------------------
+
+/** refsField — projects an array of references to a plain string[] of IDs without dereferencing */
+export const refsField = (fieldName: string) => `"${fieldName}": ${fieldName}[]._ref`
+
+// ---------------------------------------------------------------------------
 // Shared document fragments
 // ---------------------------------------------------------------------------
 
