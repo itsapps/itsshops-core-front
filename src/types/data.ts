@@ -13,6 +13,14 @@ export type ResolvedImage = {
   crop?: SanityImageCrop
 }
 
+export type ResolvedCarousel = {
+  autoplay: boolean
+  autoplayDelay: number
+  loop: boolean
+  fade: boolean
+  slides: ResolvedImage[]
+}
+
 export type ResolvedSeo = {
   metaTitle: string
   metaDescription: string

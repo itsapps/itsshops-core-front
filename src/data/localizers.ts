@@ -1,5 +1,5 @@
 import type { Locale, LocalizedStringArray } from '../types'
-import type { ResolvedImage, ResolvedSeo } from '../types/data'
+import type { ResolvedCarousel, ResolvedImage, ResolvedSeo } from '../types/data'
 
 /** Locale-bound localizer functions — pre-applied with (locale, defaultLocale). */
 export type BoundLocalizers = {
@@ -9,6 +9,7 @@ export type BoundLocalizers = {
   resolveLocaleAltImage: (raw: any) => ResolvedImage | null
   resolveBaseImage:      (raw: any) => ResolvedImage | null
   resolveSeo:            (raw: any) => ResolvedSeo
+  resolveCarousel:       (raw: any) => ResolvedCarousel | null
 }
 
 /**
@@ -89,6 +90,19 @@ export function resolveBaseImage(raw: any): ResolvedImage | null {
     alt: raw.alt ?? '',
     hotspot: raw.hotspot,
     crop: raw.crop,
+  }
+}
+
+export function resolveCarousel(raw: any, locale: Locale, defaultLocale: Locale): ResolvedCarousel | null {
+  if (!raw) return null
+  return {
+    autoplay:      raw.autoplay      ?? false,
+    autoplayDelay: raw.autoplayDelay ?? 5,
+    loop:          raw.loop          ?? false,
+    fade:          raw.fade          ?? false,
+    slides: (raw.slides ?? [])
+      .map((s: any) => resolveLocaleAltImage(s, locale, defaultLocale))
+      .filter((s: ResolvedImage | null): s is ResolvedImage => s !== null),
   }
 }
 

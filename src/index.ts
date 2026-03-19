@@ -4,6 +4,8 @@ export * as projections from './data/projections'
 export * as queries from './data/queries'
 export { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from './data/localizers'
 export { resolvePortableText, renderPortableText } from './data/portableText'
+export { escapeHTML } from '@portabletext/to-html'
+export type { PortableTextHtmlComponents } from '@portabletext/to-html'
 export { sanityPicture, imageUrl, imageSizes } from './media'
 export type { PictureSize } from './media'
 
@@ -27,7 +29,7 @@ import { setupHeaders } from './config/headers'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
-  setupDev(config)
+  setupDev(eleventyConfig, config)
 
   const client = createSanityClient(config.sanity)
   const imageBuilder = createImageBuilder(client)

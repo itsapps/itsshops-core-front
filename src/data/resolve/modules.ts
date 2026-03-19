@@ -8,17 +8,9 @@ export function resolveModules(
   return (modules ?? []).map(m => {
     let resolved: any
     switch (m._type) {
-      case 'hero':
-        resolved = { ...m, bgImage: ctx.resolveImage(m.bgImage) }
-        break
-      case 'multiColumns':
-        resolved = {
-          ...m,
-          columns: (m.columns ?? []).map((col: any) => ({
-            ...col,
-            image: ctx.resolveImage(col.image),
-          })),
-        }
+      case 'productGrid':
+      case 'categoryGrid':
+        resolved = { ...m, title: ctx.resolveString(m.title) }
         break
       case 'carousel':
         resolved = {

@@ -26,29 +26,15 @@ export function buildModulesProjection(docType: string, extensions?: Config['ext
 // ---------------------------------------------------------------------------
 
 export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
-  hero: `{
+  productGrid: `{
     _type,
     ${proj.i18nStringField('title')},
-    ${proj.i18nImageField('bgImage')},
-    ${proj.actionsField()}
+    ${proj.refsField('products')}
   }`,
-  multiColumns: `{
-    _type,
-    "columns": columns[]{
-      ${proj.i18nStringField('title')},
-      ${proj.i18nStringField('text')},
-      ${proj.i18nImageField('image')}
-    }
-  }`,
-  productSection: `{
+  categoryGrid: `{
     _type,
     ${proj.i18nStringField('title')},
-    "products": products[]->{ _id }
-  }`,
-  categorySection: `{
-    _type,
-    ${proj.i18nStringField('title')},
-    "categories": categories[]->{ _id }
+    ${proj.refsField('categories')}
   }`,
   carousel: `{
     _type,
@@ -58,7 +44,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     fade,
     "slides": slides[]${proj.i18nAltImage}
   }`,
-  youtube: `{ _type, url }`,
+  youtube: `{ _type, url, showControls, autoload, autopause, start }`,
 }
 
 // ---------------------------------------------------------------------------

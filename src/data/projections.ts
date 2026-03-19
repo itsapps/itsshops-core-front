@@ -121,22 +121,6 @@ export const seo = `{
 }`
 
 // ---------------------------------------------------------------------------
-// Actions (hero CTAs, internalLinkFields with title + displayType)
-// ---------------------------------------------------------------------------
-
-/**
- * action — single CTA action object built with builders.internalLinkFields({ includeTitle, includeDisplayType }).
- * Fields: internalLinkTitle (i18n), internalLinkReference (ref), internalLinkDisplayType (string).
- */
-export const action = `{
-  ${i18nStringField('internalLinkTitle')},
-  "reference": internalLinkReference->{ _id, _type, "slug": slug.current },
-  "displayType": internalLinkDisplayType
-}`
-
-export const actionsField = (fieldName = 'actions') => `"${fieldName}": ${fieldName}[] ${action}`
-
-// ---------------------------------------------------------------------------
 // Carousel
 // ---------------------------------------------------------------------------
 
