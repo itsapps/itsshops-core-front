@@ -3,5 +3,5 @@ layout: base.njk
 permalink: "/{{ coreConfig.preview.locale }}/preview/"
 ---
 {%- set _locale = coreConfig.preview.locale or coreConfig.defaultLocale -%}
-{%- set cmsPage = cms[_locale].pages | findById(coreConfig.preview.documentId) -%}
+{%- set pageDoc = cms[_locale].pages | findById(coreConfig.preview.documentId) -%}
 {%- include "components/page/container.njk" -%}

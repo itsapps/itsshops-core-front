@@ -7,6 +7,7 @@ import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import type { CmsData } from './data'
+import type { PictureSize } from '../media'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -314,6 +315,16 @@ export type Config = {
   js?: Js
 
   // project-specific, no env var equivalent
+  /**
+   * Additional image size presets merged with core defaults.
+   * Customer-defined presets extend (and can override) the built-in ones.
+   *
+   * @example
+   * imageSizes: {
+   *   splitModule: { sizes: [[800, 1200], [400, 600]], widths: '(min-width: 50rem) 50vw, 100vw' }
+   * }
+   */
+  imageSizes?: Record<string, PictureSize>
   imagePlaceholders?: Record<string, string>
   manifest?: {
     themeBgColor?: string

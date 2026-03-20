@@ -1,7 +1,7 @@
 import type { SanityClient } from '@sanity/client'
 import { slugify as coreSlugify } from '../utils/slugify'
 import { stegaClean } from '@sanity/client/stega'
-import type { Locale, PermalinkTranslations, CoreContext } from '../types'
+import type { CoreContext } from '../types'
 import type { CmsData, CmsLocaleData, ResolvedPage, ResolvedPost } from '../types/data'
 import { buildPermalinkTranslations } from '../i18n/permalinks'
 import {
@@ -155,10 +155,11 @@ export async function buildCmsData(
     const menus = resolveMenus(rawMenus, ctx, resolve.menuItem)
 
     const urlMap: Record<string, string> = {}
-    for (const p of pages)      urlMap[p._id] = p.url
-    for (const c of categories) urlMap[c._id] = c.url
-    for (const v of products)   urlMap[v._id] = v.url
-    for (const p of posts)      urlMap[p._id] = p.url
+    const docMap: Record<string, any> = {}
+    for (const p of pages)      { urlMap[p._id] = p.url; docMap[p._id] = p }
+    for (const c of categories) { urlMap[c._id] = c.url; docMap[c._id] = c }
+    for (const v of products)   { urlMap[v._id] = v.url; docMap[v._id] = v }
+    for (const p of posts)      { urlMap[p._id] = p.url; docMap[p._id] = p }
 
     const localeData: CmsLocaleData = {
       products,
@@ -169,6 +170,7 @@ export async function buildCmsData(
       settings:     rawSettings     ? resolveSettings(rawSettings, ctx, urlMap)     : null,
       shopSettings: rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)     : null,
       urlMap,
+      docMap,
       ...extensionData,
     }
 

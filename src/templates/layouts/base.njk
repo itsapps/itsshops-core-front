@@ -5,63 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {% block seo %}
-      {%- set _item = product or category or cmsPage -%}
-      {%- set _seo = _item.seo or {} -%}
-      {%- set _seoTitle = _seo.metaTitle or _item.title or title -%}
-      {%- set _seoDesc  = _seo.metaDescription or description -%}
-      {%- set _shareImage = _seo.shareImage or _item.image -%}
-      <title>{{ _seoTitle | stegaClean }}</title>
-      {% if _seoDesc %}<meta name="description" content="{{ _seoDesc | stegaClean }}" />{% endif %}
-      {% if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords | stegaClean }}" />{% endif %}
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content="{{ (_seo.shareTitle or _seoTitle) | stegaClean }}" />
-      {% if _seo.shareDescription or _seoDesc %}
-        <meta property="og:description" content="{{ (_seo.shareDescription or _seoDesc) | stegaClean }}" />
-      {% endif %}
-      {% if _shareImage %}
-        <meta property="og:image" content="{{ _shareImage | imageUrl(1200) }}" />
-      {% endif %}
-    {% endblock %}
-
-    {% if coreConfig.buildMode == 'normal' %}
-      {% include "core/head/schemas.njk" %}
-      {% include "core/head/preloads.njk" %}
-    {% endif %}
-
-    {% block styles %}
-      {% include "core/head/css.njk" %}
-    {% endblock %}
-
+    {% include "components/head/seo.njk" %}
+    {% include "core/head/schemas.njk" %}
+    {% include "core/head/preloads.njk" %}
+    {% include "core/head/css.njk" %}
     {% include "core/head/favicons.njk" %}
-
     {%- include "core/head/js-inline.njk" -%}
-
-    {% block head %}{% endblock %}
+    {% include "components/head/extras.njk" %}
   </head>
 
   <body>
     {% include "core/partials/dev-nav.njk" %}
-
-    {% block header %}
-      {%- include "components/header.njk" -%}
-    {% endblock %}
+    {%- include "components/header.njk" -%}
 
     <main id="main">
-      {% block main %}
-        {{ content | safe }}
-      {% endblock %}
+      {{ content | safe }}
     </main>
 
-    {% block footer %}
-      {%- include "components/footer.njk" -%}
-    {% endblock %}
+    {%- include "components/footer.njk" -%}
 
     {%- getBundle "html", "externalJS" -%}
-
     <script src="/assets/scripts/index.js" type="module"></script>
-
-    {% block scripts %}{% endblock %}
 
     {% if coreConfig.preview.enabled %}
       {% include "core/partials/visual-editing.njk" %}

@@ -9,15 +9,20 @@ const coreInlineDir = path.join(__dirname, 'templates/scripts/inline')
 
 // ─── Inline script hashing ────────────────────────────────────────────────────
 
-function getInlineScriptHashes(): string[] {
-  if (!fs.existsSync(coreInlineDir)) return []
-  return fs.readdirSync(coreInlineDir)
+function hashDir(dir: string): string[] {
+  if (!fs.existsSync(dir)) return []
+  return fs.readdirSync(dir)
     .filter(f => f.endsWith('.js'))
     .map(f => {
-      const content = fs.readFileSync(path.join(coreInlineDir, f), 'utf8')
+      const content = fs.readFileSync(path.join(dir, f), 'utf8')
       const hash = createHash('sha256').update(content, 'utf8').digest('base64')
       return `'sha256-${hash}'`
     })
+}
+
+function getInlineScriptHashes(): string[] {
+  const customerInlineDir = path.join(process.cwd(), 'src/assets/scripts/inline')
+  return [...hashDir(coreInlineDir), ...hashDir(customerInlineDir)]
 }
 
 // ─── CSP / headers building ───────────────────────────────────────────────────

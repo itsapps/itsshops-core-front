@@ -12,6 +12,7 @@ export function resolveSettings(
     siteShortDescription: ctx.resolveString(raw.siteShortDescription),
     siteDescription:      ctx.resolvePortableText(raw.siteDescription),
     homePageUrl:          raw.homePage?._id    ? (urlMap[raw.homePage._id] ?? null) : null,
+    homePageId:          raw.homePage?._id ?? null,
     privacyPage:          raw.privacyPage?._id ?? null,
     mainMenus:            (raw.mainMenus  ?? []).map((m: any) => m._ref),
     footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),

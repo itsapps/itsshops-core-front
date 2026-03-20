@@ -1,24 +1,15 @@
 {#
   Renders a modules array.
-  Requires: modules (array), _locale (string), defaultLocale (global)
+  Requires: modules (array), _locale (string)
+
+  Dispatch is purely file-based: for each module, looks up
+  components/modules/{_type}.njk — customer-overridable, ignore missing.
+  Core built-ins live in components/modules/ and can be overridden per project.
+  Custom module types: drop src/_includes/components/modules/{type}.njk.
 #}
 {% for module in modules %}
-  {% set _isFirstModule = loop.first %}
+  {%- set _isFirstModule = loop.first -%}
   <div class="module module--{{ module._type }}">
-    {% if module._type == 'hero' %}
-      {% include "core/modules/hero.njk" %}
-    {% elif module._type == 'multiColumns' %}
-      {% include "core/modules/multiColumns.njk" %}
-    {% elif module._type == 'productSection' %}
-      {% include "core/modules/productSection.njk" %}
-    {% elif module._type == 'categorySection' %}
-      {% include "core/modules/categorySection.njk" %}
-    {% elif module._type == 'carousel' %}
-      {% include "core/modules/carousel.njk" %}
-    {% elif module._type == 'youtube' %}
-      {% include "core/modules/youtube.njk" %}
-    {% else %}
-      {% block extra_modules %}{% endblock %}
-    {% endif %}
+    {%- include "components/modules/" + module._type + ".njk" ignore missing -%}
   </div>
 {% endfor %}

@@ -103,10 +103,17 @@ function resolveWine(
     ? (vinofactMap.get(sanityWine.vinofactWineId) ?? {})
     : {}
 
+  const resolved = resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as Record<string, unknown>
+
+  // Vinofact stores alcohol in hundredths of a percent (e.g. 1250 = 12.50%)
+  if (typeof resolved.alcohol === 'number') {
+    resolved.alcohol = resolved.alcohol / 100
+  }
+
   return {
     volume:  sanityWine.volume  ?? null,
     vintage: sanityWine.vintage ?? null,
-    ...(resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as object),
+    ...resolved,
   }
 }
 
@@ -161,6 +168,7 @@ export function resolveVariants(
 
     const resolved: ResolvedVariant = {
       _id:            variant._id,
+      _type:          'productVariant',
       slug,
       url,
       status:         variant.status ?? 'active',
@@ -179,7 +187,7 @@ export function resolveVariants(
       })),
       taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
       stock: variant.stock ?? null,
-      wine: variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) : null,
+      wine: variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null,
       options: (variant.options ?? []).map((o: any) => ({
         _id:  o._id,
         name: ctx.resolveString(o.name),

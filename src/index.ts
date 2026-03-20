@@ -26,6 +26,7 @@ import { setupPlugins } from './config/plugins'
 import { setupDev } from './config/dev'
 import { setupJs } from './config/js'
 import { setupHeaders } from './config/headers'
+import utils from './utils'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
@@ -47,7 +48,8 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
   eleventyConfig.addGlobalData('coreConfig', config)
-  eleventyConfig.addGlobalData('imageSizes', imageSizes)
+  eleventyConfig.addGlobalData('imageSizes', { ...imageSizes, ...itsshopsConfig.imageSizes })
+  eleventyConfig.addGlobalData('utils', utils)
 
   setupTemplates(ctx)
 }

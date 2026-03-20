@@ -127,7 +127,7 @@ program
 program
   .command('clean')
   .description('🚀 Clean files and folders')
-  .action((options) => {
+  .action(() => {
     console.log(`\n📦 ITSSHOPS | clean files...\n`);
 
     const foldersToClean = [

@@ -91,7 +91,7 @@
     <div class="site-header__actions">
 
       {%- if coreConfig.locales.length > 1 -%}
-        {%- set _currentId = (product or category or cmsPage or post)._id -%}
+        {%- set _currentId = pageDoc._id -%}
         <nav class="locale-switcher" aria-label="Language selection">
           {%- for _l in coreConfig.locales -%}
             {%- if _l != _locale -%}

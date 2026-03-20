@@ -73,6 +73,7 @@ export function buildProductQuery(extensions?: Config['extensions'], documentId?
 export function buildVariantQuery(extensions?: Config['extensions'], documentId?: string): string {
   return `*[_type == 'productVariant'${idFilter(documentId)}]{
   _id,
+  _type,
   status,
   ${proj.i18nStringField('title')},
   sku,
@@ -96,6 +97,7 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
 export function buildCategoryQuery(extensions?: Config['extensions'], documentId?: string): string {
   return `*[_type == 'category'${idFilter(documentId)}] | order(sortOrder asc){
   _id,
+  _type,
   ${proj.i18nStringField('title')},
   ${proj.i18nStringField('description')},
   sortOrder,
@@ -108,6 +110,7 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
 export function buildPageQuery(extensions?: Config['extensions'], documentId?: string): string {
   return `*[_type == 'page'${idFilter(documentId)}]{
   _id,
+  _type,
   ${proj.i18nStringField('title')},
   "slug": slug.current,
   ${buildModulesProjection('page', extensions)},
@@ -118,6 +121,7 @@ export function buildPageQuery(extensions?: Config['extensions'], documentId?: s
 export function buildPostQuery(extensions?: Config['extensions'], documentId?: string): string {
   return `*[_type == 'post'${idFilter(documentId)}]{
   _id,
+  _type,
   ${proj.i18nStringField('title')},
   "slug": slug.current,
   publishedAt,

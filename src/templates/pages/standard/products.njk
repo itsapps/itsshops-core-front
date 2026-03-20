@@ -3,7 +3,8 @@ layout: base.njk
 pagination:
   data: cms.products
   size: 1
-  alias: product
-permalink: "{{ product.url }}"
+  alias: pageDoc
+permalink: "{{ pageDoc.url }}"
 ---
+{%- set product = pageDoc -%}
 {%- include "components/product/container.njk" -%}

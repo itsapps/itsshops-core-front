@@ -3,9 +3,26 @@ import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale } from '../types'
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Strip leading/trailing <br> tags and whitespace from a block's rendered children. */
+function blockContent(children: string | undefined): string {
+  return (children ?? '').replace(/^(\s*<br\s*\/?>\s*)+|(\s*<br\s*\/?>\s*)+$/gi, '').trim()
+}
+
 // ─── Core components ──────────────────────────────────────────────────────────
 
 const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtmlComponents> => ({
+  block: {
+    // Strip leading/trailing <br> and filter empty blocks entirely
+    normal:     ({ children }) => blockContent(children) ? `<p>${blockContent(children)}</p>` : '',
+    h1:         ({ children }) => blockContent(children) ? `<h1>${blockContent(children)}</h1>` : '',
+    h2:         ({ children }) => blockContent(children) ? `<h2>${blockContent(children)}</h2>` : '',
+    h3:         ({ children }) => blockContent(children) ? `<h3>${blockContent(children)}</h3>` : '',
+    h4:         ({ children }) => blockContent(children) ? `<h4>${blockContent(children)}</h4>` : '',
+    blockquote: ({ children }) => blockContent(children) ? `<blockquote>${blockContent(children)}</blockquote>` : '',
+  },
+  hardBreak: () => '<br>',
   marks: {
     internalLink: ({ children, value }) => {
       const id  = value?.reference?._id ?? ''

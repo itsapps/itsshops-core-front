@@ -13,6 +13,7 @@ export function resolveCategories(
     const slug = coreSlugify(stegaClean(ctx.resolveString(c.title) || c._id))
     return {
       _id: c._id,
+      _type: 'category' as const,
       title: ctx.resolveString(c.title),
       description: ctx.resolveString(c.description),
       slug,

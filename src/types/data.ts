@@ -32,6 +32,7 @@ export type ResolvedSeo = {
 
 export type ResolvedCategory = {
   _id: string
+  _type: 'category'
   title: string
   description: string
   slug: string
@@ -102,6 +103,7 @@ export type ResolvedSettings = {
   siteShortDescription: string
   siteDescription: string
   homePageUrl: string | null
+  homePageId: string | null
   privacyPage: string | null
   mainMenus: string[]
   footerMenus: string[]
@@ -133,6 +135,7 @@ export type ResolvedWine = {
 
 export type ResolvedVariant = {
   _id: string
+  _type: 'productVariant'
   slug: string
   url: string
   status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
@@ -159,6 +162,7 @@ export type ResolvedVariant = {
 
 export type ResolvedPage = {
   _id: string
+  _type: 'page'
   title: string
   slug: string
   url: string
@@ -169,6 +173,7 @@ export type ResolvedPage = {
 
 export type ResolvedPost = {
   _id: string
+  _type: 'post'
   title: string
   slug: string
   url: string
@@ -189,6 +194,8 @@ export type CmsLocaleData = {
   shopSettings: ResolvedShopSettings | null
   /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
   urlMap: Record<string, string>
+  /** Sanity _id → resolved document (variant, category, page, or post) for the current locale. */
+  docMap: Record<string, ResolvedVariant | ResolvedCategory | ResolvedPage | ResolvedPost>
   [key: string]: unknown
 }
 

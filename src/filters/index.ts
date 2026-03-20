@@ -4,7 +4,8 @@ import { resolveString } from "../data/localizers";
 import { imageUrl } from "../media"
 import { stegaClean } from "@sanity/client/stega"
 import { renderPortableText } from "../data/portableText"
-
+import { buildPageDocSchema } from "../schema"
+import { map } from "../utils/map"
 /**
  * Format a price in cents to a locale-aware currency string.
  * Usage: {{ product.price | formatPrice('de', 'EUR') }}
@@ -110,17 +111,26 @@ export const createFilters = (ctx: CoreContext) => {
     imageUrl(ctx.imageBuilder, image, width, height)
   );
   eleventyConfig.addFilter("stegaClean", stegaClean);
-  eleventyConfig.addFilter('limit', limit)
+  eleventyConfig.addFilter('limit', limit as any)
   eleventyConfig.addFilter('formatDate', function (date: string, style?: Intl.DateTimeFormatOptions['dateStyle']) {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
   eleventyConfig.addFilter('portableText', function (blocks: any[]) {
     const locale = this.page?.lang || config.defaultLocale
-    const urlMap: Record<string, string> = this.ctx?.cms?.[locale]?.urlMap ?? {}
+    const urlMap: Record<string, string> = (this as any).ctx?.cms?.[locale]?.urlMap ?? {}
     return renderPortableText(blocks, urlMap, config.extensions?.portableText as any)
   })
   eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
     return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)
   })
+  eleventyConfig.addFilter('docById', function (id: string) {
+    const locale = this.page?.lang || config.defaultLocale
+    return (this as any).ctx?.cms?.[locale]?.docMap?.[id] ?? null
+  })
+  eleventyConfig.addFilter('pageSchema', function (pageDoc: any, locale: string, settings: any) {
+    const products = (this as any).ctx?.cms?.[locale]?.products ?? []
+    return buildPageDocSchema(pageDoc, locale, settings, config, (img, w) => imageUrl(ctx.imageBuilder, img, w), products)
+  })
+  eleventyConfig.addFilter('map', map as any);
 }

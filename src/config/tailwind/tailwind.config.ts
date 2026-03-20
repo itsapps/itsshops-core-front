@@ -16,17 +16,6 @@ import defaultSpacings from './design-tokens/spacing'
 import defaultTextSizes from './design-tokens/text-sizes'
 import { Css } from '../../types';
 
-function mergeByKey(base: any[], overrides: any[], matchKey = "name") {
-  const overrideMap = Object.fromEntries(
-    overrides.map(item => [item[matchKey], item])
-  );
-
-  return base.map(item =>
-    overrideMap[item[matchKey]]
-      ? { ...item, ...overrideMap[item[matchKey]] }
-      : item
-  );
-}
 
 export function getTailwindConfig(css: Css): Config {
   const {

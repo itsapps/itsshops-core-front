@@ -1,0 +1,61 @@
+{%- set _locale    = page.lang or coreConfig.defaultLocale -%}
+{%- set _settings  = cms[_locale].settings -%}
+{%- set _siteTitle = _settings.siteTitle or '' -%}
+{%- set _item      = pageDoc -%}
+{%- set _seo       = _item.seo or {} -%}
+{%- set _rawTitle  = (_seo.metaTitle | stegaClean) if _seo.metaTitle else (_item.title | stegaClean if _item.title else '') -%}
+{%- set _desc      = (_seo.metaDescription | stegaClean) if _seo.metaDescription else '' -%}
+{%- set _shareImg  = _seo.shareImage or _item.image -%}
+{%- set _shareTitle = ((_seo.shareTitle | stegaClean) if _seo.shareTitle else _rawTitle) or _siteTitle -%}
+{%- set _shareDesc  = (_seo.shareDescription | stegaClean) if _seo.shareDescription else _desc -%}
+{%- set _noIndex   = (not coreConfig.doIndexPages) or noindex -%}
+
+{# Title: "Page – Site" unless they're identical or page title is absent #}
+{%- if _rawTitle and _siteTitle and _rawTitle != _siteTitle -%}
+  {%- set _fullTitle = _rawTitle + ' – ' + _siteTitle -%}
+{%- else -%}
+  {%- set _fullTitle = _rawTitle or _siteTitle -%}
+{%- endif -%}
+
+<title>{{ _fullTitle }}</title>
+<meta name="format-detection" content="telephone=no" />
+{%- if _desc %}<meta name="description" content="{{ _desc }}" />{% endif %}
+{%- if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords | stegaClean }}" />{% endif %}
+<meta name="robots" content="{{ 'noindex,nofollow' if _noIndex else 'index,follow' }}" />
+
+{# Canonical + hreflang #}
+{%- if coreConfig.baseUrl %}
+  <link rel="canonical" href="{{ coreConfig.baseUrl }}{{ page.url }}" />
+{%- endif %}
+{%- if coreConfig.locales.length > 1 and _item and _item._id -%}
+  {%- for _l in coreConfig.locales -%}
+    {%- set _altUrl = cms[_l].urlMap[_item._id] -%}
+    {%- if _altUrl -%}
+      <link rel="alternate" hreflang="{{ _l }}" href="{{ coreConfig.baseUrl }}{{ _altUrl }}" />
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set _defaultUrl = cms[coreConfig.defaultLocale].urlMap[_item._id] -%}
+  {%- if _defaultUrl -%}
+    <link rel="alternate" hreflang="x-default" href="{{ coreConfig.baseUrl }}{{ _defaultUrl }}" />
+  {%- endif -%}
+{%- endif %}
+
+{# Open Graph #}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="{{ _siteTitle }}" />
+<meta property="og:locale" content="{{ _locale }}" />
+<meta property="og:title" content="{{ _shareTitle }}" />
+{%- if _shareDesc %}<meta property="og:description" content="{{ _shareDesc }}" />{% endif %}
+{%- if coreConfig.baseUrl %}<meta property="og:url" content="{{ coreConfig.baseUrl }}{{ page.url }}" />{% endif %}
+{%- if _shareImg %}
+  <meta property="og:image" content="{{ _shareImg | imageUrl(1200) }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="{{ _shareTitle }}" />
+{%- endif %}
+
+{# Twitter card #}
+<meta name="twitter:card" content="{{ 'summary_large_image' if _shareImg else 'summary' }}" />
+<meta name="twitter:title" content="{{ _shareTitle }}" />
+{%- if _shareDesc %}<meta name="twitter:description" content="{{ _shareDesc }}" />{% endif %}
+{%- if _shareImg %}<meta name="twitter:image" content="{{ _shareImg | imageUrl(1200) }}" />{% endif %}
