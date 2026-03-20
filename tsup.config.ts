@@ -15,6 +15,7 @@ export default defineConfig({
   splitting: false,
   clean: true,
   external: ['esbuild'],
+  noExternal: ['@portabletext/to-html'],
   onSuccess: async () => {
     copySync('src/templates', 'dist/templates', { overwrite: true });
     copySync('src/scripts',   'dist/scripts',   { overwrite: true });
