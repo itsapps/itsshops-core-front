@@ -1,6 +1,6 @@
 import { toHTML, escapeHTML, mergeComponents } from '@portabletext/to-html'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
-import { stegaClean } from '@sanity/client/stega' // only for href attributes, never for text content
+import { stegaClean } from '@sanity/client/stega'
 import type { Locale } from '../types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -76,8 +76,15 @@ export function renderPortableText(
   extra?: Partial<PortableTextHtmlComponents>,
 ): string {
   if (!blocks?.length) return ''
+  // Clean only structural routing fields — style/listItem drive component dispatch.
+  // Text span content is left encoded so stega visual editing overlays still work.
+  const normalizedBlocks = blocks.map((block: any) => ({
+    ...block,
+    style:    block.style    ? stegaClean(block.style)    : block.style,
+    listItem: block.listItem ? stegaClean(block.listItem) : block.listItem,
+  }))
   const components = extra
     ? mergeComponents(coreComponents(urlMap) as PortableTextHtmlComponents, extra)
     : coreComponents(urlMap)
-  return toHTML(blocks, { components })
+  return toHTML(normalizedBlocks, { components })
 }
