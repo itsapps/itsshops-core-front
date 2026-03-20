@@ -95,6 +95,9 @@ export type ResolvedCompany = {
   name: string
   owner: string
   address: ResolvedAddress | null
+  email: string | null
+  phone: string | null
+  vatId: string | null
 }
 
 export type ResolvedSettings = {

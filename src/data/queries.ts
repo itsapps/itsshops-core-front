@@ -166,6 +166,9 @@ export function buildSettingsQuery(): string {
   "company": company {
     ${proj.i18nStringField('name')},
     owner,
+    email,
+    phone,
+    vatId,
     "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }
   }
 }`

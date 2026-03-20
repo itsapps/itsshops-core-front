@@ -26,6 +26,9 @@ function resolveCompany(raw: any, ctx: ResolveContext): ResolvedCompany {
   return {
     name:  ctx.resolveString(raw.name),
     owner: raw.owner ?? '',
+    email: raw.email ?? null,
+    phone: raw.phone ?? null,
+    vatId: raw.vatId ?? null,
     address: addr ? {
       line1:   addr.line1   ?? '',
       line2:   addr.line2   ?? '',
