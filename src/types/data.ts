@@ -98,13 +98,14 @@ export type ResolvedCompany = {
   email: string | null
   phone: string | null
   vatId: string | null
+  [key: string]: unknown
 }
 
 export type ResolvedSettings = {
   _id: string
   siteTitle: string
   siteShortDescription: string
-  siteDescription: string
+  siteDescription: any[]
   homePageUrl: string | null
   homePageId: string | null
   privacyPage: string | null

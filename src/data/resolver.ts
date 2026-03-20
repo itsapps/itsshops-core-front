@@ -56,7 +56,7 @@ export async function buildCmsData(
     fetchQuery(buildPageQuery(extensions, pid('page'))),
     features.blog ? fetchQuery(buildPostQuery(extensions, pid('post'))) : Promise.resolve([]),
     fetchQuery(buildMenuQuery(extensions, config.menu.maxDepth)),
-    fetchQuery(buildSettingsQuery()),
+    fetchQuery(buildSettingsQuery(extensions.fields)),
     features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
   ])
 
@@ -167,7 +167,7 @@ export async function buildCmsData(
       pages,
       posts,
       menus,
-      settings:     rawSettings     ? resolveSettings(rawSettings, ctx, urlMap)     : null,
+      settings:     rawSettings     ? resolveSettings(rawSettings, ctx, urlMap, extensions)     : null,
       shopSettings: rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)     : null,
       urlMap,
       docMap,

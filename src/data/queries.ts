@@ -152,7 +152,8 @@ export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1):
 }`
 }
 
-export function buildSettingsQuery(): string {
+export function buildSettingsQuery(extensions: Record<string, string> = {}): string {
+  const companyFields = extensions.company ? `\n    ${extensions.company}` : ''
   return `*[_type == 'settings'][0]{
   _id,
   ${proj.i18nStringField('siteTitle')},
@@ -169,7 +170,7 @@ export function buildSettingsQuery(): string {
     email,
     phone,
     vatId,
-    "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }
+    "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }${companyFields}
   }
 }`
 }

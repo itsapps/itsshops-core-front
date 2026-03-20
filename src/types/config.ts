@@ -237,6 +237,8 @@ export type Extensions = {
     menuItem?: (raw: any, ctx: ResolveContext) => Record<string, unknown>
     /** Called for every module after core resolution. Return fields to merge in. */
     module?:   (module: any, ctx: ResolveContext) => Record<string, unknown>
+    /** Called after core company resolution. Return fields to merge into company. */
+    company?:  (raw: any, ctx: ResolveContext) => Record<string, unknown>
   }
 }
 
