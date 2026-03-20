@@ -153,7 +153,7 @@ export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1):
 }
 
 export function buildSettingsQuery(extensions: Record<string, string> = {}): string {
-  const companyFields = extensions.company ? `\n    ${extensions.company}` : ''
+  const companyFields = extensions.company ? `,\n    ${extensions.company}` : ''
   return `*[_type == 'settings'][0]{
   _id,
   ${proj.i18nStringField('siteTitle')},
