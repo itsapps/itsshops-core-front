@@ -10,17 +10,28 @@ function blockContent(children: string | undefined): string {
   return stegaClean(children ?? '').replace(/^(\s*<br\s*\/?>\s*)+|(\s*<br\s*\/?>\s*)+$/gi, '').trim()
 }
 
+function renderBlock(tag: string, children: string, cls?: string): string {
+  const content = blockContent(children)
+  const attrs = cls ? ` class="${cls}"` : ''
+  return `<${tag}${attrs}>${content}</${tag}>`
+}
+
+/** Returns true if a portable text block has no visible text content. */
+function isEmptyBlock(block: any): boolean {
+  if (block._type !== 'block') return false
+  return (block.children ?? []).every((child: any) => !stegaClean(child.text ?? '').trim())
+}
+
 // ─── Core components ──────────────────────────────────────────────────────────
 
 const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtmlComponents> => ({
   block: {
-    // Strip leading/trailing <br> and filter empty blocks entirely
-    normal:     ({ children }) => blockContent(children) ? `<p>${blockContent(children)}</p>` : '',
-    h1:         ({ children }) => blockContent(children) ? `<h1>${blockContent(children)}</h1>` : '',
-    h2:         ({ children }) => blockContent(children) ? `<h2>${blockContent(children)}</h2>` : '',
-    h3:         ({ children }) => blockContent(children) ? `<h3>${blockContent(children)}</h3>` : '',
-    h4:         ({ children }) => blockContent(children) ? `<h4>${blockContent(children)}</h4>` : '',
-    blockquote: ({ children }) => blockContent(children) ? `<blockquote>${blockContent(children)}</blockquote>` : '',
+    normal:     ({ children }) => renderBlock('p',          children ?? ''),
+    h1:         ({ children }) => renderBlock('h1',         children ?? ''),
+    h2:         ({ children }) => renderBlock('h2',         children ?? ''),
+    h3:         ({ children }) => renderBlock('h3',         children ?? ''),
+    h4:         ({ children }) => renderBlock('h4',         children ?? ''),
+    blockquote: ({ children }) => renderBlock('blockquote', children ?? ''),
   },
   hardBreak: () => '<br>',
   marks: {
@@ -66,6 +77,15 @@ export function resolvePortableText(
 
 // ─── HTML rendering ───────────────────────────────────────────────────────────
 
+export type PortableTextOptions = {
+  /**
+   * Render empty blocks as empty tags instead of filtering them out.
+   * Useful for editorial long-form content where editors use empty lines for spacing.
+   * Defaults to false.
+   */
+  allowEmptyBlocks?: boolean
+}
+
 /**
  * Render portable text blocks to HTML.
  * Called by the `portableText` Nunjucks filter — urlMap is passed at template time.
@@ -74,15 +94,19 @@ export function renderPortableText(
   blocks: any[],
   urlMap: Record<string, string> = {},
   extra?: Partial<PortableTextHtmlComponents>,
+  options: PortableTextOptions = {},
 ): string {
   if (!blocks?.length) return ''
+  const { allowEmptyBlocks = false } = options
   // Clean only structural routing fields — style/listItem drive component dispatch.
   // Text span content is left encoded so stega visual editing overlays still work.
-  const normalizedBlocks = blocks.map((block: any) => ({
-    ...block,
-    style:    block.style    ? stegaClean(block.style)    : block.style,
-    listItem: block.listItem ? stegaClean(block.listItem) : block.listItem,
-  }))
+  const normalizedBlocks = blocks
+    .filter(block => allowEmptyBlocks || !isEmptyBlock(block))
+    .map((block: any) => ({
+      ...block,
+      style:    block.style    ? stegaClean(block.style)    : block.style,
+      listItem: block.listItem ? stegaClean(block.listItem) : block.listItem,
+    }))
   const components = extra
     ? mergeComponents(coreComponents(urlMap) as PortableTextHtmlComponents, extra)
     : coreComponents(urlMap)

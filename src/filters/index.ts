@@ -4,6 +4,7 @@ import { resolveString } from "../data/localizers";
 import { imageUrl } from "../media"
 import { stegaClean } from "@sanity/client/stega"
 import { renderPortableText } from "../data/portableText"
+import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema } from "../schema"
 import { map } from "../utils/map"
 /**
@@ -116,10 +117,10 @@ export const createFilters = (ctx: CoreContext) => {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
-  eleventyConfig.addFilter('portableText', function (blocks: any[]) {
+  eleventyConfig.addFilter('portableText', function (blocks: any[], options?: PortableTextOptions) {
     const locale = this.page?.lang || config.defaultLocale
     const urlMap: Record<string, string> = (this as any).ctx?.cms?.[locale]?.urlMap ?? {}
-    return renderPortableText(blocks, urlMap, config.extensions?.portableText as any)
+    return renderPortableText(blocks, urlMap, config.extensions?.portableText as any, options)
   })
   eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
     return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)
