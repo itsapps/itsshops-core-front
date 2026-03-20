@@ -1,5 +1,6 @@
 import type { ImageUrlBuilder } from '@sanity/image-url'
 import type { ResolvedImage } from './types/data'
+import { stegaClean } from '@sanity/client/stega'
 
 export type PictureSize = {
   /** [width, height] pairs for each srcset entry */
@@ -36,7 +37,7 @@ export function sanityPicture(
 
   const formats = size.formats ?? ['webp', 'jpg']
   const { loading = 'lazy', fetchpriority, class: imgClass = '', pictureClass = '', alt: altOverride } = options
-  const alt = (altOverride ?? image.alt ?? '').replace(/"/g, '&quot;')
+  const alt = stegaClean(altOverride ?? image.alt ?? '').replace(/"/g, '&quot;')
 
   const sources = formats.map(fmt => {
     const type = fmt === 'webp' ? 'image/webp' : 'image/jpeg'

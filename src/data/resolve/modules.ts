@@ -1,4 +1,5 @@
 import type { ResolveContext, ResolveHooks } from '../../types'
+import { stegaClean } from '@sanity/client/stega'
 
 export function resolveModules(
   modules: any[],
@@ -17,6 +18,9 @@ export function resolveModules(
           ...m,
           slides: (m.slides ?? []).map((s: any) => ctx.resolveLocaleAltImage(s)),
         }
+        break
+      case 'youtube':
+        resolved = { ...m, url: stegaClean(m.url) }
         break
       default:
         resolved = m

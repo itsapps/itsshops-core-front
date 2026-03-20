@@ -7,6 +7,7 @@ export { resolvePortableText, renderPortableText } from './data/portableText'
 export { escapeHTML } from '@portabletext/to-html'
 export type { PortableTextHtmlComponents } from '@portabletext/to-html'
 export { sanityPicture, imageUrl, imageSizes } from './media'
+export { stegaClean } from '@sanity/client/stega'
 export type { PictureSize } from './media'
 
 import type { EleventyConfig } from '11ty.ts'

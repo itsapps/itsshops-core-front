@@ -1,5 +1,6 @@
 import type { ResolveContext, ResolveHooks } from '../../types'
 import type { ResolvedMenu, ResolvedMenuItem } from '../../types/data'
+import { stegaClean } from '@sanity/client/stega'
 
 export function resolveMenuItems(
   items: any[],
@@ -13,7 +14,7 @@ export function resolveMenuItems(
       _key,
       title:    ctx.resolveString(title),
       linkType: linkType ?? 'internal',
-      url:      ctx.resolveString(url) || null,
+      url:      stegaClean(ctx.resolveString(url)) || null,
       internal: internal ?? null,
       children: resolveMenuItems(children ?? [], ctx, resolveHook),
       ...(resolveHook ? resolveHook(item, ctx) : {}),
