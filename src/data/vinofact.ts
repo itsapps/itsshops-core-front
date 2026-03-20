@@ -49,17 +49,23 @@ export async function fetchVinofactWines(
     }
   `
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${accessToken}`,
-    },
-    body: JSON.stringify({
-      query,
-      variables: { profileSlug, locales, ids: wineIds },
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Token ${accessToken}`,
+      },
+      body: JSON.stringify({
+        query,
+        variables: { profileSlug, locales, ids: wineIds },
+      }),
+    })
+  } catch (err) {
+    console.warn(`[itsshops] Vinofact fetch failed — wine data will be missing. Cause: ${(err as Error).message}`)
+    return new Map()
+  }
 
   if (!response.ok) {
     if (response.status === 401) throw new Error('[itsshops] Invalid or missing Vinofact API token')
