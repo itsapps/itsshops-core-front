@@ -37,7 +37,7 @@ const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtm
   marks: {
     internalLink: ({ children, value }) => {
       const id  = value?.reference?._id ?? ''
-      const url = urlMap[id] ?? `/${value?.reference?.slug ?? ''}`
+      const url = urlMap[id] ?? `/${stegaClean(value?.reference?.slug ?? '')}`
       return `<a href="${escapeHTML(url)}">${children}</a>`
     },
     link: ({ children, value }) => {

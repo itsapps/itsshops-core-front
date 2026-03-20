@@ -63,7 +63,14 @@ export async function fetchVinofactWines(
       }),
     })
   } catch (err) {
-    console.warn(`[itsshops] Vinofact fetch failed — wine data will be missing. Cause: ${(err as Error).message}`)
+    const e = err as any
+    console.warn([
+      `[itsshops] Vinofact fetch failed — wine data will be missing.`,
+      `  Endpoint: ${endpoint}`,
+      `  Error:    ${e?.message ?? String(e)}`,
+      `  Code:     ${e?.code ?? 'n/a'}`,
+      `  Cause:    ${e?.cause?.message ?? e?.cause ?? 'n/a'}`,
+    ].join('\n'))
     return new Map()
   }
 
