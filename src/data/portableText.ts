@@ -1,6 +1,6 @@
 import { toHTML, escapeHTML, mergeComponents } from '@portabletext/to-html'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
-import { stegaClean } from '@sanity/client/stega'
+import { stegaClean } from '@sanity/client/stega' // only for href attributes, never for text content
 import type { Locale } from '../types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -30,11 +30,11 @@ const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtm
       return `<a href="${escapeHTML(url)}">${children}</a>`
     },
     link: ({ children, value }) => {
-      const href = escapeHTML(value?.href ?? value?.url ?? '#')
+      const href = escapeHTML(stegaClean(value?.href ?? value?.url ?? '#'))
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${children}</a>`
     },
     externalLink: ({ children, value }) => {
-      const href = escapeHTML(value?.href ?? value?.url ?? '#')
+      const href = escapeHTML(stegaClean(value?.href ?? value?.url ?? '#'))
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${children}</a>`
     },
   },
@@ -76,9 +76,8 @@ export function renderPortableText(
   extra?: Partial<PortableTextHtmlComponents>,
 ): string {
   if (!blocks?.length) return ''
-  const cleaned    = stegaClean(blocks)
   const components = extra
     ? mergeComponents(coreComponents(urlMap) as PortableTextHtmlComponents, extra)
     : coreComponents(urlMap)
-  return toHTML(cleaned, { components })
+  return toHTML(blocks, { components })
 }
