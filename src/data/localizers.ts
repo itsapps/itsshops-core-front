@@ -60,7 +60,7 @@ export function resolveImage(
   if (!img?.asset) return null
 
   return {
-    asset: { _ref: img.asset._ref ?? img.asset._id },
+    asset: { _ref: img.asset._ref ?? img.asset._id, dimensions: img.asset.dimensions },
     alt: resolveString(raw.alt, locale, defaultLocale),
     hotspot: img.hotspot,
     crop: img.crop,
@@ -75,7 +75,7 @@ export function resolveLocaleAltImage(
 ): ResolvedImage | null {
   if (!raw?.asset) return null
   return {
-    asset: { _ref: raw.asset._ref ?? raw.asset._id },
+    asset: { _ref: raw.asset._ref ?? raw.asset._id, dimensions: raw.asset.dimensions },
     alt: resolveString(raw.alt, locale, defaultLocale),
     hotspot: raw.hotspot,
     crop: raw.crop,
@@ -86,7 +86,7 @@ export function resolveLocaleAltImage(
 export function resolveBaseImage(raw: any): ResolvedImage | null {
   if (!raw?.asset) return null
   return {
-    asset: { _ref: raw.asset._ref ?? raw.asset._id },
+    asset: { _ref: raw.asset._ref ?? raw.asset._id, dimensions: raw.asset.dimensions },
     alt: raw.alt ?? '',
     hotspot: raw.hotspot,
     crop: raw.crop,

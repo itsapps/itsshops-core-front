@@ -7,7 +7,10 @@ import type { VinofactWine } from './vinofact'
  */
 
 export type ResolvedImage = {
-  asset: { _ref: string }
+  asset: {
+    _ref: string
+    dimensions?: { width: number; height: number; aspectRatio: number }
+  }
   alt: string
   hotspot?: SanityImageHotspot
   crop?: SanityImageCrop

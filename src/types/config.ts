@@ -7,7 +7,7 @@ import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import type { CmsData } from './data'
-import type { PictureSize } from '../media'
+import type { PictureSize } from '../image'
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 

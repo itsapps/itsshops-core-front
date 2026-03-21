@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-img": "^6.0.4",
     "@iarna/toml": "^2.2.5",
     "@netlify/functions": "5.0.0",
     "@portabletext/to-html": "^5.0.2",
@@ -70,6 +71,7 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@types/11ty__eleventy-img": "^4.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.0.9",

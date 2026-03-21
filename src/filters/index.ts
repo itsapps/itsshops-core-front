@@ -1,7 +1,7 @@
 import { slugify, toIsoString } from "../utils";
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
-import { imageUrl } from "../media"
+import { imageUrl } from "../image"
 import { stegaClean } from "@sanity/client/stega"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
