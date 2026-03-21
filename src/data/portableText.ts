@@ -18,8 +18,8 @@ function renderBlock(tag: string, children: string, cls?: string): string {
 
 /** Returns true if a portable text block has no visible text content. */
 function isEmptyBlock(block: any): boolean {
-  if (block._type !== 'block') return false
-  return (block.children ?? []).every((child: any) => !stegaClean(child.text ?? '').trim())
+  if (!Array.isArray(block.children)) return false
+  return block.children.every((child: any) => !stegaClean(child.text ?? '').trim())
 }
 
 // ─── Core components ──────────────────────────────────────────────────────────
