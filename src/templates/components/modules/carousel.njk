@@ -1,6 +1,6 @@
 {% if _isFirstModule and module.slides.length %}
   {%- html "preloads" -%}
-  <link rel="preload" as="image" href="{{ module.slides[0] | imageUrl(1200) }}">
+  <link rel="preload" as="image" imagesrcset="{{ module.slides[0] | imageUrl(1200, null, 'webp') }} 1200w, {{ module.slides[0] | imageUrl(800, null, 'webp') }} 800w" imagesizes="{{ imageSizes.carousel.widths }}">
   {%- endhtml -%}
 {% endif %}
 <div class="carousel" data-autoplay="{{ module.autoplay }}" data-loop="{{ module.loop }}" data-fade="{{ module.fade }}"{% if module.autoplay %} data-delay="{{ module.autoplayDelay }}"{% endif %}>

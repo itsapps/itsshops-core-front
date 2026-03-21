@@ -108,8 +108,8 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
-  eleventyConfig.addFilter("imageUrl", (image, width, height) =>
-    imageUrl(ctx.imageBuilder, image, width, height)
+  eleventyConfig.addFilter("imageUrl", (image, width, height, format) =>
+    imageUrl(ctx.imageBuilder, image, width, height, format)
   );
   eleventyConfig.addFilter("stegaClean", stegaClean);
   eleventyConfig.addFilter('limit', limit as any)

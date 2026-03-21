@@ -71,23 +71,32 @@ export function sanityPicture(
 ): string {
   if (!image) return ''
 
-  const formats = size.formats ?? ['webp', 'jpg']
+  const fmt = (size.formats ?? ['webp'])[0]
   const alt = stegaClean(options.alt ?? image.alt ?? '').replace(/"/g, '&quot;')
+  const { loading = 'lazy', fetchpriority, class: imgClass = '' } = options
 
-  const sources = formats.map(fmt => {
-    const type = fmt === 'webp' ? 'image/webp' : 'image/jpeg'
-    const srcset = size.sizes.map(([w, hSpec]) => {
-      const h = resolveHeight(hSpec, w, image) ?? null
-      return `${buildSanityUrl(builder, image, w, h, fmt)} ${w}w`
-    }).join(', ')
-    return `<source type="${type}" srcset="${srcset}" sizes="${size.widths}">`
-  })
+  const srcset = size.sizes.map(([w, hSpec]) => {
+    const h = resolveHeight(hSpec, w, image) ?? null
+    return `${buildSanityUrl(builder, image, w, h, fmt)} ${w}w`
+  }).join(', ')
 
-  const [fw, fhSpec] = size.sizes[0]
+  const [fw, fhSpec] = size.sizes[size.sizes.length - 1]
   const fh = resolveHeight(fhSpec, fw, image)
-  const fallback = buildSanityUrl(builder, image, fw, fhSpec ?? null)
+  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt)
 
-  return buildPictureHtml(sources, fallback, fw, fh, alt, options)
+  const attrs = [
+    `src="${src}"`,
+    `srcset="${srcset}"`,
+    `sizes="${size.widths}"`,
+    `width="${fw}"`,
+    fh !== undefined && `height="${fh}"`,
+    `alt="${alt}"`,
+    `loading="${loading}"`,
+    fetchpriority && `fetchpriority="${fetchpriority}"`,
+    imgClass && `class="${imgClass}"`,
+  ].filter(Boolean).join(' ')
+
+  return `<img ${attrs}>`
 }
 
 /** Plain URL for a given size — use for og:image, JSON-LD, CSS backgrounds etc. */
@@ -96,11 +105,13 @@ export function imageUrl(
   image: ResolvedImage | null | undefined,
   width?: number,
   height?: number,
+  format?: 'webp' | 'jpg',
 ): string {
   if (!image) return ''
   let b = builder.image(image)
   if (width)         b = b.width(width)
   if (height)        b = b.height(height)
+  if (format)        b = b.format(format as any)
   if (image.crop)    b = b.crop('focalpoint')
   if (image.hotspot) b = b.focalPoint(image.hotspot.x ?? 0.5, image.hotspot.y ?? 0.5)
   return b.url()
@@ -115,7 +126,7 @@ export async function staticPicture(
 ): Promise<string> {
   if (!src) return ''
 
-  const formats = (size.formats ?? ['webp', 'jpg']).map(f => f === 'jpg' ? 'jpeg' : f)
+  const formats = (size.formats ?? ['webp']).map(f => f === 'jpg' ? 'jpeg' : f)
   const widths = size.sizes.map(([w]) => w)
 
   const metadata = await Image(src, {
@@ -128,18 +139,18 @@ export async function staticPicture(
   const alt = (options.alt ?? '').replace(/"/g, '&quot;')
   const formatEntries = Object.values(metadata) as any[][]
 
-  const sources = formatEntries.slice(0, -1).map(imageFormat => {
+  const sources = formatEntries.map(imageFormat => {
     const type = imageFormat[0].sourceType
     const srcset = imageFormat.map(entry => `${entry.url} ${entry.width}w`).join(', ')
     return `<source type="${type}" srcset="${srcset}" sizes="${size.widths}">`
   })
 
-  const fallbackFormat = formatEntries.at(-1)!
-  const fallback = fallbackFormat[0]
+  const primaryFormat = formatEntries[0]
   const [fw, fhSpec] = size.sizes[0]
-  const fh = fhSpec ?? fallback.height
+  const fh = fhSpec ?? primaryFormat[0].height
+  const fallbackEntry = primaryFormat[primaryFormat.length - 1]
 
-  return buildPictureHtml(sources, fallback.url, fw, fh, alt, options)
+  return buildPictureHtml(sources, fallbackEntry.url, fw, fh, alt, options)
 }
 
 // ─── Presets ──────────────────────────────────────────────────────────────────
