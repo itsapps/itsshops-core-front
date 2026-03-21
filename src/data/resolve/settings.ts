@@ -61,6 +61,13 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
       : null,
     orderNumberPrefix:   raw.orderNumberPrefix   ?? null,
     invoiceNumberPrefix: raw.invoiceNumberPrefix ?? null,
+    billingAddress: raw.billingAddress ? {
+      line1:   raw.billingAddress.line1   ?? '',
+      line2:   raw.billingAddress.line2   ?? '',
+      zip:     raw.billingAddress.zip     ?? '',
+      city:    ctx.resolveString(raw.billingAddress.city),
+      country: raw.billingAddress.country ?? '',
+    } satisfies ResolvedAddress : null,
     bankAccount:         raw.bankAccount
       ? { name: raw.bankAccount.name ?? '', bic: raw.bankAccount.bic ?? '', iban: raw.bankAccount.iban ?? '' }
       : null,

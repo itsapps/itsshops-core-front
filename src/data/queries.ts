@@ -185,6 +185,7 @@ export function buildShopSettingsQuery(): string {
   "defaultTaxCategory": defaultTaxCategory->{ _id, ${proj.i18nStringField('title')}, "code": code.current },
   orderNumberPrefix,
   invoiceNumberPrefix,
+  billingAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
   bankAccount { name, bic, iban }
 }`
 }

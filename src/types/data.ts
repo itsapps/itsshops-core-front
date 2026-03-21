@@ -124,6 +124,7 @@ export type ResolvedShopSettings = {
   defaultTaxCategory: { _id: string; title: string; code: string } | null
   orderNumberPrefix: string | null
   invoiceNumberPrefix: string | null
+  billingAddress: ResolvedAddress | null
   bankAccount: { name: string; bic: string; iban: string } | null
 }
 
