@@ -5,9 +5,11 @@ export * as queries from './data/queries'
 export { resolveString, resolveImage, resolveLocaleAltImage, resolveBaseImage } from './data/localizers'
 export { resolvePortableText, renderPortableText } from './data/portableText'
 export type { PortableTextOptions } from './data/portableText'
+export type { PortableTextExtensionContext, Extensions } from './types/config'
 export { escapeHTML } from '@portabletext/to-html'
 export type { PortableTextHtmlComponents } from '@portabletext/to-html'
 export { sanityPicture, staticPicture, imageUrl, imageSizes } from './image'
+export { createSanityClient, createImageBuilder } from './core'
 export { stegaClean } from '@sanity/client/stega'
 export type { PictureSize, PictureOptions } from './image'
 
@@ -37,7 +39,8 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   const client = createSanityClient(config.sanity)
   const imageBuilder = createImageBuilder(client)
   const translate = setupTranslation(config)
-  const ctx: CoreContext = { eleventyConfig, config, translate, imageBuilder }
+  const mergedImageSizes = { ...imageSizes, ...itsshopsConfig.imageSizes }
+  const ctx: CoreContext = { eleventyConfig, config, translate, imageBuilder, imageSizes: mergedImageSizes }
 
   setupIgnores(ctx)
   setupPlugins(ctx)
@@ -50,7 +53,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
 
   eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
   eleventyConfig.addGlobalData('coreConfig', config)
-  eleventyConfig.addGlobalData('imageSizes', { ...imageSizes, ...itsshopsConfig.imageSizes })
+  eleventyConfig.addGlobalData('imageSizes', mergedImageSizes)
   eleventyConfig.addGlobalData('utils', utils)
 
   setupTemplates(ctx)

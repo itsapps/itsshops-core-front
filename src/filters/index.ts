@@ -1,8 +1,9 @@
-import { slugify, toIsoString } from "../utils";
+import { slugify, toIsoString } from "../utils"
+import { escapeHTML } from "@portabletext/to-html"
+import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
-import { imageUrl } from "../image"
-import { stegaClean } from "@sanity/client/stega"
+import { imageUrl, sanityPicture } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema } from "../schema"
@@ -117,10 +118,21 @@ export const createFilters = (ctx: CoreContext) => {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
-  eleventyConfig.addFilter('portableText', function (blocks: any[], options?: PortableTextOptions) {
+  const portableTextExtCtx = {
+    imageBuilder: ctx.imageBuilder,
+    imageSizes: ctx.imageSizes,
+    sanityPicture: (image: any, size: any, options?: any) => sanityPicture(ctx.imageBuilder, image, size, options),
+    imageUrl: (image: any, width?: number, height?: number, format?: any) => imageUrl(ctx.imageBuilder, image, width, height, format),
+    escapeHTML,
+    stegaClean,
+  }
+
+  eleventyConfig.addFilter('portableText', function (blocks: any[], name?: string, options?: PortableTextOptions) {
     const locale = this.page?.lang || config.defaultLocale
     const urlMap: Record<string, string> = (this as any).ctx?.cms?.[locale]?.urlMap ?? {}
-    return renderPortableText(blocks, urlMap, config.extensions?.portableText as any, options)
+    const factory = config.extensions?.portableTexts?.[name ?? 'default']
+    const extra = factory?.(portableTextExtCtx)
+    return renderPortableText(blocks, urlMap, extra as any, options)
   })
   eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
     return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)

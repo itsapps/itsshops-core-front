@@ -7,7 +7,17 @@ import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import type { CmsData } from './data'
-import type { PictureSize } from '../image'
+import type { PictureSize, PictureOptions } from '../image'
+import type { ResolvedImage } from './data'
+
+export type PortableTextExtensionContext = {
+  imageBuilder: ImageUrlBuilder
+  imageSizes: Record<string, PictureSize>
+  sanityPicture: (image: ResolvedImage | null | undefined, size: PictureSize, options?: PictureOptions) => string
+  imageUrl: (image: ResolvedImage | null | undefined, width?: number, height?: number, format?: 'webp' | 'jpg') => string
+  escapeHTML: (str: string) => string
+  stegaClean: <T>(value: T) => T
+}
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
@@ -200,8 +210,9 @@ export type Extensions = {
   fields?: Record<string, string>
   /** Custom module type projections per document type (page, post, ...) */
   modules?: Record<string, Record<string, string>>
-  /** Extra toHTML components merged with core — add custom marks, block types, list renderers */
-  portableText?: Partial<PortableTextHtmlComponents>
+  /** Named portable text extension sets. Use 'default' for the unnamed filter call.
+   *  Usage in templates: {{ content | portableText | safe }}  or  {{ content | portableText('rich') | safe }} */
+  portableTexts?: Record<string, (ctx: PortableTextExtensionContext) => Partial<PortableTextHtmlComponents>>
   /**
    * Resolve hooks — called per locale after core resolution.
    * Return fields to merge into the final output.
@@ -404,4 +415,5 @@ export type CoreContext = {
   config: CoreConfig
   translate: TranslatorFunction
   imageBuilder: ImageUrlBuilder
+  imageSizes: Record<string, PictureSize>
 }

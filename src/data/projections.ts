@@ -77,6 +77,12 @@ export const portableTextBlocks = `[]{
   markDefs[]{
     ...,
     ${internalLinkMark}
+  },
+  _type == "image" => {
+    ${imageAssetField},
+    crop,
+    hotspot,
+    alt
   }
 }`
 
@@ -93,6 +99,12 @@ export const i18nPortableText = `[]{
     markDefs[]{
       ...,
       ${internalLinkMark}
+    },
+    _type == "image" => {
+      ${imageAssetField},
+      crop,
+      hotspot,
+      alt
     }
   }
 }`
