@@ -123,18 +123,18 @@ export async function staticPicture(
   src: string,
   size: PictureSize,
   options: PictureOptions = {},
+  isPreview = false,
 ): Promise<string> {
   if (!src) return ''
 
   const formats = (size.formats ?? ['webp']).map(f => f === 'jpg' ? 'jpeg' : f)
   const widths = size.sizes.map(([w]) => w)
 
-  const metadata = await Image(src, {
-    widths,
-    formats,
-    urlPath: '/assets/images/',
-    outputDir: './dist/assets/images/',
-  })
+  const imageOptions = { widths, formats, urlPath: '/assets/images/', outputDir: './dist/assets/images/' }
+
+  const metadata = isPreview
+    ? Image.statsSync(src, imageOptions)
+    : await Image(src, imageOptions)
 
   const alt = (options.alt ?? '').replace(/"/g, '&quot;')
   const formatEntries = Object.values(metadata) as any[][]
