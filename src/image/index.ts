@@ -148,15 +148,22 @@ export async function preGenerateStaticImages(staticDir: string, imageSizes: Rec
   if (!fs.existsSync(staticDir)) return
   const allWidths = [...new Set(Object.values(imageSizes).flatMap(s => s.sizes.map(([w]) => w)))]
   const allFormats = [...new Set(Object.values(imageSizes).flatMap(s => normalizeFormats(s.formats ?? ['webp'])))] as any[]
-  const files = fs.readdirSync(staticDir).filter(f => /\.(png|jpe?g|gif|webp)$/i.test(f))
-  for (const file of files) {
-    await Image(path.join(staticDir, file), {
+  for (const file of collectImageFiles(staticDir)) {
+    await Image(file, {
       widths: allWidths,
       formats: allFormats,
       outputDir: path.resolve(STATIC_OUTPUT_DIR),
       urlPath: STATIC_URL_PATH,
     })
   }
+}
+
+function collectImageFiles(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) return collectImageFiles(full)
+    return /\.(png|jpe?g|gif|webp)$/i.test(entry.name) ? [full] : []
+  })
 }
 
 function buildStaticPictureHtml(
@@ -186,7 +193,7 @@ function buildStaticPictureHtml(
 /**
  * Core image size presets. Extended per project via `imageSizes` in project.config.mts.
  * Usage: {% sanityPicture image, imageSizes.hero, { loading: "eager" } %}
- *        {% staticPicture "./src/assets/images/logo.png", imageSizes.logo %}
+ *        {% staticPicture "logo.png", imageSizes.logo %}
  */
 export const imageSizes = {
   /** Full-width hero, 16:9 */

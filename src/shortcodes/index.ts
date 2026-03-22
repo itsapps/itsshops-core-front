@@ -9,15 +9,16 @@ export const createShortcodes = (ctx: CoreContext) => {
     sanityPicture(imageBuilder, image, size, options)
   )
 
+  const inputDir = eleventyConfig.directories?.input ?? 'src'
+  const staticDir = path.join(process.cwd(), inputDir, 'assets/images/static')
+
   if (!config.preview?.enabled) {
     eleventyConfig.on('eleventy.before', async () => {
-      const inputDir = eleventyConfig.directories?.input ?? 'src'
-      const staticDir = path.join(process.cwd(), inputDir, 'assets/images/static')
       await preGenerateStaticImages(staticDir, imageSizes)
     })
   }
 
-  eleventyConfig.addShortcode("staticPicture", (src: string, size: PictureSize, options: PictureOptions) =>
-    staticPicture(src, size, options)
+  eleventyConfig.addShortcode("staticPicture", (filename: string, size: PictureSize, options: PictureOptions) =>
+    staticPicture(path.join(staticDir, filename), size, options)
   )
 }
