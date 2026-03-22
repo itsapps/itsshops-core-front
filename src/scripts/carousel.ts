@@ -1,26 +1,25 @@
+import EmblaCarousel, { type EmblaOptionsType } from 'embla-carousel'
+import Autoplay from 'embla-carousel-autoplay'
+
 function initCarousel(el: HTMLElement) {
-  const slides = Array.from(el.querySelectorAll<HTMLElement>('.carousel-slide'))
-  if (slides.length <= 1) return
+  const viewport = el.querySelector<HTMLElement>('.carousel-viewport')
+  if (!viewport) return
 
-  const loop     = el.dataset.loop     === 'true'
-  const autoplay = el.dataset.autoplay === 'true'
-  const delay    = Number(el.dataset.delay ?? 4000)
-  let current = 0
+  const loop          = el.dataset.loop          === 'true'
+  const autoplay      = el.dataset.autoplay      === 'true'
+  const fade          = el.dataset.fade          === 'true'
+  const delay         = Number(el.dataset.delay  ?? 5) * 1000
+  const duration      = el.dataset.duration      !== undefined ? Number(el.dataset.duration)      : undefined
+  const containScroll = el.dataset.containScroll !== undefined ? el.dataset.containScroll as EmblaOptionsType['containScroll'] : undefined
 
-  function show(index: number) {
-    if (loop) index = ((index % slides.length) + slides.length) % slides.length
-    else      index = Math.max(0, Math.min(index, slides.length - 1))
-    slides[current].classList.remove('is-active')
-    current = index
-    slides[current].classList.add('is-active')
-  }
+  const options: EmblaOptionsType = { loop }
+  if (fade)                        options.duration      = duration ?? 20
+  if (duration !== undefined)      options.duration      = duration
+  if (containScroll !== undefined) options.containScroll = containScroll
 
-  show(0)
+  const plugins = autoplay ? [Autoplay({ delay, stopOnInteraction: false })] : []
 
-  el.querySelector('[data-carousel-prev]')?.addEventListener('click', () => show(current - 1))
-  el.querySelector('[data-carousel-next]')?.addEventListener('click', () => show(current + 1))
-
-  if (autoplay) setInterval(() => show(current + 1), delay)
+  EmblaCarousel(viewport, options, plugins)
 }
 
 export function initCarousels() {

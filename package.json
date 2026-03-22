@@ -53,6 +53,8 @@
     "daisyui": "^5.5.18",
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-autoplay": "^8.6.0",
     "esbuild": "^0.27.3",
     "fs-extra": "^11.3.3",
     "i18n-iso-countries": "^7.14.0",
