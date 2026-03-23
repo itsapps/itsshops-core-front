@@ -5,7 +5,7 @@ excludeFromSitemap: true
 ---
 {%- set _settings = cms[coreConfig.defaultLocale].settings -%}
 {
-  "name": "{{ _settings.siteTitle | stegaClean }}{% if _settings.siteDescription %} - {{ _settings.siteDescription | stegaClean }}{% endif %}",
+  "name": "{{ _settings.siteTitle | stegaClean }}",
   "short_name": "{{ _settings.siteTitle | stegaClean }}",
   "start_url": "{{ coreConfig.baseUrl }}/{{ coreConfig.defaultLocale }}/",
   "icons": [

@@ -109,7 +109,6 @@ export type ResolvedSettings = {
   _id: string
   siteTitle: string
   siteShortDescription: string
-  siteDescription: any[]
   homePageUrl: string | null
   homePageId: string | null
   privacyPage: string | null
@@ -117,6 +116,7 @@ export type ResolvedSettings = {
   footerMenus: string[]
   gtmId: string | null
   company: ResolvedCompany | null
+  defaultShareImage: ResolvedImage | null
 }
 
 export type ResolvedShopSettings = {

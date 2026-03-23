@@ -223,6 +223,14 @@ export function resolveVariants(
       ...(resolveHooks?.variant ? resolveHooks.variant(variant, ctx) : {}),
     }
 
+    // Wine description fallback for SEO meta description
+    if (!resolved.seo.metaDescription && resolved.wine) {
+      const wineDesc = (resolved.wine as any).description
+      if (typeof wineDesc === 'string' && wineDesc) {
+        resolved.seo = { ...resolved.seo, metaDescription: wineDesc }
+      }
+    }
+
     return resolved
   })
 }

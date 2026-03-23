@@ -162,7 +162,7 @@ export function buildSettingsQuery(extensions: Record<string, string> = {}): str
   _id,
   ${proj.i18nStringField('siteTitle')},
   ${proj.i18nStringField('siteShortDescription')},
-  ${proj.i18nTextField('siteDescription')},
+  "defaultShareImage": defaultShareImage ${proj.baseImage},
   "homePage": homePage->{ _id },
   "privacyPage": privacyPage->{ _id },
   "mainMenus": mainMenus[]{ _ref },

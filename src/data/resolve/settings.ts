@@ -11,7 +11,6 @@ export function resolveSettings(
     _id:                  raw._id,
     siteTitle:            ctx.resolveString(raw.siteTitle),
     siteShortDescription: ctx.resolveString(raw.siteShortDescription),
-    siteDescription:      ctx.resolvePortableText(raw.siteDescription),
     homePageUrl:          raw.homePage?._id    ? (urlMap[raw.homePage._id] ?? null) : null,
     homePageId:          raw.homePage?._id ?? null,
     privacyPage:          raw.privacyPage?._id ?? null,
@@ -19,6 +18,7 @@ export function resolveSettings(
     footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
     gtmId:                raw.gtmId ?? null,
     company:              raw.company ? resolveCompany(raw.company, ctx, extensions) : null,
+    defaultShareImage:    ctx.resolveBaseImage(raw.defaultShareImage) ?? null,
   }
 }
 

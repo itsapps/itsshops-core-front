@@ -4,8 +4,8 @@
 {%- set _item      = pageDoc -%}
 {%- set _seo       = _item.seo or {} -%}
 {%- set _rawTitle  = (_seo.metaTitle | stegaClean) if _seo.metaTitle else (_item.title | stegaClean if _item.title else '') -%}
-{%- set _desc      = (_seo.metaDescription | stegaClean) if _seo.metaDescription else '' -%}
-{%- set _shareImg  = _seo.shareImage or _item.image -%}
+{%- set _desc      = (_seo.metaDescription | stegaClean) if _seo.metaDescription else ((_item.description | stegaClean) if _item.description else ((_settings.siteShortDescription | stegaClean) if _settings.siteShortDescription else '')) -%}
+{%- set _shareImg  = _seo.shareImage or _item.image or _settings.defaultShareImage -%}
 {%- set _shareTitle = ((_seo.shareTitle | stegaClean) if _seo.shareTitle else _rawTitle) or _siteTitle -%}
 {%- set _shareDesc  = (_seo.shareDescription | stegaClean) if _seo.shareDescription else _desc -%}
 {%- set _noIndex   = (not coreConfig.doIndexPages) or noindex -%}
