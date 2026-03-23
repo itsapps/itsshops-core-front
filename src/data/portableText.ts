@@ -5,9 +5,9 @@ import type { Locale } from '../types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Strip stega markers, leading/trailing <br> tags and whitespace from a block's rendered children. */
+/** Strip leading/trailing <br> tags and whitespace from a block's rendered children. */
 function blockContent(children: string | undefined): string {
-  return stegaClean(children ?? '').replace(/^(\s*<br\s*\/?>\s*)+|(\s*<br\s*\/?>\s*)+$/gi, '').trim()
+  return (children ?? '').replace(/^(\s*<br\s*\/?>\s*)+|(\s*<br\s*\/?>\s*)+$/gi, '').trim()
 }
 
 function renderBlock(tag: string, children: string, cls?: string): string {
