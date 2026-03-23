@@ -45,7 +45,7 @@ const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtm
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${children}</a>`
     },
     externalLink: ({ children, value }) => {
-      const href = escapeHTML(stegaClean(value?.href ?? value?.url ?? '#'))
+      const href = escapeHTML(stegaClean(value?.externalLinkUrl ?? value?.href ?? value?.url ?? '#'))
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${children}</a>`
     },
   },

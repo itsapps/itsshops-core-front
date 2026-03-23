@@ -51,7 +51,12 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   setupJs(ctx)
   setupHeaders(ctx)
 
-  eleventyConfig.addGlobalData('cms', () => buildCmsData(client, ctx))
+  let cmsCache: ReturnType<typeof buildCmsData> | null = null
+  eleventyConfig.addGlobalData('cms', () => {
+    if (!config.dev.fetchOnRebuild && cmsCache) return cmsCache
+    cmsCache = buildCmsData(client, ctx)
+    return cmsCache
+  })
   eleventyConfig.addGlobalData('coreConfig', config)
   eleventyConfig.addGlobalData('imageSizes', mergedImageSizes)
   eleventyConfig.addGlobalData('utils', utils)

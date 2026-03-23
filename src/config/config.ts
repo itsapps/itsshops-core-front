@@ -69,9 +69,10 @@ export function resolveConfig(config: Config): CoreConfig {
     doIndexPages:      config.doIndexPages      ?? env.doIndexPages,
     maxProducts:       config.maxProducts       ?? env.maxProducts,
     dev: {
-      enabled:    config.dev?.enabled    ?? env.dev.enabled,
-      liveReload: config.dev?.liveReload ?? env.dev.liveReload,
-      serverPort: config.dev?.serverPort ?? env.dev.serverPort,
+      enabled:        config.dev?.enabled        ?? env.dev.enabled,
+      liveReload:     config.dev?.liveReload     ?? env.dev.liveReload,
+      serverPort:     config.dev?.serverPort     ?? env.dev.serverPort,
+      fetchOnRebuild: config.dev?.fetchOnRebuild ?? env.dev.fetchOnRebuild,
     },
     preview: {
       enabled:      previewEnabled,
@@ -123,9 +124,10 @@ function readEnv() {
     doIndexPages:      parseBool(process.env.DO_INDEX_PAGES, true),
     maxProducts:       parseNum(process.env.MAX_PRODUCTS, -1),
     dev: {
-      enabled:    parseBool(process.env.ITSSHOPS_DEBUG, false),
-      liveReload: parseBool(process.env.DEV_LIVE_RELOAD, true),
-      serverPort: parseNum(process.env.DEV_SERVER_PORT, 8080),
+      enabled:        parseBool(process.env.ITSSHOPS_DEBUG, false),
+      liveReload:     parseBool(process.env.DEV_LIVE_RELOAD, true),
+      serverPort:     parseNum(process.env.DEV_SERVER_PORT, 8080),
+      fetchOnRebuild: parseBool(process.env.DEV_FETCH_ON_REBUILD, true),
     },
     preview: {
       enabled:      previewEnabled,

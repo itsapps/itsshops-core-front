@@ -14,6 +14,7 @@ export function resolveCategories(
     return {
       _id: c._id,
       _type: 'category' as const,
+      _updatedAt: c._updatedAt ?? null,
       title: ctx.resolveString(c.title),
       description: ctx.resolveString(c.description),
       slug,

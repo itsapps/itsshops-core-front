@@ -36,6 +36,7 @@ export type ResolvedSeo = {
 export type ResolvedCategory = {
   _id: string
   _type: 'category'
+  _updatedAt: string | null
   title: string
   description: string
   slug: string
@@ -144,6 +145,7 @@ export type ResolvedWine = {
 export type ResolvedVariant = {
   _id: string
   _type: 'productVariant'
+  _updatedAt: string | null
   slug: string
   url: string
   status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
@@ -171,6 +173,7 @@ export type ResolvedVariant = {
 export type ResolvedPage = {
   _id: string
   _type: 'page'
+  _updatedAt: string | null
   title: string
   slug: string
   url: string
@@ -182,6 +185,7 @@ export type ResolvedPage = {
 export type ResolvedPost = {
   _id: string
   _type: 'post'
+  _updatedAt: string | null
   title: string
   slug: string
   url: string
@@ -207,6 +211,17 @@ export type CmsLocaleData = {
   [key: string]: unknown
 }
 
+export type SitemapEntry = {
+  url: string
+  lastmod: string | null
+  alternates: { locale: string; url: string }[]
+}
+
+export type Sitemap = {
+  permalink: string
+  entries: SitemapEntry[]
+}
+
 /**
  * Top-level cms global data shape.
  * - cms[locale]   → per-locale data for layout/component templates
@@ -217,5 +232,6 @@ export type CmsData = {
   categories: (ResolvedCategory & { locale: string })[]
   pages:      (ResolvedPage     & { locale: string })[]
   posts:      (ResolvedPost     & { locale: string })[]
+  sitemaps:   Sitemap[]
   [locale: string]: CmsLocaleData | unknown
 }

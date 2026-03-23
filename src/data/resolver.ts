@@ -2,7 +2,7 @@ import type { SanityClient } from '@sanity/client'
 import { slugify as coreSlugify } from '../utils/slugify'
 import { stegaClean } from '@sanity/client/stega'
 import type { CoreContext } from '../types'
-import type { CmsData, CmsLocaleData, ResolvedPage, ResolvedPost } from '../types/data'
+import type { CmsData, CmsLocaleData, ResolvedPage, ResolvedPost, Sitemap, SitemapEntry } from '../types/data'
 import { buildPermalinkTranslations } from '../i18n/permalinks'
 import {
   buildProductQuery,
@@ -27,6 +27,8 @@ export async function buildCmsData(
   context: CoreContext,
 ): Promise<CmsData> {
   const { config, translate } = context
+
+  console.log('\n\x1b[36m▶ Fetching CMS data from Sanity...\x1b[0m\n')
 
   const permalinks = buildPermalinkTranslations(config.permalinks)
   const features   = config.features
@@ -96,7 +98,7 @@ export async function buildCmsData(
 
   // ─── Per-locale resolution ────────────────────────────────────────────────
 
-  const cms: CmsData = { products: [], categories: [], pages: [], posts: [] }
+  const cms: CmsData = { products: [], categories: [], pages: [], posts: [], sitemaps: [] }
 
   const localesToProcess = isPreview && config.preview.locale
     ? [config.preview.locale]
@@ -182,7 +184,49 @@ export async function buildCmsData(
     for (const item of posts)      cms.posts.push({ ...item, locale })
   }
 
+  cms.sitemaps = buildSitemaps(cms, config)
+
   extensions.onCmsBuilt?.(cms)
 
   return cms
+}
+
+function buildSitemaps(cms: CmsData, config: CoreContext['config']): Sitemap[] {
+  const { locales, defaultLocale, baseUrl, features } = config
+
+  const toEntry = (doc: { _id: string; _updatedAt: string | null; url: string }): SitemapEntry => ({
+    url: `${baseUrl}${doc.url}`,
+    lastmod: doc._updatedAt ?? null,
+    alternates: locales
+      .map(locale => {
+        const localeData = cms[locale] as CmsLocaleData | undefined
+        const url = localeData?.urlMap?.[doc._id]
+        return url ? { locale, url: `${baseUrl}${url}` } : null
+      })
+      .filter(Boolean) as { locale: string; url: string }[],
+  })
+
+  const defaultData = cms[defaultLocale] as CmsLocaleData
+
+  const sitemaps: Sitemap[] = []
+
+  const pages = (defaultData?.pages ?? []).map(toEntry)
+  if (pages.length) sitemaps.push({ permalink: '/sitemap-pages.xml', entries: pages })
+
+  if (features.shop.enabled) {
+    const products = (defaultData?.products ?? []).map(toEntry)
+    if (products.length) sitemaps.push({ permalink: '/sitemap-products.xml', entries: products })
+
+    if (features.shop.category) {
+      const categories = (defaultData?.categories ?? []).map(toEntry)
+      if (categories.length) sitemaps.push({ permalink: '/sitemap-categories.xml', entries: categories })
+    }
+  }
+
+  if (features.blog) {
+    const posts = (defaultData?.posts ?? []).map(toEntry)
+    if (posts.length) sitemaps.push({ permalink: '/sitemap-posts.xml', entries: posts })
+  }
+
+  return sitemaps
 }

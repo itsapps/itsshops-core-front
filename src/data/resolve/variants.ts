@@ -169,6 +169,7 @@ export function resolveVariants(
     const resolved: ResolvedVariant = {
       _id:            variant._id,
       _type:          'productVariant',
+      _updatedAt:     variant._updatedAt ?? null,
       slug,
       url,
       status:         variant.status ?? 'active',

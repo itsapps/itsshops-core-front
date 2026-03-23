@@ -44,8 +44,9 @@ export type EnvVars = {
   INLINE_CSS:     string | undefined  // 'true' | 'false'
 
   // Dev server
-  DEV_LIVE_RELOAD: string | undefined  // 'true' | 'false'
-  DEV_SERVER_PORT: string | undefined
+  DEV_LIVE_RELOAD:     string | undefined  // 'true' | 'false'
+  DEV_SERVER_PORT:     string | undefined
+  DEV_FETCH_ON_REBUILD: string | undefined  // 'true' | 'false'
 
   // Preview
   IS_PREVIEW:          string | undefined  // 'true' | 'false'
@@ -317,6 +318,8 @@ export type Config = {
     enabled?: boolean
     liveReload?: boolean
     serverPort?: number
+    /** Re-fetch CMS data from Sanity on every rebuild during --serve. Defaults to true. */
+    fetchOnRebuild?: boolean
   }
   preview?: {
     enabled?: boolean
@@ -385,6 +388,7 @@ export type CoreConfig = {
     enabled: boolean
     liveReload: boolean
     serverPort: number
+    fetchOnRebuild: boolean
   }
   preview: {
     enabled: boolean
