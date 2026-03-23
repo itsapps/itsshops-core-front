@@ -17,6 +17,20 @@ function formatPrice(cents: number, locale = 'de', currency = 'EUR'): string {
 }
 
 /**
+ * Format a volume stored in ml to a locale-aware display string using the configured unit.
+ * Usage: {{ wine.volume | formatVolume }}
+ */
+export function formatVolumeMl(ml: number, unit: string, locale = 'de'): string {
+  let value: number
+  switch (unit) {
+    case 'l':  value = ml / 1000; break
+    case 'cl': value = ml / 10;   break
+    default:   value = ml
+  }
+  return `${new Intl.NumberFormat(locale).format(value)}${unit}`
+}
+
+/**
  * Resolve an InternationalizedArray to a plain string in templates.
  * Usage: {{ module.heading | localize(product.locale, defaultLocale) }}
  */
@@ -131,6 +145,9 @@ export const createFilters = (ctx: CoreContext) => {
   // eleventyConfig.addFilter("formatPrice", formatPrice);
   eleventyConfig.addFilter("formatPrice", function (price: number, locale: string | undefined) {
     return formatPrice(price, locale || this.page?.lang || config.defaultLocale);
+  });
+  eleventyConfig.addFilter("formatVolume", function (ml: number) {
+    return formatVolumeMl(ml, config.units.volume, this.page?.lang || config.defaultLocale)
   });
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);

@@ -101,7 +101,7 @@
         {%- endif %}
         {%- if item.variant.kind == "wine" and (item.variant.volume or item.variant.vintage) %}
           <span class="{{ class }}__meta">
-            {%- if item.variant.volume %}{{ item.variant.volume }}ml{% endif %}
+            {%- if item.variant.volume %}{{ item.variant.volume | formatVolume }}{% endif %}
             {%- if item.variant.volume and item.variant.vintage %} · {% endif %}
             {%- if item.variant.vintage %}{{ item.variant.vintage }}{% endif -%}
           </span>
@@ -166,7 +166,7 @@
     {%- if wine.volume %}
       <div class="{{ class }}__row">
         <dt class="{{ class }}__label">{{ 'product.wine.volume' | trans }}</dt>
-        <dd class="{{ class }}__value">{{ wine.volume }}ml</dd>
+        <dd class="{{ class }}__value">{{ wine.volume | formatVolume }}</dd>
       </div>
     {%- endif %}
 
