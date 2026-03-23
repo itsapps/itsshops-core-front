@@ -85,6 +85,33 @@ function limit(arr: any[], n: number): any[] {
   return (arr ?? []).slice(0, n)
 }
 
+/** International postal prefixes (ISO 3166-1 alpha-2 → prefix) */
+const POSTAL_PREFIXES: Record<string, string> = {
+  AT: 'A',  DE: 'D',  CH: 'CH', LI: 'FL', FR: 'F',
+  IT: 'I',  HU: 'H',  SK: 'SK', CZ: 'CZ', SI: 'SLO',
+  PL: 'PL', NL: 'NL', BE: 'B',  LU: 'L',  DK: 'DK',
+  SE: 'S',  NO: 'N',  FI: 'FIN',
+}
+
+/** Prepend international postal prefix to a zip code when the country has one.
+ * Usage: {{ address.zip | postalCode(address.country) }} → "A-7000" */
+function postalCode(zip: string, country?: string): string {
+  if (!zip) return ''
+  const prefix = country ? POSTAL_PREFIXES[country.toUpperCase()] : undefined
+  return prefix ? `${prefix}-${zip}` : zip
+}
+
+/** Format an ISO 3166-1 alpha-2 country code to a localized country name.
+ * Usage: {{ address.country | countryName }} → "Österreich" / "Austria" */
+function countryName(code: string, locale: string): string {
+  if (!code) return ''
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code
+  } catch {
+    return code
+  }
+}
+
 /** Convert newlines to <br> — pipe result through | safe in templates */
 function nl2br(text: string): string {
   if (!text) return ''
@@ -118,6 +145,10 @@ export const createFilters = (ctx: CoreContext) => {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
+  eleventyConfig.addFilter('postalCode', postalCode as any)
+  eleventyConfig.addFilter('countryName', function (code: string) {
+    return countryName(code, this.page?.lang || config.defaultLocale)
+  })
   const portableTextExtCtx = {
     imageBuilder: ctx.imageBuilder,
     imageSizes: ctx.imageSizes,
