@@ -202,6 +202,10 @@ export function buildShopSettingsQuery(): string {
   orderNumberPrefix,
   invoiceNumberPrefix,
   billingAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
-  bankAccount { name, bic, iban }
+  bankAccount { name, bic, iban },
+  "filters": filters[]{
+    _type == 'wineFieldFilter' => { _type, field },
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+  }
 }`
 }

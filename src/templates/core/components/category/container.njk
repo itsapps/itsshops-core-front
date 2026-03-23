@@ -17,9 +17,9 @@
   {% block category_products %}
     {%- set categoryProducts = cms[category.locale].products | filterByCategory(category._id) -%}
     {% if categoryProducts.length %}
-      {%- set filterGroups = cms[category.locale].filterGroups -%}
-      {% if category.filters.length %}
-        {%- set activeFilterKeys = category.filters -%}
+      {%- set filterGroups = cms[category.locale].filterGroups | filterGroupsForProducts(categoryProducts) -%}
+      {%- set activeFilterKeys = category.filters if category.filters.length else cms[category.locale].shopSettings.filters -%}
+      {% if activeFilterKeys.length %}
         {% include "components/partials/product-filters.njk" %}
       {% endif %}
       <div class="category-products" data-product-list>

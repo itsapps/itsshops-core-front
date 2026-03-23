@@ -1,11 +1,11 @@
 {%- set listProducts = cms[_locale].products -%}
-{%- set filterGroups = cms[_locale].filterGroups -%}
+{%- set filterGroups = cms[_locale].filterGroups | filterGroupsForProducts(listProducts) -%}
+{%- set activeFilterKeys = module.filters if module.filters.length else cms[_locale].shopSettings.filters -%}
 <div class="product-list" data-product-list>
   {% if module.title %}
     <h2 class="product-list__title">{{ module.title }}</h2>
   {% endif %}
-  {% if module.filters.length %}
-    {%- set activeFilterKeys = module.filters -%}
+  {% if activeFilterKeys.length %}
     {% include "components/partials/product-filters.njk" %}
   {% endif %}
   {% if listProducts.length %}

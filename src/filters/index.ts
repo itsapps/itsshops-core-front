@@ -53,6 +53,33 @@ function filterByCategory(products: any[], categoryId: string): any[] {
 }
 
 /**
+ * Trim filterGroups to only values present in the given products.
+ * Removes values not represented by any product, and removes empty groups.
+ * Usage: {% set contextFilterGroups = filterGroups | filterGroupsForProducts(categoryProducts) %}
+ */
+function filterGroupsForProducts(filterGroups: any[], products: any[]): any[] {
+  // Collect all values present across the given products per key
+  const present = new Map<string, Set<string>>()
+  for (const p of (products ?? [])) {
+    const attrs: Record<string, string[]> = p.filterAttributes ?? {}
+    for (const [key, values] of Object.entries(attrs)) {
+      if (!present.has(key)) present.set(key, new Set())
+      for (const v of values) present.get(key)!.add(v)
+    }
+  }
+
+  return (filterGroups ?? [])
+    .map((group: any) => {
+      const presentValues = present.get(group.key)
+      if (!presentValues?.size) return null
+      const values = group.values.filter((v: any) => presentValues.has(v.value))
+      if (!values.length) return null
+      return { ...group, values }
+    })
+    .filter(Boolean)
+}
+
+/**
  * Resolve product refs to full product objects from cms data.
  * Accepts either [{_id, ...}] objects or plain string IDs.
  * Usage: {% set resolved = module.products | resolveProductRefs(cms[_locale].products) %}
@@ -155,6 +182,7 @@ export const createFilters = (ctx: CoreContext) => {
   });
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
+  eleventyConfig.addFilter("filterGroupsForProducts", filterGroupsForProducts as any);
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height, format) =>

@@ -135,6 +135,8 @@ export type ResolvedShopSettings = {
   invoiceNumberPrefix: string | null
   billingAddress: ResolvedAddress | null
   bankAccount: { name: string; bic: string; iban: string } | null
+  /** Global default filters applied when a module/category defines no local filters */
+  filters: ResolvedFilterKey[]
 }
 
 /**

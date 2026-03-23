@@ -1,5 +1,6 @@
 import type { ResolveContext, Extensions } from '../../types'
 import type { ResolvedSettings, ResolvedShopSettings, ResolvedCompany, ResolvedAddress } from '../../types/data'
+import { resolveFilterSpecs } from './filters'
 
 export function resolveSettings(
   raw: any,
@@ -45,6 +46,7 @@ function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions):
 
 export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
   return {
+    filters: resolveFilterSpecs(raw.filters, ctx),
     _id:                     raw._id,
     shopPageId:              raw.shopPage?._id ?? null,
     defaultCountry:          raw.defaultCountry
