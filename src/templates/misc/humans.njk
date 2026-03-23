@@ -1,0 +1,18 @@
+---
+permalink: /humans.txt
+eleventyExcludeFromCollections: true
+excludeFromSitemap: true
+---
+{%- set _settings = cms[coreConfig.defaultLocale].settings -%}
+{%- set _company = _settings.company -%}
+
+/* TEAM */
+{% if coreConfig.developer.name %}Web designer and developer: {{ coreConfig.developer.name }}{% if coreConfig.developer.website %} | {{ coreConfig.developer.website }}{% endif %}
+{% endif %}{% if _settings.siteTitle %}Owner: {{ _settings.siteTitle | stegaClean }}
+{% endif %}{% if _company and _company.email %}Contact: {{ _company.email | stegaClean }}
+{% endif %}Site: {{ coreConfig.baseUrl }}
+{% if _company and _company.address %}From: {{ _company.address.city }}, {{ _company.address.country | countryName }}
+{% endif %}
+/* SITE */
+Doctype: HTML5
+Language: {{ coreConfig.locales | join(", ") }}
