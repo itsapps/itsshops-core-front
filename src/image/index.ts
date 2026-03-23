@@ -229,4 +229,9 @@ export const imageSizes = {
     sizes: [[300, 300]] as [number, number][],
     widths: '300px',
   },
+  /** Single product page image — half viewport on desktop */
+  product: {
+    sizes: [[1200, null], [800, null]] as [number, null][],
+    widths: '(min-width: 60rem) 50vw, 100vw',
+  },
 } satisfies Record<string, PictureSize>

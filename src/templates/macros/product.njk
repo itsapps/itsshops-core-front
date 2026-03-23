@@ -1,0 +1,279 @@
+{# ─── Product macros ──────────────────────────────────────────────────────────
+ #
+ # Usage:
+ #   {% from "macros/product.njk" import productPrice, productStatus,
+ #      productSiblings, productWineDetails, productBundleItems,
+ #      productOptions, productCategories, productManufacturers %}
+ #
+ #}
+
+{# ─── Price ───────────────────────────────────────────────────────────────────
+ # Renders price + optional compare-at (strikethrough) price.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class on the wrapper (default: "product-price")
+ #}
+{% macro productPrice(product, class="product-price") %}
+<div class="{{ class }}">
+  {%- if product.compareAtPrice %}
+    <s class="{{ class }}__compare">{{ product.compareAtPrice | formatPrice(product.locale) }}</s>
+  {%- endif %}
+  <span class="{{ class }}__amount">{{ product.price | formatPrice(product.locale) }}</span>
+</div>
+{% endmacro %}
+
+
+{# ─── Status ──────────────────────────────────────────────────────────────────
+ # Renders a status badge when the product is not active.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-status")
+ #}
+{% macro productStatus(product, class="product-status") %}
+{%- if product.status != "active" %}
+  <span class="{{ class }} {{ class }}--{{ product.status }}">
+    {{- 'product.states.' + product.status | trans -}}
+  </span>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Siblings / variant switcher ─────────────────────────────────────────────
+ # Renders a nav of sibling variants. The current variant is marked aria-current.
+ # Unavailable siblings get a modifier class.
+ #
+ # @param product   ResolvedVariant  (current variant)
+ # @param class     optional CSS class (default: "product-siblings")
+ #}
+{% macro productSiblings(product, class="product-siblings") %}
+{%- if product.siblings.length %}
+  <nav class="{{ class }}" aria-label="{{ 'product.variants' | trans }}">
+    <a
+      class="{{ class }}__item {{ class }}__item--current"
+      href="{{ product.url }}"
+      aria-current="true"
+    >{{ product.label }}</a>
+    {%- for sibling in product.siblings %}
+      <a
+        class="{{ class }}__item{% if sibling.status != 'active' %} {{ class }}__item--unavailable{% endif %}"
+        href="{{ sibling.url }}"
+        aria-current="false"
+      >{{ sibling.label }}</a>
+    {%- endfor %}
+  </nav>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Options ─────────────────────────────────────────────────────────────────
+ # Renders option names for physical/digital products.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-options")
+ #}
+{% macro productOptions(product, class="product-options") %}
+{%- if product.options.length %}
+  <ul class="{{ class }}">
+    {%- for option in product.options %}
+      <li class="{{ class }}__item">{{ option.name }}</li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Bundle items ────────────────────────────────────────────────────────────
+ # Renders the list of items in a bundle variant.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-bundle")
+ #}
+{% macro productBundleItems(product, class="product-bundle") %}
+{%- if product.bundleItems.length %}
+  <ul class="{{ class }}">
+    {%- for item in product.bundleItems %}
+      <li class="{{ class }}__item">
+        <span class="{{ class }}__qty">{{ item.quantity }}×</span>
+        {%- if item.variant.url %}
+          <a class="{{ class }}__link" href="{{ item.variant.url }}">{{ item.variant.title }}</a>
+        {%- else %}
+          <span class="{{ class }}__name">{{ item.variant.title }}</span>
+        {%- endif %}
+        {%- if item.variant.kind == "wine" and (item.variant.volume or item.variant.vintage) %}
+          <span class="{{ class }}__meta">
+            {%- if item.variant.volume %}{{ item.variant.volume }}ml{% endif %}
+            {%- if item.variant.volume and item.variant.vintage %} · {% endif %}
+            {%- if item.variant.vintage %}{{ item.variant.vintage }}{% endif -%}
+          </span>
+        {%- elif item.variant.options.length %}
+          <span class="{{ class }}__meta">{{ item.variant.options | map('name') | join(', ') }}</span>
+        {%- endif %}
+      </li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Categories ──────────────────────────────────────────────────────────────
+ # Renders a list of category links.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-categories")
+ #}
+{% macro productCategories(product, class="product-categories") %}
+{%- if product.categories.length %}
+  <ul class="{{ class }}">
+    {%- for cat in product.categories %}
+      <li class="{{ class }}__item">
+        <a class="{{ class }}__link" href="{{ cat.url }}">{{ cat.title }}</a>
+      </li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Manufacturers ───────────────────────────────────────────────────────────
+ # Renders a list of manufacturer names.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-manufacturers")
+ #}
+{% macro productManufacturers(product, class="product-manufacturers") %}
+{%- if product.manufacturers.length %}
+  <ul class="{{ class }}">
+    {%- for m in product.manufacturers %}
+      <li class="{{ class }}__item">{{ m.name }}</li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Wine details ────────────────────────────────────────────────────────────
+ # Renders a <dl> of wine facts from Vinofact data.
+ # Only renders rows for fields that are present on the wine object.
+ #
+ # @param product   ResolvedVariant  (must be kind == "wine")
+ # @param class     optional CSS class (default: "wine-details")
+ #}
+{% macro productWineDetails(product, class="wine-details") %}
+{%- if product.kind == "wine" and product.wine %}
+  {%- set wine = product.wine %}
+  <dl class="{{ class }}">
+
+    {%- if wine.volume %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.volume' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.volume }}ml</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.vintage %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.vintage' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.vintage }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.color %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.color' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.color }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.type %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.type' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.type }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.alcohol %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.alcohol' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.alcohol }}%</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.tartaricAcid %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.tartaricAcid' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.tartaricAcid }} g/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.freeSulfur %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.freeSulfur' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.freeSulfur }} mg/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.totalSulfur %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.totalSulfur' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.totalSulfur }} mg/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.phValue %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.phValue' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.phValue }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.histamine %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.histamine' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.histamine }} mg/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.varietals and wine.varietals.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.varietals' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.varietals | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.classifications and wine.classifications.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.classifications' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.classifications | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.terroir and wine.terroir.name %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.terroir' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.terroir.name }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.terroir and wine.terroir.soils and wine.terroir.soils.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.soils' | trans }}</dt>
+        <dd class="{{ class }}__value">{{ wine.terroir.soils | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.awards and wine.awards.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.awards' | trans }}</dt>
+        <dd class="{{ class }}__value">
+          <ul class="{{ class }}__awards">
+            {%- for award in wine.awards %}
+              <li>{{ award.name }}{% if award.value %}: {{ award.value }}{% endif %}</li>
+            {%- endfor %}
+          </ul>
+        </dd>
+      </div>
+    {%- endif %}
+
+  </dl>
+{%- endif %}
+{% endmacro %}

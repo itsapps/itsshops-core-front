@@ -130,7 +130,7 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("toIsoString", toIsoString);
   // eleventyConfig.addFilter("formatPrice", formatPrice);
   eleventyConfig.addFilter("formatPrice", function (price: number, locale: string | undefined) {
-    return formatPrice(price, locale || this.page.lang || config.defaultLocale);
+    return formatPrice(price, locale || this.page?.lang || config.defaultLocale);
   });
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);

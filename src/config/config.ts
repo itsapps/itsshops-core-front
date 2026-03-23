@@ -63,6 +63,7 @@ export function resolveConfig(config: Config): CoreConfig {
     },
     extensions:    config.extensions    ?? {},
     menu:          { maxDepth: config.menu?.maxDepth ?? 1 },
+    units:         { volume: config.units?.volume ?? 'l' },
     baseUrl,
     hostname,
     isMaintenanceMode,

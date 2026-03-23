@@ -1,138 +1,62 @@
+{% from "macros/product.njk" import productPrice, productStatus, productSiblings,
+  productWineDetails, productBundleItems, productOptions,
+  productCategories, productManufacturers %}
+
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
 
-  {% block product_gallery %}
-    {% if product.image %}
-      <figure class="product-gallery">
-        {% image product.image, imageSizes.content, { loading: "eager" } %}
-      </figure>
-    {% endif %}
-  {% endblock %}
+  {% if product.image %}
+    <figure class="product-gallery">
+      {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
+    </figure>
+  {% endif %}
 
   <div class="product-body">
 
-    {% block product_header %}
-      <header class="product-header">
-        {% if product.status != "active" %}
-          <span class="product-status product-status--{{ product.status }}">{{ product.status }}</span>
-        {% endif %}
-        <h1 class="product-title">{{ product.title }}</h1>
-        {% if product.sku %}
-          <p class="product-sku">{{ product.sku }}</p>
-        {% endif %}
-      </header>
-    {% endblock %}
+    <header class="product-header">
+      {{ productStatus(product, class="product-status") }}
+      <h1 class="product-title">{{ product.title }}</h1>
+      {%- if product.sku %}
+        <p class="product-sku">{{ product.sku }}</p>
+      {%- endif %}
+    </header>
 
-    {% block product_pricing %}
-      <div class="product-pricing">
-        {% if product.compareAtPrice %}
-          <s class="product-price--compare">{{ product.compareAtPrice | formatPrice(product.locale) }}</s>
-        {% endif %}
-        <span class="product-price">{{ product.price | formatPrice() }}</span>
-      </div>
-    {% endblock %}
+    {{ productSiblings(product, class="product-siblings") }}
 
-    {% block product_variants %}
-      {% if product.siblings.length %}
-        <nav class="product-variants" aria-label="Variants">
-          {% for sibling in product.siblings %}
-            <a
-              href="{{ sibling.url }}"
-              class="product-variant{% if sibling.status != 'active' %} product-variant--unavailable{% endif %}"
-              aria-current="false"
-            >{{ sibling.title }}</a>
-          {% endfor %}
-        </nav>
-      {% endif %}
-    {% endblock %}
-
-    {% block product_actions %}
-      <div class="product-actions">
-        {% if product.status == "active" %}
+    <div class="product-purchase">
+      {{ productPrice(product, class="product-price") }}
+      <p class="product-tax-info">{{ 'product.taxShippingInfoText' | trans }}</p>
+      <div class="product-actions" data-product-actions>
+        {%- if product.status == "active" %}
           <button
             type="button"
             class="product-add-to-cart"
+            data-add-to-cart
             data-product-id="{{ product._id }}"
             data-sku="{{ product.sku }}"
             data-price="{{ product.price }}"
-          >
-            Add to cart
-          </button>
-        {% elif product.status == "comingSoon" %}
-          <p class="product-unavailable">Coming soon</p>
-        {% elif product.status == "soldOut" %}
-          <p class="product-unavailable">Sold out</p>
-        {% endif %}
+          >{{ 'product.cartButton.addToCart' | trans }}</button>
+        {%- elif product.status == "comingSoon" %}
+          <p class="product-unavailable">{{ 'product.states.comingSoon' | trans }}</p>
+        {%- elif product.status == "soldOut" %}
+          <p class="product-unavailable">{{ 'product.states.soldOut' | trans }}</p>
+        {%- endif %}
       </div>
-    {% endblock %}
+    </div>
 
-    {% block product_details %}
-      {% if product.kind == "wine" and product.wine %}
-        <dl class="product-details product-details--wine">
-          {% if product.wine.volume %}
-            <div><dt>Volume</dt><dd>{{ product.wine.volume }}ml</dd></div>
-          {% endif %}
-          {% if product.wine.vintage %}
-            <div><dt>Vintage</dt><dd>{{ product.wine.vintage }}</dd></div>
-          {% endif %}
-          {% if product.wine.alcohol %}
-            <div><dt>Alcohol</dt><dd>{{ product.wine.alcohol }}%</dd></div>
-          {% endif %}
-        </dl>
-      {% endif %}
+    {%- if product.kind == "wine" and product.wine %}
+      {{ productWineDetails(product, class="product-wine-details") }}
+    {%- endif %}
 
-      {% if product.kind == "physical" or product.kind == "digital" %}
-        {% if product.options.length %}
-          <ul class="product-options">
-            {% for option in product.options %}
-              <li>{{ option.name }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      {% endif %}
+    {%- if product.kind == "bundle" %}
+      {{ productBundleItems(product, class="product-bundle") }}
+    {%- endif %}
 
-      {% if product.kind == "bundle" %}
-        {% if product.bundleItems.length %}
-          <ul class="product-bundle-items">
-            {% for item in product.bundleItems %}
-              <li>
-                {{ item.quantity }}x
-                {% if item.variant.url %}
-                  <a href="{{ item.variant.url }}" class="bundle-item__link">{{ item.variant.title }}</a>
-                {% else %}
-                  {{ item.variant.title }}
-                {% endif %}
-                {% if item.variant.kind == "wine" and (item.variant.volume or item.variant.vintage) %}
-                  <span class="bundle-item__meta">
-                    {%- if item.variant.volume %}{{ item.variant.volume }}ml{% endif %}
-                    {%- if item.variant.volume and item.variant.vintage %} · {% endif %}
-                    {%- if item.variant.vintage %}{{ item.variant.vintage }}{% endif -%}
-                  </span>
-                {% elif item.variant.options.length %}
-                  <span class="bundle-item__meta">{%- for o in item.variant.options %}{{ o.name }}{% if not loop.last %}, {% endif %}{% endfor -%}</span>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      {% endif %}
-    {% endblock %}
+    {%- if product.kind == "physical" or product.kind == "digital" %}
+      {{ productOptions(product, class="product-options") }}
+    {%- endif %}
 
-    {% block product_meta %}
-      {% if product.categories.length %}
-        <ul class="product-categories">
-          {% for cat in product.categories %}
-            <li><a href="{{ cat.url }}">{{ cat.title }}</a></li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-      {% if product.manufacturers.length %}
-        <ul class="product-manufacturers">
-          {% for m in product.manufacturers %}
-            <li>{{ m.name }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endblock %}
+    {{ productCategories(product, class="product-categories") }}
+    {{ productManufacturers(product, class="product-manufacturers") }}
 
   </div>
 

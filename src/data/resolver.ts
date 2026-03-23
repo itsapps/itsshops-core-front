@@ -115,7 +115,7 @@ export async function buildCmsData(
     const defaultLocale = config.defaultLocale
     const resolve = extensions.resolve ?? {}
 
-    const ctx = makeCtx(locale, defaultLocale, translate, extensions)
+    const ctx = makeCtx(locale, defaultLocale, translate, config.units)
 
     const extensionData = extensions.resolveData
       ? extensions.resolveData(rawExtensionData, ctx)

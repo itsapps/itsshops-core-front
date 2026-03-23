@@ -150,6 +150,7 @@ export type ResolvedVariant = {
   url: string
   status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
   title: string
+  label: string
   sku: string
   kind: 'wine' | 'physical' | 'digital' | 'bundle'
   featured: boolean
@@ -165,7 +166,7 @@ export type ResolvedVariant = {
   options: ResolvedOption[]
   bundleItems: ResolvedBundleItem[]
   product: { _id: string; title: string }
-  siblings: Array<{ _id: string; title: string; url: string; status: string }>
+  siblings: Array<{ _id: string; title: string; label: string; url: string; status: string; kind: string }>
   // extended fields land here at runtime (e.g. isLimited from customer extensions)
   [key: string]: unknown
 }

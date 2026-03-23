@@ -8,6 +8,31 @@ import { resolveString } from '../localizers'
 // Slug generation
 // ---------------------------------------------------------------------------
 
+function buildVariantLabel(
+  title: string,
+  kind: string,
+  variant: any,
+  ctx: ResolveContext,
+): string {
+  switch (kind) {
+    case 'wine': {
+      const parts: string[] = []
+      if (variant.wine?.volume)  parts.push(`${variant.wine.volume}${ctx.units.volume}`)
+      if (variant.wine?.vintage) parts.push(String(variant.wine.vintage))
+      return parts.length ? parts.join(' ') : title
+    }
+    case 'physical':
+    case 'digital': {
+      const optionNames = (variant.options ?? [])
+        .map((o: any) => resolveString(o.name, ctx.locale, ctx.defaultLocale))
+        .filter(Boolean)
+      return optionNames.length ? optionNames.join(' · ') : title
+    }
+    default:
+      return title
+  }
+}
+
 function generateVariantSlug(
   variant: any,
   product: any,
@@ -20,15 +45,13 @@ function generateVariantSlug(
     || variant.sku
     || variant._id
   )
-
   const kind = variant.kind ?? product.kind
-
+  // Slugs use fixed 'ml' — volume unit config must not change existing URLs
   switch (kind) {
     case 'wine': {
-      const wine = variant.wine
       const parts = [title]
-      if (wine?.volume)  parts.push(`${wine.volume}ml`)
-      if (wine?.vintage) parts.push(wine.vintage)
+      if (variant.wine?.volume)  parts.push(`${variant.wine.volume}ml`)
+      if (variant.wine?.vintage) parts.push(variant.wine.vintage)
       return coreSlugify(parts.join(' '))
     }
     case 'physical':
@@ -159,12 +182,18 @@ export function resolveVariants(
 
     const siblings = (siblingsMap.get(product._id) ?? [])
       .filter((s: any) => s._id !== variant._id)
-      .map((s: any) => ({
-        _id:    s._id,
-        title:  ctx.resolveString(s.title) || ctx.resolveString(product.title),
-        url:    variantUrlMap.get(s._id) ?? '',
-        status: s.status ?? 'active',
-      }))
+      .map((s: any) => {
+        const sKind  = s.kind ?? product.kind ?? 'physical'
+        const sTitle = ctx.resolveString(s.title) || ctx.resolveString(product.title)
+        return {
+          _id:    s._id,
+          title:  sTitle,
+          label:  buildVariantLabel(sTitle, sKind, s, ctx),
+          url:    variantUrlMap.get(s._id) ?? '',
+          status: s.status ?? 'active',
+          kind:   sKind,
+        }
+      })
 
     const resolved: ResolvedVariant = {
       _id:            variant._id,
@@ -174,6 +203,12 @@ export function resolveVariants(
       url,
       status:         variant.status ?? 'active',
       title:          ctx.resolveString(variant.title) || ctx.resolveString(product.title),
+      label:          buildVariantLabel(
+                        ctx.resolveString(variant.title) || ctx.resolveString(product.title),
+                        variant.kind ?? product.kind ?? 'physical',
+                        variant,
+                        ctx,
+                      ),
       sku:            variant.sku ?? '',
       kind:           variant.kind ?? product.kind ?? 'physical',
       featured:       variant.featured ?? false,

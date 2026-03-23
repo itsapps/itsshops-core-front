@@ -314,6 +314,11 @@ export type Config = {
     maxDepth?: number
   }
 
+  units?: {
+    /** Unit appended to wine volume in variant labels and wine details. Defaults to 'ml'. */
+    volume?: string
+  }
+
   // override env vars if needed
   baseUrl?: string
   isMaintenanceMode?: boolean
@@ -384,6 +389,7 @@ export type CoreConfig = {
   }
   extensions: Extensions
   menu: { maxDepth: number }
+  units: { volume: string }
   baseUrl: string
   hostname: string
   isMaintenanceMode: boolean

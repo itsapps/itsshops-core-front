@@ -318,6 +318,24 @@ menu: {
 
 ---
 
+## `units`
+
+Display units for physical measurements. Affects variant pill labels throughout the shop.
+
+| Field | Default | Description |
+|---|---|---|
+| `volume` | `'l'` | Unit appended to wine volume (e.g. `'ml'`, `'cl'`, `'l'`) |
+
+```ts
+units: {
+  volume: 'ml',
+}
+```
+
+Note: changing `volume` does not affect product URLs — slugs always use `ml` internally for stability.
+
+---
+
 ## `imageSizes`
 
 Additional image size presets merged with core defaults. Customer presets extend (and can override) built-in ones.

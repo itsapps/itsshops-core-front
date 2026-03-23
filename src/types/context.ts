@@ -9,4 +9,5 @@ export type ResolveContext = BoundLocalizers & {
   resolvePortableText: (raw: any) => any[]
   /** Translate a key in the current locale. Locale is pre-bound from the resolution context. */
   translate: (key: string, params?: TranslatorParams) => string
+  units: { volume: string }
 }
