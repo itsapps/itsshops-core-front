@@ -1,5 +1,7 @@
-import { initCarousels } from './carousel'
 import { initMenu } from './menu'
 
-initCarousels()
 initMenu()
+
+if (document.querySelector('[data-carousel]')) {
+  import('./carousel').then(m => m.initCarousels())
+}

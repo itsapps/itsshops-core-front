@@ -23,5 +23,5 @@ function initCarousel(el: HTMLElement) {
 }
 
 export function initCarousels() {
-  document.querySelectorAll<HTMLElement>('.carousel').forEach(initCarousel)
+  document.querySelectorAll<HTMLElement>('[data-carousel]').forEach(initCarousel)
 }
