@@ -183,6 +183,9 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("filterGroupsForProducts", filterGroupsForProducts as any);
+  eleventyConfig.addFilter("hasModule", (modules: any[], type: string) =>
+    (modules ?? []).some((m: any) => m._type === type) as any
+  );
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height, format) =>
