@@ -23,6 +23,9 @@ export const cssConfig = (ctx: CoreContext) => {
       const defaultEntry = path.join(inputDir, 'assets/css/global/global.css')
       if (inputPath.endsWith(cssPath || defaultEntry)) {
         paths.push(path.join(includesDir, 'css/global.css'));
+      } else if (inputPath.includes('/assets/css/bundle/')) {
+        // Bundle files are passed through as-is (no PostCSS)
+        return async () => inputContent
       } else {
         return;
       }
