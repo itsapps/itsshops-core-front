@@ -198,7 +198,7 @@ function buildStaticPictureHtml(
 export const imageSizes = {
   /** Full-width hero, 16:9 */
   hero: {
-    sizes: [[1600, 900], [1200, 675], [800, 450]] as [number, number][],
+    sizes: [[1800, 1100], [1600, 900], [1200, 675]] as [number, number][],
     widths: '(min-width: 80rem) 1600px, (min-width: 60rem) 1200px, 100vw',
   },
   /** Main content image, 4:3 */
