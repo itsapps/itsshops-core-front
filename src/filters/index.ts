@@ -3,7 +3,7 @@ import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
-import { imageUrl, sanityPicture } from "../image"
+import { imageUrl, image } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema } from "../schema"
@@ -121,7 +121,7 @@ export const createFilters = (ctx: CoreContext) => {
   const portableTextExtCtx = {
     imageBuilder: ctx.imageBuilder,
     imageSizes: ctx.imageSizes,
-    sanityPicture: (image: any, size: any, options?: any) => sanityPicture(ctx.imageBuilder, image, size, options),
+    image: (img: any, size: any, options?: any) => image(ctx.imageBuilder, img, size, options),
     imageUrl: (image: any, width?: number, height?: number, format?: any) => imageUrl(ctx.imageBuilder, image, width, height, format),
     escapeHTML,
     stegaClean,

@@ -13,7 +13,7 @@ import type { ResolvedImage } from './data'
 export type PortableTextExtensionContext = {
   imageBuilder: ImageUrlBuilder
   imageSizes: Record<string, PictureSize>
-  sanityPicture: (image: ResolvedImage | null | undefined, size: PictureSize, options?: PictureOptions) => string
+  image: (img: ResolvedImage | null | undefined, size: PictureSize, options?: PictureOptions) => string
   imageUrl: (image: ResolvedImage | null | undefined, width?: number, height?: number, format?: 'webp' | 'jpg') => string
   escapeHTML: (str: string) => string
   stegaClean: <T>(value: T) => T

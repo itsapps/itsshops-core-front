@@ -1,12 +1,16 @@
 import * as path from 'node:path'
 import type { CoreContext } from "../types";
-import { sanityPicture, staticPicture, preGenerateStaticImages, type PictureSize, type PictureOptions } from "../image";
+import { image, preload, staticImage, staticPreload, preGenerateStaticImages, type PictureSize, type PictureOptions } from "../image";
 
 export const createShortcodes = (ctx: CoreContext) => {
   const { eleventyConfig, imageBuilder, config, imageSizes } = ctx
 
-  eleventyConfig.addShortcode("sanityPicture", (image, size, options) =>
-    sanityPicture(imageBuilder, image, size, options)
+  eleventyConfig.addShortcode("image", (img, size, options) =>
+    image(imageBuilder, img, size, options)
+  )
+
+  eleventyConfig.addShortcode("preload", (img, size) =>
+    preload(imageBuilder, img, size)
   )
 
   const inputDir = eleventyConfig.directories?.input ?? 'src'
@@ -18,7 +22,11 @@ export const createShortcodes = (ctx: CoreContext) => {
     })
   }
 
-  eleventyConfig.addShortcode("staticPicture", (filename: string, size: PictureSize, options: PictureOptions) =>
-    staticPicture(path.join(staticDir, filename), size, options)
+  eleventyConfig.addShortcode("staticImage", (filename: string, size: PictureSize, options: PictureOptions) =>
+    staticImage(path.join(staticDir, filename), size, options)
+  )
+
+  eleventyConfig.addShortcode("staticPreload", (filename: string, size: PictureSize) =>
+    staticPreload(path.join(staticDir, filename), size)
   )
 }

@@ -1,7 +1,7 @@
 <a href="{{ product.url }}" class="product-card">
   {% if product.image %}
     <figure class="product-card-image">
-      {% sanityPicture product.image, imageSizes.card %}
+      {% image product.image, imageSizes.card %}
     </figure>
   {% endif %}
   <div class="product-card-body">

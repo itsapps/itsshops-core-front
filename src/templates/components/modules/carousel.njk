@@ -9,9 +9,9 @@
       {% for slide in module.slides %}
         <figure class="carousel-slide">
           {% if loop.first and _isFirstModule %}
-            {% sanityPicture slide, imageSizes.carousel, { loading: "eager", fetchpriority: "high" } %}
+            {% image slide, imageSizes.carousel, { loading: "eager", fetchpriority: "high" } %}
           {% else %}
-            {% sanityPicture slide, imageSizes.carousel %}
+            {% image slide, imageSizes.carousel %}
           {% endif %}
         </figure>
       {% endfor %}
