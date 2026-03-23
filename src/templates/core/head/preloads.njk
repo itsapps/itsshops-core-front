@@ -1,1 +1,5 @@
 {% getBundle "html", "preloads" %}
+<link rel="preconnect" href="https://cdn.sanity.io">
+{%- for font in preloadFonts %}
+<link rel="preload" as="font" type="font/woff2" href="{{ font }}" crossorigin>
+{%- endfor %}

@@ -71,6 +71,13 @@ export async function buildCmsData(
   )
   const rawExtensionData = Object.fromEntries(rawExtensionEntries)
 
+  extensions.onRawDataFetched?.({
+    products: rawProducts, variants: rawVariants, categories: rawCategories,
+    pages: rawPages, posts: rawPosts, menus: rawMenus,
+    settings: rawSettings, shopSettings: rawShopSettings,
+    ...rawExtensionData,
+  })
+
   // ─── Pre-compute shared maps ───────────────────────────────────────────────
 
   const productMap = new Map<string, any>(rawProducts.map((p: any) => [p._id, p]))

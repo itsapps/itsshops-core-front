@@ -233,6 +233,11 @@ export type Extensions = {
    */
   resolveData?: (rawData: Record<string, any[]>, ctx: ResolveContext) => Record<string, unknown>
   /**
+   * Called once after all raw Sanity data has been fetched, before per-locale resolution.
+   * Use for debugging — set a breakpoint here to inspect raw query results.
+   */
+  onRawDataFetched?: (raw: Record<string, any>) => void
+  /**
    * Called once after all CMS data has been built and resolved.
    * Use for debugging — set a breakpoint here to inspect the full cms object.
    *

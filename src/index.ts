@@ -63,3 +63,18 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
 
   setupTemplates(ctx)
 }
+
+const eleventyReturn = {
+  dir: { input: 'src', output: 'dist', includes: '_includes', layouts: '_layouts' },
+  markdownTemplateEngine: 'njk' as const,
+  htmlTemplateEngine: 'njk' as const,
+}
+
+export const createEleventyConfig = (
+  projectConfig: Config,
+  extra?: (eleventyConfig: EleventyConfig) => void
+) => (eleventyConfig: EleventyConfig) => {
+  eleventyConfig.addPlugin(shopCoreFrontendPlugin, projectConfig)
+  extra?.(eleventyConfig)
+  return eleventyReturn
+}
