@@ -378,4 +378,12 @@ export default {
       title: "Cookie Settings",
     }
   },
+  filters: {
+    vintage: "Vintage",
+    varietal: "Varietal",
+    color: "Color",
+    classification: "Classification",
+    reset: "Reset filters",
+    showResults: "Show results",
+  },
 };

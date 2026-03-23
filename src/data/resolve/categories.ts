@@ -2,6 +2,7 @@ import { slugify as coreSlugify } from '../../utils/slugify'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
 import type { ResolvedCategory } from '../../types/data'
+import { resolveFilterSpecs } from './filters'
 
 export function resolveCategories(
   raw: any[],
@@ -19,10 +20,12 @@ export function resolveCategories(
       description: ctx.resolveString(c.description),
       slug,
       url: `/${ctx.locale}/${permalinks[ctx.locale].category}/${slug}/`,
+      locale: ctx.locale,
       sortOrder: c.sortOrder ?? 0,
       parentId: c.parent?._id ?? null,
       image: ctx.resolveImage(c.image),
       seo: ctx.resolveSeo(c.seo),
+      filters: resolveFilterSpecs(c.filters, ctx),
       ...(resolveHook ? resolveHook(c, ctx) : {}),
     }
   })

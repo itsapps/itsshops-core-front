@@ -1,0 +1,35 @@
+{#
+  Product filter bar.
+  Expects: filterGroups (array of FilterGroup), activeFilterKeys (array of group keys to show)
+  activeFilterKeys: subset of filterGroups to render. If empty/undefined, renders all.
+#}
+{%- set _groups = [] -%}
+{%- for group in filterGroups -%}
+  {%- if not activeFilterKeys or activeFilterKeys.length == 0 or group.key in activeFilterKeys -%}
+    {%- set _groups = (_groups.push(group), _groups) -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{% if _groups.length %}
+  <div class="product-filters" data-product-filters>
+    {% for group in _groups %}
+      <div class="product-filters__group" data-filter-group="{{ group.key }}">
+        <p class="product-filters__label">{{ group.label }}</p>
+        <div class="product-filters__options">
+          {% for val in group.values %}
+            <button
+              type="button"
+              class="product-filters__option"
+              data-filter-key="{{ group.key }}"
+              data-filter-value="{{ val.value }}"
+              aria-pressed="false"
+            >{{ val.label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    <button type="button" class="product-filters__reset" data-filter-reset>
+      {{ "filters.reset" | trans }}
+    </button>
+  </div>
+{% endif %}

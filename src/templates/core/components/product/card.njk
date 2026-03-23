@@ -1,11 +1,13 @@
 {% from "macros/product.njk" import productPrice, productStatus %}
 
 <a href="{{ product.url }}" class="product-card">
-  {%- if product.image %}
-    <figure class="product-card__image">
+  <figure class="product-card__image">
+    {%- if product.image %}
       {% image product.image, imageSizes.card %}
-    </figure>
-  {%- endif %}
+    {%- else %}
+      {% include "components/product/placeholder.njk" %}
+    {%- endif %}
+  </figure>
   <div class="product-card__body">
     {{ productStatus(product, class="product-card__status") }}
     <h2 class="product-card__title">{{ product.title }}</h2>

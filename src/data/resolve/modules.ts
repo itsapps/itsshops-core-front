@@ -1,5 +1,6 @@
 import type { ResolveContext, ResolveHooks } from '../../types'
 import { stegaClean } from '@sanity/client/stega'
+import { resolveFilterSpecs } from './filters'
 
 export function resolveModules(
   modules: any[],
@@ -12,6 +13,13 @@ export function resolveModules(
       case 'productGrid':
       case 'categoryGrid':
         resolved = { ...m, title: ctx.resolveString(m.title) }
+        break
+      case 'productList':
+        resolved = {
+          ...m,
+          title: ctx.resolveString(m.title),
+          filters: resolveFilterSpecs(m.filters, ctx),
+        }
         break
       case 'carousel':
         resolved = {

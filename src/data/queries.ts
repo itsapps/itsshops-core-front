@@ -36,6 +36,14 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     ${proj.i18nStringField('title')},
     ${proj.refsField('categories')}
   }`,
+  productList: `{
+    _type,
+    ${proj.i18nStringField('title')},
+    "filters": filters[]{
+      _type == 'wineFieldFilter' => { _type, field },
+      _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+    }
+  }`,
   carousel: `{
     _type,
     autoplay,
@@ -89,7 +97,7 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id },
   wine,
-  "options": options[]->{ _id, "name": title[]{ _key, value } },
+  "options": options[]->{ _id, "name": title[]{ _key, value }, "group": group->{ _id, "title": title[]{ _key, value } } },
   "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
   "productId": product._ref${extraFields('variant', extensions)}
 }`
@@ -105,7 +113,11 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
   sortOrder,
   "parent": parent->{ _id },
   ${proj.i18nImageField('image')},
-  seo ${proj.seo}${extraFields('category', extensions)}
+  seo ${proj.seo},
+  "filters": filters[]{
+    _type == 'wineFieldFilter' => { _type, field },
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+  }${extraFields('category', extensions)}
 }`
 }
 

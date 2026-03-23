@@ -21,6 +21,7 @@ import { resolveCategories } from './resolve/categories'
 import { resolveVariants } from './resolve/variants'
 import { resolveMenus } from './resolve/menus'
 import { resolveSettings, resolveShopSettings } from './resolve/settings'
+import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
 
 export async function buildCmsData(
   client: SanityClient,
@@ -124,9 +125,11 @@ export async function buildCmsData(
     const categories = resolveCategories(rawCategories, ctx, permalinks, resolve.category)
     const categoryMap = new Map(categories.map(c => [c._id, c]))
 
+    const filterAcc: FilterAccumulator = new Map()
     const products = features.shop
-      ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, vinofactMap, resolve)
+      ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, vinofactMap, resolve, filterAcc)
       : []
+    const filterGroups = buildFilterGroups(filterAcc)
 
     const homePageId = rawSettings?.homePage?._id ?? null
 
@@ -139,6 +142,7 @@ export async function buildCmsData(
         title,
         slug,
         url,
+        locale,
         modules: resolveModules(p.modules, ctx, resolve.module),
         seo:     ctx.resolveSeo(p.seo),
         ...(resolve.page ? resolve.page(p, ctx) : {}),
@@ -153,6 +157,7 @@ export async function buildCmsData(
             title:       ctx.resolveString(p.title),
             slug,
             url:         `/${locale}/${permalinks[locale].blog}/${slug}/`,
+            locale,
             publishedAt: p.publishedAt ?? null,
             modules:     resolveModules(p.modules, ctx, resolve.module),
             seo:         ctx.resolveSeo(p.seo),
@@ -172,6 +177,7 @@ export async function buildCmsData(
 
     const localeData: CmsLocaleData = {
       products,
+      filterGroups,
       categories,
       pages,
       posts,
@@ -185,10 +191,10 @@ export async function buildCmsData(
 
     cms[locale] = localeData
 
-    for (const item of products)   cms.products.push({ ...item, locale })
-    for (const item of categories) cms.categories.push({ ...item, locale })
-    for (const item of pages)      cms.pages.push({ ...item, locale })
-    for (const item of posts)      cms.posts.push({ ...item, locale })
+    for (const item of products) cms.products.push(item)
+    for (const item of categories) cms.categories.push(item)
+    for (const item of pages)      cms.pages.push(item)
+    for (const item of posts)      cms.posts.push(item)
   }
 
   cms.sitemaps = buildSitemaps(cms, config)

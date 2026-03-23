@@ -1,0 +1,24 @@
+{%- set listProducts = cms[_locale].products -%}
+{%- set filterGroups = cms[_locale].filterGroups -%}
+<div class="product-list" data-product-list>
+  {% if module.title %}
+    <h2 class="product-list__title">{{ module.title }}</h2>
+  {% endif %}
+  {% if module.filters.length %}
+    {%- set activeFilterKeys = module.filters -%}
+    {% include "components/partials/product-filters.njk" %}
+  {% endif %}
+  {% if listProducts.length %}
+    <div class="product-list__grid">
+      {% for product in listProducts %}
+        <div
+          class="product-list__item"
+          data-filter-item
+          data-filter-attrs="{{ product.filterAttributes | dump }}"
+        >
+          {% include "components/product/card.njk" %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

@@ -378,4 +378,12 @@ export default {
       title: "Cookie-Einstellungen",
     }
   },
+  filters: {
+    vintage: "Jahrgang",
+    varietal: "Rebsorte",
+    color: "Farbe",
+    classification: "Klassifikation",
+    reset: "Filter zurücksetzen",
+    showResults: "Ergebnisse anzeigen",
+  },
 };

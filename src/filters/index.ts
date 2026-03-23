@@ -30,6 +30,10 @@ export function formatVolumeMl(ml: number, unit: string, locale = 'de'): string 
   return `${new Intl.NumberFormat(locale).format(value)}${unit}`
 }
 
+export function formatNumber(num: number, locale = 'de'): string {
+  return `${new Intl.NumberFormat(locale).format(num || 0)}`
+}
+
 /**
  * Resolve an InternationalizedArray to a plain string in templates.
  * Usage: {{ module.heading | localize(product.locale, defaultLocale) }}
@@ -160,6 +164,9 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter('limit', limit as any)
   eleventyConfig.addFilter('formatDate', function (date: string, style?: Intl.DateTimeFormatOptions['dateStyle']) {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
+  })
+  eleventyConfig.addFilter('formatNumber', function (num: number) {
+    return formatNumber(num, this.page?.lang || config.defaultLocale)
   })
   eleventyConfig.addFilter('nl2br', nl2br)
   eleventyConfig.addFilter('postalCode', postalCode as any)

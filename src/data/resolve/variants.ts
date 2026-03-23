@@ -4,6 +4,7 @@ import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from
 import type { ResolvedCategory, ResolvedVariant } from '../../types/data'
 import { resolveString } from '../localizers'
 import { formatVolumeMl } from '../../filters'
+import { buildFilterAttributes, accumulateFilterGroups, type FilterAccumulator } from './filters'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -14,23 +15,26 @@ function buildVariantLabel(
   kind: string,
   variant: any,
   ctx: ResolveContext,
-): string {
+): { labels: string[]; label: string } {
   switch (kind) {
     case 'wine': {
       const parts: string[] = []
       if (variant.wine?.volume)  parts.push(formatVolumeMl(variant.wine.volume, ctx.units.volume, ctx.locale))
       if (variant.wine?.vintage) parts.push(String(variant.wine.vintage))
-      return parts.length ? parts.join(' ') : title
+      return { label: parts.length ? parts.join(' · ') : title, labels: parts.length ? parts : [title] }
     }
     case 'physical':
     case 'digital': {
       const optionNames = (variant.options ?? [])
         .map((o: any) => resolveString(o.name, ctx.locale, ctx.defaultLocale))
         .filter(Boolean)
-      return optionNames.length ? optionNames.join(' · ') : title
+      return {
+        label: optionNames.length ? optionNames.join(' · ') : title,
+        labels: optionNames.length ? optionNames : [title]
+      }
     }
     default:
-      return title
+      return { label: title, labels: [title]}
   }
 }
 
@@ -129,10 +133,18 @@ function resolveWine(
 
   const resolved = resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as Record<string, unknown>
 
-  // Vinofact stores alcohol in hundredths of a percent (e.g. 1250 = 12.50%)
-  if (typeof resolved.alcohol === 'number') {
-    resolved.alcohol = resolved.alcohol / 100
+  const numbersMultipliedFields = ['alcohol', 'tartaricAcid', 'totalSulfur', 'freeSulfur', 'phValue', 'histamine']
+  for (const field of numbersMultipliedFields) {
+    if (typeof resolved[field] === 'number') {
+      resolved[field] = resolved[field] / 100
+    }
   }
+  // if (typeof resolved.alcohol === 'number') {
+  //   resolved.alcohol = resolved.alcohol / 100
+  // }
+  // if (typeof resolved.tartaricAcid === 'number') {
+  //   resolved.tartaricAcid = resolved.tartaricAcid / 100
+  // }
 
   return {
     volume:  sanityWine.volume  ?? null,
@@ -154,6 +166,7 @@ export function resolveVariants(
   siblingsMap: Map<string, any[]>,
   vinofactMap: Map<string, any>,
   resolveHooks?: ResolveHooks,
+  filterAcc?: FilterAccumulator,
 ): ResolvedVariant[] {
   const { locale, defaultLocale } = ctx
   const usedSlugs = new Set<string>()
@@ -189,12 +202,20 @@ export function resolveVariants(
         return {
           _id:    s._id,
           title:  sTitle,
-          label:  buildVariantLabel(sTitle, sKind, s, ctx),
+          ...buildVariantLabel(sTitle, sKind, s, ctx),
           url:    variantUrlMap.get(s._id) ?? '',
           status: s.status ?? 'active',
           kind:   sKind,
         }
       })
+
+    const kind      = variant.kind ?? product.kind ?? 'physical'
+    const wine      = variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null
+    const rawOpts   = variant.options ?? []
+    const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx)
+    if (filterAcc) accumulateFilterGroups(filterAcc, kind, wine, rawOpts, ctx)
+    
+    const title = ctx.resolveString(variant.title) || ctx.resolveString(product.title)
 
     const resolved: ResolvedVariant = {
       _id:            variant._id,
@@ -202,16 +223,17 @@ export function resolveVariants(
       _updatedAt:     variant._updatedAt ?? null,
       slug,
       url,
+      locale:         locale,
       status:         variant.status ?? 'active',
-      title:          ctx.resolveString(variant.title) || ctx.resolveString(product.title),
-      label:          buildVariantLabel(
-                        ctx.resolveString(variant.title) || ctx.resolveString(product.title),
-                        variant.kind ?? product.kind ?? 'physical',
-                        variant,
-                        ctx,
-                      ),
+      title,
+      ...buildVariantLabel(
+        title,
+        kind,
+        variant,
+        ctx,
+      ),
       sku:            variant.sku ?? '',
-      kind:           variant.kind ?? product.kind ?? 'physical',
+      kind,
       featured:       variant.featured ?? false,
       price:          variant.price ?? product.price ?? 0,
       compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
@@ -224,7 +246,7 @@ export function resolveVariants(
       })),
       taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
       stock: variant.stock ?? null,
-      wine: variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null,
+      wine,
       options: (variant.options ?? []).map((o: any) => ({
         _id:  o._id,
         name: ctx.resolveString(o.name),
@@ -254,6 +276,7 @@ export function resolveVariants(
         title: ctx.resolveString(product.title),
       },
       siblings,
+      filterAttributes,
       // Extended fields from product-level hook (variant hook wins on collision)
       ...(resolveHooks?.product ? resolveHooks.product(product, ctx) : {}),
       ...(resolveHooks?.variant ? resolveHooks.variant(variant, ctx) : {}),

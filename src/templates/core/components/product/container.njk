@@ -4,11 +4,13 @@
 
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
 
-  {% if product.image %}
-    <figure class="product-gallery">
+  <figure class="product-gallery">
+    {% if product.image %}
       {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
-    </figure>
-  {% endif %}
+    {% else %}
+      {% include "components/product/placeholder.njk" %}
+    {% endif %}
+  </figure>
 
   <div class="product-body">
 

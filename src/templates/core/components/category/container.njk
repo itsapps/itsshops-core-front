@@ -1,4 +1,4 @@
-<section class="category" data-category-id="{{ category._id }}">
+<article class="category" data-category-id="{{ category._id }}">
 
   {% block category_header %}
     <header class="category-header">
@@ -17,12 +17,23 @@
   {% block category_products %}
     {%- set categoryProducts = cms[category.locale].products | filterByCategory(category._id) -%}
     {% if categoryProducts.length %}
-      <div class="category-products">
+      {%- set filterGroups = cms[category.locale].filterGroups -%}
+      {% if category.filters.length %}
+        {%- set activeFilterKeys = category.filters -%}
+        {% include "components/partials/product-filters.njk" %}
+      {% endif %}
+      <div class="category-products" data-product-list>
         {% for product in categoryProducts %}
-          {% include "components/product/card.njk" %}
+          <div
+            class="category-products__item"
+            data-filter-item
+            data-filter-attrs="{{ product.filterAttributes | dump }}"
+          >
+            {% include "components/product/card.njk" %}
+          </div>
         {% endfor %}
       </div>
     {% endif %}
   {% endblock %}
 
-</section>
+</article>

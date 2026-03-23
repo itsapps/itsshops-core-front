@@ -41,10 +41,13 @@ export type ResolvedCategory = {
   description: string
   slug: string
   url: string
+  locale: string
   sortOrder: number
   parentId: string | null
   image: ResolvedImage | null
   seo: ResolvedSeo
+  /** Filter group keys to show on the category page (resolved from Sanity filter config) */
+  filters: ResolvedFilterKey[]
 }
 
 export type ResolvedManufacturer = {
@@ -62,6 +65,8 @@ export type ResolvedBundleItem = {
   variant: {
     _id: string
     title: string
+    label: string
+    labels: string[]
     url: string | null
     kind: string
     volume: number | null
@@ -142,12 +147,28 @@ export type ResolvedWine = {
   vintage: string | null
 } & Partial<VinofactWine>
 
+export type FilterValue = {
+  value: string   // URL-safe slug
+  label: string   // display label
+  count: number   // number of active variants with this value
+}
+
+export type FilterGroup = {
+  key: string         // URL param key (e.g. 'vintage', 'groesse')
+  label: string       // display label (e.g. 'Jahrgang', 'Größe')
+  values: FilterValue[]
+}
+
+/** Resolved filter key — references either a wine field key or a slugified option group title */
+export type ResolvedFilterKey = string
+
 export type ResolvedVariant = {
   _id: string
   _type: 'productVariant'
   _updatedAt: string | null
   slug: string
   url: string
+  locale: string
   status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
   title: string
   label: string
@@ -166,7 +187,9 @@ export type ResolvedVariant = {
   options: ResolvedOption[]
   bundleItems: ResolvedBundleItem[]
   product: { _id: string; title: string }
-  siblings: Array<{ _id: string; title: string; label: string; url: string; status: string; kind: string }>
+  siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string }>
+  /** URL-safe filter attributes for client-side filtering. Key = filter group key, value = slugified values. */
+  filterAttributes: Record<string, string[]>
   // extended fields land here at runtime (e.g. isLimited from customer extensions)
   [key: string]: unknown
 }
@@ -178,6 +201,7 @@ export type ResolvedPage = {
   title: string
   slug: string
   url: string
+  locale: string
   modules: unknown[]
   seo: ResolvedSeo
   [key: string]: unknown
@@ -190,6 +214,7 @@ export type ResolvedPost = {
   title: string
   slug: string
   url: string
+  locale: string
   publishedAt: string | null
   modules: unknown[]
   seo: ResolvedSeo
@@ -200,6 +225,7 @@ export type ResolvedPost = {
 export type CmsLocaleData = {
   products: ResolvedVariant[]
   categories: ResolvedCategory[]
+  filterGroups: FilterGroup[]
   pages: ResolvedPage[]
   posts: ResolvedPost[]
   menus: ResolvedMenu[]
