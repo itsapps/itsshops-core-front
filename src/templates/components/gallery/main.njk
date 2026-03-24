@@ -1,0 +1,27 @@
+{#
+  Expects:
+    _galleryImages    — array of resolved images (optional)
+    _galleryImage     — single resolved image fallback (optional)
+    _galleryImageSize — imageSizes preset for slides
+#}
+<div class="embla">
+  <div class="embla__viewport">
+    <div class="embla__container">
+      {%- if _galleryImages and _galleryImages.length -%}
+        {%- for img in _galleryImages -%}
+          <div class="embla__slide">
+            {% image img, _galleryImageSize, { loading: ('eager' if loop.first else 'lazy'), fetchpriority: ('high' if loop.first else 'auto') } %}
+          </div>
+        {%- endfor -%}
+      {%- elif _galleryImage -%}
+        <div class="embla__slide">
+          {% image _galleryImage, _galleryImageSize, { loading: "eager", fetchpriority: "high" } %}
+        </div>
+      {%- else -%}
+        <div class="embla__slide">
+          {% include "components/product/placeholder.njk" %}
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>

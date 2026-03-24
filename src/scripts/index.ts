@@ -9,3 +9,7 @@ if (document.querySelector('[data-carousel]')) {
 if (document.querySelector('[data-product-list]')) {
   import('./product-filter').then(m => m.initProductFilter())
 }
+
+if (document.querySelector('[data-gallery]')) {
+  import('./gallery').then(m => m.initGallery())
+}

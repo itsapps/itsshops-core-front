@@ -1,0 +1,23 @@
+{#
+  Expects:
+    _galleryImages    — array of resolved images
+    _galleryThumbSize — imageSizes preset for thumbnails
+  Renders nothing when fewer than 2 images.
+#}
+{%- set _images = _galleryImages if (_galleryImages and _galleryImages.length > 1) else null -%}
+
+{%- if _images -%}
+<div class="embla-thumbs">
+  <div class="embla-thumbs__viewport">
+    <div class="embla-thumbs__container">
+      {%- for img in _images -%}
+        <div class="embla-thumbs__slide{% if loop.first %} embla-thumbs__slide--selected{% endif %}">
+          <button type="button" class="embla-thumbs__slide__number">
+            {% image img, _galleryThumbSize, { loading: ('eager' if loop.index0 < 4 else 'lazy') } %}
+          </button>
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+{%- endif -%}
