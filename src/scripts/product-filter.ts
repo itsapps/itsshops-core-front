@@ -91,20 +91,46 @@ function resetFilters(): void {
   applyState(new Map())
 }
 
+function syncViewButton(view: string): void {
+  document.querySelectorAll<HTMLElement>('[data-toggle-products-view]').forEach(btn => {
+    const label = view === 'grid' ? btn.dataset.labelList : btn.dataset.labelGrid
+    if (label) btn.textContent = label
+  })
+}
+
 export function initProductFilter(): void {
   if (!document.querySelector('[data-product-list]')) return
 
   // Initial apply from URL
   applyState(parseFilterState())
 
+  // Sync view button label to current state
+  const productList = document.querySelector<HTMLElement>('[data-product-list]')
+  if (productList) syncViewButton(productList.dataset.view ?? 'grid')
+
   // Filter button clicks
   document.addEventListener('click', (e) => {
-    const btn = (e.target as Element).closest<HTMLButtonElement>('[data-filter-key]')
+    const target = e.target as Element
+
+    if (target.closest('[data-toggle-products-filter]')) {
+      document.querySelector('[data-filter-panel]')?.classList.toggle('is-open')
+      return
+    }
+
+    if (target.closest('[data-toggle-products-view]') && productList) {
+      const next = productList.dataset.view === 'grid' ? 'list' : 'grid'
+      productList.dataset.view = next
+      syncViewButton(next)
+      return
+    }
+
+    const btn = target.closest<HTMLButtonElement>('[data-filter-key]')
     if (btn) {
       toggleFilter(btn.dataset.filterKey!, btn.dataset.filterValue!)
       return
     }
-    const reset = (e.target as Element).closest('[data-filter-reset]')
+
+    const reset = target.closest('[data-filter-reset]')
     if (reset) resetFilters()
   })
 
