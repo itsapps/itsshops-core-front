@@ -12,7 +12,11 @@ import { map } from "../utils/map"
  * Format a price in cents to a locale-aware currency string.
  * Usage: {{ product.price | formatPrice('de', 'EUR') }}
  */
-function formatPrice(cents: number, locale = 'de', currency = 'EUR'): string {
+function formatPrice(cents: number, locale = 'de', currency = 'EUR', currencyLabel?: string): string {
+  if (currencyLabel) {
+    const number = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)
+    return `${number} ${currencyLabel}`
+  }
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(cents / 100)
 }
 
@@ -175,7 +179,7 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("toIsoString", toIsoString);
   // eleventyConfig.addFilter("formatPrice", formatPrice);
   eleventyConfig.addFilter("formatPrice", function (price: number, locale: string | undefined) {
-    return formatPrice(price, locale || this.page?.lang || config.defaultLocale);
+    return formatPrice(price, locale || this.page?.lang || config.defaultLocale, config.units.price.currency, config.units.price.currencyLabel);
   });
   eleventyConfig.addFilter("formatVolume", function (ml: number) {
     return formatVolumeMl(ml, config.units.volume, this.page?.lang || config.defaultLocale)

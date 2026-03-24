@@ -63,7 +63,7 @@ export function resolveConfig(config: Config): CoreConfig {
     },
     extensions:    config.extensions    ?? {},
     menu:          { maxDepth: config.menu?.maxDepth ?? 1 },
-    units:         { volume: config.units?.volume ?? 'l' },
+    units:         { volume: config.units?.volume ?? 'l', price: { currency: config.units?.price?.currency ?? 'EUR', currencyLabel: config.units?.price?.currencyLabel } },
     baseUrl,
     hostname,
     isMaintenanceMode,

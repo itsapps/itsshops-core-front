@@ -317,6 +317,15 @@ export type Config = {
   units?: {
     /** Unit appended to wine volume in variant labels and wine details. Defaults to 'ml'. */
     volume?: string
+    price?: {
+      /** ISO 4217 currency code. Defaults to 'EUR'. */
+      currency?: string
+      /**
+       * Custom label appended after the number instead of the Intl currency symbol.
+       * E.g. 'Eur' → "50,50 Eur". When omitted, uses Intl.NumberFormat currency formatting.
+       */
+      currencyLabel?: string
+    }
   }
 
   // override env vars if needed
@@ -389,7 +398,7 @@ export type CoreConfig = {
   }
   extensions: Extensions
   menu: { maxDepth: number }
-  units: { volume: string }
+  units: { volume: string; price: { currency: string; currencyLabel?: string } }
   baseUrl: string
   hostname: string
   isMaintenanceMode: boolean
