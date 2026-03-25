@@ -18,7 +18,7 @@
       {{ productPrice(product, class="product-card__price") }}
     </div>
   </a>
-  {%- if coreConfig.features.shop.enabled and product.status == "active" -%}
+  {%- if coreConfig.features.shop.checkout and product.status == "active" -%}
     <div class="product-card__actions">
       <div class="product-card__qty" data-qty-control>
         <button type="button" class="product-card__qty-btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
