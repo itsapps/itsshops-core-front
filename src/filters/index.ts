@@ -3,7 +3,7 @@ import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
-import { imageUrl, image } from "../image"
+import { imageUrl, imageSizeUrl, image } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema } from "../schema"
@@ -201,6 +201,9 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("findById", findById as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height, format) =>
     imageUrl(ctx.imageBuilder, image, width, height, format)
+  );
+  eleventyConfig.addFilter("imageSizeUrl", (image, size, format) =>
+    imageSizeUrl(ctx.imageBuilder, image, size, format)
   );
   eleventyConfig.addFilter("stegaClean", stegaClean);
   eleventyConfig.addFilter('limit', limit as any)

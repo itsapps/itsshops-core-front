@@ -24,7 +24,7 @@ export function resolveModules(
       case 'carousel':
         resolved = {
           ...m,
-          slides: (m.slides ?? []).map((s: any) => ctx.resolveLocaleAltImage(s)),
+          slides: (m.slides ?? []).map((s: any) => ctx.resolveLocaleAltImage(s)).filter(Boolean),
         }
         break
       case 'youtube':

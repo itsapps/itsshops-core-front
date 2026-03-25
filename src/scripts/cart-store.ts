@@ -3,6 +3,7 @@ const STORAGE_KEY = `itsshops_cart_${location.host}`
 export type CartItem = {
   id: string
   title: string
+  subtitle?: string
   price: number
   quantity: number
   imageUrl: string

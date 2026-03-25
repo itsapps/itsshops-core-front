@@ -49,7 +49,7 @@ function renderItems(): void {
         : '<div class="cart-item__image cart-item__image--placeholder"></div>'
       }
       <div class="cart-item__body">
-        <a href="${item.url}" class="cart-item__title">${item.title}</a>
+        <a href="${item.url}" class="cart-item__title">${item.title}${item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''}</a>
         <div class="cart-item__row">
           <div class="cart-item__qty">
             <button type="button" class="cart-item__qty-btn" data-cart-decrease aria-label="${tDecrease}">−</button>
@@ -139,6 +139,7 @@ export function initCart(): void {
     btn.addEventListener('click', () => {
       const id       = btn.dataset.productId
       const title    = btn.dataset.title
+      const subtitle = btn.dataset.subtitle
       const price    = Number(btn.dataset.price)
       const imageUrl = btn.dataset.image ?? ''
       const url      = btn.dataset.url ?? '#'
@@ -150,7 +151,7 @@ export function initCart(): void {
       const qtyEl     = actionsEl?.querySelector<HTMLElement>('[data-qty-value]')
       const qty        = qtyEl ? Math.max(1, parseInt(qtyEl.textContent || '1', 10)) : 1
 
-      addItem({ id, title, price, imageUrl, url }, qty)
+      addItem({ id, title, subtitle, price, imageUrl, url }, qty)
 
       // Reset qty display back to 1
       if (qtyEl) qtyEl.textContent = '1'

@@ -30,11 +30,11 @@
         class="product-card__add-to-cart"
         data-add-to-cart
         data-product-id="{{ product._id }}"
-        data-sku="{{ product.sku }}"
+        data-sku="{{ product.sku or '' }}"
         data-price="{{ product.price }}"
         data-title="{{ product.title }}"
         data-url="{{ product.url }}"
-        {%- if product.image %} data-image="{{ product.image | imageUrl(160, 160) }}"{% endif %}
+        {%- if product.image %} data-image="{{ product.image | imageSizeUrl(imageSizes.thumb) }}"{% endif %}
       >{{ 'product.cartButton.addToCartShort' | trans }}</button>
     </div>
   {%- endif -%}
