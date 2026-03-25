@@ -20,7 +20,9 @@ function updateCount(): void {
   const count = getCount()
   document.querySelectorAll<HTMLElement>('[data-cart-count]').forEach(el => {
     el.textContent = String(count)
-    el.style.display = count === 0 ? 'none' : ''
+    if ('cartCountHide' in el.dataset) {
+      el.style.display = count === 0 ? 'none' : ''
+    }
   })
 }
 
