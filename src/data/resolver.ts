@@ -133,6 +133,10 @@ export async function buildCmsData(
 
     const homePageId = rawSettings?.homePage?._id ?? null
 
+    if (rawSettings && !homePageId) {
+      console.warn(`[itsshops] No home page configured in settings for locale "${locale}". Set a home page in Sanity settings to generate /${locale}/.`)
+    }
+
     const pages: ResolvedPage[] = rawPages.map((p: any) => {
       const title = ctx.resolveString(p.title)
       const slug  = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
