@@ -175,6 +175,9 @@ export async function buildCmsData(
     for (const v of products)   { urlMap[v._id] = v.url; docMap[v._id] = v }
     for (const p of posts)      { urlMap[p._id] = p.url; docMap[p._id] = p }
 
+    const settings     = rawSettings     ? resolveSettings(rawSettings, ctx, extensions)     : null
+    const shopSettings = rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)               : null
+
     const localeData: CmsLocaleData = {
       products,
       filterGroups,
@@ -182,10 +185,13 @@ export async function buildCmsData(
       pages,
       posts,
       menus,
-      settings:     rawSettings     ? resolveSettings(rawSettings, ctx, urlMap, extensions)     : null,
-      shopSettings: rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)     : null,
+      settings,
+      shopSettings,
       urlMap,
       docMap,
+      homeUrl:    urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
+      shopUrl:    urlMap[shopSettings?.shopPageId ?? '']     ?? '#',
+      privacyUrl: urlMap[settings?.privacyPageId ?? '']      ?? '#',
       ...extensionData,
     }
 

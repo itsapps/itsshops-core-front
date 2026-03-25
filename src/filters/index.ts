@@ -134,6 +134,13 @@ function limit(arr: any[], n: number): any[] {
   return (arr ?? []).slice(0, n)
 }
 
+/** Truncate a string to n characters with an ellipsis.
+ * Usage: {{ text | truncate(120) }} */
+function truncate(text: string, n: number): string {
+  if (!text || text.length <= n) return text ?? ''
+  return text.slice(0, n).trimEnd() + '…'
+}
+
 /** International postal prefixes (ISO 3166-1 alpha-2 → prefix) */
 const POSTAL_PREFIXES: Record<string, string> = {
   AT: 'A',  DE: 'D',  CH: 'CH', LI: 'FL', FR: 'F',
@@ -235,5 +242,19 @@ export const createFilters = (ctx: CoreContext) => {
     const products = (this as any).ctx?.cms?.[locale]?.products ?? []
     return buildPageDocSchema(pageDoc, locale, settings, config, (img, w) => imageUrl(ctx.imageBuilder, img, w), products)
   })
-  eleventyConfig.addFilter('map', map as any);
+  eleventyConfig.addFilter('map', map as any)
+  eleventyConfig.addFilter('truncate', truncate as any)
+
+  /** Resolves a Sanity document ID to its URL via urlMap.
+   * Usage: {{ item._id | pageUrl }} */
+  eleventyConfig.addFilter('pageUrl', function (id: string) {
+    const locale = this.page?.lang || config.defaultLocale
+    return (this as any).ctx?.cms?.[locale]?.urlMap?.[id] ?? '#'
+  })
+
+  /** Returns true if the given URL matches the current page URL.
+   * Usage: {% if item._id | pageUrl | isCurrentUrl %}aria-current="page"{% endif %} */
+  eleventyConfig.addFilter('isCurrentUrl', function (url: string) {
+    return url === this.page?.url
+  })
 }

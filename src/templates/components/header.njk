@@ -4,7 +4,7 @@
   <div class="site-header__inner">
 
     {# ── Logo ──────────────────────────────────────────────────────────── #}
-    <a href="{{ _settings.homePageUrl or '/' }}" class="site-header__logo" aria-label="{{ _settings.siteTitle }}">
+    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ _settings.siteTitle if _settings }}">
       {{ _settings.siteTitle }}
     </a>
 
@@ -34,7 +34,7 @@
                 {%- if item.linkType == 'internal' and item.internal -%}
                   <li class="site-nav__item{% if item.children.length %} site-nav__item--has-children{% endif %}">
                     <a
-                      href="{{ cms[_locale].urlMap[item.internal._id] or '#' }}"
+                      href="{{ item.internal._id | pageUrl }}"
                       class="site-nav__link"
                     >{{ item.title }}</a>
                     {%- if item.children.length -%}
@@ -42,7 +42,7 @@
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ cms[_locale].urlMap[child.internal._id] or '#' }}" class="site-nav__sublink">{{ child.title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title }}</a>
                             </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">
@@ -67,7 +67,7 @@
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ cms[_locale].urlMap[child.internal._id] or '#' }}" class="site-nav__sublink">{{ child.title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title }}</a>
                             </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">
@@ -96,7 +96,7 @@
           {%- for _l in coreConfig.locales -%}
             {%- if _l != _locale -%}
               <a
-                href="{{ cms[_l].urlMap[_currentId] or '/' }}"
+                href="{{ cms[_l].urlMap[_currentId] or cms[_l].homeUrl }}"
                 hreflang="{{ _l }}"
                 lang="{{ _l }}"
                 class="locale-switcher__link"

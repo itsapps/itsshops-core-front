@@ -5,16 +5,14 @@ import { resolveFilterSpecs } from './filters'
 export function resolveSettings(
   raw: any,
   ctx: ResolveContext,
-  urlMap: Record<string, string>,
   extensions?: Extensions,
 ): ResolvedSettings {
   return {
     _id:                  raw._id,
     siteTitle:            ctx.resolveString(raw.siteTitle),
     siteShortDescription: ctx.resolveString(raw.siteShortDescription),
-    homePageUrl:          raw.homePage?._id    ? (urlMap[raw.homePage._id] ?? null) : null,
-    homePageId:          raw.homePage?._id ?? null,
-    privacyPage:          raw.privacyPage?._id ?? null,
+    homePageId:           raw.homePage?._id ?? null,
+    privacyPageId:        raw.privacyPage?._id ?? null,
     mainMenus:            (raw.mainMenus  ?? []).map((m: any) => m._ref),
     footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
     gtmId:                raw.gtmId ?? null,

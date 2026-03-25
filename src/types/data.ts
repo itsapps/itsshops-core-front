@@ -114,9 +114,8 @@ export type ResolvedSettings = {
   _id: string
   siteTitle: string
   siteShortDescription: string
-  homePageUrl: string | null
   homePageId: string | null
-  privacyPage: string | null
+  privacyPageId: string | null
   mainMenus: string[]
   footerMenus: string[]
   gtmId: string | null
@@ -237,6 +236,12 @@ export type CmsLocaleData = {
   urlMap: Record<string, string>
   /** Sanity _id → resolved document (variant, category, page, or post) for the current locale. */
   docMap: Record<string, ResolvedVariant | ResolvedCategory | ResolvedPage | ResolvedPost>
+  /** URL of the home page for the current locale. */
+  homeUrl: string
+  /** URL of the shop page for the current locale. */
+  shopUrl: string
+  /** URL of the privacy page for the current locale. */
+  privacyUrl: string
   [key: string]: unknown
 }
 
