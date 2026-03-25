@@ -10,7 +10,6 @@ export function initMenu() {
       el.classList.remove('is-open')
       el.setAttribute('aria-hidden', 'true')
       btn.setAttribute('aria-expanded', 'false')
-      document.body.classList.remove('menu-open')
       setTimeout(() => delete btn.dataset.closing, 300)
     }
 
@@ -18,7 +17,6 @@ export function initMenu() {
       el.classList.add('is-open')
       el.setAttribute('aria-hidden', 'false')
       btn.setAttribute('aria-expanded', 'true')
-      document.body.classList.add('menu-open')
     }
 
     btn.addEventListener('click', () => {
