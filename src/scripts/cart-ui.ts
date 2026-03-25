@@ -7,6 +7,8 @@ let cartEmptyEl: HTMLElement | null = null
 let locale = 'de'
 let currency = 'EUR'
 let currencyLabel: string | undefined
+let imgWidth = 80
+let imgHeight = 80
 
 function formatPrice(cents: number): string {
   if (currencyLabel) {
@@ -45,7 +47,7 @@ function renderItems(): void {
     div.dataset.cartItemId = item.id
     div.innerHTML = `
       ${item.imageUrl
-        ? `<img src="${item.imageUrl}" alt="" class="cart-item__image" width="80" height="80" loading="lazy">`
+        ? `<img src="${item.imageUrl}" alt="" class="cart-item__image" width="${imgWidth}" height="${imgHeight}" loading="lazy">`
         : '<div class="cart-item__image cart-item__image--placeholder"></div>'
       }
       <div class="cart-item__body">
@@ -100,9 +102,11 @@ export function initCart(): void {
   cartTotalEl = cartSidebar.querySelector('[data-cart-total]')
   cartEmptyEl = cartSidebar.querySelector('[data-cart-empty]')
 
-  locale       = document.documentElement.lang || 'de'
-  currency     = cartSidebar.dataset.currency || 'EUR'
+  locale        = document.documentElement.lang || 'de'
+  currency      = cartSidebar.dataset.currency || 'EUR'
   currencyLabel = cartSidebar.dataset.currencyLabel || undefined
+  imgWidth      = parseInt(cartSidebar.dataset.cartImageWidth || '80', 10)
+  imgHeight     = parseInt(cartSidebar.dataset.cartImageHeight || '80', 10)
 
   updateCount()
   renderItems()
