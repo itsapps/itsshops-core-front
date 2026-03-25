@@ -29,6 +29,11 @@
       <p class="product-tax-info">{{ 'product.taxShippingInfoText' | trans }}</p>
       <div class="product-actions" data-product-actions>
         {%- if product.status == "active" %}
+          <div class="product-qty-control" data-qty-control>
+            <button type="button" class="product-qty-control__btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
+            <span class="product-qty-control__value" data-qty-value aria-live="polite">1</span>
+            <button type="button" class="product-qty-control__btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
+          </div>
           <button
             type="button"
             class="product-add-to-cart"
@@ -36,6 +41,9 @@
             data-product-id="{{ product._id }}"
             data-sku="{{ product.sku }}"
             data-price="{{ product.price }}"
+            data-title="{{ product.title }}"
+            data-url="{{ product.url }}"
+            {%- if product.image %} data-image="{{ product.image | imageUrl(160, 160) }}"{% endif %}
           >{{ 'product.cartButton.addToCart' | trans }}</button>
         {%- elif product.status == "comingSoon" %}
           <p class="product-unavailable">{{ 'product.states.comingSoon' | trans }}</p>

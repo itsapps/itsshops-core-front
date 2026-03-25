@@ -7,5 +7,6 @@ pagination:
   addAllPagesToCollections: false
 permalink: "/{{ _locale }}/{{ coreConfig.resolvedPermalinks[_locale].checkout }}/{{ coreConfig.resolvedPermalinks[_locale].orderThanks }}/"
 eleventyExcludeFromCollections: true
+noindex: true
 ---
 {%- include "components/order-thanks.njk" -%}

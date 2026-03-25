@@ -23,6 +23,7 @@
     </main>
 
     {%- include "components/footer.njk" -%}
+    {%- if coreConfig.features.shop.checkout -%}{%- include "components/cart.njk" -%}{%- endif -%}
 
     {%- getBundle "html", "externalJS" -%}
     <script src="/assets/scripts/index.js" type="module"></script>

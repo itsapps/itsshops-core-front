@@ -60,6 +60,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   eleventyConfig.addGlobalData('coreConfig', config)
   eleventyConfig.addGlobalData('imageSizes', mergedImageSizes)
   eleventyConfig.addGlobalData('utils', utils)
+  eleventyConfig.addGlobalData('pageDoc', {})
 
   setupTemplates(ctx)
 }

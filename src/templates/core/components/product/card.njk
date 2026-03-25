@@ -1,19 +1,41 @@
 {% from "macros/product.njk" import productPrice, productStatus %}
 
-<a href="{{ product.url }}" class="product-card">
-  <figure class="product-card__image">
-    {%- if product.image %}
-      {% image product.image, imageSizes.card %}
-    {%- else %}
-      {% include "components/product/placeholder.njk" %}
-    {%- endif %}
-  </figure>
-  <div class="product-card__body">
-    {{ productStatus(product, class="product-card__status") }}
-    <h2 class="product-card__title">{{ product.title }}</h2>
-    {%- if product.label != product.title %}
-      <p class="product-card__label">{{ product.label }}</p>
-    {%- endif %}
-    {{ productPrice(product, class="product-card__price") }}
-  </div>
-</a>
+<article class="product-card">
+  <a href="{{ product.url }}" class="product-card__link">
+    <figure class="product-card__image">
+      {%- if product.image %}
+        {% image product.image, imageSizes.card %}
+      {%- else %}
+        {% include "components/product/placeholder.njk" %}
+      {%- endif %}
+    </figure>
+    <div class="product-card__body">
+      {{ productStatus(product, class="product-card__status") }}
+      <h2 class="product-card__title">{{ product.title }}</h2>
+      {%- if product.label != product.title %}
+        <p class="product-card__label">{{ product.label }}</p>
+      {%- endif %}
+      {{ productPrice(product, class="product-card__price") }}
+    </div>
+  </a>
+  {%- if coreConfig.features.shop.enabled and product.status == "active" -%}
+    <div class="product-card__actions">
+      <div class="product-card__qty" data-qty-control>
+        <button type="button" class="product-card__qty-btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
+        <span class="product-card__qty-value" data-qty-value aria-live="polite">1</span>
+        <button type="button" class="product-card__qty-btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
+      </div>
+      <button
+        type="button"
+        class="product-card__add-to-cart"
+        data-add-to-cart
+        data-product-id="{{ product._id }}"
+        data-sku="{{ product.sku }}"
+        data-price="{{ product.price }}"
+        data-title="{{ product.title }}"
+        data-url="{{ product.url }}"
+        {%- if product.image %} data-image="{{ product.image | imageUrl(160, 160) }}"{% endif %}
+      >{{ 'product.cartButton.addToCartShort' | trans }}</button>
+    </div>
+  {%- endif -%}
+</article>

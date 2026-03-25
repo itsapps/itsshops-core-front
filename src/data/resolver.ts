@@ -193,9 +193,10 @@ export async function buildCmsData(
       shopSettings,
       urlMap,
       docMap,
-      homeUrl:    urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
-      shopUrl:    urlMap[shopSettings?.shopPageId ?? '']     ?? '#',
-      privacyUrl: urlMap[settings?.privacyPageId ?? '']      ?? '#',
+      homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
+      shopUrl:     urlMap[shopSettings?.shopPageId ?? '']    ?? '#',
+      privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
+      checkoutUrl: features.shop.checkout ? `/${locale}/${permalinks[locale].checkout}/` : '#',
       ...extensionData,
     }
 

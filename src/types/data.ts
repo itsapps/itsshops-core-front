@@ -242,6 +242,8 @@ export type CmsLocaleData = {
   shopUrl: string
   /** URL of the privacy page for the current locale. */
   privacyUrl: string
+  /** URL of the checkout page for the current locale. */
+  checkoutUrl: string
   [key: string]: unknown
 }
 

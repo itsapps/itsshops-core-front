@@ -13,3 +13,7 @@ if (document.querySelector('[data-product-list]')) {
 if (document.querySelector('[data-gallery]')) {
   import('./gallery').then(m => m.initGallery())
 }
+
+if (document.getElementById('cart-sidebar')) {
+  import('./cart-ui').then(m => m.initCart())
+}

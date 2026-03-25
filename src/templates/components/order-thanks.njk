@@ -1,0 +1,6 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.orderThankYou.title' | trans }}</h1>
+  <p>{{ 'staticPages.orderThankYou.text' | trans }}</p>
+  <p><a href="{{ cms[_locale].shopUrl }}">{{ 'product.allProducts' | trans }}</a></p>
+</article>

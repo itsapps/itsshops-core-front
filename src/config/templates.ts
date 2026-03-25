@@ -49,10 +49,8 @@ export const loadTemplates = (ctx: CoreContext) => {
       if (!file.endsWith(".njk")) continue
 
       const customerLayoutPath = path.join(process.cwd(), eleventyConfig.directories.layouts, file)
-      // const customerLayoutPath = path.join(inputDir, layoutsDirName, file);
       if (fs.existsSync(customerLayoutPath)) {
-        loadedTemplates.push(customerLayoutPath)
-        continue;
+        throw new Error(`Conflict detected: You are not allowed to override the core layout at: ${customerLayoutPath}`)
       }
 
       // const content = '<main id="main" class="relative">{{ shopConfig.title | safe }}{{ content | safe }}</main>'
