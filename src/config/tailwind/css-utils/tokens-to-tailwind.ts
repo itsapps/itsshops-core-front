@@ -1,14 +1,14 @@
 /* © Andy Bell - https://buildexcellentwebsit.es/ */
-import slugify from '@sindresorhus/slugify';
 
 type Token = { name: string; value: any }
 
+const tokenKey = (name: string) => name.toLowerCase().replace(/[\s-]+/g, '-')
+
 export const tokensToTailwind = (tokens: Token[]): Record<string, any> => {
-  const nameSlug = (text: string) => slugify(text, { lowercase: true });
   const response: Record<string, any> = {};
 
   tokens.forEach(({name, value}) => {
-    response[nameSlug(name)] = value;
+    response[tokenKey(name)] = value;
   });
 
   return response;
