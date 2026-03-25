@@ -6,10 +6,12 @@ export function initMenu() {
     const el: HTMLElement = target
 
     function close() {
+      btn.dataset.closing = ''
       el.classList.remove('is-open')
       el.setAttribute('aria-hidden', 'true')
       btn.setAttribute('aria-expanded', 'false')
       document.body.classList.remove('menu-open')
+      setTimeout(() => delete btn.dataset.closing, 300)
     }
 
     function open() {
