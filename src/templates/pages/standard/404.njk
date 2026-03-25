@@ -1,0 +1,13 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "/{{ _locale }}/404/"
+noindex: true
+eleventyExcludeFromCollections: true
+---
+{%- set _homeUrl = cms[_locale].homeUrl -%}
+{%- include "components/404.njk" -%}

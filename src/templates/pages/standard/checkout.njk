@@ -1,0 +1,11 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "/{{ _locale }}/{{ coreConfig.resolvedPermalinks[_locale].checkout }}/"
+eleventyExcludeFromCollections: true
+---
+{%- include "components/checkout.njk" -%}

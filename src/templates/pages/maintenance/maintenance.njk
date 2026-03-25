@@ -1,0 +1,17 @@
+---
+permalink: "/maintenance/"
+eleventyExcludeFromCollections: true
+---
+<!doctype html>
+<html lang="{{ coreConfig.defaultLocale }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    {% include "core/head/css.njk" %}
+    <title>{{ cms[coreConfig.defaultLocale].settings.siteTitle if cms[coreConfig.defaultLocale].settings }} — Wartung</title>
+  </head>
+  <body>
+    {%- include "components/maintenance.njk" -%}
+  </body>
+</html>

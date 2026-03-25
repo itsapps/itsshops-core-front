@@ -3,3 +3,19 @@ permalink: /_redirects
 eleventyExcludeFromCollections: true
 excludeFromSitemap: true
 ---
+{%- for _locale in coreConfig.locales -%}{%- if _locale != coreConfig.defaultLocale -%}
+/    /{{ _locale }}/    302! Language={{ _locale }}
+{%- endif -%}{%- endfor %}
+/    /{{ coreConfig.defaultLocale }}/    302!
+{%- if coreConfig.isMaintenanceMode %}
+/maintenance    /maintenance    200
+/*    /maintenance    302!
+{%- else %}
+{%- for _locale in coreConfig.locales %}
+/{{ _locale }}*    /{{ _locale }}/404/    404
+{%- endfor %}
+/*    /{{ coreConfig.defaultLocale }}/404/    404
+{%- for _locale in coreConfig.locales -%}{%- if _locale != coreConfig.defaultLocale %}
+/*    /{{ _locale }}/404/    404 Language={{ _locale }}
+{%- endif -%}{%- endfor %}
+{%- endif %}

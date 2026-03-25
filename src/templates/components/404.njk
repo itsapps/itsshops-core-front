@@ -1,0 +1,7 @@
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.errorPage.title' | trans }}</h1>
+  <p><a href="{{ _homeUrl }}">{{ 'navigation.goHome' | trans }}</a></p>
+  {%- if coreConfig.supportEmail -%}
+    <p>{{ 'staticPages.errorPage.contactSupport' | trans({ email: coreConfig.supportEmail }) | safe }}</p>
+  {%- endif -%}
+</article>
