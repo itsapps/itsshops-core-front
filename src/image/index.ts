@@ -21,6 +21,8 @@ export type PictureSize = {
   widths: string
   /** Defaults to ['webp', 'jpg'] */
   formats?: ('webp' | 'jpg' | 'png')[]
+  /** Default quality, can be overridden per image (shortcut) */
+  quality?: number | (number | null)[]
 }
 
 export type PictureOptions = {
@@ -28,6 +30,7 @@ export type PictureOptions = {
   loading?: 'lazy' | 'eager'
   fetchpriority?: 'high' | 'low' | 'auto'
   class?: string
+  quality?: number | (number | null)[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,22 +41,28 @@ function resolveHeight(hSpec: number | null, w: number, image: ResolvedImage): n
   return ar ? Math.floor(w / ar) : undefined
 }
 
-function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number | null, format?: string): string {
+function resolveQuality(quality: number | (number | null)[] | undefined, index: number): number | undefined {
+  if (quality === undefined) return undefined
+  const q = Array.isArray(quality) ? quality[index] : quality
+  return q ?? undefined
+}
+
+function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number | null, format?: string, quality?: number): string {
   let b = builder.image(image).width(w)
   if (h !== null) b = b.height(h)
-  if (image.crop)    b = b.crop('focalpoint')
-  if (image.hotspot) b = b.focalPoint(image.hotspot.x ?? 0.5, image.hotspot.y ?? 0.5)
-  if (format)        b = b.format(format as any)
+  if (format)    b = b.format(format as any)
+  if (quality)   b = b.quality(quality)
   return b.url()
 }
 
 // ─── Sanity image ─────────────────────────────────────────────────────────────
 
-function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size: PictureSize): string {
+function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size: PictureSize, quality?: number | (number | null)[]): string {
   const fmt = (size.formats ?? ['webp'])[0]
-  return size.sizes.map(([w, hSpec]) => {
+  const q = quality ?? size.quality
+  return size.sizes.map(([w, hSpec], i) => {
     const h = resolveHeight(hSpec, w, image) ?? null
-    return `${buildSanityUrl(builder, image, w, h, fmt)} ${w}w`
+    return `${buildSanityUrl(builder, image, w, h, fmt, resolveQuality(q, i))} ${w}w`
   }).join(', ')
 }
 
@@ -61,9 +70,12 @@ export function preload(
   builder: ImageUrlBuilder,
   image: ResolvedImage | null | undefined,
   size: PictureSize,
+  options: PictureOptions = {},
 ): string {
   if (!image) return ''
-  return `<link rel="preload" as="image" imagesrcset="${buildSanitySrcset(builder, image, size)}" imagesizes="${size.widths}">`
+  
+  const { quality } = options
+  return `<link rel="preload" as="image" imagesrcset="${buildSanitySrcset(builder, image, size, quality ?? size.quality)}" imagesizes="${size.widths}">`
 }
 
 export function image(
@@ -76,13 +88,15 @@ export function image(
 
   const fmt = (size.formats ?? ['webp'])[0]
   const alt = stegaClean(options.alt ?? image.alt ?? '').replace(/"/g, '&quot;')
-  const { loading = 'lazy', fetchpriority, class: imgClass = '' } = options
+  const { loading = 'lazy', fetchpriority, class: imgClass = '', quality } = options
 
-  const srcset = buildSanitySrcset(builder, image, size)
+  const fQuality = quality ?? size.quality
+  const srcset = buildSanitySrcset(builder, image, size, fQuality)
 
-  const [fw, fhSpec] = size.sizes[size.sizes.length - 1]
+  const lastIndex = size.sizes.length - 1
+  const [fw, fhSpec] = size.sizes[lastIndex]
   const fh = resolveHeight(fhSpec, fw, image)
-  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt)
+  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(fQuality, lastIndex))
 
   const attrs = [
     `src="${src}"`,
@@ -109,11 +123,9 @@ export function imageUrl(
 ): string {
   if (!image) return ''
   let b = builder.image(image)
-  if (width)         b = b.width(width)
-  if (height)        b = b.height(height)
-  if (format)        b = b.format(format as any)
-  if (image.crop)    b = b.crop('focalpoint')
-  if (image.hotspot) b = b.focalPoint(image.hotspot.x ?? 0.5, image.hotspot.y ?? 0.5)
+  if (width)  b = b.width(width)
+  if (height) b = b.height(height)
+  if (format) b = b.format(format as any)
   return b.url()
 }
 

@@ -206,6 +206,17 @@ export const createFilters = (ctx: CoreContext) => {
     imageSizeUrl(ctx.imageBuilder, image, size, format)
   );
   eleventyConfig.addFilter("stegaClean", stegaClean);
+  eleventyConfig.addFilter("focalPoint", ((image: any) => {
+    const hx = image?.hotspot?.x ?? 0.5
+    const hy = image?.hotspot?.y ?? 0.5
+    const cl = image?.crop?.left   ?? 0
+    const cr = image?.crop?.right  ?? 0
+    const ct = image?.crop?.top    ?? 0
+    const cb = image?.crop?.bottom ?? 0
+    const x = (hx - cl) / (1 - cl - cr)
+    const y = (hy - ct) / (1 - ct - cb)
+    return { x: Math.min(1, Math.max(0, x)), y: Math.min(1, Math.max(0, y)) }
+  }) as any);
   eleventyConfig.addFilter('limit', limit as any)
   eleventyConfig.addFilter('formatDate', function (date: string, style?: Intl.DateTimeFormatOptions['dateStyle']) {
     return formatDate(date, this.page?.lang || config.defaultLocale, style)
