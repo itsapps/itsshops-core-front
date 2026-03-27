@@ -1,6 +1,6 @@
 # Configuration
 
-`project.config.mts` exports a `Config` object passed to `createEleventyConfig`. All fields are optional unless noted otherwise.
+`itsshops.config.mts` exports a `Config` object passed to `createEleventyConfig`. All fields are optional unless noted otherwise.
 
 ```ts
 import { type Config } from '@itsapps/itsshops-core-front'

@@ -25,7 +25,7 @@ export function createTranslator(config: CoreConfig, baseTranslations: Record<st
     missingKeyHandler: function(lngs: readonly string[], ns: string, key: string, fallbackValue: string, _updateMissing: boolean, _options: any) {
       throw new Error(`Missing translation key: ${key} (namespace: ${ns}, language: ${lngs}, fallback value: ${fallbackValue})`);
     },
-    ...config.dev.enabled && { missingInterpolationHandler: function(text: string, value: string) {
+    ...config.debug.enabled && { missingInterpolationHandler: function(text: string, value: string) {
       throw new Error(`Missing interpolation value: ${value} (text: ${text})`);
     }},
     ns: ['common', 'shared'],

@@ -94,12 +94,12 @@ Available globally in all templates as `imageSizes`.
 | `card` | 3:2 | 600w, 300w | `(min-width: 30rem) 50vw, 100vw` |
 | `thumb` | 1:1 | 300w | `300px` |
 
-### Overriding / extending in `project.config.mts`
+### Overriding / extending in `itsshops.config.mts`
 
 Customer presets are **merged over** the core presets — you can override `card`, `hero` etc. or add new keys.
 
 ```ts
-// project.config.mts
+// itsshops.config.mts
 imageSizes: {
   // Override core card preset (core is landscape 3:2, Jurtschitsch needs portrait 2:3)
   card: {

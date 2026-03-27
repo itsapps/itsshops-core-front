@@ -5,13 +5,14 @@ export const setupIgnores = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
   eleventyConfig.setUseGitIgnore(false);
   
-  if (config.dev.enabled) {
-    console.log('Debug mode enabled: watching for changes in node_modules and templates')
-    eleventyConfig.watchIgnores.add("**/.DS_Store");
-    eleventyConfig.watchIgnores.add(path.join(eleventyConfig.directories.includes, "css"));
-    eleventyConfig.watchIgnores.add(path.join(eleventyConfig.directories.includes, "scripts"));
+  // Always ignore build artefacts and OS noise when watching
+  eleventyConfig.watchIgnores.add("**/.DS_Store");
+  eleventyConfig.watchIgnores.add(path.join(eleventyConfig.directories.includes, "css"));
+  eleventyConfig.watchIgnores.add(path.join(eleventyConfig.directories.includes, "scripts"));
 
-    // Watch the core dist folder for changes during development
+  if (config.debug.enabled) {
+    // Watch core dist templates when developing core itself via npm link
+    console.log('Debug mode: watching core dist templates in node_modules')
     const pkgPath = path.dirname(new URL(import.meta.url).pathname)
     const distPath = path.resolve(pkgPath, 'templates')
     eleventyConfig.addWatchTarget(distPath)

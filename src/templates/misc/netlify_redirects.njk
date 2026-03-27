@@ -7,7 +7,7 @@ excludeFromSitemap: true
 /    /{{ _locale }}/    302! Language={{ _locale }}
 {%- endif -%}{%- endfor %}
 /    /{{ coreConfig.defaultLocale }}/    302!
-{%- if coreConfig.isMaintenanceMode %}
+{%- if coreConfig.buildMode == 'maintenance' %}
 /maintenance    /maintenance    200
 /*    /maintenance    302!
 {%- else %}

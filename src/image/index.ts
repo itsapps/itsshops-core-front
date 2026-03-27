@@ -223,7 +223,7 @@ function buildStaticPictureHtml(
 // ─── Presets ──────────────────────────────────────────────────────────────────
 
 /**
- * Core image size presets. Extended per project via `imageSizes` in project.config.mts.
+ * Core image size presets. Extended per project via `imageSizes` in itsshops.config.mts.
  * Usage: {% image image, imageSizes.hero, { loading: "eager" } %}
  *        {% staticImage "logo.png", imageSizes.logo %}
  */

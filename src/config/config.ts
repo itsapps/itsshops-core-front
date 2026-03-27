@@ -6,9 +6,9 @@ export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
   const features = resolveFeatures(config.features, env)
 
-  const previewEnabled = config.preview?.enabled ?? env.preview.enabled
+  const previewEnabled = env.preview.enabled
   const perspective = (previewEnabled ? (env.preview.perspective || 'drafts') : 'published') as ClientPerspective
-  const isMaintenanceMode = config.isMaintenanceMode ?? env.isMaintenanceMode
+  const isMaintenanceMode = env.isMaintenanceMode
 
   // required — hard fail
   const sanityProjectId = requireVar('SANITY_PROJECT_ID', config.sanity?.projectId ?? env.sanity.projectId)
@@ -66,14 +66,15 @@ export function resolveConfig(config: Config): CoreConfig {
     units:         { volume: config.units?.volume ?? 'l', price: { currency: config.units?.price?.currency ?? 'EUR', currencyLabel: config.units?.price?.currencyLabel } },
     baseUrl,
     hostname,
-    isMaintenanceMode,
-    doIndexPages:      config.doIndexPages      ?? env.doIndexPages,
-    maxProducts:       config.maxProducts       ?? env.maxProducts,
-    dev: {
-      enabled:        config.dev?.enabled        ?? env.dev.enabled,
-      liveReload:     config.dev?.liveReload     ?? env.dev.liveReload,
-      serverPort:     config.dev?.serverPort     ?? env.dev.serverPort,
-      fetchOnRebuild: config.dev?.fetchOnRebuild ?? env.dev.fetchOnRebuild,
+    doIndexPages: config.doIndexPages ?? env.doIndexPages,
+    maxProducts:  config.maxProducts  ?? env.maxProducts,
+    debug: {
+      enabled: config.debug?.enabled ?? env.debug.enabled,
+    },
+    serve: {
+      port:        config.serve?.port        ?? env.serve.port,
+      liveReload:  config.serve?.liveReload  ?? env.serve.liveReload,
+      refetchData: config.serve?.refetchData ?? env.serve.refetchData,
     },
     preview: {
       enabled:      previewEnabled,
@@ -110,25 +111,26 @@ export function resolveConfig(config: Config): CoreConfig {
 // ─── Env ──────────────────────────────────────────────────────────────────────
 
 function readEnv() {
-  const stage   = process.env.STAGE ?? 'production'
-  const rawUrl  = process.env.DEV_URL ?? process.env.URL
+  const rawUrl  = process.env.URL
   const baseUrl = rawUrl ?? 'http://localhost:8080'
-  const minify  = parseBool(process.env.MINIFY, stage !== 'development')
+  const minify  = parseBool(process.env.MINIFY, true)
   const previewEnabled = parseBool(process.env.IS_PREVIEW, false)
 
   return {
     rawUrl,
     baseUrl,
     minify,
-    inlineCss:        parseBool(process.env.INLINE_CSS, true),
+    inlineCss:         parseBool(process.env.INLINE_CSS, true),
     isMaintenanceMode: parseBool(process.env.MAINTENANCE, false),
     doIndexPages:      parseBool(process.env.DO_INDEX_PAGES, true),
     maxProducts:       parseNum(process.env.MAX_PRODUCTS, -1),
-    dev: {
-      enabled:        parseBool(process.env.ITSSHOPS_DEBUG, false),
-      liveReload:     parseBool(process.env.DEV_LIVE_RELOAD, true),
-      serverPort:     parseNum(process.env.DEV_SERVER_PORT, 8080),
-      fetchOnRebuild: parseBool(process.env.DEV_FETCH_ON_REBUILD, true),
+    debug: {
+      enabled: parseBool(process.env.ITSSHOPS_DEBUG, false),
+    },
+    serve: {
+      port:        parseNum(process.env.SERVE_PORT,         8080),
+      liveReload:  parseBool(process.env.SERVE_LIVE_RELOAD, true),
+      refetchData: parseBool(process.env.SERVE_REFETCH_DATA, true),
     },
     preview: {
       enabled:      previewEnabled,

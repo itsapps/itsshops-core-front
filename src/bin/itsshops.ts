@@ -21,7 +21,8 @@ program
   .option('-e, --env <path>', 'Path to environment file', '.env')
   .option('--serve', 'Start the local server')
   .option('--watch', 'Watch for file changes')
-  .option('--dev', 'Watch core frontend dist folder in node_modules')
+  .option('--mode <mode>', 'Build mode: normal (default), preview, maintenance')
+  .option('--dev', 'Enable debug features (verbose errors, undefined warnings)')
   // .option('--debug', 'Enable Debug mode')
   .option('--debug [namespace]', 'Enable Debug mode, optional: * , Benchmark, Watch, "Template,Benchmark,FileSystemSearch,Eleventy", etc.')
   .action((options) => {
@@ -79,6 +80,8 @@ program
     const envVars = {
       ...process.env,
       ...(options.dev && { ITSSHOPS_DEBUG: 'true' }),
+      ...(options.mode === 'preview'     && { IS_PREVIEW: 'true' }),
+      ...(options.mode === 'maintenance' && { MAINTENANCE: 'true' }),
       ...(options.debug && { DEBUG: debugNamespace })
     };
     // 4. Spawn the process
@@ -122,6 +125,49 @@ program
       console.error('❌ Failed to start Netlify. Is it installed globally?');
       console.error(err);
     });
+  });
+
+const NETLIFY_TOML = `[build]
+command = "npm run build"
+publish = "dist"
+
+[dev]
+command = "npm run dev"
+dist = "dist"
+autoLaunch = false
+envFiles = [ ".env" ]
+
+[functions]
+  [functions.preview]
+  included_files = [
+    "src/**",
+    "eleventy.config.mts",
+    "itsshops.config.mts",
+    "node_modules/**"
+  ]
+`
+
+program
+  .command('init')
+  .description('Scaffold required config files for a new project')
+  .option('--force', 'Overwrite existing files')
+  .action((options) => {
+    console.log(`\n📦 ITSSHOPS | init...\n`);
+    const root = process.cwd();
+
+    const files: [string, string][] = [
+      ['netlify.toml', NETLIFY_TOML],
+    ]
+
+    for (const [filename, content] of files) {
+      const dest = path.join(root, filename)
+      if (fs.existsSync(dest) && !options.force) {
+        console.log(`  ⏭ Skipped ${filename} (already exists — use --force to overwrite)`)
+      } else {
+        fs.writeFileSync(dest, content, 'utf-8')
+        console.log(`  ✔ Written ${filename}`)
+      }
+    }
   });
 
 program

@@ -91,10 +91,10 @@ See `src/assets/css/global/blocks/embla-gallery.css` in the Jurtschitsch project
 
 ### 4. Define `imageSizes` presets
 
-The gallery partials receive size presets via `_galleryImageSize` and `_galleryThumbSize` — define whatever keys make sense for your use case in `project.config.mts`:
+The gallery partials receive size presets via `_galleryImageSize` and `_galleryThumbSize` — define whatever keys make sense for your use case in `itsshops.config.mts`:
 
 ```ts
-// project.config.mts
+// itsshops.config.mts
 imageSizes: {
   product: {
     sizes: [[800, 1200], [400, 600]],

@@ -22,7 +22,7 @@ export const setupTemplates = (ctx: CoreContext) => {
   // add templates to search path
   loadTemplates(ctx)
 
-  if (config.dev.enabled) {
+  if (config.debug.enabled) {
     console.log('Debug mode enabled: throwing errors for undefined variables in templates')
     eleventyConfig.setNunjucksEnvironmentOptions({
       throwOnUndefined: true,

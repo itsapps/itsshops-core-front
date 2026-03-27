@@ -170,7 +170,7 @@ Extend core via `ItsshopsConfig`: `documents[]`, `objects[]`, `schemaExtensions`
 ### Customer frontend
 - Jurtschitsch: `/Users/kampfgnu/Documents/programming/web/jurtschitsch/webshop-frontend`
 
-Registers plugin in `eleventy.config.mts`, configures via `project.config.mts` (type `Config`).
+Registers plugin in `eleventy.config.mts`, configures via `itsshops.config.mts` (type `Config`).
 
 ### Reference implementation
 `/Users/kampfgnu/Documents/programming/jamstack/itsapps_ffmh_frontend` — standalone predecessor. Does not use this package. Gold standard for full feature set: checkout (Stripe), users (Supabase), search, i18n, Netlify functions, PDF, email.

@@ -31,9 +31,7 @@ export type EnvVars = {
   SANITY_STUDIO_URL:    string | undefined
 
   // Deployment
-  URL:     string | undefined  // Netlify: production URL
-  DEV_URL: string | undefined  // local dev URL override
-  STAGE:   string | undefined  // 'development' | 'production'
+  URL: string | undefined  // Netlify: production URL
 
   // Build flags
   MAINTENANCE:    string | undefined  // 'true' | 'false'
@@ -43,10 +41,10 @@ export type EnvVars = {
   MINIFY_HTML:    string | undefined  // 'true' | 'false'
   INLINE_CSS:     string | undefined  // 'true' | 'false'
 
-  // Dev server
-  DEV_LIVE_RELOAD:     string | undefined  // 'true' | 'false'
-  DEV_SERVER_PORT:     string | undefined
-  DEV_FETCH_ON_REBUILD: string | undefined  // 'true' | 'false'
+  // Local serve
+  SERVE_LIVE_RELOAD:  string | undefined  // 'true' | 'false'
+  SERVE_PORT:         string | undefined
+  SERVE_REFETCH_DATA: string | undefined  // 'true' | 'false'
 
   // Preview
   IS_PREVIEW:          string | undefined  // 'true' | 'false'
@@ -267,26 +265,27 @@ export type ResolveHooks = NonNullable<Extensions['resolve']>
 // are optional here — the core reads the env var and the customer value wins if set.
 //
 // Standard env vars read by core (customer override field):
-//   URL / DEV_URL             → baseUrl
-//   STAGE                     → dev.enabled
-//   DEV_LIVE_RELOAD           → dev.liveReload
-//   DEV_SERVER_PORT           → dev.serverPort
-//   MAINTENANCE               → isMaintenanceMode
-//   DO_INDEX_PAGES            → doIndexPages
-//   MAX_PRODUCTS              → maxProducts
-//   IS_PREVIEW                → preview.enabled
-//   PREVIEW_TYPE              → preview.documentType
-//   PREVIEW_ID                → preview.documentId
-//   PREVIEW_LOCALE            → preview.locale
-//   MINIFY                    → css.minify / js.minify
-//   INLINE_CSS                → css.inline
-//   SANITY_PROJECT_ID         → sanity.projectId
-//   SANITY_DATASET            → sanity.dataset
-//   SANITY_TOKEN              → sanity.token
-//   SANITY_STUDIO_URL         → sanity.studioUrl (from ClientConfig)
+//   URL                        → baseUrl
+//   MAINTENANCE                → buildMode = 'maintenance'
+//   IS_PREVIEW                 → buildMode = 'preview'
+//   DO_INDEX_PAGES             → doIndexPages
+//   MAX_PRODUCTS               → maxProducts
+//   MINIFY                     → css.minify / js.minify  (default: true)
+//   INLINE_CSS                 → css.inline
+//   ITSSHOPS_DEBUG             → debug.enabled
+//   SERVE_PORT                 → serve.port
+//   SERVE_LIVE_RELOAD          → serve.liveReload
+//   SERVE_REFETCH_DATA         → serve.refetchData
+//   PREVIEW_TYPE               → preview.documentType
+//   PREVIEW_ID                 → preview.documentId
+//   PREVIEW_LOCALE             → preview.locale
+//   SANITY_PROJECT_ID          → sanity.projectId
+//   SANITY_DATASET             → sanity.dataset
+//   SANITY_TOKEN               → sanity.token
+//   SANITY_STUDIO_URL          → sanity.studioUrl (from ClientConfig)
 //   STRIPE_PUBLISHABLE_API_KEY → stripe.publishableApiKey
-//   CAPTCHA_SITE_KEY          → captchaSiteKey
-//   SUPPORT_EMAIL             → supportEmail
+//   CAPTCHA_SITE_KEY           → captchaSiteKey
+//   SUPPORT_EMAIL              → supportEmail
 
 export type Config = {
   // required — project-specific, no env var equivalent
@@ -330,18 +329,18 @@ export type Config = {
 
   // override env vars if needed
   baseUrl?: string
-  isMaintenanceMode?: boolean
   doIndexPages?: boolean
   maxProducts?: number
-  dev?: {
+  debug?: {
     enabled?: boolean
+  }
+  serve?: {
+    port?: number
     liveReload?: boolean
-    serverPort?: number
-    /** Re-fetch CMS data from Sanity on every rebuild during --serve. Defaults to true. */
-    fetchOnRebuild?: boolean
+    /** Re-fetch CMS data from Sanity on every rebuild. Defaults to true. */
+    refetchData?: boolean
   }
   preview?: {
-    enabled?: boolean
     documentType?: string
     documentId?: string
     locale?: Locale
@@ -401,14 +400,15 @@ export type CoreConfig = {
   units: { volume: string; price: { currency: string; currencyLabel?: string } }
   baseUrl: string
   hostname: string
-  isMaintenanceMode: boolean
   doIndexPages: boolean
   maxProducts: number
-  dev: {
+  debug: {
     enabled: boolean
+  }
+  serve: {
+    port: number
     liveReload: boolean
-    serverPort: number
-    fetchOnRebuild: boolean
+    refetchData: boolean
   }
   preview: {
     enabled: boolean

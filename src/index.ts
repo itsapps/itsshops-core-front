@@ -52,7 +52,7 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
 
   let cmsCache: ReturnType<typeof buildCmsData> | null = null
   eleventyConfig.addGlobalData('cms', () => {
-    if (!config.dev.fetchOnRebuild && cmsCache) return cmsCache
+    if (!config.serve.refetchData && cmsCache) return cmsCache
     cmsCache = buildCmsData(client, ctx)
     return cmsCache
   })

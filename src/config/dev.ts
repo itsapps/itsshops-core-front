@@ -4,17 +4,18 @@ import { createRequire } from 'module'
 import type { EleventyConfig } from '11ty.ts'
 
 export const setupDev = (eleventyConfig: EleventyConfig, config: CoreConfig) => {
-  if (!config.dev.enabled) return
-
-  const { liveReload, serverPort } = config.dev
+  // Server options apply whenever --serve is used (Eleventy ignores them otherwise)
   eleventyConfig.setServerOptions({
-    port: serverPort,
+    port: config.serve.port,
     showAllHosts: true,
-    liveReload: liveReload,
+    liveReload: config.serve.liveReload,
     middleware: [
       function (req: IncomingMessage, res: ServerResponse, next: () => void) {
         if (req.url === '/') {
-          res.writeHead(302, { Location: '/de' });
+          const location = config.buildMode === 'maintenance'
+            ? '/maintenance/'
+            : `/${config.defaultLocale}/`
+          res.writeHead(302, { Location: location });
           res.end();
           return;
         }
@@ -22,6 +23,9 @@ export const setupDev = (eleventyConfig: EleventyConfig, config: CoreConfig) => 
       }
     ]
   });
+
+  // Debug helpers only when ITSSHOPS_DEBUG=true / --dev
+  if (!config.debug.enabled) return
 
   const require = createRequire(import.meta.url)
   const runtime = require('nunjucks/src/runtime')
