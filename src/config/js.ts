@@ -6,19 +6,20 @@ import type { CoreContext } from '../types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Core default deferred entry — shipped in dist/scripts/ via tsup onSuccess copy
-const coreScriptsEntry = path.join(__dirname, '../scripts/index.ts')
+const coreScriptsEntry = path.join(__dirname, 'scripts/index.ts')
 
 export const setupJs = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
 
   if (config.preview.enabled) return
 
-  const minify = config.js?.minify ?? false
+  const minify    = config.js.minify ?? false
+  const outdir    = path.resolve(eleventyConfig.directories.output, 'assets/scripts')
   const scriptsRoot = path.resolve(eleventyConfig.directories.input, 'assets/scripts')
 
   // Use customer's entry if it exists, otherwise fall back to core default
-  const customerEntry  = path.join(scriptsRoot, 'index.ts')
-  const deferredEntry  = fs.existsSync(customerEntry) ? customerEntry : coreScriptsEntry
+  const customerEntry = path.join(scriptsRoot, 'index.ts')
+  const deferredEntry = fs.existsSync(customerEntry) ? customerEntry : coreScriptsEntry
 
   eleventyConfig.addTemplateFormats('ts')
   eleventyConfig.addExtension('ts', {
@@ -34,7 +35,7 @@ export const setupJs = (ctx: CoreContext) => {
       // esbuild writes directly to dist/assets/scripts/ with code splitting.
       await esbuild.build({
         entryPoints: [deferredEntry],
-        outdir: path.resolve(eleventyConfig.directories.output, 'assets/scripts'),
+        outdir,
         bundle: true,
         splitting: true,
         format: 'esm',

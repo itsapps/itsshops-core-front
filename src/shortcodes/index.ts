@@ -9,7 +9,7 @@ export const createShortcodes = (ctx: CoreContext) => {
   const staticDir = path.join(process.cwd(), inputDir, 'assets/images/static')
   
   // build static images before building
-  if (!config.preview?.enabled) {
+  if (!config.preview.enabled) {
     eleventyConfig.on('eleventy.before', async () => {
       await preGenerateStaticImages(staticDir, imageSizes)
     })

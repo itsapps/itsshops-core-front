@@ -242,7 +242,7 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter('portableText', function (blocks: any[], name?: string, options?: PortableTextOptions) {
     const locale = this.page?.lang || config.defaultLocale
     const urlMap: Record<string, string> = (this as any).ctx?.cms?.[locale]?.urlMap ?? {}
-    const factory = config.extensions?.portableTexts?.[name ?? 'default']
+    const factory = config.extensions.portableTexts?.[name ?? 'default']
     const extra = factory?.(portableTextExtCtx)
     return renderPortableText(blocks, urlMap, extra as any, options)
   })
