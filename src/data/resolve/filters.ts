@@ -1,4 +1,5 @@
 import { slugify } from '../../utils/slugify'
+import { stegaClean } from '@sanity/client/stega'
 import type { ResolveContext } from '../../types'
 import type { FilterGroup, ResolvedFilterKey, ResolvedWine } from '../../types/data'
 
@@ -111,7 +112,7 @@ export function resolveFilterSpecs(
 ): ResolvedFilterKey[] {
   return (rawFilters ?? []).flatMap((f: any) => {
     if (!f) return []
-    if (f._type === 'wineFieldFilter' && f.field) return [f.field as string]
+    if (f._type === 'wineFieldFilter' && f.field) return [stegaClean(f.field) as string]
     if (f._type === 'reference' && f.title) {
       const key = slugify(ctx.resolveString(f.title) || '')
       return key ? [key] : []
