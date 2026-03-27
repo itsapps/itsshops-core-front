@@ -12,7 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const templatesRoot = path.join(__dirname, 'templates');
-const layoutsDir = path.join(templatesRoot, 'layouts');
+const layoutsDir    = path.join(templatesRoot, 'layouts');
+const coreDir       = path.join(templatesRoot, 'core');
 const corePagesRoot = path.join(templatesRoot, 'pages');
 
 export const setupTemplates = (ctx: CoreContext) => {
@@ -35,15 +36,31 @@ export const loadTemplates = (ctx: CoreContext) => {
   const loadedTemplates: string[] = []
   const ignoredTemplates: string[] = []
 
-  // add templates to search path
+  const customerIncludesDir = path.resolve("src/_includes")
+
+  // Nunjucks search order: customer overridable/ first, then core templates
   eleventyConfig.amendLibrary("njk", (env: any) => {
-    env.loaders[0].searchPaths.push(
-      path.resolve("src/_includes"),
-      templatesRoot
-    );
+    env.loaders[0].searchPaths.push(customerIncludesDir, templatesRoot);
   });
 
-  // 
+  // Protect core/ templates from customer overrides
+  if (fs.existsSync(coreDir)) {
+    const walkCore = (dir: string, rel = '') => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const entryRel = path.join(rel, entry.name)
+        if (entry.isDirectory()) {
+          walkCore(path.join(dir, entry.name), entryRel)
+        } else if (entry.name.endsWith('.njk')) {
+          const conflict = path.join(customerIncludesDir, 'core', entryRel)
+          if (fs.existsSync(conflict)) {
+            throw new Error(`Conflict detected: You are not allowed to override the core template at: ${conflict}`)
+          }
+        }
+      }
+    }
+    walkCore(coreDir)
+  }
+
   if (fs.existsSync(layoutsDir)) {
     for (const file of fs.readdirSync(layoutsDir)) {
       if (!file.endsWith(".njk")) continue
@@ -64,35 +81,6 @@ export const loadTemplates = (ctx: CoreContext) => {
   }
 
   const customerPagesRoot = path.join(eleventyConfig.directories.input, 'pages')
-  // const projectRoot = process.cwd();
-  // const customerPagesRoot = path.resolve(
-  //   projectRoot,
-  //   eleventyConfig.directories.input,
-  //   'pages'
-  // );
-
-  console.log(`🔍 Checking for pages at: ${customerPagesRoot}`);
-  if (fs.existsSync(customerPagesRoot)) {
-    for (const dir of fs.readdirSync(customerPagesRoot)) {
-      const dirPath = path.join(customerPagesRoot, dir)
-      if (!fs.statSync(dirPath).isDirectory()) continue
-
-      for (const file of fs.readdirSync(dirPath)) {
-        if (!file.endsWith('.njk')) continue
-
-        if (shouldIgnoreTemplate({
-          dir,
-          file,
-          ctx,
-        })) {
-          console.log(`🚫 Ignoring template: ${dirPath}/${file}`);
-          const templatePath = path.join(dir, file)
-          eleventyConfig.ignores.add(templatePath)
-          ignoredTemplates.push(templatePath)
-        }
-      }
-    }
-  }
 
   // eleventyConfig.addTemplate("virtual.11ty.js", function(data: any) {
 	// 	return `<h1>Hello</h1>`;
@@ -107,15 +95,15 @@ export const loadTemplates = (ctx: CoreContext) => {
 
       const customerPath = path.join(customerPagesRoot, dir, file)
       const corePath = path.join(dirPath, file)
-      const ignoreTemplate = shouldIgnoreTemplate({
-        dir,
-        file,
-        ctx,
-      })
+      if (fs.existsSync(customerPath)) {
+        throw new Error(`Conflict detected: You are not allowed to override the core page template at: ${customerPath}`)
+      }
+
+      const ignoreTemplate = shouldIgnoreTemplate({ dir, file, ctx })
       const templatePath = path.join(dir, file)
       if (ignoreTemplate) {
         ignoredTemplates.push(templatePath)
-      } else if (!fs.existsSync(customerPath)) {
+      } else {
         eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'), {})
         loadedTemplates.push(templatePath)
       }

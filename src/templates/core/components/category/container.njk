@@ -20,7 +20,7 @@
       {%- set filterGroups = cms[category.locale].filterGroups | filterGroupsForProducts(categoryProducts) -%}
       {%- set activeFilterKeys = category.filters if category.filters.length else cms[category.locale].shopSettings.filters -%}
       {% if activeFilterKeys.length %}
-        {% include "components/partials/product-filters.njk" %}
+        {% include "overridable/partials/product-filters.njk" %}
       {% endif %}
       <div class="category-products" data-product-list>
         {% for product in categoryProducts %}
@@ -29,7 +29,7 @@
             data-filter-item
             data-filter-attrs="{{ product.filterAttributes | dump }}"
           >
-            {% include "components/product/card.njk" %}
+            {% include "overridable/product/card.njk" %}
           </div>
         {% endfor %}
       </div>

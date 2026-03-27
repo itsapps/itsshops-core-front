@@ -12,6 +12,6 @@ eleventyExcludeFromCollections: true
     <title>{{ cms[coreConfig.defaultLocale].settings.siteTitle if cms[coreConfig.defaultLocale].settings }} — Wartung</title>
   </head>
   <body>
-    {%- include "components/maintenance.njk" -%}
+    {%- include "overridable/maintenance.njk" -%}
   </body>
 </html>

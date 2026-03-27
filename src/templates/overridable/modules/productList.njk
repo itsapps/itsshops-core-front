@@ -6,7 +6,7 @@
     <h2 class="product-list__title">{{ module.title }}</h2>
   {% endif %}
   {% if activeFilterKeys.length %}
-    {% include "components/partials/product-filters.njk" %}
+    {% include "overridable/partials/product-filters.njk" %}
   {% endif %}
   {% if listProducts.length %}
     <div class="product-list__grid">
@@ -16,7 +16,7 @@
           data-filter-item
           data-filter-attrs="{{ product.filterAttributes | dump }}"
         >
-          {% include "components/product/card.njk" %}
+          {% include "overridable/product/card.njk" %}
         </div>
       {% endfor %}
     </div>

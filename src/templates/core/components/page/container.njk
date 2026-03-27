@@ -9,7 +9,7 @@
   {% block page_modules %}
     {%- set _locale = pageDoc.locale -%}
     {%- set modules = pageDoc.modules -%}
-    {% include "components/partials/modules.njk" %}
+    {% include "overridable/partials/modules.njk" %}
   {% endblock %}
 
 </article>

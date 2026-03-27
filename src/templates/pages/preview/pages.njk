@@ -4,4 +4,4 @@ permalink: "/{{ coreConfig.preview.locale }}/preview/"
 ---
 {%- set _locale = coreConfig.preview.locale or coreConfig.defaultLocale -%}
 {%- set pageDoc = cms[_locale].pages | findById(coreConfig.preview.documentId) -%}
-{%- include "components/page/container.njk" -%}
+{%- include "overridable/page/container.njk" -%}

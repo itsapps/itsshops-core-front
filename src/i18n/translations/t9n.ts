@@ -3,18 +3,15 @@ import _ from 'lodash'
 import { CoreConfig } from '../../types/config';
 import { TranslatorFunction } from '../../types/t9n';
 
-export function createTranslator(config: CoreConfig, customerResources: Record<string, any> = {}) {
+export function createTranslator(config: CoreConfig, baseTranslations: Record<string, any> = {}) {
   const mergedResources: Record<string, any> = {};
-  // Respect the locales array
-  config.locales.forEach((lng) => {
-    // Get the core defaults for this language (if they exist)
-    const coreForLng = config.translations[lng] || { common: {}, shared: {} };
-    
-    // Get the customer overrides for this language
-    const customerForLng = customerResources[lng] || {};
 
-    // Deep merge both namespaces (common AND shared)
-    mergedResources[lng] = _.merge({}, coreForLng, customerForLng);
+  config.locales.forEach((lng) => {
+    const base     = baseTranslations[lng]        || { common: {}, shared: {} }
+    const overrides = config.translations[lng]    || {}
+
+    // Deep merge: base (core files) first, project overrides win
+    mergedResources[lng] = _.merge({}, base, overrides);
   });
 
 

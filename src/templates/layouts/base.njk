@@ -5,25 +5,25 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {% include "components/head/seo.njk" %}
+    {% include "overridable/head/seo.njk" %}
     {%- if not coreConfig.preview.enabled -%}{% include "core/head/schemas.njk" %}{%- endif -%}
     {% include "core/head/preloads.njk" %}
     {% include "core/head/css.njk" %}
     {% include "core/head/favicons.njk" %}
     {%- include "core/head/js-inline.njk" -%}
-    {% include "components/head/extras.njk" %}
+    {% include "overridable/head/extras.njk" %}
   </head>
 
   <body>
     {% include "core/partials/dev-nav.njk" %}
-    {%- include "components/header.njk" -%}
+    {%- include "overridable/header.njk" -%}
 
     <main id="main">
       {{ content | safe }}
     </main>
 
-    {%- include "components/footer.njk" -%}
-    {%- if coreConfig.features.shop.checkout -%}{%- include "components/cart.njk" -%}{%- endif -%}
+    {%- include "overridable/footer.njk" -%}
+    {%- if coreConfig.features.shop.checkout -%}{%- include "overridable/cart.njk" -%}{%- endif -%}
 
     {%- getBundle "html", "externalJS" -%}
     <script src="/assets/scripts/index.js" type="module"></script>

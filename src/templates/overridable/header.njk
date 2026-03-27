@@ -36,7 +36,7 @@
                     <a
                       href="{{ item.internal._id | pageUrl }}"
                       class="site-nav__link"
-                      {{ item.internal._id | pageUrl | linkActiveState }}
+                      {{ item.internal._id | pageUrl | linkActiveState | safe }}
                     >{{ item.title }}</a>
                     {%- if item.children.length -%}
                       <ul class="site-nav__submenu" role="list">

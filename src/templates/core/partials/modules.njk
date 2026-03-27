@@ -3,13 +3,19 @@
   Requires: modules (array), _locale (string)
 
   Dispatch is purely file-based: for each module, looks up
-  components/modules/{_type}.njk — customer-overridable, ignore missing.
-  Core built-ins live in components/modules/ and can be overridden per project.
-  Custom module types: drop src/_includes/components/modules/{type}.njk.
+  overridable/modules/{_type}.njk — customer-overridable, ignore missing.
+  Core built-ins live in overridable/modules/ and can be overridden per project.
+  Custom module types: drop src/_includes/overridable/modules/{type}.njk.
 #}
 {% for module in modules %}
   {%- set _isFirstModule = loop.first -%}
+  {%- set _moduleContent -%}
+    {%- include "overridable/modules/" + module._type + ".njk" ignore missing -%}
+  {%- endset -%}
+  {%- if not _moduleContent and coreConfig.dev.enabled -%}
+    <!-- DEV WARNING: No template found for module type "{{ module._type }}" -->
+  {%- endif -%}
   <div class="module module--{{ module._type }}">
-    {%- include "components/modules/" + module._type + ".njk" ignore missing -%}
+    {{- _moduleContent | safe -}}
   </div>
 {% endfor %}

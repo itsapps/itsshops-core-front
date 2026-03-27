@@ -8,7 +8,7 @@
     {% if product.image %}
       {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
     {% else %}
-      {% include "components/product/placeholder.njk" %}
+      {% include "overridable/product/placeholder.njk" %}
     {% endif %}
   </figure>
 

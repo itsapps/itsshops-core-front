@@ -6,7 +6,7 @@
       {%- if product.image %}
         {% image product.image, imageSizes.card %}
       {%- else %}
-        {% include "components/product/placeholder.njk" %}
+        {% include "overridable/product/placeholder.njk" %}
       {%- endif %}
     </figure>
     <div class="product-card__body">
