@@ -4,7 +4,7 @@
   <div class="site-header__inner">
 
     {# ── Logo ──────────────────────────────────────────────────────────── #}
-    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ _settings.siteTitle if _settings }}">
+    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ (_settings.siteTitle | stegaClean) if _settings }}">
       {{ _settings.siteTitle }}
     </a>
 
@@ -36,6 +36,7 @@
                     <a
                       href="{{ item.internal._id | pageUrl }}"
                       class="site-nav__link"
+                      {{ item.internal._id | pageUrl | linkActiveState }}
                     >{{ item.title }}</a>
                     {%- if item.children.length -%}
                       <ul class="site-nav__submenu" role="list">

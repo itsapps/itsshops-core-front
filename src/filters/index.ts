@@ -1,4 +1,5 @@
 import { slugify, toIsoString } from "../utils"
+import { linkActiveState } from "../utils/linkActiveState"
 import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
@@ -6,7 +7,7 @@ import { resolveString } from "../data/localizers";
 import { imageUrl, imageSizeUrl, image } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
-import { buildPageDocSchema } from "../schema"
+import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
 import { map } from "../utils/map"
 /**
  * Format a price in cents to a locale-aware currency string.
@@ -252,9 +253,14 @@ export const createFilters = (ctx: CoreContext) => {
     const locale = this.page?.lang || config.defaultLocale
     return (this as any).ctx?.cms?.[locale]?.docMap?.[id] ?? null
   })
-  eleventyConfig.addFilter('pageSchema', function (pageDoc: any, locale: string, settings: any) {
+  eleventyConfig.addFilter('pageSchema', function (pageDoc: any, settings: any) {
+    const locale = this.page?.lang || config.defaultLocale
     const products = (this as any).ctx?.cms?.[locale]?.products ?? []
     return buildPageDocSchema(pageDoc, locale, settings, config, (img, w) => imageUrl(ctx.imageBuilder, img, w), products)
+  })
+  eleventyConfig.addFilter('webSiteSchema', function (settings: any) {
+    const locale = this.page?.lang || config.defaultLocale
+    return buildWebSiteSchema(settings, config, locale)
   })
   eleventyConfig.addFilter('map', map as any)
   eleventyConfig.addFilter('truncate', truncate as any)
@@ -266,9 +272,9 @@ export const createFilters = (ctx: CoreContext) => {
     return (this as any).ctx?.cms?.[locale]?.urlMap?.[id] ?? '#'
   })
 
-  /** Returns true if the given URL matches the current page URL.
-   * Usage: {% if item._id | pageUrl | isCurrentUrl %}aria-current="page"{% endif %} */
-  eleventyConfig.addFilter('isCurrentUrl', function (url: string) {
-    return url === this.page?.url
+  /** Returns aria-current="page" or data-state="active" attribute string.
+   * Usage: <a href="{{ item.url }}" {{ item.url | linkActiveState }}> */
+  eleventyConfig.addFilter('linkActiveState', function (this: any, url: string) {
+    return linkActiveState(url, this.page?.url ?? '')
   })
 }

@@ -1,6 +1,6 @@
 {%- set _locale    = page.lang or coreConfig.defaultLocale -%}
 {%- set _settings  = cms[_locale].settings -%}
-{%- set _siteTitle = _settings.siteTitle or '' -%}
+{%- set _siteTitle = (_settings.siteTitle | stegaClean) or '' -%}
 {%- set _item      = pageDoc -%}
 {%- set _seo       = _item.seo or {} -%}
 {%- set _rawTitle  = (_seo.metaTitle | stegaClean) if _seo.metaTitle else (_item.title | stegaClean if _item.title else '') -%}

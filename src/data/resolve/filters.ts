@@ -34,8 +34,8 @@ export function buildFilterAttributes(
 
   for (const opt of rawOptions) {
     if (!opt.group) continue
-    const groupKey = slugify(ctx.resolveString(opt.group.title) || opt.group._id)
-    const valueSlug = slugify(ctx.resolveString(opt.name))
+    const groupKey = slugify(stegaClean(ctx.resolveString(opt.group.title)) || opt.group._id)
+    const valueSlug = slugify(stegaClean(ctx.resolveString(opt.name)))
     if (groupKey && valueSlug) {
       if (!attrs[groupKey]) attrs[groupKey] = []
       if (!attrs[groupKey].includes(valueSlug)) attrs[groupKey].push(valueSlug)
@@ -78,9 +78,9 @@ export function accumulateFilterGroups(
   for (const opt of rawOptions) {
     if (!opt.group) continue
     const groupLabel = ctx.resolveString(opt.group.title) || ''
-    const groupKey = slugify(groupLabel || opt.group._id)
+    const groupKey = slugify(stegaClean(groupLabel) || opt.group._id)
     const valueLabel = ctx.resolveString(opt.name)
-    const valueSlug = slugify(valueLabel)
+    const valueSlug = slugify(stegaClean(valueLabel))
     if (groupKey && valueSlug) {
       addToAcc(acc, groupKey, groupLabel, valueSlug, valueLabel)
     }
@@ -114,7 +114,7 @@ export function resolveFilterSpecs(
     if (!f) return []
     if (f._type === 'wineFieldFilter' && f.field) return [stegaClean(f.field) as string]
     if (f._type === 'reference' && f.title) {
-      const key = slugify(ctx.resolveString(f.title) || '')
+      const key = slugify(stegaClean(ctx.resolveString(f.title)) || '')
       return key ? [key] : []
     }
     return []

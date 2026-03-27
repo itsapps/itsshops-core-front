@@ -30,7 +30,6 @@ import { setupPlugins } from './config/plugins'
 import { setupDev } from './config/dev'
 import { setupJs } from './config/js'
 import { setupHeaders } from './config/headers'
-import utils from './utils'
 
 export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsConfig: Config) => {
   const config = resolveConfig(itsshopsConfig)
@@ -59,7 +58,6 @@ export const shopCoreFrontendPlugin = (eleventyConfig: EleventyConfig, itsshopsC
   })
   eleventyConfig.addGlobalData('coreConfig', config)
   eleventyConfig.addGlobalData('imageSizes', mergedImageSizes)
-  eleventyConfig.addGlobalData('utils', utils)
   eleventyConfig.addGlobalData('pageDoc', {})
 
   setupTemplates(ctx)

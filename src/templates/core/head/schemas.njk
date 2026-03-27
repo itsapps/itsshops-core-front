@@ -1,14 +1,13 @@
 {%- set _locale   = page.lang or coreConfig.defaultLocale -%}
 {%- set _settings = cms[_locale].settings -%}
 
+
 {# WebSite schema — always present when baseUrl is known #}
-{%- if _settings and coreConfig.baseUrl -%}
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":{{ _settings.siteTitle | dump | safe }},"url":{{ coreConfig.baseUrl | dump | safe }}}</script>
-{%- endif -%}
+{{ _settings | webSiteSchema | safe }}
 
 {# Page-type schema — driven by pageDoc set in each page template #}
 {%- if pageDoc and coreConfig.baseUrl -%}
-  {{ pageDoc | pageSchema(_locale, _settings) | safe }}
+  {{ pageDoc | pageSchema(_settings) | safe }}
 {%- endif -%}
 
 {# Custom schemas pushed from page templates #}
