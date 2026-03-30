@@ -102,7 +102,10 @@ function resetFilters(): void {
 function syncViewButton(view: string): void {
   document.querySelectorAll<HTMLElement>('[data-toggle-products-view]').forEach(btn => {
     const label = view === 'grid' ? btn.dataset.labelList : btn.dataset.labelGrid
-    if (label) btn.textContent = label
+    if (label) {
+      btn.textContent = label
+      btn.setAttribute('aria-label', label)
+    }
   })
 }
 
@@ -125,7 +128,11 @@ export function initProductFilter(): void {
     const target = e.target as Element
 
     if (target.closest('[data-toggle-products-filter]')) {
-      document.querySelector('[data-filter-panel]')?.classList.toggle('is-open')
+      const panel = document.querySelector('[data-filter-panel]')
+      panel?.classList.toggle('is-open')
+      const isOpen = panel?.classList.contains('is-open') ?? false
+      const btn = target.closest<HTMLElement>('[data-toggle-products-filter]')
+      btn?.setAttribute('aria-expanded', String(isOpen))
       return
     }
 
