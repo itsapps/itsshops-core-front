@@ -45,10 +45,14 @@
             data-url="{{ product.url }}"
             {%- if product.image %} data-image="{{ product.image | imageSizeUrl(imageSizes.thumb) }}"{% endif %}
           >{{ 'product.cartButton.addToCart' | trans }}</button>
+        {%- elif product.status == "active" %}
+          <p class="product-active">{{ 'product.states.active' | trans }}</p>
         {%- elif product.status == "comingSoon" %}
-          <p class="product-unavailable">{{ 'product.states.comingSoon' | trans }}</p>
+          <p class="product-coming-soon">{{ 'product.states.comingSoon' | trans }}</p>
         {%- elif product.status == "soldOut" %}
-          <p class="product-unavailable">{{ 'product.states.soldOut' | trans }}</p>
+          <p class="product-sold-out">{{ 'product.states.soldOut' | trans }}</p>
+        {%- elif product.status == "archived" %}
+          <p class="product-archived">{{ 'product.states.archived' | trans }}</p>
         {%- endif %}
       </div>
     </div>

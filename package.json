@@ -18,7 +18,9 @@
     },
     "./scripts": {
       "import": "./dist/scripts/index.ts"
-    }
+    },
+    "./core.css": "./dist/core.css",
+    "./reset.css": "./dist/reset.css"
   },
   "files": [
     "bin/",

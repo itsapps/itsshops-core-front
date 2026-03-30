@@ -17,8 +17,10 @@ export default defineConfig({
   external: ['esbuild'],
   noExternal: ['@portabletext/to-html'],
   onSuccess: async () => {
-    copySync('src/templates', 'dist/templates', { overwrite: true });
-    copySync('src/scripts',   'dist/scripts',   { overwrite: true });
+    copySync('src/templates',          'dist/templates', { overwrite: true });
+    copySync('src/scripts',            'dist/scripts',   { overwrite: true });
+    copySync('src/assets/css/core.css', 'dist/core.css',  { overwrite: true });
+    copySync('src/assets/css/reset.css','dist/reset.css', { overwrite: true });
 
     // Pre-build core inline scripts into dist/templates so {% include %} works
     // even when customers have no src/assets/scripts/inline/ of their own.

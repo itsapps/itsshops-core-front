@@ -9,9 +9,12 @@
         {%- for _menuId in _settings.footerMenus -%}
           {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
           {%- if _menu -%}
-            <div class="footer-nav__group">
+            <div
+              class="footer-nav__group"
+              {% if _menu.title %}role="group" aria-labelledby="footer-nav-title-{{ loop.index }}"{% endif %}
+            >
               {%- if _menu.title -%}
-                <p class="footer-nav__title">{{ _menu.title }}</p>
+                <p class="footer-nav__title" id="footer-nav-title-{{ loop.index }}">{{ _menu.title }}</p>
               {%- endif -%}
               <ul class="footer-nav__list" role="list">
                 {%- for item in _menu.items -%}

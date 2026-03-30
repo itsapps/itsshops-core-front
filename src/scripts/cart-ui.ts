@@ -1,6 +1,7 @@
 import { addItem, removeItem, updateQuantity, getCart, getCount, getTotal } from './cart-store'
 
 let cartSidebar: HTMLElement | null = null
+let lastCartTrigger: HTMLElement | null = null
 let cartItemsEl: HTMLElement | null = null
 let cartTotalEl: HTMLElement | null = null
 let cartEmptyEl: HTMLElement | null = null
@@ -54,12 +55,12 @@ function renderItems(): void {
         <a href="${item.url}" class="cart-item__title">${item.title}${item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''}</a>
         <div class="cart-item__row">
           <div class="cart-item__qty">
-            <button type="button" class="cart-item__qty-btn" data-cart-decrease aria-label="${tDecrease}">−</button>
+            <button type="button" class="cart-item__qty-btn" data-cart-decrease aria-label="${tDecrease}: ${item.title}">−</button>
             <span class="cart-item__qty-count" aria-live="polite">${item.quantity}</span>
-            <button type="button" class="cart-item__qty-btn" data-cart-increase aria-label="${tIncrease}">+</button>
+            <button type="button" class="cart-item__qty-btn" data-cart-increase aria-label="${tIncrease}: ${item.title}">+</button>
           </div>
           <span class="cart-item__price">${formatPrice(item.price * item.quantity)}</span>
-          <button type="button" class="cart-item__remove" data-cart-remove aria-label="${tRemove}">
+          <button type="button" class="cart-item__remove" data-cart-remove aria-label="${tRemove}: ${item.title}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -80,11 +81,19 @@ function renderItems(): void {
   }
 }
 
+function setCartTogglesExpanded(expanded: boolean): void {
+  document.querySelectorAll<HTMLElement>('[data-cart-toggle]').forEach(btn => {
+    btn.setAttribute('aria-expanded', String(expanded))
+  })
+}
+
 function openCart(): void {
   if (!cartSidebar) return
   cartSidebar.classList.add('is-open')
   cartSidebar.setAttribute('aria-hidden', 'false')
   document.querySelector('[data-cart-overlay]')?.classList.add('is-visible')
+  setCartTogglesExpanded(true)
+  cartSidebar.focus()
 }
 
 function closeCart(): void {
@@ -92,6 +101,8 @@ function closeCart(): void {
   cartSidebar.classList.remove('is-open')
   cartSidebar.setAttribute('aria-hidden', 'true')
   document.querySelector('[data-cart-overlay]')?.classList.remove('is-visible')
+  setCartTogglesExpanded(false)
+  lastCartTrigger?.focus()
 }
 
 export function initCart(): void {
@@ -113,6 +124,7 @@ export function initCart(): void {
 
   document.querySelectorAll<HTMLButtonElement>('[data-cart-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
+      lastCartTrigger = btn
       cartSidebar?.classList.contains('is-open') ? closeCart() : openCart()
     })
   })

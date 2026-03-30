@@ -2,19 +2,20 @@
  * URL-based product filter.
  *
  * Reads active filters from URL search params, toggles `data-filter-item`
- * elements based on `data-filter-attrs` JSON, and syncs button states.
+ * elements based on `data-filter-attrs` JSON, and syncs checkbox states.
  *
  * URL format: ?vintage=2021&groesse=s&groesse=m
- * Multiple values for the same key are AND-ed per group, groups are AND-ed.
+ * Multiple values for the same key are OR-ed per group, groups are AND-ed.
  *
  * Data attributes:
  *   [data-product-list]        — container (one or more on the page)
- *   [data-product-filters]     — filter bar
+ *   [data-product-filters]     — filter bar; carries data-t-results for live region
  *   [data-filter-item]         — each product wrapper
  *   [data-filter-attrs]        — JSON string: Record<string, string[]>
- *   [data-filter-key]          — on filter buttons: group key
- *   [data-filter-value]        — on filter buttons: value slug
+ *   input[data-filter-key]     — checkbox inputs: group key
+ *   input[data-filter-value]   — checkbox inputs: value slug
  *   [data-filter-reset]        — reset button
+ *   [data-filter-count]        — sr-only live region for result count
  */
 
 type FilterState = Map<string, Set<string>>
@@ -41,7 +42,6 @@ function stateToSearch(state: FilterState): string {
 function itemMatchesState(attrs: Record<string, string[]>, state: FilterState): boolean {
   for (const [key, activeValues] of state) {
     const itemValues = attrs[key] ?? []
-    // Item must have at least one of the active values for this group
     const hasMatch = [...activeValues].some(v => itemValues.includes(v))
     if (!hasMatch) return false
   }
@@ -50,25 +50,33 @@ function itemMatchesState(attrs: Record<string, string[]>, state: FilterState): 
 
 function applyState(state: FilterState): void {
   // Update items
+  let visibleCount = 0
   document.querySelectorAll<HTMLElement>('[data-filter-item]').forEach(item => {
     let attrs: Record<string, string[]> = {}
     try { attrs = JSON.parse(item.dataset.filterAttrs ?? '{}') } catch (_) { /* noop */ }
     const visible = state.size === 0 || itemMatchesState(attrs, state)
     item.hidden = !visible
+    if (visible) visibleCount++
   })
 
-  // Update button states
-  document.querySelectorAll<HTMLButtonElement>('[data-filter-key]').forEach(btn => {
-    const key = btn.dataset.filterKey!
-    const value = btn.dataset.filterValue!
-    const active = state.get(key)?.has(value) ?? false
-    btn.setAttribute('aria-pressed', String(active))
-    btn.classList.toggle('is-active', active)
+  // Sync checkbox states
+  document.querySelectorAll<HTMLInputElement>('input[data-filter-key]').forEach(input => {
+    input.checked = state.get(input.dataset.filterKey!)?.has(input.dataset.filterValue!) ?? false
   })
 
-  // Update reset visibility
+  // Update reset button visibility
   document.querySelectorAll<HTMLElement>('[data-filter-reset]').forEach(btn => {
     btn.hidden = state.size === 0
+  })
+
+  // Announce result count to screen readers
+  document.querySelectorAll<HTMLElement>('[data-filter-count]').forEach(el => {
+    if (state.size === 0) {
+      el.textContent = ''
+      return
+    }
+    const template = el.closest<HTMLElement>('[data-product-filters]')?.dataset.tResults ?? '{{count}}'
+    el.textContent = template.replace('{count}', String(visibleCount))
   })
 }
 
@@ -101,14 +109,18 @@ function syncViewButton(view: string): void {
 export function initProductFilter(): void {
   if (!document.querySelector('[data-product-list]')) return
 
-  // Initial apply from URL
   applyState(parseFilterState())
 
-  // Sync view button label to current state
   const productList = document.querySelector<HTMLElement>('[data-product-list]')
   if (productList) syncViewButton(productList.dataset.view ?? 'grid')
 
-  // Filter button clicks
+  // Checkbox filter changes
+  document.addEventListener('change', (e) => {
+    const input = (e.target as Element).closest<HTMLInputElement>('input[data-filter-key]')
+    if (input) toggleFilter(input.dataset.filterKey!, input.dataset.filterValue!)
+  })
+
+  // Reset + view/filter panel toggles
   document.addEventListener('click', (e) => {
     const target = e.target as Element
 
@@ -124,16 +136,8 @@ export function initProductFilter(): void {
       return
     }
 
-    const btn = target.closest<HTMLButtonElement>('[data-filter-key]')
-    if (btn) {
-      toggleFilter(btn.dataset.filterKey!, btn.dataset.filterValue!)
-      return
-    }
-
-    const reset = target.closest('[data-filter-reset]')
-    if (reset) resetFilters()
+    if (target.closest('[data-filter-reset]')) resetFilters()
   })
 
-  // Handle browser back/forward
   window.addEventListener('popstate', () => applyState(parseFilterState()))
 }

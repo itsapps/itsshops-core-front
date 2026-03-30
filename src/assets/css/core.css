@@ -1,0 +1,29 @@
+/* ─── itsshops-core-front: base structural styles ────────────────────────────
+ *
+ * Import this file in your global.css:
+ *   @import '@itsapps/itsshops-core-front/dist/core.css';
+ *
+ * These styles are functionally required by core templates.
+ * Override any class in your own CSS as needed.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+
+/* ─── Skip link ──────────────────────────────────────────────────────────────
+ * Used in layouts/base.njk. Visually hidden until focused by keyboard.
+ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}

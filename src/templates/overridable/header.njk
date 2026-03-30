@@ -4,7 +4,7 @@
   <div class="site-header__inner">
 
     {# ── Logo ──────────────────────────────────────────────────────────── #}
-    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ (_settings.siteTitle | stegaClean) if _settings }}">
+    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ 'navigation.ariaGoHome' | trans }}">
       {{ _settings.siteTitle }}
     </a>
 
@@ -12,7 +12,7 @@
     <button
       type="button"
       class="site-header__menu-toggle"
-      aria-label="Toggle menu"
+      aria-label="{{ 'navigation.ariaOpenMainMenu' | trans }}"
       aria-expanded="false"
       aria-controls="site-nav"
       data-menu-toggle
@@ -24,12 +24,14 @@
 
     {# ── Main navigation ───────────────────────────────────────────────── #}
     {% if _settings and _settings.mainMenus.length %}
-      <nav id="site-nav" class="site-nav" aria-label="Main navigation">
+      <nav id="site-nav" class="site-nav" aria-label="{{ 'navigation.mainMenu' | trans }}">
         <ul class="site-nav__list" role="list">
           {%- for _menuId in _settings.mainMenus -%}
             {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
+            {%- set _menuIdx = loop.index -%}
             {%- if _menu -%}
               {%- for item in _menu.items -%}
+                {%- set _submenuId = "site-nav-sub-" + _menuIdx + "-" + loop.index -%}
 
                 {%- if item.linkType == 'internal' and item.internal -%}
                   <li class="site-nav__item{% if item.children.length %} site-nav__item--has-children{% endif %}">
@@ -39,7 +41,13 @@
                       {{ item.internal._id | pageUrl | linkActiveState | safe }}
                     >{{ item.title }}</a>
                     {%- if item.children.length -%}
-                      <ul class="site-nav__submenu" role="list">
+                      <button
+                        type="button"
+                        class="site-nav__submenu-toggle"
+                        aria-expanded="false"
+                        aria-controls="{{ _submenuId }}"
+                      ><span class="sr-only">{{ 'navigation.ariaOpenSubmenu' | trans }}: {{ item.title }}</span></button>
+                      <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
@@ -62,9 +70,14 @@
 
                 {%- elif item.linkType == 'submenu' -%}
                   <li class="site-nav__item site-nav__item--submenu{% if item.children.length %} site-nav__item--has-children{% endif %}">
-                    <button type="button" class="site-nav__trigger" aria-expanded="false" aria-haspopup="true">{{ item.title }}</button>
+                    <button
+                      type="button"
+                      class="site-nav__trigger"
+                      aria-expanded="false"
+                      aria-controls="{{ _submenuId }}"
+                    >{{ item.title }}</button>
                     {%- if item.children.length -%}
-                      <ul class="site-nav__submenu" role="list">
+                      <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
@@ -93,7 +106,7 @@
 
       {%- if coreConfig.locales.length > 1 -%}
         {%- set _currentId = pageDoc._id -%}
-        <nav class="locale-switcher" aria-label="Language selection">
+        <nav class="locale-switcher" aria-label="{{ 'language.ariaSelect' | trans }}">
           {%- for _l in coreConfig.locales -%}
             {%- if _l != _locale -%}
               <a
@@ -108,7 +121,7 @@
       {%- endif -%}
 
       {%- if coreConfig.features.shop.enabled -%}
-        <button type="button" class="cart-toggle" aria-label="Cart" data-cart-toggle>
+        <button type="button" class="cart-toggle" aria-label="{{ 'navigation.ariaOpenCart' | trans }}" aria-expanded="false" aria-controls="cart-sidebar" data-cart-toggle>
           <span class="cart-toggle__count" aria-hidden="true" data-cart-count>0</span>
         </button>
       {%- endif -%}

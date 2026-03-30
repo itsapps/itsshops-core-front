@@ -150,7 +150,8 @@ export function getTailwindConfig(css: Css): Config {
 
     // Disables Tailwind's reset etc
     corePlugins: {
-      preflight: false
+      preflight: false,
+      container: false,
     },
     plugins: [
       // Generates custom property values from tailwind config

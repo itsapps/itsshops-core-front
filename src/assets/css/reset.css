@@ -1,0 +1,151 @@
+/* Modern reset: https://piccalil.li/blog/a-modern-css-reset/ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+
+/* html {
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  scroll-behavior: smooth;
+  overflow-y: scroll;
+} */
+
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+[role='list'] {
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  text-decoration-skip-ink: auto;
+  color: currentColor;
+}
+
+picture,
+img {
+  max-inline-size: 100%;
+  block-size: auto;
+  vertical-align: middle;
+  font-style: italic;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+picture {
+  display: block;
+}
+
+button {
+  all: unset;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+textarea {
+  resize: vertical;
+  resize: block;
+}
+
+textarea:not([rows]) {
+  min-height: 10em;
+}
+
+button,
+label,
+select,
+summary,
+[role='button'],
+[role='option'] {
+  cursor: pointer;
+}
+
+:target {
+  scroll-margin-block-start: 2ex;
+}
+
+:focus {
+  scroll-margin-block-end: 8vh;
+}
+
+dialog {
+  border: none;
+  background: none;
+  inset: unset;
+  max-width: unset;
+  max-height: unset;
+}
+
+[popover] {
+  border: none;
+  background: none;
+  inset: unset;
+  color: inherit;
+}
+
+dialog:not([open], [popover]),
+[popover]:not(:popover-open) {
+  display: none !important;
+}
+
+html:has(dialog[open]:modal) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  ::after,
+  ::before {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

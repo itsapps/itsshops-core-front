@@ -1,247 +1,247 @@
 export default {
-  home: {
-    welcome: "Welcome",
-    welcomeText: "... bei Fliegenfischen mit Herz",
-  },
   navigation: {
-    search: "Search",
-    toggleSearchAria: "Toggle Search",
-    goHome: "Go Home",
+    goHome: "Go to Homepage",
+    ariaGoHome: "Go to Homepage",
+    mainMenu: "Main menu",
+    openMainMenu: "Main menu",
+    ariaOpenMainMenu: "Open main menu",
+    closeMainMenu: "Close",
+    ariaCloseMainMenu: "Close main menu",
+    openSubmenu: "Submenu",
+    ariaOpenSubmenu: "Open submenu",
+    openCart: "Cart",
+    ariaOpenCart: "Go to cart",
   },
-  general: {
-    retry: "Retry",
-    back: 'Back',
-    skipText: 'Jump to main content',
-    toc: 'Table of contents',
-    skipToc: 'Skip table of contents',
-    isLoading: 'Loading',
-    registerNew: 'Register here',
-    register: 'Register',
-    loginHeadline: 'Login',
-    closeLogin: 'Close Login',
-    login: 'Login',
-    logout: 'Logout',
-    loggingIn: 'Login ...',
-    loggingOut: 'Logout ...',
-    goToLogin: '',
-    forgotPassword: 'Forgotten your password?',
-    areYouNew: 'Are you new here?',
-    serviceError: {
-      title: 'Service Error',
-      contactSupport: 'Send email to support',
-    },
+  language: {
+    select: "Select language",
+    ariaSelect: "Select language",
+    change: "Change language",
+    ariaChange: "Change language",
   },
-  customerCenter: {
-    title: "Customer Centre",
-    ariaCloseCustomerCenter: "Close Customer Centre",
-    yourOrders: "Your Orders",
-  },
-  search: {
-    products: "Products",
-    categories: "Categories",
-    manufacturers: "Manufacturers",
-    closeSearchAria: "Close Search",
-    retrySearchAria: "Retry loading Search",
-    inputPlaceholder: "Search Products",
-  },
-  menus: {
-    main: {
-      label: "Main Menu",
-      ariaLabel: "Main",
-      open: "Open Menu",
-      close: "Close Menu",
-      all: "All",
-    },
-    footer: {
-      ariaLabel: "Footer"
-    },
-    language: {
-      select: "Select language",
-      change: "Change language"
-    }
-  },
-  footer: {
-    contact: "Contact",
-  },
-  user: {
+  skipLink: {
+    title: 'Skip to main content',
   },
   cart: {
-    menu: "Bag",
-    cart: "Cart",
-    open: "Go to Cart",
-    close: "Close Cart",
-    empty: "Your Cart is empty.",
-    ariaQuantity: "Quantity",
-    ariaRemoveProduct: "Remove from Cart",
-    removeProduct: "Remove",
-    subtotal: "Subtotal",
-    tax: "Included Tax",
-    shipping: "Shipping",
-    discount: "Discount",
+    ariaMain: "Shopping cart",
+    title: "Shopping cart",
+    close: "Close",
+    ariaClose: "Close shopping cart",
+    empty: "Your cart is empty.",
     total: "Total",
-    toCheckout: "Checkout",
-    itemsChanged: "Cart has changed",
-    productRemoved: "Product not listed anymore",
-    ariaRemoveVoucher: "Remove Voucher",
-    ariaEnableVoucher: "Activate Voucher",
-    ariaDisableVoucher: "Deactivate Voucher",
-    vouchers: "Vouchers",
-    addVoucher: "Add Voucher",
-    addVoucherLoading: "Adding Voucher...",
+    removeProduct: "Remove",
+    ariaRemoveProduct: "Remove from cart",
     counter: {
       decreaseQuantity: "Decrease quantity by one",
       increaseQuantity: "Increase quantity by one",
       manuallySetQuantity: "Manually enter quantity",
     },
-  },
-  orders: {
-    empty: "You have no orders yet.",
-    detailsHeader: "Order details",
-    orderNumber: "Order number",
-    orderDate: "Date",
-    orderStatus: "Status",
-  },
-  checkout: {
-    sections: {
-      contact: "Contact",
-      delivery: "Delivery",
-      payment: "Payment",
-      shippingMethod: "Shipping method",
-    },
-    voucherPlaceholder: "Enter voucher code",
+    toCheckout: "Proceed to checkout",
+
+    // ariaQuantity: "Quantity",
+    // subtotal: "Subtotal",
+    // tax: "Tax included",
+    // shipping: "Shipping",
+    // discount: "Discount",
+    // itemsChanged: "The cart has changed",
+    // productRemoved: "Product no longer available",
+    // ariaRemoveVoucher: "Remove voucher",
+    // ariaEnableVoucher: "Enable voucher",
+    // ariaDisableVoucher: "Disable voucher",
+    // vouchers: "Vouchers",
+    // addVoucher: "Add voucher",
+    // addVoucherLoading: "Adding voucher...",
+
   },
   product: {
-    description: "Description",
-    allProducts: "All Products",
-    randomProducts: "Random products",
-    relatedProducts: "Related products",
-    otherProducts: "Other products",
-    categories: "Categories",
-    variants: "Variants",
     taxShippingInfoText: "Incl. VAT / Excl. shipping costs",
     cartButton: {
       addToCart: "Add to cart",
-      addedToCart: "Added to cart",
+      addedToCart: "In cart",
       addToCartShort: "Add",
       addedToCartShort: "Added",
     },
     states: {
-      soldOut:   "Sold out",
+      active:  "Available",
       comingSoon: "Coming soon",
+      soldOut:   "Sold out",
       archived:  "Unavailable",
     },
-    stock: "Availability",
-    shippingDuration: "Shipping duration: 2-3 business days",
+    price: {
+      was: "Was",
+    },
+    variants: "Variants",
+    ariaVariants: "Product variants",
     wine: {
       volume:          "Volume",
       vintage:         "Vintage",
-      color:           "Color",
+      color:           "Colour",
       type:            "Type",
       alcohol:         "Alcohol",
       tartaricAcid:    "Total acidity",
-      freeSulfur:      "Free sulfur",
-      totalSulfur:     "Total sulfur",
+      freeSulfur:      "Free sulphur",
+      totalSulfur:     "Total sulphur",
       phValue:         "pH value",
       histamine:       "Histamine",
-      varietals:       "Varietals",
+      varietals:       "Grape variety",
       classifications: "Classification",
       terroir:         "Region",
-      soils:           "Soils",
+      soils:           "Soil",
       awards:          "Awards",
-    },
-  },
-  products: {
-    loop: {
-      ariaLabel: "Products",
-    },
-  },
-  categories: {
-    subCategories: {
-      ariaLabel: "Subcategories",
-    },
-    products: "Products",
-  },
-  dynamicPages: {
-    products: {
-      path: "products"
-    },
-    categories: {
-      path: "categories"
-    },
-    blogPosts: {
-      path: "blog",
-      title: "Blog",
-      page: "page",
-      pagination: {
-        page: "Page {{page}}",
+      factsheet: {
+        pdfUrl: "Factsheet (PDF)",
       },
     },
-    blogPost: {
-      path: "blog"
+    allProducts: "All products",
+
+    // description: "Description",
+    // randomProducts: "Random products",
+    // relatedProducts: "Related products",
+    // otherProducts: "Other products",
+    // categories: "Categories",
+    // stock: "Availability",
+    // shippingDuration: "Delivery time: 2-3 business days",
+  },
+  filters: {
+    vintage: "Vintage",
+    varietal: "Grape variety",
+    color: "Colour",
+    classification: "Classification",
+    reset: "Reset filters",
+    showResults: "Show results",
+    results: "{count} products",
+  },
+  categories: {
+    title: "Shop-Categories",
+    ariaTitle: "Shop-Categories",
+  },
+  products: {
+    title: "Products",
+    ariaTitle: "Products",
+    view: {
+      list: 'List',
+      grid: 'Grid',
     },
   },
+
+  // general: {
+  //   retry: "Try again",
+  //   back: 'Back',
+  //   skipText: 'Skip to main content',
+  //   toc: 'Table of contents',
+  //   skipToc: 'Skip table of contents',
+  //   isLoading: 'Loading',
+  //   registerNew: 'Register new',
+  //   register: 'Register',
+  //   loginHeadline: 'Login',
+  //   closeLogin: 'Close login',
+  //   login: 'Log in',
+  //   logout: 'Log out',
+  //   loggingIn: 'Logging in ...',
+  //   loggingOut: 'Logging out ...',
+  //   goToLogin: 'Go to login',
+  //   forgotPassword: 'Forgot password?',
+  //   areYouNew: 'New here?',
+  //   serviceError: {
+  //     title: 'Service error',
+  //     contactSupport: 'Email support',
+  //   },
+  // },
+  // customerCenter: {
+  //   title: "Customer centre",
+  //   ariaCloseCustomerCenter: "Close customer centre",
+  //   yourOrders: "Your orders",
+  // },
+  // search: {
+  //   products: "Products",
+  //   categories: "Categories",
+  //   manufacturers: "Manufacturers",
+  //   closeSearchAria: "Close search",
+  //   retrySearchAria: "Reload search",
+  //   inputPlaceholder: "Search products",
+  // },
+  // footer: {
+  //   contact: "Contact",
+  // },
+  // user: {
+  // },
+  // orders: {
+  //   empty: "You haven't placed any orders yet.",
+  //   detailsHeader: "Order details",
+  //   orderNumber: "Order number",
+  //   orderDate: "Date",
+  //   orderStatus: "Status",
+  // },
+  // checkout: {
+  //   sections: {
+  //     contact: "Contact",
+  //     delivery: "Delivery",
+  //     payment: "Payment",
+  //     shippingMethod: "Shipping method",
+  //   },
+  //   voucherPlaceholder: "Enter voucher code",
+  // },
   staticPages: {
     errorPage: {
-      title: "I'm unable to find this page!",
-      description: "404 - I'm unable to find this page! Please try to visit the home page. Please let me know if you encounter more errors!",
-      goToHomepage: "Try to visit the <a href='/{{ url }}/'>home page!</a>",
-      contactSupport: "Please let me know if there are any other errors so I can correct them: <a href='mailto:{{ email }}'>{{ email }}</a>"
+      title: "I can't find this page!",
+      description: "404 - I can't find this page! Please try visiting the homepage. Please let me know if further errors occur!",
+      goToHomepage: "Your best bet is to try the <a href='/{{ url }}/'>homepage!</a>",
+      contactSupport: "Please let me know if further errors occur so I can fix them: <a href='mailto:{{ email }}'>{{ email }}</a>"
     },
     userLogin: {
       title: "Login",
-      description: "Login User",
+      description: "User login",
     },
     userRegistration: {
-      title: "Registration",
-      description: "Register User",
-      info: "Once you have registered, we will send you an e-mail with a link you can use to activate your account.",
+      title: "Register",
+      description: "User registration",
+      info: "After registering, we will send you an email with a link to activate your account.",
     },
     userRegistrationSuccess: {
-      title: "Thank You!",
+      title: "Thank you!",
       description: "Thanks for registering",
-      info: "You will receive your login details shortly by email. In the meantime, you can place an order with us online - the ordering process does not require a login!"
+      info: "You will receive your login details by email shortly. In the meantime, you can order online from us — the ordering process does not require a login!"
     },
     userConfirm: {
-      title: "Account Confirmation",
-      description: "Confirmation of Account",
+      title: "Confirm account",
+      description: "Account confirmation",
     },
     userConfirmSuccess: {
       title: "Welcome!",
-      description: "Account confirmed successfully",
+      description: "User successfully confirmed",
     },
     userRecover: {
-      title: "Reset Password",
-      description: "Reset Password of your account",
-      info: "Please enter the email address you used to register with us. We will send you a link which you can use to set a new password."
+      title: "Reset password",
+      description: "Reset your account password",
+      info: "Please enter the email address you used to register with us. We will then send you a link to set a new password."
     },
     userRecoverSuccess: {
       title: "Password reset",
-      description: "Password was reset successfully",
+      description: "Password has been successfully reset",
     },
     userReset: {
-      title: "Change Password",
-      description: "Change Password",
+      title: "Change password",
+      description: "Change password",
     },
     userResetSuccess: {
       title: "Great!",
-      description: "Successfully changed Password",
+      description: "Password successfully changed",
     },
     userOrders: {
       title: "Orders",
-      description: "Your Orders",
+      description: "Your orders",
     },
     orderThankYou: {
-      title: "Thanks",
-      description: "Thanks for the Order",
-      text: "Your order has been successfully placed and will be processed as soon as possible.",
+      title: "Thank you for your order!",
+      description: "Thank you for your order!",
+      text: "Your order has been received and is now being processed.",
       submit: {
-        text: "Load Order",
-        loadingText: "Order loading ...",
+        text: "Load order",
+        loadingText: "Loading order ...",
       },
     },
     checkout: {
       title: "Order",
-      description: "Pay Order",
+      description: "Pay for order",
     },
   },
   forms: {
@@ -252,15 +252,15 @@ export default {
       },
       password: {
         label: "Password",
-        errorMessage: "The Password must contain at least one number, one uppercase and lowercase letter, and at least 8 or more characters",
+        errorMessage: "The password must contain at least one number, one uppercase and one lowercase letter, and at least 8 or more characters",
         validationChecklist: {
           numbers: "At least one number",
-          length: "8 characters or more",
+          length: "8 or more characters",
           letters: "Uppercase and lowercase letters"
         }
       },
       prename: {
-        label: "First Name",
+        label: "First name",
         errorMessage: "First name must not be empty",
       },
       lastname: {
@@ -272,118 +272,110 @@ export default {
         errorMessage: "Street must not be empty",
       },
       streetnumber: {
-        label: "House Number",
+        label: "House number",
         errorMessage: "House number must not be empty",
       },
       city: {
-        label: "Place/City",
-        errorMessage: "Place/City must not be empty",
+        label: "City/Town",
+        errorMessage: "City/Town must not be empty",
       },
       zip: {
-        label: "Postcode/ZIP",
-        errorMessage: "Postcode/ZIP must not be empty",
+        label: "Postal code",
+        errorMessage: "Postal code must not be empty",
       },
       country: {
         label: "Country",
         errorMessage: "Country must not be empty",
-        none: "Choose country",
+        none: "Select country",
       },
       registerForNewsletter: {
-        label: "Register for newsletter",
+        label: "Subscribe to newsletter",
       }
     },
     userRegistration: {
       submit: {
         text: "Register",
-        loadingText: "Registering ...",
+        loadingText: "Loading ...",
       }
     },
     userRecover: {
       submit: {
-        text: "Send new password",
-        loadingText: "Laden ...",
+        text: "Reset password",
+        loadingText: "Loading ...",
       }
     },
     userReset: {
       submit: {
         text: "Reset password",
-        loadingText: "Resetting ...",
+        loadingText: "Resetting password ...",
       }
     },
     checkout: {
       submit: {
-        text: "Place order",
-        loadingText: "Placing order ...",
+        text: "Place binding order",
+        loadingText: "Loading ...",
       },
       useShippingAsBilling: "Use shipping address as billing address",
     },
   },
   userConfirm: {
     submit: {
-      text: "Confirm Account",
-      loadingText: "Confirming Account ...",
+      text: "Confirm account",
+      loadingText: "Confirming account ...",
     }
   },
   userOrders: {
     submit: {
-      text: "Load Orders",
-      loadingText: "Orders loading ...",
+      text: "Load orders",
+      loadingText: "Loading orders ...",
     }
   },
   confirmUserExpired: {
     headline: 'Sorry!',
-    text: 'The link you clicked is invalid. Either you have already activated your customer account using this link, or the activation period for this link has expired. To prevent misuse, we limit the validity of activation links for data protection reasons. However, you can request a new email with a valid activation link at any time.',
-    action: 'Request Email'
+    text: 'The link you followed is invalid. Either you have already activated your account via this link, or the activation period has expired. To prevent misuse, we limit the validity of activation links for data protection reasons. However, you can request a new email with a valid activation link at any time.',
+    action: 'Request email'
   },
   userRegistered: {
-    text: 'If your email address is saved with us, you will shortly receive an email with which you can reset your password.'
+    text: 'If the email address provided is registered with us, you will shortly receive an email with which you can reset your password.'
   },
   userConfirmed: {
-    text: 'Your customer account has been successfully activated. Have fun shopping!'
+    text: 'Your account has been successfully activated. Enjoy shopping!'
   },
   userResetSuccess: {
-    text: 'Your password has been successfully updated. Have fun shopping!'
+    text: 'Your password has been successfully changed. Enjoy shopping!'
   },
   cookies: {
-    title: "Cookie Consent",
+    title: "Cookie consent",
     close: "Close",
-    description: "We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking \"Accept All\", you consent to our use of cookies. You can manage your preferences below.",
-    privacyPolicy: "Privacy Policy",
+    description: "We use cookies to improve your browsing experience, provide personalised advertising or content, and analyse our traffic. By clicking \"Accept all\", you consent to our use of cookies. You can manage your preferences below.",
+    privacyPolicy: "Privacy policy",
     essential: {
-      title: "Essential Cookies",
+      title: "Essential cookies",
       required: "Required",
       description: "These cookies are necessary for the website to function properly and cannot be disabled.",
       accessToken: "Stores your authentication token for secure login",
-      refreshToken: "Refreshes your authentication to keep you logged in",
-      cart: "Maintains your shopping cart across sessions",
+      refreshToken: "Renews your authentication to keep you logged in",
+      cart: "Keeps your shopping cart across sessions",
       stripe: "Required for secure payment processing",
     },
     analytics: {
-      title: "Analytics Cookies",
-      description: "We use Google Analytics to analyze how you use our website and to improve it. The data collected is processed anonymously. You can choose to accept or reject Analytics cookies. For more information, see our {{ privacyPolicy }}.",
-      cookiePolicy: "Cookie Policy",
+      title: "Analytics cookies",
+      description: "We use Google Analytics to analyse and improve the use of our website. The data collected is processed anonymously. You can accept or decline the use of analytics cookies. More information can be found in our {{ privacyPolicy }}.",
+      cookiePolicy: "Cookie policy",
     },
     marketing: {
-      title: "Marketing Cookies",
-      description: "These cookies allow us to show you personalized ads and track marketing campaign performance. You can disable these without affecting website functionality.",
+      title: "Marketing cookies",
+      description: "These cookies allow us to show you personalised ads and track the performance of marketing campaigns. You can disable these without affecting website functionality.",
     },
     actions: {
-      rejectAll: "Reject All",
-      acceptAll: "Accept All",
-      savePreferences: "Save Preferences",
+      rejectAll: "Reject all",
+      acceptAll: "Accept all",
+      savePreferences: "Save preferences",
       settings: "Settings",
     },
     editButton: "Cookies",
     settings: {
-      title: "Cookie Settings",
+      title: "Cookie settings",
     }
-  },
-  filters: {
-    vintage: "Vintage",
-    varietal: "Varietal",
-    color: "Color",
-    classification: "Classification",
-    reset: "Reset filters",
-    showResults: "Show results",
   },
 };

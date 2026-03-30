@@ -16,7 +16,9 @@
 {% macro productPrice(product, class="product-price") %}
 <div class="{{ class }}">
   {%- if product.compareAtPrice %}
-    <s class="{{ class }}__compare">{{ product.compareAtPrice | formatPrice(product.locale) }}</s>
+    <s class="{{ class }}__compare">
+      <span class="sr-only">{{ 'product.price.was' | trans }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
+    </s>
   {%- endif %}
   <span class="{{ class }}__amount">{{ product.price | formatPrice(product.locale) }}</span>
 </div>
@@ -47,17 +49,16 @@
  #}
 {% macro productSiblings(product, class="product-siblings") %}
 {%- if product.siblings.length %}
-  <nav class="{{ class }}" aria-label="{{ 'product.variants' | trans }}">
+  <nav class="{{ class }}" aria-label="{{ 'product.ariaVariants' | trans }}">
     <a
       class="{{ class }}__item {{ class }}__item--current"
       href="{{ product.url }}"
-      aria-current="true"
+      aria-current="page"
     >{{ product.label }}</a>
     {%- for sibling in product.siblings %}
       <a
         class="{{ class }}__item{% if sibling.status != 'active' %} {{ class }}__item--unavailable{% endif %}"
         href="{{ sibling.url }}"
-        aria-current="false"
       >{{ sibling.label }}</a>
     {%- endfor %}
   </nav>

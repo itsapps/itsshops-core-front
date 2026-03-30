@@ -1,0 +1,48 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- if page.url != cms[_locale].checkoutUrl -%}
+<div
+  class="cart-sidebar"
+  id="cart-sidebar"
+  aria-hidden="true"
+  aria-label="{{ 'cart.ariaMain' | trans }}"
+  role="region"
+  tabindex="-1"
+  data-cart-sidebar
+  data-currency="{{ coreConfig.units.price.currency }}"
+  {%- if coreConfig.units.price.currencyLabel %} data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+  data-t-remove="{{ 'cart.ariaRemoveProduct' | trans }}"
+  data-t-decrease="{{ 'cart.counter.decreaseQuantity' | trans }}"
+  data-t-increase="{{ 'cart.counter.increaseQuantity' | trans }}"
+  data-t-manuallySetQuantity="{{ 'cart.counter.manuallySetQuantity' | trans }}"
+  data-cart-image-width="{{ imageSizes.cart.sizes[0][0] }}" data-cart-image-height="{{ imageSizes.cart.sizes[0][1] }}"
+>
+  <div class="cart-sidebar__inner">
+
+    <div class="cart-sidebar__header">
+      <h2 class="cart-sidebar__title">{{ 'cart.title' | trans }}</h2>
+      <button
+        type="button"
+        class="cart-sidebar__close"
+        aria-label="{{ 'cart.ariaClose' | trans }}"
+        data-cart-close
+      >{% block cart_close_icon %}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>{% endblock %}</button>
+    </div>
+
+    <div class="cart-sidebar__items" data-cart-items>
+      <p class="cart-sidebar__empty" data-cart-empty>{{ 'cart.empty' | trans }}</p>
+    </div>
+
+    <div class="cart-sidebar__footer">
+      <div class="cart-sidebar__total-row">
+        <span class="cart-sidebar__total-label">{{ 'cart.total' | trans }}</span>
+        <span class="cart-sidebar__total-amount" data-cart-total></span>
+      </div>
+      <a href="{{ cms[_locale].checkoutUrl }}" class="cart-sidebar__checkout" data-cart-checkout-link>
+        {{ 'cart.toCheckout' | trans }}
+      </a>
+    </div>
+
+  </div>
+</div>
+<div class="cart-overlay" data-cart-overlay aria-hidden="true"></div>
+{%- endif -%}

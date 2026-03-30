@@ -258,4 +258,9 @@ export const imageSizes = {
     sizes: [[1200, null], [800, null]] as [number, null][],
     widths: '(min-width: 60rem) 50vw, 100vw',
   },
+  /** Cart sidebar item thumbnail, 1:1 square */
+  cart: {
+    sizes: [[80, 80]] as [number, number][],
+    widths: '80px',
+  },
 } satisfies Record<string, PictureSize>

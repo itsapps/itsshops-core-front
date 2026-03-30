@@ -1,123 +1,58 @@
 export default {
-  home: {
-    welcome: "Willkommen",
-    welcomeText: "... bei Fliegenfischen mit Herz",
-  },
   navigation: {
-    search: "Suche",
-    toggleSearchAria: "Suche ein-/ausblenden",
     goHome: "Zur Startseite",
+    ariaGoHome: "Zur Startseite",
+    mainMenu: "Hauptmenü",
+    openMainMenu: "Hauptmenü",
+    ariaOpenMainMenu: "Hauptmenü öffnen",
+    closeMainMenu: "Schließen",
+    ariaCloseMainMenu: "Hauptmenü schließen",
+    openSubmenu: "Untermenü",
+    ariaOpenSubmenu: "Untermenü öffnen",
+    openCart: "Warenkorb",
+    ariaOpenCart: "Zum Warenkorb",
   },
-  general: {
-    retry: "Erneut versuchen",
-    back: 'Zurück',
-    skipText: 'Zum Hauptinhalt springen',
-    toc: 'Inhaltsverzeichnis',
-    skipToc: 'Inhaltsverzeichnis überspringen',
-    isLoading: 'Wird geladen',
-    registerNew: 'Neu registrieren',
-    register: 'Registrieren',
-    loginHeadline: 'Anmeldung',
-    closeLogin: 'Anmeldung schließen',
-    login: 'Anmelden',
-    logout: 'Abmelden',
-    loggingIn: 'Anmelden ...',
-    loggingOut: 'Abmelden ...',
-    goToLogin: 'Zur Anmeldung',
-    forgotPassword: 'Passwort vergessen?',
-    areYouNew: 'Neu hier?',
-    serviceError: {
-      title: 'Servicefehler',
-      contactSupport: 'Email an Support schicken',
-    },
+  language: {
+    select: "Sprache wählen",
+    ariaSelect: "Sprache wählen",
+    change: "Sprache ändern",
+    ariaChange: "Sprache ändern",
   },
-  customerCenter: {
-    title: "Kundencenter",
-    ariaCloseCustomerCenter: "Kundencenter schließen",
-    yourOrders: "Deine Bestellungen",
-  },
-  search: {
-    products: "Produkte",
-    categories: "Kategorien",
-    manufacturers: "Hersteller",
-    closeSearchAria: "Suche schließen",
-    retrySearchAria: "Suche nochmals laden",
-    inputPlaceholder: "Produkte suchen",
-  },
-  menus: {
-    main: {
-      label: "Hauptmenü",
-      ariaLabel: "Haupt",
-      open: "Menü öffnen",
-      close: "Menü schließen",
-      all: "Alle",
-    },
-    footer: {
-      ariaLabel: "Fusszeile"
-    },
-    language: {
-      select: "Sprache wählen",
-      change: "Sprache ändern"
-    }
-  },
-  footer: {
-    contact: "Kontakt",
-  },
-  user: {
+  skipLink: {
+    title: 'Zum Hauptinhalt springen',
   },
   cart: {
-    menu: "Bag",
-    cart: "Warenkorb",
-    open: "Zum Warenkorb",
-    close: "Warenkorb schließen",
+    ariaMain: "Warenkorb",
+    title: "Warenkorb",
+    close: "Schließen",
+    ariaClose: "Warenkorb schließen",
     empty: "Dein Warenkorb ist leer.",
-    ariaQuantity: "Menge",
-    ariaRemoveProduct: "Aus dem Warenkorb löschen",
-    removeProduct: "Löschen",
-    subtotal: "Zwischensumme",
-    tax: "Inkludierte Steuern",
-    shipping: "Versand",
-    discount: "Ermäßigung",
     total: "Gesamtsumme",
-    toCheckout: "Zur Kasse",
-    itemsChanged: "Der Warenkorb hat sich geändert",
-    productRemoved: "Produkt nicht mehr im Sortiment",
-    ariaRemoveVoucher: "Gutschein löschen",
-    ariaEnableVoucher: "Gutschein aktivieren",
-    ariaDisableVoucher: "Gutschein deaktivieren",
-    vouchers: "Gutscheine",
-    addVoucher: "Gutschein hinzufügen",
-    addVoucherLoading: "Gutschein wird hinzugefügt...",
+    removeProduct: "Löschen",
+    ariaRemoveProduct: "Aus dem Warenkorb löschen",
     counter: {
       decreaseQuantity: "Menge um eins verringern",
       increaseQuantity: "Menge um eins erhöhen",
       manuallySetQuantity: "Menge manuell eingeben",
-    }
-  },
-  orders: {
-    empty: "Du hast noch keine Bestellungen gemacht.",
-    detailsHeader: "Bestelldetails",
-    orderNumber: "Bestellnummer",
-    orderDate: "Datum",
-    orderStatus: "Status",
-  },
-  checkout: {
-    sections: {
-      contact: "Kontakt",
-      delivery: "Lieferung",
-      payment: "Zahlung",
-      shippingMethod: "Versandart",
     },
-    voucherPlaceholder: "Gutscheincode eingeben",
+    toCheckout: "Zur Kasse",
+
+    // ariaQuantity: "Menge",
+    // subtotal: "Zwischensumme",
+    // tax: "Inkludierte Steuern",
+    // shipping: "Versand",
+    // discount: "Ermäßigung",
+    // itemsChanged: "Der Warenkorb hat sich geändert",
+    // productRemoved: "Produkt nicht mehr im Sortiment",
+    // ariaRemoveVoucher: "Gutschein löschen",
+    // ariaEnableVoucher: "Gutschein aktivieren",
+    // ariaDisableVoucher: "Gutschein deaktivieren",
+    // vouchers: "Gutscheine",
+    // addVoucher: "Gutschein hinzufügen",
+    // addVoucherLoading: "Gutschein wird hinzugefügt...",
+    
   },
   product: {
-    description: "Beschreibung",
-    allProducts: "Alle Produkte",
-    randomProducts: "Zufällige Produkte",
-    relatedProducts: "Ähnliche Produkte",
-    otherProducts: "Andere Produkte",
-    categories: "Kategorien",
-    variants: "Varianten",
     taxShippingInfoText: "Inkl. MwSt. / Exkl. Versandkosten",
     cartButton: {
       addToCart: "In den Warenkorb",
@@ -126,12 +61,16 @@ export default {
       addedToCartShort: "Hinzugefügt",
     },
     states: {
-      soldOut:   "Ausverkauft",
+      active:  "Verfügbar",
       comingSoon: "Demnächst",
+      soldOut:   "Ausverkauft",
       archived:  "Nicht verfügbar",
     },
-    stock: "Verfügbarkeit",
-    shippingDuration: "Lieferzeit: 2-3 Werktage",
+    price: {
+      was: "War",
+    },
+    variants: "Varianten",
+    ariaVariants: "Produktvarianten",
     wine: {
       volume:          "Inhalt",
       vintage:         "Jahrgang",
@@ -148,38 +87,99 @@ export default {
       terroir:         "Gebiet",
       soils:           "Boden",
       awards:          "Auszeichnungen",
-    },
-  },
-  products: {
-    loop: {
-      ariaLabel: "Produkte",
-    },
-  },
-  categories: {
-    subCategories: {
-      ariaLabel: "Unterkategorien",
-    },
-    products: "Produkte",
-  },
-  dynamicPages: {
-    products: {
-      path: "produkte"
-    },
-    categories: {
-      path: "kategorien"
-    },
-    blogPosts: {
-      path: "blog",
-      title: "Blog",
-      page: "seite",
-      pagination: {
-        page: "Seite {{page}}",
+      factsheet: {
+        pdfUrl: "Factsheet (PDF)",
       },
     },
-    blogPost: {
-      path: "blog"
+    allProducts: "Alle Produkte",
+
+    // description: "Beschreibung",
+    // randomProducts: "Zufällige Produkte",
+    // relatedProducts: "Ähnliche Produkte",
+    // otherProducts: "Andere Produkte",
+    // categories: "Kategorien",
+    // stock: "Verfügbarkeit",
+    // shippingDuration: "Lieferzeit: 2-3 Werktage",
+  },
+  filters: {
+    vintage: "Jahrgang",
+    varietal: "Rebsorte",
+    color: "Farbe",
+    classification: "Klassifikation",
+    reset: "Filter zurücksetzen",
+    showResults: "Ergebnisse anzeigen",
+    results: "{count} Produkte",
+  },
+  categories: {
+    title: "Shop-Kategorien",
+    ariaTitle: "Shop-Kategorien",
+  },
+  products: {
+    title: "Produkte",
+    ariaTitle: "Produkte",
+    view: {
+      list: 'Liste',
+      grid: 'Kacheln',
     },
   },
+
+  // general: {
+  //   retry: "Erneut versuchen",
+  //   back: 'Zurück',
+  //   skipText: 'Zum Hauptinhalt springen',
+  //   toc: 'Inhaltsverzeichnis',
+  //   skipToc: 'Inhaltsverzeichnis überspringen',
+  //   isLoading: 'Wird geladen',
+  //   registerNew: 'Neu registrieren',
+  //   register: 'Registrieren',
+  //   loginHeadline: 'Anmeldung',
+  //   closeLogin: 'Anmeldung schließen',
+  //   login: 'Anmelden',
+  //   logout: 'Abmelden',
+  //   loggingIn: 'Anmelden ...',
+  //   loggingOut: 'Abmelden ...',
+  //   goToLogin: 'Zur Anmeldung',
+  //   forgotPassword: 'Passwort vergessen?',
+  //   areYouNew: 'Neu hier?',
+  //   serviceError: {
+  //     title: 'Servicefehler',
+  //     contactSupport: 'Email an Support schicken',
+  //   },
+  // },
+  // customerCenter: {
+  //   title: "Kundencenter",
+  //   ariaCloseCustomerCenter: "Kundencenter schließen",
+  //   yourOrders: "Deine Bestellungen",
+  // },
+  // search: {
+  //   products: "Produkte",
+  //   categories: "Kategorien",
+  //   manufacturers: "Hersteller",
+  //   closeSearchAria: "Suche schließen",
+  //   retrySearchAria: "Suche nochmals laden",
+  //   inputPlaceholder: "Produkte suchen",
+  // },
+  // footer: {
+  //   contact: "Kontakt",
+  // },
+  // user: {
+  // },
+  // orders: {
+  //   empty: "Du hast noch keine Bestellungen gemacht.",
+  //   detailsHeader: "Bestelldetails",
+  //   orderNumber: "Bestellnummer",
+  //   orderDate: "Datum",
+  //   orderStatus: "Status",
+  // },
+  // checkout: {
+  //   sections: {
+  //     contact: "Kontakt",
+  //     delivery: "Lieferung",
+  //     payment: "Zahlung",
+  //     shippingMethod: "Versandart",
+  //   },
+  //   voucherPlaceholder: "Gutscheincode eingeben",
+  // },
   staticPages: {
     errorPage: {
       title: "Ich kann diese Seite nicht finden!",
@@ -377,13 +377,5 @@ export default {
     settings: {
       title: "Cookie-Einstellungen",
     }
-  },
-  filters: {
-    vintage: "Jahrgang",
-    varietal: "Rebsorte",
-    color: "Farbe",
-    classification: "Klassifikation",
-    reset: "Filter zurücksetzen",
-    showResults: "Ergebnisse anzeigen",
   },
 };
