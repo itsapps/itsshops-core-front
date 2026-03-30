@@ -12,7 +12,7 @@
     <div class="embla-thumbs__container">
       {%- for img in _images -%}
         <div class="embla-thumbs__slide{% if loop.first %} embla-thumbs__slide--selected{% endif %}">
-          <button type="button" class="embla-thumbs__slide__number">
+          <button type="button" class="embla-thumbs__slide__number" aria-label="{{ 'gallery.thumbnail' | trans }} {{ loop.index }}">
             {% image img, _galleryThumbSize, { loading: ('eager' if loop.index0 < 4 else 'lazy') } %}
           </button>
         </div>

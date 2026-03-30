@@ -17,7 +17,7 @@ export function createTranslator(config: CoreConfig, baseTranslations: Record<st
 
   i18next.init({
     // debug: isDev,
-    saveMissing: false,//config.dev.enabled, // Only enable missing key logging in dev mode
+    saveMissing: config.debug.enabled, // Only enable missing key logging in dev mode
     fallbackLng: config.defaultLocale,
     supportedLngs: config.locales,
     // missingKeyHandler: function(lng, ns, key, fallbackValue, updateMissing, options) {

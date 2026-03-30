@@ -110,6 +110,13 @@ export default {
     showResults: "Show results",
     results: "{count} products",
   },
+  gallery: {
+    thumbnail: "Image",
+    carousel: "Image gallery",
+    slide: "Slide",
+    pause: "Pause autoplay",
+    play: "Resume autoplay",
+  },
   categories: {
     title: "Shop-Categories",
     ariaTitle: "Shop-Categories",

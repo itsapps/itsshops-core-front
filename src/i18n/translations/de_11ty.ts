@@ -110,6 +110,13 @@ export default {
     showResults: "Ergebnisse anzeigen",
     results: "{count} Produkte",
   },
+  gallery: {
+    thumbnail: "Bild",
+    carousel: "Bildergalerie",
+    slide: "Bild",
+    pause: "Automatisches Abspielen pausieren",
+    play: "Automatisches Abspielen fortsetzen",
+  },
   categories: {
     title: "Shop-Kategorien",
     ariaTitle: "Shop-Kategorien",

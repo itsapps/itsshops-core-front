@@ -27,3 +27,26 @@
 .skip-link:focus {
   top: 1rem;
 }
+
+
+/* ─── Carousel pause/play button ────────────────────────────────────────────
+ * Structural positioning only. Override colors/size in customer CSS.
+ */
+.carousel {
+  position: relative;
+}
+
+.carousel__pause {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.carousel__pause svg[hidden] {
+  display: none;
+}
