@@ -115,10 +115,14 @@ program
     const root = process.cwd();
     console.log(`🛠️  Running: netlify dev\n`);
 
-    const child = spawn('netlify', ['dev'], { 
-      stdio: 'inherit', 
+    const child = spawn('netlify', ['dev'], {
+      stdio: 'inherit',
       shell: true,
       cwd: root,
+      env: {
+        ...process.env,
+        URL: process.env.URL || 'http://localhost:8888',
+      },
     });
 
     child.on('error', (err) => {
