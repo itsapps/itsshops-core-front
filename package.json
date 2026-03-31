@@ -16,6 +16,14 @@
       "types": "./dist/preview.d.ts",
       "import": "./dist/preview.js"
     },
+    "./functions/payment-create": {
+      "types": "./dist/payment-create.d.ts",
+      "import": "./dist/payment-create.js"
+    },
+    "./functions/payment-webhooks": {
+      "types": "./dist/payment-webhooks.d.ts",
+      "import": "./dist/payment-webhooks.js"
+    },
     "./scripts": {
       "import": "./dist/scripts/index.ts"
     },
@@ -34,6 +42,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch & node scripts/watch-templates.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepare": "npm run build"
   },
   "simple-git-hooks": {
@@ -48,6 +58,7 @@
     "@sanity/client": "^7.14.1",
     "@sanity/image-url": "^2.0.3",
     "@sindresorhus/slugify": "^3.0.0",
+    "@stripe/stripe-js": "^9.0.1",
     "autoprefixer": "^10.4.27",
     "commander": "^14.0.2",
     "countries-list": "^3.3.0",
@@ -71,6 +82,7 @@
     "postcss-js": "^5.0.3",
     "postcss-load-config": "6.0.1",
     "postcss-nesting": "^13.0.1",
+    "stripe": "^21.0.1",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.21.0"
   },
@@ -84,6 +96,7 @@
     "11ty.ts": "^0.0.7",
     "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
   }
 }

@@ -1,5 +1,113 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
-<article class="region wrapper flow">
+<article class="checkout region wrapper">
   <h1>{{ 'staticPages.checkout.title' | trans }}</h1>
-  <div id="checkout" data-checkout></div>
+
+  <div
+    id="checkout"
+    data-checkout
+    data-checkout-api="/api/payment/create"
+    data-stripe-key="{{ coreConfig.stripe.publishableApiKey }}"
+    data-return-url="{{ coreConfig.baseUrl }}{{ cms[_locale].checkoutUrl }}{{ coreConfig.resolvedPermalinks[_locale].orderThanks }}/"
+    data-currency="{{ coreConfig.units.price.currency | default('EUR') | upper }}"
+    {% if coreConfig.units.price.currencyLabel %}data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+  >
+    {# Loading state #}
+    <div data-checkout-loading class="checkout__loading" aria-live="polite">
+      {{ 'checkout.loading' | trans }}
+    </div>
+
+    {# Global error #}
+    <div data-checkout-error-global class="checkout__error" role="alert" hidden></div>
+
+    <form data-checkout-form class="checkout__form" novalidate>
+      <div class="checkout__columns">
+        {# ── Left column: form fields ──────────────────────────────────── #}
+        <div class="checkout__fields">
+
+          {# Contact #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.contact' | trans }}</legend>
+            <div class="checkout__field">
+              <label for="checkout-email">{{ 'forms.fields.email.label' | trans }}</label>
+              <input type="email" id="checkout-email" name="contactEmail" required autocomplete="email">
+              <span data-checkout-error="contactEmail" class="checkout__field-error"></span>
+            </div>
+          </fieldset>
+
+          {# Shipping address #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.delivery' | trans }}</legend>
+            <div class="checkout__field-row">
+              <div class="checkout__field">
+                <label for="checkout-prename">{{ 'forms.fields.prename.label' | trans }}</label>
+                <input type="text" id="checkout-prename" name="shipping.prename" required autocomplete="given-name">
+                <span data-checkout-error="shipping.prename" class="checkout__field-error"></span>
+              </div>
+              <div class="checkout__field">
+                <label for="checkout-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
+                <input type="text" id="checkout-lastname" name="shipping.lastname" required autocomplete="family-name">
+                <span data-checkout-error="shipping.lastname" class="checkout__field-error"></span>
+              </div>
+            </div>
+            <div class="checkout__field">
+              <input type="hidden" name="shipping.name" value="">
+              <label for="checkout-line1">{{ 'forms.fields.street.label' | trans }}</label>
+              <input type="text" id="checkout-line1" name="shipping.line1" required autocomplete="address-line1">
+              <span data-checkout-error="shipping.line1" class="checkout__field-error"></span>
+            </div>
+            <div class="checkout__field-row">
+              <div class="checkout__field checkout__field--zip">
+                <label for="checkout-zip">{{ 'forms.fields.zip.label' | trans }}</label>
+                <input type="text" id="checkout-zip" name="shipping.zip" required autocomplete="postal-code">
+                <span data-checkout-error="shipping.zip" class="checkout__field-error"></span>
+              </div>
+              <div class="checkout__field">
+                <label for="checkout-city">{{ 'forms.fields.city.label' | trans }}</label>
+                <input type="text" id="checkout-city" name="shipping.city" required autocomplete="address-level2">
+                <span data-checkout-error="shipping.city" class="checkout__field-error"></span>
+              </div>
+            </div>
+            <div class="checkout__field">
+              <label for="checkout-country">{{ 'forms.fields.country.label' | trans }}</label>
+              <select id="checkout-country" name="shipping.country" data-checkout-country required autocomplete="country">
+                <option value="">{{ 'forms.fields.country.none' | trans }}</option>
+              </select>
+              <span data-checkout-error="shipping.country" class="checkout__field-error"></span>
+            </div>
+          </fieldset>
+
+          {# Billing toggle + address #}
+          <fieldset class="checkout__section">
+            <label class="checkout__checkbox">
+              <input type="checkbox" data-checkout-same-billing checked>
+              {{ 'forms.checkout.useShippingAsBilling' | trans }}
+            </label>
+          </fieldset>
+
+          {# Shipping method #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.shippingMethod' | trans }}</legend>
+            <div data-checkout-shipping class="checkout-shipping"></div>
+          </fieldset>
+
+          {# Payment #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.payment' | trans }}</legend>
+            <div data-checkout-payment class="checkout-payment"></div>
+          </fieldset>
+
+          <button type="submit" data-checkout-submit class="checkout__submit btn">
+            {{ 'forms.checkout.submit.text' | trans }}
+          </button>
+        </div>
+
+        {# ── Right column: order summary ───────────────────────────────── #}
+        <aside class="checkout__summary">
+          <h2>{{ 'checkout.sections.summary' | trans }}</h2>
+          <div data-checkout-items class="checkout-items"></div>
+          <div data-checkout-totals class="checkout-totals"></div>
+        </aside>
+      </div>
+    </form>
+  </div>
 </article>

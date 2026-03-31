@@ -9,6 +9,8 @@ export default defineConfig({
     index: 'src/index.ts',
     core: 'src/core/index.ts',
     preview: 'src/netlify/functions/preview.ts',
+    'payment-create': 'src/netlify/functions/payment-create.ts',
+    'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
   },
   format: ['esm'],
   dts: true,

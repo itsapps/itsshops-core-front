@@ -17,3 +17,7 @@ if (document.querySelector('[data-gallery]')) {
 if (document.getElementById('cart-sidebar')) {
   import('./cart-ui').then(m => m.initCart())
 }
+
+if (document.querySelector('[data-checkout]')) {
+  import('./checkout').then(m => m.initCheckout())
+}

@@ -178,15 +178,25 @@ export default {
   //   orderDate: "Datum",
   //   orderStatus: "Status",
   // },
-  // checkout: {
-  //   sections: {
-  //     contact: "Kontakt",
-  //     delivery: "Lieferung",
-  //     payment: "Zahlung",
-  //     shippingMethod: "Versandart",
-  //   },
-  //   voucherPlaceholder: "Gutscheincode eingeben",
-  // },
+  checkout: {
+    sections: {
+      contact: "Kontakt",
+      delivery: "Lieferung",
+      billing: "Rechnungsadresse",
+      payment: "Zahlung",
+      shippingMethod: "Versandart",
+      summary: "Zusammenfassung",
+    },
+    subtotal: "Zwischensumme",
+    shipping: "Versand",
+    total: "Gesamt",
+    freeShipping: "Kostenloser Versand",
+    cartEmpty: "Dein Warenkorb ist leer.",
+    loading: "Wird geladen...",
+    error: "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
+    itemsUnavailable: "Einige Artikel sind nicht mehr verfügbar und wurden entfernt.",
+    available: "verfügbar",
+  },
   staticPages: {
     errorPage: {
       title: "Ich kann diese Seite nicht finden!",

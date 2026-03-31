@@ -23,12 +23,10 @@ export type PortableTextExtensionContext = {
 
 export type EnvVars = {
   // Sanity
-  SANITY_PROJECT_ID:    string | undefined  // preferred name
-  SANITY_STUDIO_PROJECT: string | undefined // alias used in some projects
-  SANITY_DATASET:       string | undefined  // preferred name
-  SANITY_STUDIO_DATASET: string | undefined // alias used in some projects
-  SANITY_TOKEN:         string | undefined
-  SANITY_STUDIO_URL:    string | undefined
+  SANITY_PROJECT_ID:  string | undefined
+  SANITY_DATASET:     string | undefined
+  SANITY_TOKEN:       string | undefined
+  SANITY_STUDIO_URL:  string | undefined
 
   // Deployment
   URL: string | undefined  // Netlify: production URL

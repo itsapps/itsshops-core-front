@@ -178,15 +178,25 @@ export default {
   //   orderDate: "Date",
   //   orderStatus: "Status",
   // },
-  // checkout: {
-  //   sections: {
-  //     contact: "Contact",
-  //     delivery: "Delivery",
-  //     payment: "Payment",
-  //     shippingMethod: "Shipping method",
-  //   },
-  //   voucherPlaceholder: "Enter voucher code",
-  // },
+  checkout: {
+    sections: {
+      contact: "Contact",
+      delivery: "Delivery",
+      billing: "Billing address",
+      payment: "Payment",
+      shippingMethod: "Shipping method",
+      summary: "Summary",
+    },
+    subtotal: "Subtotal",
+    shipping: "Shipping",
+    total: "Total",
+    freeShipping: "Free shipping",
+    cartEmpty: "Your cart is empty.",
+    loading: "Loading...",
+    error: "An error occurred. Please try again.",
+    itemsUnavailable: "Some items are no longer available and have been removed.",
+    available: "available",
+  },
   staticPages: {
     errorPage: {
       title: "I can't find this page!",
