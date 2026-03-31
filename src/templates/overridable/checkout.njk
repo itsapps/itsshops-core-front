@@ -82,6 +82,46 @@
               <input type="checkbox" data-checkout-same-billing checked>
               {{ 'forms.checkout.useShippingAsBilling' | trans }}
             </label>
+            <div data-checkout-billing-fields class="checkout__billing" hidden>
+              <legend>{{ 'checkout.sections.billing' | trans }}</legend>
+              <div class="checkout__field-row">
+                <div class="checkout__field">
+                  <label for="checkout-billing-prename">{{ 'forms.fields.prename.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-prename" name="billing.prename" autocomplete="billing given-name">
+                  <span data-checkout-error="billing.prename" class="checkout__field-error"></span>
+                </div>
+                <div class="checkout__field">
+                  <label for="checkout-billing-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-lastname" name="billing.lastname" autocomplete="billing family-name">
+                  <span data-checkout-error="billing.lastname" class="checkout__field-error"></span>
+                </div>
+              </div>
+              <div class="checkout__field">
+                <input type="hidden" name="billing.name" value="">
+                <label for="checkout-billing-line1">{{ 'forms.fields.street.label' | trans }}</label>
+                <input type="text" id="checkout-billing-line1" name="billing.line1" autocomplete="billing address-line1">
+                <span data-checkout-error="billing.line1" class="checkout__field-error"></span>
+              </div>
+              <div class="checkout__field-row">
+                <div class="checkout__field checkout__field--zip">
+                  <label for="checkout-billing-zip">{{ 'forms.fields.zip.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-zip" name="billing.zip" autocomplete="billing postal-code">
+                  <span data-checkout-error="billing.zip" class="checkout__field-error"></span>
+                </div>
+                <div class="checkout__field">
+                  <label for="checkout-billing-city">{{ 'forms.fields.city.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-city" name="billing.city" autocomplete="billing address-level2">
+                  <span data-checkout-error="billing.city" class="checkout__field-error"></span>
+                </div>
+              </div>
+              <div class="checkout__field">
+                <label for="checkout-billing-country">{{ 'forms.fields.country.label' | trans }}</label>
+                <select id="checkout-billing-country" name="billing.country" data-checkout-billing-country autocomplete="billing country">
+                  <option value="">{{ 'forms.fields.country.none' | trans }}</option>
+                </select>
+                <span data-checkout-error="billing.country" class="checkout__field-error"></span>
+              </div>
+            </div>
           </fieldset>
 
           {# Shipping method #}

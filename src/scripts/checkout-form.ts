@@ -11,10 +11,21 @@ export class CheckoutForm {
   constructor(form: HTMLFormElement) {
     this.form = form
     this.bindCountryListener()
+    this.bindBillingToggle()
   }
 
   setOnCountryChange(fn: (country: string) => void): void {
     this.onCountryChange = fn
+  }
+
+  private bindBillingToggle(): void {
+    const checkbox = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    const billingFields = this.form.querySelector<HTMLElement>('[data-checkout-billing-fields]')
+    if (!checkbox || !billingFields) return
+
+    checkbox.addEventListener('change', () => {
+      billingFields.hidden = checkbox.checked
+    })
   }
 
   private bindCountryListener(): void {

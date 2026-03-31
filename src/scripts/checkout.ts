@@ -36,6 +36,7 @@ export async function initCheckout(): Promise<void> {
   const errorEl = container.querySelector<HTMLElement>('[data-checkout-error-global]')
   const loadingEl = container.querySelector<HTMLElement>('[data-checkout-loading]')
   const countrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-country]')
+  const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
 
   if (!formEl || !itemsEl || !totalsEl || !shippingEl || !paymentEl || !submitBtn) {
     console.error('[checkout] Missing required DOM elements')
@@ -68,6 +69,9 @@ export async function initCheckout(): Promise<void> {
     quantity: item.quantity,
   }))
 
+  // Show cart items immediately from localStorage
+  summary.renderCartItems(cart)
+
   // Map cart images for display
   const cartImages = new Map(cart.map(item => [item.id, item.imageUrl]))
 
@@ -98,16 +102,21 @@ export async function initCheckout(): Promise<void> {
     }
   }
 
-  function populateCountries(countries: SupportedCountry[], selected: string): void {
-    if (!countrySelect || countrySelect.options.length > 1) return
-    countrySelect.innerHTML = ''
+  function populateCountrySelect(select: HTMLSelectElement | null, countries: SupportedCountry[], selected: string): void {
+    if (!select || select.options.length > 1) return
+    select.innerHTML = ''
     for (const country of countries) {
       const option = document.createElement('option')
       option.value = country.code
       option.textContent = country.title
       option.selected = country.code === selected
-      countrySelect.appendChild(option)
+      select.appendChild(option)
     }
+  }
+
+  function populateCountries(countries: SupportedCountry[], selected: string): void {
+    populateCountrySelect(countrySelect, countries, selected)
+    populateCountrySelect(billingCountrySelect, countries, selected)
   }
 
   // ── Calculate ─────────────────────────────────────────────────────────

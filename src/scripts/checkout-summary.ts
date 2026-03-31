@@ -1,3 +1,4 @@
+import type { CartItem } from './cart-store'
 import type { CalculateResponse, ValidatedCartItemResponse } from './checkout-types'
 
 export class CheckoutSummary {
@@ -35,26 +36,62 @@ export class CheckoutSummary {
     }).format(cents / 100)
   }
 
+  renderCartItems(cart: CartItem[]): void {
+    this.itemsContainer.innerHTML = ''
+
+    for (const item of cart) {
+      const div = document.createElement('div')
+      div.className = 'cart-item'
+
+      const subtitle = item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''
+
+      div.innerHTML = `
+        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="" class="cart-item__image" loading="lazy">` : ''}
+        <div class="cart-item__body">
+          <span class="cart-item__title">${item.title}</span>
+          ${subtitle}
+          <div class="cart-item__row">
+            <span class="cart-item__qty-count">&times; ${item.quantity}</span>
+            <span class="cart-item__price">${this.formatPrice(item.price * item.quantity)}</span>
+          </div>
+        </div>
+      `
+      this.itemsContainer.appendChild(div)
+    }
+
+    // Render a preliminary subtotal
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    this.totalsContainer.innerHTML = `
+      <div class="checkout-totals__row checkout-totals__row--total">
+        <span data-t="subtotal">Subtotal</span>
+        <span>${this.formatPrice(subtotal)}</span>
+      </div>
+    `
+  }
+
   renderItems(items: ValidatedCartItemResponse[], cartImages: Map<string, string>): void {
     this.itemsContainer.innerHTML = ''
 
     for (const item of items) {
       const div = document.createElement('div')
-      div.className = 'checkout-item'
+      div.className = 'cart-item'
 
       const imageUrl = cartImages.get(item.variantId) ?? item.imageUrl ?? ''
-      const subtitle = item.variantTitle ? `<span class="checkout-item__subtitle">${item.variantTitle}</span>` : ''
+      const subtitle = item.variantTitle ? `<span class="cart-item__subtitle">${item.variantTitle}</span>` : ''
       const qtyNote = item.requestedQuantity !== item.quantity
-        ? `<span class="checkout-item__stock-note" aria-live="polite">(${item.quantity} available)</span>`
+        ? `<span class="cart-item__stock-note" aria-live="polite">(${item.quantity} available)</span>`
         : ''
 
       div.innerHTML = `
-        ${imageUrl ? `<img src="${imageUrl}" alt="" class="checkout-item__image" loading="lazy">` : ''}
-        <div class="checkout-item__body">
-          <span class="checkout-item__title">${item.title}${subtitle}</span>
-          <span class="checkout-item__qty">&times; ${item.quantity} ${qtyNote}</span>
+        ${imageUrl ? `<img src="${imageUrl}" alt="" class="cart-item__image" loading="lazy">` : ''}
+        <div class="cart-item__body">
+          <span class="cart-item__title">${item.title}</span>
+          ${subtitle}
+          <div class="cart-item__row">
+            <span class="cart-item__qty-count">&times; ${item.quantity} ${qtyNote}</span>
+            <span class="cart-item__price">${this.formatPrice(item.price * item.quantity)}</span>
+          </div>
         </div>
-        <span class="checkout-item__price">${this.formatPrice(item.price * item.quantity)}</span>
       `
       this.itemsContainer.appendChild(div)
     }
