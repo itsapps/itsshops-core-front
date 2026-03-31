@@ -52,7 +52,8 @@ function renderItems(): void {
         : '<div class="cart-item__image cart-item__image--placeholder"></div>'
       }
       <div class="cart-item__body">
-        <a href="${item.url}" class="cart-item__title">${item.title}${item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''}</a>
+        <a href="${item.url}" class="cart-item__title">${item.title}</a>
+        ${item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''}
         <div class="cart-item__row">
           <div class="cart-item__qty">
             <button type="button" class="cart-item__qty-btn" data-cart-decrease aria-label="${tDecrease}: ${item.title}">−</button>

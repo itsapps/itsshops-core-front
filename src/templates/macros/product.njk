@@ -186,12 +186,16 @@
 {%- set _imageSize = imageSize -%}
 {%- set _label = label if label else ('product.cartButton.addToCart' | trans(_locale)) -%}
 {%- set _subtitle = subtitle -%}
-{%- if not _subtitle and product.kind == "wine" and product.wine -%}
+{%- if not _subtitle -%}
   {%- set _parts = [] -%}
-  {%- if product.wine.varietals and product.wine.varietals.length %}{%- set _parts = _parts.concat([product.wine.varietals | map('name') | join(', ')]) %}{% endif -%}
-  {%- if product.wine.vintage %}{%- set _parts = _parts.concat([product.wine.vintage]) %}{% endif -%}
-  {%- if product.wine.classifications and product.wine.classifications.length %}{%- set _parts = _parts.concat([product.wine.classifications | map('name') | join(', ')]) %}{% endif -%}
-  {%- if product.wine.volume %}{%- set _parts = _parts.concat([product.wine.volume | formatVolume]) %}{% endif -%}
+  {%- if product.kind == "wine" and product.wine -%}
+    {%- if product.wine.volume %}{%- set _parts = _parts.concat([product.wine.volume | formatVolume]) %}{% endif -%}
+    {%- if product.wine.vintage %}{%- set _parts = _parts.concat([product.wine.vintage]) %}{% endif -%}
+  {%- elif product.kind == "bundle" and product.bundleItems and product.bundleItems.length -%}
+    {%- for item in product.bundleItems %}{%- set _parts = _parts.concat([item.quantity + '× ' + item.variant.title]) %}{% endfor -%}
+  {%- elif product.options and product.options.length -%}
+    {%- set _parts = _parts.concat([product.options | map('name') | join(', ')]) -%}
+  {%- endif -%}
   {%- set _subtitle = _parts | join(', ') -%}
 {%- endif -%}
 <button
