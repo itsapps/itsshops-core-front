@@ -33,6 +33,7 @@ export default {
     counter: {
       decreaseQuantity: "Menge um eins verringern",
       increaseQuantity: "Menge um eins erhöhen",
+      quantity: "Menge",
       manuallySetQuantity: "Menge manuell eingeben",
     },
     toCheckout: "Zur Kasse",
@@ -59,6 +60,7 @@ export default {
       addedToCart: "Im Warenkorb",
       addToCartShort: "Hinzufügen",
       addedToCartShort: "Hinzugefügt",
+      ariaAddToCart: "{qty} {title} in den Warenkorb legen",
     },
     states: {
       active:  "Verfügbar",

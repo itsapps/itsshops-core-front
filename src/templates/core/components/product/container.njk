@@ -43,7 +43,7 @@
             data-price="{{ product.price }}"
             data-title="{{ product.title }}"
             data-url="{{ product.url }}"
-            {%- if product.image %} data-image="{{ product.image | imageSizeUrl(imageSizes.thumb) }}"{% endif %}
+            {%- if product.image %} data-image="{{ product.image | imageSizeUrl(imageSizes.cart) }}"{% endif %}
           >{{ 'product.cartButton.addToCart' | trans }}</button>
         {%- elif product.status == "active" %}
           <p class="product-active">{{ 'product.states.active' | trans }}</p>

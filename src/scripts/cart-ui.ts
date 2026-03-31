@@ -141,13 +141,41 @@ export function initCart(): void {
   document.querySelectorAll<HTMLElement>('[data-qty-control]').forEach(ctrl => {
     const valueEl = ctrl.querySelector<HTMLElement>('[data-qty-value]')
     if (!valueEl) return
-    ctrl.querySelector('[data-qty-decrease]')?.addEventListener('click', () => {
+    const decreaseBtn = ctrl.querySelector<HTMLButtonElement>('[data-qty-decrease]')
+    const increaseBtn = ctrl.querySelector<HTMLButtonElement>('[data-qty-increase]')
+    const tDecrease = ctrl.dataset.tDecrease ?? 'Decrease quantity'
+    const tIncrease = ctrl.dataset.tIncrease ?? 'Increase quantity'
+    const tQuantity = ctrl.dataset.tQuantity ?? 'Quantity'
+
+    const actionsEl = ctrl.closest('[data-product-actions], .product-card__actions')
+    const addBtn = actionsEl?.querySelector<HTMLButtonElement>('[data-add-to-cart]')
+    const addBtnBaseLabel = addBtn?.getAttribute('aria-label') ?? ''
+    const ariaTemplate = addBtn?.dataset.ariaAddTemplate ?? ''
+    const productTitle = addBtn?.dataset.title ?? ''
+
+    function updateQty(newVal: number): void {
+      valueEl!.textContent = String(newVal)
+      if (decreaseBtn) {
+        decreaseBtn.disabled = newVal <= 1
+        decreaseBtn.setAttribute('aria-label', `${tDecrease}, ${tQuantity}: ${newVal}`)
+      }
+      if (increaseBtn) {
+        increaseBtn.setAttribute('aria-label', `${tIncrease}, ${tQuantity}: ${newVal}`)
+      }
+      if (addBtn && ariaTemplate) {
+        addBtn.setAttribute('aria-label', newVal > 1
+          ? ariaTemplate.replace('{qty}', String(newVal)).replace('{title}', productTitle)
+          : addBtnBaseLabel)
+      }
+    }
+
+    decreaseBtn?.addEventListener('click', () => {
       const n = parseInt(valueEl.textContent || '1', 10)
-      if (n > 1) valueEl.textContent = String(n - 1)
+      if (n > 1) updateQty(n - 1)
     })
-    ctrl.querySelector('[data-qty-increase]')?.addEventListener('click', () => {
+    increaseBtn?.addEventListener('click', () => {
       const n = parseInt(valueEl.textContent || '1', 10)
-      valueEl.textContent = String(n + 1)
+      updateQty(n + 1)
     })
   })
 
@@ -168,12 +196,25 @@ export function initCart(): void {
       const qty        = qtyEl ? Math.max(1, parseInt(qtyEl.textContent || '1', 10)) : 1
 
       addItem({ id, title, subtitle, price, imageUrl, url }, qty)
+      lastCartTrigger = btn
 
       // Reset qty display back to 1
       if (qtyEl) qtyEl.textContent = '1'
 
+      const originalText = btn.textContent
+      const addedText = btn.dataset.addedToCart
       btn.classList.add('is-added')
-      setTimeout(() => btn.classList.remove('is-added'), 1500)
+      if (addedText) {
+        btn.setAttribute('aria-live', 'assertive')
+        btn.textContent = addedText
+      }
+      setTimeout(() => {
+        btn.classList.remove('is-added')
+        if (addedText) {
+          btn.removeAttribute('aria-live')
+          btn.textContent = originalText
+        }
+      }, 2000)
 
       openCart()
     })

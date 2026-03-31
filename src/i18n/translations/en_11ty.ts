@@ -33,6 +33,7 @@ export default {
     counter: {
       decreaseQuantity: "Decrease quantity by one",
       increaseQuantity: "Increase quantity by one",
+      quantity: "Quantity",
       manuallySetQuantity: "Manually enter quantity",
     },
     toCheckout: "Proceed to checkout",
@@ -59,6 +60,7 @@ export default {
       addedToCart: "In cart",
       addToCartShort: "Add",
       addedToCartShort: "Added",
+      ariaAddToCart: "Add {qty} {title} to cart",
     },
     states: {
       active:  "Available",

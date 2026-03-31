@@ -3,7 +3,8 @@
  # Usage:
  #   {% from "macros/product.njk" import productPrice, productStatus,
  #      productSiblings, productWineDetails, productBundleItems,
- #      productOptions, productCategories, productManufacturers %}
+ #      productOptions, productCategories, productManufacturers,
+ #      qtyControl, addToCartButton %}
  #
  #}
 
@@ -17,7 +18,7 @@
 <div class="{{ class }}">
   {%- if product.compareAtPrice %}
     <s class="{{ class }}__compare">
-      <span class="sr-only">{{ 'product.price.was' | trans }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
+      <span class="sr-only">{{ 'product.price.was' | trans({ lng: product.locale }) }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
     </s>
   {%- endif %}
   <span class="{{ class }}__amount">{{ product.price | formatPrice(product.locale) }}</span>
@@ -34,7 +35,7 @@
 {% macro productStatus(product, class="product-status") %}
 {%- if product.status != "active" %}
   <span class="{{ class }} {{ class }}--{{ product.status }}">
-    {{- 'product.states.' + product.status | trans -}}
+    {{- 'product.states.' + product.status | trans(product.locale) -}}
   </span>
 {%- endif %}
 {% endmacro %}
@@ -49,7 +50,7 @@
  #}
 {% macro productSiblings(product, class="product-siblings") %}
 {%- if product.siblings.length %}
-  <nav class="{{ class }}" aria-label="{{ 'product.ariaVariants' | trans }}">
+  <nav class="{{ class }}" aria-label="{{ 'product.ariaVariants' | trans({ lng: product.locale }) }}">
     <a
       class="{{ class }}__item {{ class }}__item--current"
       href="{{ product.url }}"
@@ -152,6 +153,65 @@
 {% endmacro %}
 
 
+{# ─── Quantity control ────────────────────────────────────────────────────────
+ # Renders a quantity stepper (−/+) for add-to-cart forms.
+ #
+ # @param class     optional CSS class on the wrapper (default: "qty-control")
+ #}
+{% macro qtyControl(locale="", class="qty-control") %}
+<div class="{{ class }}" data-qty-control
+  data-t-decrease="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}"
+  data-t-increase="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}"
+  data-t-quantity="{{ 'cart.counter.quantity' | trans({ lng: locale }) }}"
+>
+  <button type="button" class="{{ class }}__btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}">−</button>
+  <output class="{{ class }}__value" data-qty-value>1</output>
+  <button type="button" class="{{ class }}__btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}">+</button>
+</div>
+{% endmacro %}
+
+
+{# ─── Add to cart button ─────────────────────────────────────────────────────
+ # Renders an add-to-cart button with all required data attributes.
+ # Automatically builds a subtitle from wine data when available.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "add-to-cart")
+ # @param label     optional button label (default: translation key)
+ # @param subtitle  optional explicit subtitle (overrides auto-generated wine subtitle)
+ # @param imageSize image size preset for thumb (required — pass imageSizes.thumb or similar)
+ #}
+{% macro addToCartButton(product, class="add-to-cart", label="", subtitle="", imageSize=null, locale="") %}
+{%- set _locale = locale if locale else product.locale -%}
+{%- set _imageSize = imageSize -%}
+{%- set _label = label if label else ('product.cartButton.addToCart' | trans(_locale)) -%}
+{%- set _subtitle = subtitle -%}
+{%- if not _subtitle and product.kind == "wine" and product.wine -%}
+  {%- set _parts = [] -%}
+  {%- if product.wine.varietals and product.wine.varietals.length %}{%- set _parts = _parts.concat([product.wine.varietals | map('name') | join(', ')]) %}{% endif -%}
+  {%- if product.wine.vintage %}{%- set _parts = _parts.concat([product.wine.vintage]) %}{% endif -%}
+  {%- if product.wine.classifications and product.wine.classifications.length %}{%- set _parts = _parts.concat([product.wine.classifications | map('name') | join(', ')]) %}{% endif -%}
+  {%- if product.wine.volume %}{%- set _parts = _parts.concat([product.wine.volume | formatVolume]) %}{% endif -%}
+  {%- set _subtitle = _parts | join(', ') -%}
+{%- endif -%}
+<button
+  type="button"
+  class="{{ class }}"
+  aria-label="{{ _label }}: {{ product.title }}"
+  data-add-to-cart
+  data-aria-add-template="{{ 'product.cartButton.ariaAddToCart' | trans({ lng: _locale }) }}"
+  data-product-id="{{ product._id }}"
+  data-sku="{{ product.sku or '' }}"
+  data-price="{{ product.price }}"
+  data-title="{{ product.title }}"
+  {%- if _subtitle %} data-subtitle="{{ _subtitle }}"{% endif %}
+  data-url="{{ product.url }}"
+  data-added-to-cart="{{ 'product.cartButton.addedToCart' | trans({ lng: _locale }) }}"
+  {%- if product.image and _imageSize %} data-image="{{ product.image | imageSizeUrl(_imageSize) }}"{% endif %}
+>{{ _label }}</button>
+{% endmacro %}
+
+
 {# ─── Wine details ────────────────────────────────────────────────────────────
  # Renders a <dl> of wine facts from Vinofact data.
  # Only renders rows for fields that are present on the wine object.
@@ -166,105 +226,105 @@
 
     {%- if wine.volume %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.volume' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.volume' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.volume | formatVolume }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.vintage %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.vintage' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.vintage' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.vintage }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.color %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.color' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.color' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.color }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.type %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.type' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.type' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.type }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.alcohol %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.alcohol' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.alcohol' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.alcohol }}%</dd>
       </div>
     {%- endif %}
 
     {%- if wine.tartaricAcid %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.tartaricAcid' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.tartaricAcid' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.tartaricAcid }} g/l</dd>
       </div>
     {%- endif %}
 
     {%- if wine.freeSulfur %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.freeSulfur' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.freeSulfur' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.freeSulfur }} mg/l</dd>
       </div>
     {%- endif %}
 
     {%- if wine.totalSulfur %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.totalSulfur' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.totalSulfur' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.totalSulfur }} mg/l</dd>
       </div>
     {%- endif %}
 
     {%- if wine.phValue %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.phValue' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.phValue' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.phValue }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.histamine %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.histamine' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.histamine' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.histamine }} mg/l</dd>
       </div>
     {%- endif %}
 
     {%- if wine.varietals and wine.varietals.length %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.varietals' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.varietals' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.varietals | map('name') | join(', ') }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.classifications and wine.classifications.length %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.classifications' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.classifications' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.classifications | map('name') | join(', ') }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.terroir and wine.terroir.name %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.terroir' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.terroir' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.terroir.name }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.terroir and wine.terroir.soils and wine.terroir.soils.length %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.soils' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.soils' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">{{ wine.terroir.soils | map('name') | join(', ') }}</dd>
       </div>
     {%- endif %}
 
     {%- if wine.awards and wine.awards.length %}
       <div class="{{ class }}__row">
-        <dt class="{{ class }}__label">{{ 'product.wine.awards' | trans }}</dt>
+        <dt class="{{ class }}__label">{{ 'product.wine.awards' | trans({ lng: product.locale }) }}</dt>
         <dd class="{{ class }}__value">
           <ul class="{{ class }}__awards">
             {%- for award in wine.awards %}
