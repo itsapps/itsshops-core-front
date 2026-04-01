@@ -12,16 +12,22 @@
     <div class="product-card__body">
       {{ productStatus(product, class="product-card__status") }}
       <h2 class="product-card__title">{{ product.title }}</h2>
+      {% block product_label %}
       {%- if product.label != product.title %}
         <p class="product-card__label">{{ product.label }}</p>
       {%- endif %}
-      {{ productPrice(product, class="product-card__price") }}
+      {% endblock %}
+      {% block product_price %}
+        {{ productPrice(product, class="product-card__price") }}
+      {% endblock %}
     </div>
   </a>
+  {% block product_cart_control %}
   {%- if coreConfig.features.shop.checkout and product.status == "active" -%}
     <div class="product-card__actions">
       {{ qtyControl(locale=product.locale) }}
       {{ addToCartButton(product, label=('product.cartButton.addToCartShort' | trans), imageSize=imageSizes.cart) }}
     </div>
   {%- endif -%}
+  {% endblock %}
 </article>
