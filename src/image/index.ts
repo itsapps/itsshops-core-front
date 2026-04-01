@@ -23,6 +23,8 @@ export type PictureSize = {
   formats?: ('webp' | 'jpg' | 'png')[]
   /** Default quality, can be overridden per image (shortcut) */
   quality?: number | (number | null)[]
+  /** Sanity fit mode. 'max' fits within w×h without cropping. Default is Sanity's default ('crop' when both w+h are set). */
+  fit?: 'crop' | 'max' | 'clip' | 'fill' | 'min' | 'scale'
 }
 
 export type PictureOptions = {
@@ -47,9 +49,12 @@ function resolveQuality(quality: number | (number | null)[] | undefined, index: 
   return q ?? undefined
 }
 
-function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number | null, format?: string, quality?: number): string {
-  let b = builder.image(image).width(w)
+function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number | null, format?: string, quality?: number, fit?: PictureSize['fit']): string {
+  let b = builder.image(image)
+  if (fit) b = b.ignoreImageParams()
+  b = b.width(w)
   if (h !== null) b = b.height(h)
+  if (fit)       b = b.fit(fit)
   if (format)    b = b.format(format as any)
   if (quality)   b = b.quality(quality)
   return b.url()
@@ -62,7 +67,7 @@ function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size:
   const q = quality ?? size.quality
   return size.sizes.map(([w, hSpec], i) => {
     const h = resolveHeight(hSpec, w, image) ?? null
-    return `${buildSanityUrl(builder, image, w, h, fmt, resolveQuality(q, i))} ${w}w`
+    return `${buildSanityUrl(builder, image, w, h, fmt, resolveQuality(q, i), size.fit)} ${w}w`
   }).join(', ')
 }
 
@@ -96,7 +101,7 @@ export function image(
   const lastIndex = size.sizes.length - 1
   const [fw, fhSpec] = size.sizes[lastIndex]
   const fh = resolveHeight(fhSpec, fw, image)
-  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(fQuality, lastIndex))
+  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(fQuality, lastIndex), size.fit)
 
   const attrs = [
     `src="${src}"`,
@@ -120,16 +125,19 @@ export function imageUrl(
   width?: number,
   height?: number,
   format?: 'webp' | 'jpg',
+  fit?: PictureSize['fit'],
 ): string {
   if (!image) return ''
   let b = builder.image(image)
+  if (fit)    b = b.ignoreImageParams()
   if (width)  b = b.width(width)
   if (height) b = b.height(height)
+  if (fit)    b = b.fit(fit)
   if (format) b = b.format(format as any)
   return b.url()
 }
 
-/** Single URL from a PictureSize preset — uses the smallest [w, h] entry */
+/** Single URL from a PictureSize preset — uses the largest [w, h] entry for retina sharpness */
 export function imageSizeUrl(
   builder: ImageUrlBuilder,
   image: ResolvedImage | null | undefined,
@@ -137,8 +145,8 @@ export function imageSizeUrl(
   format?: 'webp' | 'jpg',
 ): string {
   if (!image) return ''
-  const [w, h] = size.sizes[size.sizes.length - 1]
-  return imageUrl(builder, image, w, h ?? undefined, format)
+  const [w, h] = size.sizes[0]
+  return imageUrl(builder, image, w, h ?? undefined, format, size.fit)
 }
 
 // ─── Static image ─────────────────────────────────────────────────────────────

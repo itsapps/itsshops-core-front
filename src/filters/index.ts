@@ -200,8 +200,8 @@ export const createFilters = (ctx: CoreContext) => {
   );
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
-  eleventyConfig.addFilter("imageUrl", (image, width, height, format) =>
-    imageUrl(ctx.imageBuilder, image, width, height, format)
+  eleventyConfig.addFilter("imageUrl", (image, width, height, format, fit) =>
+    imageUrl(ctx.imageBuilder, image, width, height, format, fit)
   );
   eleventyConfig.addFilter("imageSizeUrl", (image, size, format) =>
     imageSizeUrl(ctx.imageBuilder, image, size, format)
