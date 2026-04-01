@@ -21,6 +21,25 @@ export async function initCheckout(): Promise<void> {
   const currency = container.dataset.currency ?? 'EUR'
   const currencyLabel = container.dataset.currencyLabel
 
+  // Translations from data-t-* attributes (set in checkout.njk via trans filter)
+  const t = {
+    subtotal: container.dataset.tSubtotal ?? 'Subtotal',
+    shipping: container.dataset.tShipping ?? 'Shipping',
+    total: container.dataset.tTotal ?? 'Total',
+    freeShipping: container.dataset.tFreeShipping ?? 'Free shipping',
+    cartEmpty: container.dataset.tCartEmpty ?? 'Cart is empty',
+    error: container.dataset.tError ?? 'An error occurred. Please try again.',
+    itemsUnavailable: container.dataset.tItemsUnavailable ?? 'Some items are no longer available.',
+    available: container.dataset.tAvailable ?? 'available',
+    errorEmail: container.dataset.tErrorEmail ?? 'Valid email required',
+    errorPrename: container.dataset.tErrorPrename ?? 'First name is required',
+    errorLastname: container.dataset.tErrorLastname ?? 'Last name is required',
+    errorStreet: container.dataset.tErrorStreet ?? 'Address is required',
+    errorCity: container.dataset.tErrorCity ?? 'City is required',
+    errorZip: container.dataset.tErrorZip ?? 'Postal code is required',
+    errorCountry: container.dataset.tErrorCountry ?? 'Country is required',
+  }
+
   if (!stripeKey) {
     console.error('[checkout] Missing data-stripe-key attribute')
     return
@@ -52,15 +71,28 @@ export async function initCheckout(): Promise<void> {
   }
 
   // ── Initialize modules ────────────────────────────────────────────────
-  const form = new CheckoutForm(formEl)
+  const form = new CheckoutForm(formEl, {
+    email: t.errorEmail,
+    prename: t.errorPrename,
+    lastname: t.errorLastname,
+    street: t.errorStreet,
+    city: t.errorCity,
+    zip: t.errorZip,
+    country: t.errorCountry,
+  })
   const shipping = new CheckoutShipping(shippingEl)
-  const summary = new CheckoutSummary(itemsEl, totalsEl, locale, currency, currencyLabel)
+  const summary = new CheckoutSummary(itemsEl, totalsEl, locale, currency, currencyLabel, {
+    subtotal: t.subtotal,
+    shipping: t.shipping,
+    total: t.total,
+    available: t.available,
+  })
   const stripeCheckout = new CheckoutStripe(stripe)
 
   // Build cart items from store (only need variantId + quantity for API)
   const cart = getCart()
   if (cart.length === 0) {
-    container.innerHTML = '<p data-checkout-empty>Cart is empty</p>'
+    container.innerHTML = `<p data-checkout-empty>${t.cartEmpty}</p>`
     return
   }
 
@@ -142,12 +174,12 @@ export async function initCheckout(): Promise<void> {
       }
 
       if (response.unavailableItems.length > 0) {
-        showError(`Some items are no longer available and were removed.`)
+        showError(t.itemsUnavailable)
       }
 
       dispatch('checkout:calculated', response)
     } catch (err) {
-      const message = err instanceof CheckoutApiError ? err.message : 'Failed to load checkout. Please try again.'
+      const message = err instanceof CheckoutApiError ? err.message : t.error
       showError(message)
     } finally {
       setLoading(false)
@@ -222,7 +254,7 @@ export async function initCheckout(): Promise<void> {
       clearCart()
       dispatch('checkout:complete')
     } catch (err) {
-      const message = err instanceof CheckoutApiError ? err.message : 'Payment failed. Please try again.'
+      const message = err instanceof CheckoutApiError ? err.message : t.error
       showError(message)
 
       if (err instanceof CheckoutApiError && err.details) {

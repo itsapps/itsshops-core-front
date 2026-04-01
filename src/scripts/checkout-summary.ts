@@ -1,12 +1,20 @@
 import type { CartItem } from './cart-store'
 import type { CalculateResponse, ValidatedCartItemResponse } from './checkout-types'
 
+export type SummaryLabels = {
+  subtotal: string
+  shipping: string
+  total: string
+  available: string
+}
+
 export class CheckoutSummary {
   private itemsContainer: HTMLElement
   private totalsContainer: HTMLElement
   private locale: string
   private currency: string
   private currencyLabel: string | undefined
+  private labels: SummaryLabels
 
   constructor(
     itemsContainer: HTMLElement,
@@ -14,12 +22,14 @@ export class CheckoutSummary {
     locale: string,
     currency: string,
     currencyLabel?: string,
+    labels?: SummaryLabels,
   ) {
     this.itemsContainer = itemsContainer
     this.totalsContainer = totalsContainer
     this.locale = locale
     this.currency = currency
     this.currencyLabel = currencyLabel
+    this.labels = labels ?? { subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total', available: 'available' }
   }
 
   formatPrice(cents: number): string {
@@ -63,7 +73,7 @@ export class CheckoutSummary {
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
     this.totalsContainer.innerHTML = `
       <div class="checkout-totals__row checkout-totals__row--total">
-        <span data-t="subtotal">Subtotal</span>
+        <span>${this.labels.subtotal}</span>
         <span>${this.formatPrice(subtotal)}</span>
       </div>
     `
@@ -79,7 +89,7 @@ export class CheckoutSummary {
       const imageUrl = cartImages.get(item.variantId) ?? item.imageUrl ?? ''
       const subtitle = item.variantTitle ? `<span class="cart-item__subtitle">${item.variantTitle}</span>` : ''
       const qtyNote = item.requestedQuantity !== item.quantity
-        ? `<span class="cart-item__stock-note" aria-live="polite">(${item.quantity} available)</span>`
+        ? `<span class="cart-item__stock-note" aria-live="polite">(${item.quantity} ${this.labels.available})</span>`
         : ''
 
       div.innerHTML = `
@@ -98,27 +108,27 @@ export class CheckoutSummary {
   }
 
   renderTotals(data: CalculateResponse): void {
-    const t = data.totals
-    const shippingText = t.shipping === 0 ? '—' : this.formatPrice(t.shipping)
+    const totals = data.totals
+    const shippingText = totals.shipping === 0 ? '—' : this.formatPrice(totals.shipping)
 
     this.totalsContainer.innerHTML = `
       <div class="checkout-totals__row">
-        <span data-t="subtotal">Subtotal</span>
-        <span>${this.formatPrice(t.subtotal)}</span>
+        <span>${this.labels.subtotal}</span>
+        <span>${this.formatPrice(totals.subtotal)}</span>
       </div>
       <div class="checkout-totals__row">
-        <span data-t="shipping">Shipping</span>
+        <span>${this.labels.shipping}</span>
         <span>${shippingText}</span>
       </div>
-      ${t.vatBreakdown.map(v => `
+      ${totals.vatBreakdown.map(v => `
         <div class="checkout-totals__row checkout-totals__row--vat">
           <span>${v.label}</span>
           <span>${this.formatPrice(v.vat)}</span>
         </div>
       `).join('')}
       <div class="checkout-totals__row checkout-totals__row--total">
-        <span data-t="total">Total</span>
-        <span>${this.formatPrice(t.grandTotal)}</span>
+        <span>${this.labels.total}</span>
+        <span>${this.formatPrice(totals.grandTotal)}</span>
       </div>
     `
   }

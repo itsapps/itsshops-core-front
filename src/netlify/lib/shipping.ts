@@ -22,12 +22,15 @@ export function resolveLocalizedTitle(
 /**
  * Calculate total weight of physical items in the cart (in kilograms).
  * Weights are stored in grams on variants.
+ * For wine products without an explicit weight, volume (ml) is used as a proxy (~1g/ml).
  */
 export function calculateCartWeight(items: ValidatedCartItem[]): number {
   let totalGrams = 0
   for (const item of items) {
-    if (item.kind !== 'digital' && item.weight) {
-      totalGrams += item.weight * item.quantity
+    if (item.kind === 'digital') continue
+    const weight = item.weight ?? (item.wine?.volume ? item.wine.volume : null)
+    if (weight) {
+      totalGrams += weight * item.quantity
     }
   }
   return totalGrams / 1000

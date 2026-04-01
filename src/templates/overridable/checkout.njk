@@ -10,6 +10,21 @@
     data-return-url="{{ coreConfig.baseUrl }}{{ cms[_locale].checkoutUrl }}{{ coreConfig.resolvedPermalinks[_locale].orderThanks }}/"
     data-currency="{{ coreConfig.units.price.currency | default('EUR') | upper }}"
     {% if coreConfig.units.price.currencyLabel %}data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+    data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
+    data-t-shipping="{{ 'checkout.shipping' | trans }}"
+    data-t-total="{{ 'checkout.total' | trans }}"
+    data-t-free-shipping="{{ 'checkout.freeShipping' | trans }}"
+    data-t-cart-empty="{{ 'checkout.cartEmpty' | trans }}"
+    data-t-error="{{ 'checkout.error' | trans }}"
+    data-t-items-unavailable="{{ 'checkout.itemsUnavailable' | trans }}"
+    data-t-available="{{ 'checkout.available' | trans }}"
+    data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+    data-t-error-prename="{{ 'forms.fields.prename.errorMessage' | trans }}"
+    data-t-error-lastname="{{ 'forms.fields.lastname.errorMessage' | trans }}"
+    data-t-error-street="{{ 'forms.fields.street.errorMessage' | trans }}"
+    data-t-error-city="{{ 'forms.fields.city.errorMessage' | trans }}"
+    data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
+    data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
   >
     {# Loading state #}
     <div data-checkout-loading class="checkout__loading" aria-live="polite">

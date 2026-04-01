@@ -27,6 +27,7 @@ export default {
       payment: {
         productZeroAmount: "Ein Produkt mit einer Menge von 0 ist im Warenkorb",
         noValidProducts: "Keine gültigen Produkte im Warenkorb",
+        addressRequired: "Adresse wird für die Zahlung benötigt",
         general: "Während des Zahlvorgangs ist ein Fehler aufgetreten"
       },
       orderNotFound: "Bestellung nicht gefunden",

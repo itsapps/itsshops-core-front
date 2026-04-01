@@ -27,6 +27,7 @@ export default {
       payment: {
         productZeroAmount: "There is a product with zero amount in cart",
         noValidProducts: "No valid products in cart",
+        addressRequired: "Address is required for payment",
         general: "An error occurred during payment",
       },
       orderNotFound: "Bestellung nicht gefunden",

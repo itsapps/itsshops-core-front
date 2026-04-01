@@ -2,14 +2,34 @@ import type { AddressInput } from './checkout-types'
 
 type FieldError = { field: string; message: string }
 
+export type FormErrorLabels = {
+  email: string
+  prename: string
+  lastname: string
+  street: string
+  city: string
+  zip: string
+  country: string
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export class CheckoutForm {
   private form: HTMLFormElement
   private onCountryChange: ((country: string) => void) | null = null
+  private errorLabels: FormErrorLabels
 
-  constructor(form: HTMLFormElement) {
+  constructor(form: HTMLFormElement, errorLabels?: FormErrorLabels) {
     this.form = form
+    this.errorLabels = errorLabels ?? {
+      email: 'Valid email required',
+      prename: 'First name is required',
+      lastname: 'Last name is required',
+      street: 'Address is required',
+      city: 'City is required',
+      zip: 'Postal code is required',
+      country: 'Country is required',
+    }
     this.bindCountryListener()
     this.bindBillingToggle()
   }
@@ -85,22 +105,22 @@ export class CheckoutForm {
 
     const email = this.getEmail()
     if (!email || !EMAIL_RE.test(email)) {
-      errors.push({ field: 'contactEmail', message: 'Valid email required' })
+      errors.push({ field: 'contactEmail', message: this.errorLabels.email })
     }
 
+    const l = this.errorLabels
     const required: [string, string][] = [
-      ['shipping.name', 'Name'],
-      ['shipping.prename', 'First name'],
-      ['shipping.lastname', 'Last name'],
-      ['shipping.line1', 'Address'],
-      ['shipping.zip', 'Postal code'],
-      ['shipping.city', 'City'],
-      ['shipping.country', 'Country'],
+      ['shipping.prename', l.prename],
+      ['shipping.lastname', l.lastname],
+      ['shipping.line1', l.street],
+      ['shipping.zip', l.zip],
+      ['shipping.city', l.city],
+      ['shipping.country', l.country],
     ]
 
-    for (const [field, label] of required) {
+    for (const [field, message] of required) {
       if (!this.getFieldValue(field).trim()) {
-        errors.push({ field, message: `${label} is required` })
+        errors.push({ field, message })
       }
     }
 
@@ -108,17 +128,16 @@ export class CheckoutForm {
     const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
     if (useShippingAsBilling?.checked === false) {
       const billingRequired: [string, string][] = [
-        ['billing.name', 'Name'],
-        ['billing.prename', 'First name'],
-        ['billing.lastname', 'Last name'],
-        ['billing.line1', 'Address'],
-        ['billing.zip', 'Postal code'],
-        ['billing.city', 'City'],
-        ['billing.country', 'Country'],
+        ['billing.prename', l.prename],
+        ['billing.lastname', l.lastname],
+        ['billing.line1', l.street],
+        ['billing.zip', l.zip],
+        ['billing.city', l.city],
+        ['billing.country', l.country],
       ]
-      for (const [field, label] of billingRequired) {
+      for (const [field, message] of billingRequired) {
         if (!this.getFieldValue(field).trim()) {
-          errors.push({ field, message: `${label} is required` })
+          errors.push({ field, message })
         }
       }
     }

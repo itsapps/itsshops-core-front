@@ -5,7 +5,6 @@ import type {
   OrderDocument,
   OrderStatusHistoryEntry,
 } from '../types/checkout'
-import { withRetry } from '../utils/retry'
 import type { Logger } from '../utils/logger'
 
 let sanityClient: SanityClient | null = null
@@ -24,6 +23,9 @@ export function getSanityClient(): SanityClient {
       token,
       apiVersion: '2024-01-01',
       useCdn: false,
+      perspective: 'published',
+      maxRetries: 2,
+      retryDelay: (attempt) => 1000 * 2 ** attempt,
     })
   }
   return sanityClient
@@ -65,9 +67,7 @@ export async function fetchCheckoutData(
   logger: Logger,
 ): Promise<SanityCheckoutQueryResult> {
   return logger.timed('Sanity: fetch checkout data', () =>
-    withRetry(() =>
-      getSanityClient().fetch<SanityCheckoutQueryResult>(CHECKOUT_QUERY, { variantIds, country }),
-    ),
+    getSanityClient().fetch<SanityCheckoutQueryResult>(CHECKOUT_QUERY, { variantIds, country }),
   )
 }
 
@@ -77,9 +77,7 @@ export async function createOrderMeta(
   logger: Logger,
 ): Promise<void> {
   await logger.timed('Sanity: create orderMeta', () =>
-    withRetry(() =>
-      getSanityClient().createOrReplace({ _id: id, ...doc }),
-    ),
+    getSanityClient().createOrReplace({ _id: id, ...doc }),
   )
 }
 
@@ -89,9 +87,7 @@ export async function updateOrderMeta(
   logger: Logger,
 ): Promise<void> {
   await logger.timed('Sanity: update orderMeta', () =>
-    withRetry(() =>
-      getSanityClient().patch(id).set(doc).commit(),
-    ),
+    getSanityClient().patch(id).set(doc).commit(),
   )
 }
 
@@ -100,9 +96,7 @@ export async function fetchOrderMeta(
   logger: Logger,
 ): Promise<(OrderMetaDocument & { _id: string }) | null> {
   return logger.timed('Sanity: fetch orderMeta', () =>
-    withRetry(() =>
-      getSanityClient().getDocument<OrderMetaDocument & { _id: string }>(id),
-    ),
+    getSanityClient().getDocument<OrderMetaDocument & { _id: string }>(id),
   ).then(doc => doc ?? null)
 }
 
@@ -111,24 +105,20 @@ export async function createOrder(
   logger: Logger,
 ): Promise<{ _id: string }> {
   return logger.timed('Sanity: create order', () =>
-    withRetry(() =>
-      getSanityClient().create(doc),
-    ),
+    getSanityClient().create(doc),
   )
 }
 
 export async function incrementInvoiceNumber(
   logger: Logger,
 ): Promise<number> {
-  return logger.timed('Sanity: increment invoice number', () =>
-    withRetry(async () => {
-      const result = await getSanityClient()
-        .patch('*[_type == "shopSettings"][0]._id')
-        .inc({ lastInvoiceNumber: 1 })
-        .commit()
-      return (result as any).lastInvoiceNumber as number
-    }),
-  )
+  return logger.timed('Sanity: increment invoice number', async () => {
+    const result = await getSanityClient()
+      .patch('*[_type == "shopSettings"][0]._id')
+      .inc({ lastInvoiceNumber: 1 })
+      .commit()
+    return (result as any).lastInvoiceNumber as number
+  })
 }
 
 export async function decrementStock(
@@ -137,12 +127,10 @@ export async function decrementStock(
   logger: Logger,
 ): Promise<void> {
   await logger.timed(`Sanity: decrement stock for ${variantId}`, () =>
-    withRetry(() =>
-      getSanityClient()
-        .patch(variantId)
-        .dec({ stock: quantity })
-        .commit(),
-    ),
+    getSanityClient()
+      .patch(variantId)
+      .dec({ stock: quantity })
+      .commit(),
   )
 }
 
@@ -167,12 +155,10 @@ export async function updateOrderPaymentStatus(
   }
 
   await logger.timed('Sanity: update order payment status', () =>
-    withRetry(() =>
-      getSanityClient()
-        .patch(orderId)
-        .set({ paymentStatus: status })
-        .append('statusHistory', [{ ...historyEntry, _key: crypto.randomUUID() }])
-        .commit(),
-    ),
+    getSanityClient()
+      .patch(orderId)
+      .set({ paymentStatus: status })
+      .append('statusHistory', [{ ...historyEntry, _key: crypto.randomUUID() }])
+      .commit(),
   )
 }

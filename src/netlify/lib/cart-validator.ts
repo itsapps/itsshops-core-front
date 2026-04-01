@@ -26,6 +26,7 @@ export function validateCart(
   locale: string,
   defaultLocale = 'de',
   hasStockFeature = true,
+  defaultTaxCategoryCode?: string | null,
 ): CartValidationResult {
   const variantMap = new Map(variants.map(v => [v._id, v]))
   const validatedItems: ValidatedCartItem[] = []
@@ -56,7 +57,7 @@ export function validateCart(
     }
 
     const taxCategoryCode = variant.taxCategoryCode ?? variant.productTaxCategoryCode ?? ''
-    const vatRate = findTaxRate(taxRules, taxCategoryCode)
+    const vatRate = findTaxRate(taxRules, taxCategoryCode, defaultTaxCategoryCode)
     const vatAmount = extractVat(price * quantity, vatRate)
 
     const title = resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)

@@ -13,7 +13,6 @@ import { buildOrder, formatOrderNumber } from '../lib/order-builder'
 import { errorResponse, methodNotAllowed, success } from '../utils/response'
 import { createLogger, generateRequestId } from '../utils/logger'
 import { ErrorCode } from '../types/errors'
-import { withRetry } from '../utils/retry'
 import type { OrderDocument } from '../types/checkout'
 
 export type WebhookHandlerOptions = {
@@ -31,9 +30,7 @@ async function getNextInvoiceNumber(client: SanityClient): Promise<{
   )
   if (!settings?._id) throw new Error('shopSettings not found')
 
-  const result = await withRetry(() =>
-    client.patch(settings._id).inc({ lastInvoiceNumber: 1 }).commit(),
-  )
+  const result = await client.patch(settings._id).inc({ lastInvoiceNumber: 1 }).commit()
 
   return {
     invoiceNumber: (result as any).lastInvoiceNumber,

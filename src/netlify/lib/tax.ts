@@ -3,15 +3,24 @@ import type { SanityTaxRuleResult, VatBreakdownItem } from '../types/checkout'
 /**
  * Find the tax rate for a given tax category code in a country's tax rules.
  * Returns the rate as a percentage (e.g. 20 for 20%).
- * Falls back to 0 if no matching rule is found.
+ * Falls back to defaultTaxCategoryCode if no matching rule is found,
+ * then to 0 (tax exempt) if neither matches.
  */
 export function findTaxRate(
   rules: SanityTaxRuleResult[],
   taxCategoryCode: string | null,
+  defaultTaxCategoryCode?: string | null,
 ): number {
-  if (!taxCategoryCode || rules.length === 0) return 0
-  const rule = rules.find(r => r.taxCategoryCode === taxCategoryCode)
-  return rule?.rate ?? 0
+  if (rules.length === 0) return 0
+  if (taxCategoryCode) {
+    const rule = rules.find(r => r.taxCategoryCode === taxCategoryCode)
+    if (rule) return rule.rate
+  }
+  if (defaultTaxCategoryCode) {
+    const fallback = rules.find(r => r.taxCategoryCode === defaultTaxCategoryCode)
+    if (fallback) return fallback.rate
+  }
+  return 0
 }
 
 /**

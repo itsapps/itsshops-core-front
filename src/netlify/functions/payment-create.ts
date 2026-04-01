@@ -12,6 +12,7 @@ import { resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
 import { calculateTotals } from '../lib/totals'
 import { findTaxRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
+import { serverT, countryName } from '../utils/i18n'
 
 export type PaymentCreateParams = {
   request: Request
@@ -80,19 +81,34 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
     // ── Validate tax country ────────────────────────────────────────────
     if (!data.taxCountry) {
       logger.warn('Country not supported', { country })
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, `Country ${country} is not supported for checkout`)
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.countryShippingNotSupported'))
     }
 
     // ── Validate cart items ─────────────────────────────────────────────
+    const defaultTaxCategoryCode = data.shopSettings?.defaultTaxCategoryCode ?? null
     const { items: validatedItems, unavailableItems } = validateCart(
       req.cart.items,
       data.variants,
       data.taxCountry.rules,
       req.locale,
+      'de',
+      true,
+      defaultTaxCategoryCode,
     )
 
+    logger.info('Tax debug', {
+      taxCountryCode: data.taxCountry.countryCode,
+      taxRules: data.taxCountry.rules.map(r => ({ code: r.taxCategoryCode, rate: r.rate })),
+      variantTaxCodes: data.variants.map(v => ({
+        id: v._id,
+        taxCategoryCode: v.taxCategoryCode,
+        productTaxCategoryCode: v.productTaxCategoryCode,
+      })),
+      itemVatRates: validatedItems.map(i => ({ id: i.variantId, vatRate: i.vatRate, taxCategoryCode: i.taxCategoryCode })),
+    })
+
     if (validatedItems.length === 0) {
-      return validationError(ErrorCode.CART_EMPTY, 'No valid items in cart', {
+      return validationError(ErrorCode.CART_EMPTY, serverT(req.locale, 'api.errors.payment.noValidProducts'), {
         unavailable: unavailableItems.join(', '),
       })
     }
@@ -114,12 +130,12 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
 
     if (!selectedShipping && shippingMethods.length === 0) {
       logger.warn('No shipping methods available', { country })
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, 'No shipping methods available for this country')
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'))
     }
 
     // ── Calculate totals ────────────────────────────────────────────────
     const shippingVatRate = selectedShipping
-      ? findTaxRate(data.taxCountry.rules, selectedShipping.taxCategoryCode)
+      ? findTaxRate(data.taxCountry.rules, selectedShipping.taxCategoryCode, defaultTaxCategoryCode)
       : 0
 
     const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate)
@@ -144,7 +160,7 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
     // ── Supported countries ─────────────────────────────────────────────
     const supportedCountries = data.supportedCountries.map(c => ({
       code: c.countryCode,
-      title: c.countryCode, // client maps codes to names
+      title: countryName(req.locale, c.countryCode),
     }))
 
     // ── Calculate-only response ─────────────────────────────────────────
@@ -181,11 +197,11 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
 
     // ── Create payment ──────────────────────────────────────────────────
     if (!req.address) {
-      return validationError(ErrorCode.INVALID_ADDRESS, 'Address is required for payment')
+      return validationError(ErrorCode.INVALID_ADDRESS, serverT(req.locale, 'api.errors.payment.addressRequired'))
     }
 
     if (!selectedShipping) {
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, 'A shipping method must be selected')
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.shippingRateMustBeProvided'))
     }
 
     const orderMetaId = req.orderMetaId ?? `orderMeta-${crypto.randomUUID()}`
@@ -204,15 +220,11 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
 
     // Create or update Stripe PaymentIntent
     if (req.orderMetaId) {
-      // Update existing PaymentIntent
-      const existingMeta = await fetchCheckoutData([], country, logger)
-        .catch(() => null)
-
       // Find existing payment intent ID from orderMeta
       const { fetchOrderMeta } = await import('../services/sanity-checkout')
       const existing = await fetchOrderMeta(req.orderMetaId, logger)
       if (!existing) {
-        return errorResponse(ErrorCode.ORDER_META_NOT_FOUND, 'Order meta not found', 404)
+        return errorResponse(ErrorCode.ORDER_META_NOT_FOUND, serverT(req.locale, 'api.errors.orderNotFound'), 404)
       }
 
       const intent = await updatePaymentIntent(
@@ -273,6 +285,6 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
     })
-    return errorResponse(ErrorCode.INTERNAL_ERROR, 'An unexpected error occurred')
+    return errorResponse(ErrorCode.INTERNAL_ERROR, serverT(req.locale, 'api.errors.payment.general'))
   }
 }
