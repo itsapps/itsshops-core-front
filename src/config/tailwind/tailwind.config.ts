@@ -49,48 +49,13 @@ export function getTailwindConfig(css: Css): Config {
       optimizeUniversalDefaults: true
     },
     content: [
-      // './src/**/*.{html,js,jsx,mdx,njk,liquid,webc}',
       './src/**/*.{html,njk,ts,mjs}',
       '!./src/_includes/css/**',
       '!./src/_includes/scripts/**',
       '!./src/assets/scripts/lib/**',
+      './node_modules/@itsapps/itsshops-core-front/dist/templates/**/*.njk',
     ],
-    // presets: [],
-    safelist: [
-      // {
-      //   pattern: /grid-cols-/,
-      //   variants: screenVariants,
-      // },
-      // {
-      //   // pattern: /col-span-(1|2|3)/,
-      //   pattern: /col-span-/,
-      //   variants: screenVariants,
-      // },
-      // {
-      //   pattern: /col-start-/,
-      //   variants: screenVariants,
-      // },
-      // {
-      //   pattern: /justify-self-/,
-      //   variants: screenVariants,
-      // },
-      // {
-      //   pattern: /self-/,
-      //   variants: screenVariants,
-      // },
-      // {
-      //   pattern: /object-contain/,
-      // },
-      // // {
-      // //   pattern: /max-w-/,
-      // // },
-      // // {
-      // //   pattern: /bg-/,
-      // // },
-      // {
-      //   pattern: /text-(left|center|right)/,
-      // },
-    ],
+    safelist: [],
     theme: {
       screens,
       colors: colorTokens,
