@@ -127,6 +127,6 @@ export function resolveSeo(
     shareTitle:       resolveString(raw.shareTitle, locale, defaultLocale),
     shareDescription: resolveString(raw.shareDescription, locale, defaultLocale),
     keywords:         resolveString(raw.keywords, locale, defaultLocale),
-    shareImage:       resolveImage(raw.shareImage, locale, defaultLocale),
+    shareImage:       resolveLocaleAltImage(raw.shareImage, locale, defaultLocale),
   }
 }

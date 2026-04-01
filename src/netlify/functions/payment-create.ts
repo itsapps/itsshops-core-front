@@ -96,17 +96,6 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       defaultTaxCategoryCode,
     )
 
-    logger.info('Tax debug', {
-      taxCountryCode: data.taxCountry.countryCode,
-      taxRules: data.taxCountry.rules.map(r => ({ code: r.taxCategoryCode, rate: r.rate })),
-      variantTaxCodes: data.variants.map(v => ({
-        id: v._id,
-        taxCategoryCode: v.taxCategoryCode,
-        productTaxCategoryCode: v.productTaxCategoryCode,
-      })),
-      itemVatRates: validatedItems.map(i => ({ id: i.variantId, vatRate: i.vatRate, taxCategoryCode: i.taxCategoryCode })),
-    })
-
     if (validatedItems.length === 0) {
       return validationError(ErrorCode.CART_EMPTY, serverT(req.locale, 'api.errors.payment.noValidProducts'), {
         unavailable: unavailableItems.join(', '),

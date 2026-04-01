@@ -44,7 +44,6 @@ export type ResolvedCategory = {
   locale: string
   sortOrder: number
   parentId: string | null
-  image: ResolvedImage | null
   seo: ResolvedSeo
   /** Filter group keys to show on the category page (resolved from Sanity filter config) */
   filters: ResolvedFilterKey[]

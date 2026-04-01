@@ -129,7 +129,7 @@ export const seo = `{
   ${i18nStringField('shareTitle')},
   ${i18nStringField('shareDescription')},
   ${i18nStringField('keywords')},
-  ${i18nImageField('shareImage')}
+  ${i18nAltImageField('shareImage')}
 }`
 
 // ---------------------------------------------------------------------------

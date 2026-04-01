@@ -2,11 +2,6 @@
 
   {% block category_header %}
     <header class="category-header">
-      {% if category.image %}
-        <figure class="category-image">
-          {% image category.image, imageSizes.content, { loading: "eager" } %}
-        </figure>
-      {% endif %}
       <h1 class="category-title">{{ category.title }}</h1>
       {% if category.description %}
         <p class="category-description">{{ category.description }}</p>

@@ -23,7 +23,6 @@ export function resolveCategories(
       locale: ctx.locale,
       sortOrder: c.sortOrder ?? 0,
       parentId: c.parent?._id ?? null,
-      image: ctx.resolveImage(c.image),
       seo: ctx.resolveSeo(c.seo),
       filters: resolveFilterSpecs(c.filters, ctx),
       ...(resolveHook ? resolveHook(c, ctx) : {}),

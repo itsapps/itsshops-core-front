@@ -13,11 +13,6 @@
         {% endfor %}
         {% if resolvedCat %}
           <a href="{{ resolvedCat.url }}" class="category-card">
-            {% if resolvedCat.image %}
-              <figure class="category-card-image">
-                {% image resolvedCat.image, imageSizes.card %}
-              </figure>
-            {% endif %}
             <span class="category-card-title">{{ resolvedCat.title }}</span>
           </a>
         {% endif %}

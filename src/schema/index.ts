@@ -160,8 +160,6 @@ function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): st
     || category.description
     || ''
 
-  const image = category.image ? imageUrl(category.image, 1200) : undefined
-
   const categoryProducts = products.filter(p =>
     (p.categories ?? []).some(c => c._id === category._id)
   )
@@ -194,7 +192,6 @@ function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): st
     url:           pageUrl,
     inLanguage:    locale,
     ...(desc    && { description: desc }),
-    ...(image   && { image }),
     numberOfItems: itemListElement.length,
     itemListElement,
   }) + schemaScript(buildBreadcrumb(breadcrumbItems))
