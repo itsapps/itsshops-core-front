@@ -108,6 +108,7 @@ export default {
     varietal: "Grape variety",
     color: "Colour",
     classification: "Classification",
+    volume: "Bottle size",
     reset: "Reset filters",
     showResults: "Show results",
     results: "{count} products",

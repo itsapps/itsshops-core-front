@@ -108,6 +108,7 @@ export default {
     varietal: "Rebsorte",
     color: "Farbe",
     classification: "Klassifikation",
+    volume: "Flaschengröße",
     reset: "Filter zurücksetzen",
     showResults: "Ergebnisse anzeigen",
     results: "{count} Produkte",

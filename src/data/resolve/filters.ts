@@ -1,5 +1,6 @@
 import { slugify } from '../../utils/slugify'
 import { stegaClean } from '@sanity/client/stega'
+import { formatVolumeMl } from '../../filters'
 import type { ResolveContext } from '../../types'
 import type { FilterGroup, ResolvedFilterKey, ResolvedWine } from '../../types/data'
 
@@ -30,6 +31,7 @@ export function buildFilterAttributes(
         .map(c => c.name ? slugify(c.name) : '')
         .filter(Boolean)
     }
+    if (wine.volume) attrs.volume = [String(wine.volume)]
   }
 
   for (const opt of rawOptions) {
@@ -72,6 +74,9 @@ export function accumulateFilterGroups(
       for (const cl of w.classifications as Array<{ name: string | null }>) {
         if (cl.name) addToAcc(acc, 'classification', label, slugify(cl.name), cl.name)
       }
+    }
+    if (wine.volume) {
+      addToAcc(acc, 'volume', ctx.translate('filters.volume'), String(wine.volume), formatVolumeMl(wine.volume, ctx.units.volume, ctx.locale))
     }
   }
 
@@ -130,7 +135,9 @@ export function buildFilterGroups(acc: FilterAccumulator): FilterGroup[] {
       .sort((a, b) =>
         key === 'vintage'
           ? b.value.localeCompare(a.value)
-          : a.label.localeCompare(b.label)
+          : key === 'volume'
+            ? Number(a.value) - Number(b.value)
+            : a.label.localeCompare(b.label)
       ),
   }))
 }
