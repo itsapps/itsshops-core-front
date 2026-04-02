@@ -14,14 +14,14 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class on the wrapper (default: "product-price")
  #}
-{% macro productPrice(product, class="product-price") %}
+{% macro productPrice(product, class="product__price") %}
 <div class="{{ class }}">
   {%- if product.compareAtPrice %}
-    <s class="{{ class }}__compare">
+    <s class="{{ class }}-compare">
       <span class="sr-only">{{ 'product.price.was' | trans({ lng: product.locale }) }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
     </s>
   {%- endif %}
-  <span class="{{ class }}__amount">{{ product.price | formatPrice(product.locale) }}</span>
+  <span class="{{ class }}-amount">{{ product.price | formatPrice(product.locale) }}</span>
 </div>
 {% endmacro %}
 
@@ -32,10 +32,10 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class (default: "product-status")
  #}
-{% macro productStatus(product, class="product-status") %}
+{% macro productStatus(product, class="product__status") %}
 {%- if product.status != "active" %}
-  <span class="{{ class }} {{ class }}--{{ product.status }}">
-    {{- ('product.states.' + product.status) | trans(product.locale) -}}
+  <span class="{{ class }} {{ class }}--not-active {{ class }}--{{ product.status }}">
+    {{- ('product.states.' + product.status) | trans({ lng: product.locale }) -}}
   </span>
 {%- endif %}
 {% endmacro %}
@@ -48,7 +48,7 @@
  # @param product   ResolvedVariant  (current variant)
  # @param class     optional CSS class (default: "product-siblings")
  #}
-{% macro productSiblings(product, class="product-siblings") %}
+{% macro productSiblings(product, class="product__siblings") %}
 {%- if product.siblings.length %}
   <nav class="{{ class }}" aria-label="{{ 'product.ariaVariants' | trans({ lng: product.locale }) }}">
     <a
@@ -73,7 +73,7 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class (default: "product-options")
  #}
-{% macro productOptions(product, class="product-options") %}
+{% macro productOptions(product, class="product__options") %}
 {%- if product.options.length %}
   <ul class="{{ class }}">
     {%- for option in product.options %}
@@ -88,9 +88,9 @@
  # Renders the list of items in a bundle variant.
  #
  # @param product   ResolvedVariant
- # @param class     optional CSS class (default: "product-bundle")
+ # @param class     optional CSS class (default: "product__bundle")
  #}
-{% macro productBundleItems(product, class="product-bundle") %}
+{% macro productBundleItems(product, class="product__bundle") %}
 {%- if product.bundleItems.length %}
   <ul class="{{ class }}">
     {%- for item in product.bundleItems %}
@@ -123,7 +123,7 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class (default: "product-categories")
  #}
-{% macro productCategories(product, class="product-categories") %}
+{% macro productCategories(product, class="product__categories") %}
 {%- if product.categories.length %}
   <ul class="{{ class }}">
     {%- for cat in product.categories %}
@@ -142,7 +142,7 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class (default: "product-manufacturers")
  #}
-{% macro productManufacturers(product, class="product-manufacturers") %}
+{% macro productManufacturers(product, class="product__manufacturers") %}
 {%- if product.manufacturers.length %}
   <ul class="{{ class }}">
     {%- for m in product.manufacturers %}
@@ -159,14 +159,30 @@
  # @param class     optional CSS class on the wrapper (default: "qty-control")
  #}
 {% macro qtyControl(locale="", class="qty-control") %}
-<div class="{{ class }}" data-qty-control
+<div
+  class="{{ class }}"
+  data-qty-control
   data-t-decrease="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}"
   data-t-increase="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}"
   data-t-quantity="{{ 'cart.counter.quantity' | trans({ lng: locale }) }}"
 >
-  <button type="button" class="{{ class }}__btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}">−</button>
-  <output class="{{ class }}__value" data-qty-value>1</output>
-  <button type="button" class="{{ class }}__btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}">+</button>
+  <button
+    type="button"
+    class="{{ class }}__btn"
+    data-qty-decrease
+    aria-label="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}"
+  >−</button>
+  <output
+    class="{{ class }}__value"
+    data-qty-value
+    aria-live="polite"
+  >1</output>
+  <button
+    type="button"
+    class="{{ class }}__btn"
+    data-qty-increase
+    aria-label="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}"
+  >+</button>
 </div>
 {% endmacro %}
 
@@ -184,7 +200,7 @@
 {% macro addToCartButton(product, class="add-to-cart", label="", subtitle="", imageSize=null, locale="") %}
 {%- set _locale = locale if locale else product.locale -%}
 {%- set _imageSize = imageSize -%}
-{%- set _label = label if label else ('product.cartButton.addToCart' | trans(_locale)) -%}
+{%- set _label = label if label else ('product.cartButton.addToCart' | trans({ lng: _locale })) -%}
 {%- set _subtitle = subtitle -%}
 {%- if not _subtitle -%}
   {%- set _parts = [] -%}
@@ -223,7 +239,7 @@
  # @param product   ResolvedVariant  (must be kind == "wine")
  # @param class     optional CSS class (default: "wine-details")
  #}
-{% macro productWineDetails(product, class="wine-details") %}
+{% macro productWineDetails(product, class="product__wine-details") %}
 {%- if product.kind == "wine" and product.wine %}
   {%- set wine = product.wine %}
   <dl class="{{ class }}">

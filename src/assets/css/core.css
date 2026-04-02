@@ -222,3 +222,41 @@
   padding-top: 0.5rem;
   margin-top: 0.25rem;
 }
+
+
+/* ─── Price range slider ───────────────────────────────────────────────────
+ * Structural layout for dual-thumb range slider.
+ * Override thumb/track colors in customer CSS.
+ */
+.product-filters__price-slider {
+  position: relative;
+  height: 1.5rem;
+}
+
+.product-filters__price-slider input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.product-filters__price-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.product-filters__price-slider input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.product-filters__price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

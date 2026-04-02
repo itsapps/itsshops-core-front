@@ -1,10 +1,10 @@
-{% from "macros/product.njk" import productPrice, productStatus, productSiblings,
+{% from "macros/product.njk" import addToCartButton, productPrice, productStatus, qtyControl, productSiblings,
   productWineDetails, productBundleItems, productOptions,
   productCategories, productManufacturers %}
 
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
 
-  <figure class="product-gallery">
+  <figure class="product__image">
     {% if product.image %}
       {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
     {% else %}
@@ -12,65 +12,49 @@
     {% endif %}
   </figure>
 
-  <div class="product-body">
-
-    <header class="product-header">
-      {{ productStatus(product, class="product-status") }}
-      <h1 class="product-title">{{ product.title }}</h1>
+  <div class="product__body">
+    <header class="product__header">
+      <h1 class="product__title">{{ product.title }}</h1>
       {%- if product.sku %}
-        <p class="product-sku">{{ product.sku }}</p>
+        <p class="product__sku">{{ product.sku }}</p>
       {%- endif %}
     </header>
 
-    {{ productSiblings(product, class="product-siblings") }}
+    {{ productSiblings(product) }}
 
-    <div class="product-purchase">
-      {{ productPrice(product, class="product-price") }}
-      <p class="product-tax-info">{{ 'product.taxShippingInfoText' | trans }}</p>
-      <div class="product-actions" data-product-actions>
+    <div class="product__purchase">
+      {{ productPrice(product) }}
+
+      {% block product_cart_control %}
+      {%- if coreConfig.features.shop.checkout -%}
+        <p class="product__tax-info">{{ 'product.taxShippingInfoText' | trans }}</p>
+        
+        <div class="product__actions" data-product-actions>
         {%- if product.status == "active" %}
-          <div class="product-qty-control" data-qty-control>
-            <button type="button" class="product-qty-control__btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
-            <span class="product-qty-control__value" data-qty-value aria-live="polite">1</span>
-            <button type="button" class="product-qty-control__btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
-          </div>
-          <button
-            type="button"
-            class="product-add-to-cart"
-            data-add-to-cart
-            data-product-id="{{ product._id }}"
-            data-sku="{{ product.sku or '' }}"
-            data-price="{{ product.price }}"
-            data-title="{{ product.title }}"
-            data-url="{{ product.url }}"
-            {%- if product.image %} data-image="{{ product.image | imageSizeUrl(imageSizes.cart) }}"{% endif %}
-          >{{ 'product.cartButton.addToCart' | trans }}</button>
-        {%- elif product.status == "active" %}
-          <p class="product-active">{{ 'product.states.active' | trans }}</p>
-        {%- elif product.status == "comingSoon" %}
-          <p class="product-coming-soon">{{ 'product.states.comingSoon' | trans }}</p>
-        {%- elif product.status == "soldOut" %}
-          <p class="product-sold-out">{{ 'product.states.soldOut' | trans }}</p>
-        {%- elif product.status == "archived" %}
-          <p class="product-archived">{{ 'product.states.archived' | trans }}</p>
+          {{ qtyControl(locale=product.locale) }}
+          {{ addToCartButton(product, label=('product.cartButton.addToCartShort' | trans), imageSize=imageSizes.cart) }}
+        {%- else %}
+          {{ productStatus(product) }}
         {%- endif %}
-      </div>
+        </div>
+      {%- endif -%}
+      {% endblock %}
     </div>
 
     {%- if product.kind == "wine" and product.wine %}
-      {{ productWineDetails(product, class="product-wine-details") }}
+      {{ productWineDetails(product) }}
     {%- endif %}
 
     {%- if product.kind == "bundle" %}
-      {{ productBundleItems(product, class="product-bundle") }}
+      {{ productBundleItems(product) }}
     {%- endif %}
 
     {%- if product.kind == "physical" or product.kind == "digital" %}
-      {{ productOptions(product, class="product-options") }}
+      {{ productOptions(product) }}
     {%- endif %}
 
-    {{ productCategories(product, class="product-categories") }}
-    {{ productManufacturers(product, class="product-manufacturers") }}
+    {{ productCategories(product) }}
+    {{ productManufacturers(product) }}
 
   </div>
 

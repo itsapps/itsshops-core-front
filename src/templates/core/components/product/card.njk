@@ -10,23 +10,26 @@
       {%- endif %}
     </figure>
     <div class="product-card__body">
-      {{ productStatus(product, class="product-card__status") }}
       <h2 class="product-card__title">{{ product.title }}</h2>
-      {% block product_label %}
+      {% block product_card_label %}
       {%- if product.label != product.title %}
         <p class="product-card__label">{{ product.label }}</p>
       {%- endif %}
       {% endblock %}
-      {% block product_price %}
+      {% block product_card_price %}
         {{ productPrice(product, class="product-card__price") }}
       {% endblock %}
     </div>
   </a>
-  {% block product_cart_control %}
-  {%- if coreConfig.features.shop.checkout and product.status == "active" -%}
-    <div class="product-card__actions">
+  {% block product_card_cart_control %}
+  {%- if coreConfig.features.shop.checkout -%}
+    <div class="product-card__actions" data-product-actions>
+    {%- if product.status == "active" %}
       {{ qtyControl(locale=product.locale) }}
       {{ addToCartButton(product, label=('product.cartButton.addToCartShort' | trans), imageSize=imageSizes.cart) }}
+    {%- else %}
+      {{ productStatus(product, class="product-card__status") }}
+    {%- endif %}
     </div>
   {%- endif -%}
   {% endblock %}

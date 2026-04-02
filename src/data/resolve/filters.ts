@@ -2,7 +2,7 @@ import { slugify } from '../../utils/slugify'
 import { stegaClean } from '@sanity/client/stega'
 import { formatVolumeMl } from '../../filters'
 import type { ResolveContext } from '../../types'
-import type { FilterGroup, ResolvedFilterKey, ResolvedWine } from '../../types/data'
+import type { FilterGroup, ResolvedCategory, ResolvedFilterKey, ResolvedWine } from '../../types/data'
 
 export type FilterAccumulator = Map<string, {
   label: string
@@ -14,6 +14,7 @@ export function buildFilterAttributes(
   wine: ResolvedWine | null,
   rawOptions: Array<{ _id: string; name: any; group?: { _id: string; title: any } }>,
   ctx: ResolveContext,
+  categories?: ResolvedCategory[],
 ): Record<string, string[]> {
   const attrs: Record<string, string[]> = {}
 
@@ -44,6 +45,10 @@ export function buildFilterAttributes(
     }
   }
 
+  if (categories?.length) {
+    attrs.category = categories.map(c => c.slug).filter(Boolean)
+  }
+
   return attrs
 }
 
@@ -53,6 +58,7 @@ export function accumulateFilterGroups(
   wine: ResolvedWine | null,
   rawOptions: Array<{ _id: string; name: any; group?: { _id: string; title: any } }>,
   ctx: ResolveContext,
+  categories?: ResolvedCategory[],
 ): void {
   if (kind === 'wine' && wine) {
     if (wine.vintage) {
@@ -91,6 +97,13 @@ export function accumulateFilterGroups(
       addToAcc(acc, groupKey, groupLabel, valueSlug, valueLabel)
     }
   }
+
+  if (categories?.length) {
+    const label = ctx.translate('filters.category')
+    for (const cat of categories) {
+      if (cat.slug) addToAcc(acc, 'category', label, cat.slug, cat.title)
+    }
+  }
 }
 
 function addToAcc(
@@ -119,7 +132,7 @@ export function resolveFilterSpecs(
   return (rawFilters ?? []).flatMap((f: any) => {
     if (!f) return []
     const fType = stegaClean(f._type)
-    if (fType === 'wineFieldFilter' && f.field) return [stegaClean(f.field) as string]
+    if ((fType === 'wineFieldFilter' || fType === 'productFieldFilter') && f.field) return [stegaClean(f.field) as string]
     if (fType === 'reference' && f.title) {
       const key = slugify(stegaClean(ctx.resolveString(f.title)) || '')
       return key ? [key] : []

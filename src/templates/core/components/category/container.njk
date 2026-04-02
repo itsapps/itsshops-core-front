@@ -3,9 +3,11 @@
   {% block category_header %}
     <header class="category-header">
       <h1 class="category-title">{{ category.title }}</h1>
+      {% block category_description %}
       {% if category.description %}
         <p class="category-description">{{ category.description }}</p>
       {% endif %}
+      {% endblock %}
     </header>
   {% endblock %}
 
@@ -23,6 +25,7 @@
             class="category-products__item"
             data-filter-item
             data-filter-attrs="{{ product.filterAttributes | dump }}"
+            data-filter-price="{{ product.price }}"
           >
             {% include "overridable/product/card.njk" %}
           </div>

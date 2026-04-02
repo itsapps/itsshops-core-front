@@ -14,37 +14,62 @@
  *   [data-filter-attrs]        — JSON string: Record<string, string[]>
  *   input[data-filter-key]     — checkbox inputs: group key
  *   input[data-filter-value]   — checkbox inputs: value slug
+ *   [data-filter-price]        — price in cents (on each item, for price range filter)
+ *   input[data-filter-price-min] — min price input (whole currency units)
+ *   input[data-filter-price-max] — max price input (whole currency units)
  *   [data-filter-reset]        — reset button
  *   [data-filter-count]        — sr-only live region for result count
  */
 
-type FilterState = Map<string, Set<string>>
+type FilterState = {
+  attrs: Map<string, Set<string>>
+  priceMin: number | null
+  priceMax: number | null
+}
 
 function parseFilterState(): FilterState {
-  const state: FilterState = new Map()
+  const attrs: FilterState['attrs'] = new Map()
   const params = new URLSearchParams(location.search)
+  let priceMin: number | null = null
+  let priceMax: number | null = null
   params.forEach((value, key) => {
-    if (!state.has(key)) state.set(key, new Set())
-    state.get(key)!.add(value)
+    if (key === 'priceMin') { priceMin = Number(value) || null; return }
+    if (key === 'priceMax') { priceMax = Number(value) || null; return }
+    if (!attrs.has(key)) attrs.set(key, new Set())
+    attrs.get(key)!.add(value)
   })
-  return state
+  return { attrs, priceMin, priceMax }
 }
 
 function stateToSearch(state: FilterState): string {
   const params = new URLSearchParams()
-  state.forEach((values, key) => {
+  state.attrs.forEach((values, key) => {
     values.forEach(v => params.append(key, v))
   })
+  if (state.priceMin !== null) params.set('priceMin', String(state.priceMin))
+  if (state.priceMax !== null) params.set('priceMax', String(state.priceMax))
   const s = params.toString()
   return s ? `?${s}` : location.pathname
 }
 
-function itemMatchesState(attrs: Record<string, string[]>, state: FilterState): boolean {
+function itemMatchesState(attrs: Record<string, string[]>, state: FilterState['attrs']): boolean {
   for (const [key, activeValues] of state) {
     const itemValues = attrs[key] ?? []
     const hasMatch = [...activeValues].some(v => itemValues.includes(v))
     if (!hasMatch) return false
   }
+  return true
+}
+
+function isStateEmpty(state: FilterState): boolean {
+  return state.attrs.size === 0 && state.priceMin === null && state.priceMax === null
+}
+
+function itemMatchesPrice(priceCents: number | null, state: FilterState): boolean {
+  if (priceCents === null) return true
+  // Price inputs are in whole currency units (euros), data-filter-price is in cents
+  if (state.priceMin !== null && priceCents < state.priceMin * 100) return false
+  if (state.priceMax !== null && priceCents > state.priceMax * 100) return false
   return true
 }
 
@@ -54,24 +79,37 @@ function applyState(state: FilterState): void {
   document.querySelectorAll<HTMLElement>('[data-filter-item]').forEach(item => {
     let attrs: Record<string, string[]> = {}
     try { attrs = JSON.parse(item.dataset.filterAttrs ?? '{}') } catch (_) { /* noop */ }
-    const visible = state.size === 0 || itemMatchesState(attrs, state)
+    const price = item.dataset.filterPrice ? Number(item.dataset.filterPrice) : null
+    const visible = isStateEmpty(state)
+      || (itemMatchesState(attrs, state.attrs) && itemMatchesPrice(price, state))
     item.hidden = !visible
     if (visible) visibleCount++
   })
 
   // Sync checkbox states
   document.querySelectorAll<HTMLInputElement>('input[data-filter-key]').forEach(input => {
-    input.checked = state.get(input.dataset.filterKey!)?.has(input.dataset.filterValue!) ?? false
+    input.checked = state.attrs.get(input.dataset.filterKey!)?.has(input.dataset.filterValue!) ?? false
   })
 
+  // Sync price inputs + sliders
+  const priceMinInput = document.querySelector<HTMLInputElement>('input[data-filter-price-min]')
+  const priceMaxInput = document.querySelector<HTMLInputElement>('input[data-filter-price-max]')
+  const priceSliderMin = document.querySelector<HTMLInputElement>('input[data-filter-price-slider-min]')
+  const priceSliderMax = document.querySelector<HTMLInputElement>('input[data-filter-price-slider-max]')
+  if (priceMinInput) priceMinInput.value = state.priceMin !== null ? String(state.priceMin) : ''
+  if (priceMaxInput) priceMaxInput.value = state.priceMax !== null ? String(state.priceMax) : ''
+  if (priceSliderMin) priceSliderMin.value = state.priceMin !== null ? String(state.priceMin) : priceSliderMin.min
+  if (priceSliderMax) priceSliderMax.value = state.priceMax !== null ? String(state.priceMax) : priceSliderMax.max
+
   // Update reset button visibility
+  const empty = isStateEmpty(state)
   document.querySelectorAll<HTMLElement>('[data-filter-reset]').forEach(btn => {
-    btn.hidden = state.size === 0
+    btn.hidden = empty
   })
 
   // Announce result count to screen readers
   document.querySelectorAll<HTMLElement>('[data-filter-count]').forEach(el => {
-    if (state.size === 0) {
+    if (empty) {
       el.textContent = ''
       return
     }
@@ -82,11 +120,11 @@ function applyState(state: FilterState): void {
 
 function toggleFilter(key: string, value: string): void {
   const state = parseFilterState()
-  if (!state.has(key)) state.set(key, new Set())
-  const set = state.get(key)!
+  if (!state.attrs.has(key)) state.attrs.set(key, new Set())
+  const set = state.attrs.get(key)!
   if (set.has(value)) {
     set.delete(value)
-    if (set.size === 0) state.delete(key)
+    if (set.size === 0) state.attrs.delete(key)
   } else {
     set.add(value)
   }
@@ -94,9 +132,35 @@ function toggleFilter(key: string, value: string): void {
   applyState(state)
 }
 
+function syncPriceSliderToInput(slider: HTMLInputElement, input: HTMLInputElement): void {
+  input.value = slider.value
+}
+
+function syncPriceInputToSlider(input: HTMLInputElement, slider: HTMLInputElement): void {
+  if (input.value) slider.value = input.value
+}
+
+function readPriceState(): { priceMin: number | null; priceMax: number | null } {
+  const minInput = document.querySelector<HTMLInputElement>('input[data-filter-price-min]')
+  const maxInput = document.querySelector<HTMLInputElement>('input[data-filter-price-max]')
+  return {
+    priceMin: minInput?.value ? Number(minInput.value) : null,
+    priceMax: maxInput?.value ? Number(maxInput.value) : null,
+  }
+}
+
+function updatePriceFilter(): void {
+  const state = parseFilterState()
+  const { priceMin, priceMax } = readPriceState()
+  state.priceMin = priceMin
+  state.priceMax = priceMax
+  history.pushState(null, '', stateToSearch(state))
+  applyState(state)
+}
+
 function resetFilters(): void {
   history.pushState(null, '', location.pathname)
-  applyState(new Map())
+  applyState({ attrs: new Map(), priceMin: null, priceMax: null })
 }
 
 function syncViewButton(view: string): void {
@@ -121,6 +185,39 @@ export function initProductFilter(): void {
   document.addEventListener('change', (e) => {
     const input = (e.target as Element).closest<HTMLInputElement>('input[data-filter-key]')
     if (input) toggleFilter(input.dataset.filterKey!, input.dataset.filterValue!)
+  })
+
+  // Price range inputs + sliders
+  const priceMinInput = document.querySelector<HTMLInputElement>('input[data-filter-price-min]')
+  const priceMaxInput = document.querySelector<HTMLInputElement>('input[data-filter-price-max]')
+  const priceSliderMin = document.querySelector<HTMLInputElement>('input[data-filter-price-slider-min]')
+  const priceSliderMax = document.querySelector<HTMLInputElement>('input[data-filter-price-slider-max]')
+
+  priceMinInput?.addEventListener('input', () => {
+    if (priceSliderMin) syncPriceInputToSlider(priceMinInput, priceSliderMin)
+    updatePriceFilter()
+  })
+  priceMaxInput?.addEventListener('input', () => {
+    if (priceSliderMax) syncPriceInputToSlider(priceMaxInput, priceSliderMax)
+    updatePriceFilter()
+  })
+  priceSliderMin?.addEventListener('input', () => {
+    if (priceMinInput) syncPriceSliderToInput(priceSliderMin, priceMinInput)
+    // Prevent min exceeding max
+    if (priceSliderMax && Number(priceSliderMin.value) > Number(priceSliderMax.value)) {
+      priceSliderMax.value = priceSliderMin.value
+      if (priceMaxInput) syncPriceSliderToInput(priceSliderMax, priceMaxInput)
+    }
+    updatePriceFilter()
+  })
+  priceSliderMax?.addEventListener('input', () => {
+    if (priceMaxInput) syncPriceSliderToInput(priceSliderMax, priceMaxInput)
+    // Prevent max going below min
+    if (priceSliderMin && Number(priceSliderMax.value) < Number(priceSliderMin.value)) {
+      priceSliderMin.value = priceSliderMax.value
+      if (priceMinInput) syncPriceSliderToInput(priceSliderMin, priceMinInput)
+    }
+    updatePriceFilter()
   })
 
   // Reset + view/filter panel toggles

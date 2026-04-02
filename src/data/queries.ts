@@ -40,6 +40,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     _type,
     ${proj.i18nStringField('title')},
     "filters": filters[]{
+      _type == 'productFieldFilter' => { _type, field },
       _type == 'wineFieldFilter' => { _type, field },
       _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
     }
@@ -114,6 +115,7 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
   "parent": parent->{ _id },
   seo ${proj.seo},
   "filters": filters[]{
+    _type == 'productFieldFilter' => { _type, field },
     _type == 'wineFieldFilter' => { _type, field },
     _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
   }${extraFields('category', extensions)}
@@ -203,6 +205,7 @@ export function buildShopSettingsQuery(): string {
   billingAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
   bankAccount { name, bic, iban },
   "filters": filters[]{
+    _type == 'productFieldFilter' => { _type, field },
     _type == 'wineFieldFilter' => { _type, field },
     _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
   }

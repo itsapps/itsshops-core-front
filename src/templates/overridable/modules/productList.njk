@@ -15,6 +15,7 @@
           class="product-list__item"
           data-filter-item
           data-filter-attrs="{{ product.filterAttributes | dump }}"
+          data-filter-price="{{ product.price }}"
         >
           {% include "overridable/product/card.njk" %}
         </div>

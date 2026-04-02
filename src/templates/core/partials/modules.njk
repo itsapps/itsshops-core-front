@@ -12,8 +12,8 @@
   {%- set _moduleContent -%}
     {%- include "overridable/modules/" + module._type + ".njk" ignore missing -%}
   {%- endset -%}
-  {%- if not _moduleContent and coreConfig.debug.enabled -%}
-    <!-- DEV WARNING: No template found for module type "{{ module._type }}" -->
+  {%- if not _moduleContent -%}
+    {{- ("No template found for module type: " + module._type) | log -}}
   {%- endif -%}
   <div class="module module--{{ module._type }}">
     {{- _moduleContent | safe -}}

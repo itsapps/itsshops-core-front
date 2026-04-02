@@ -214,8 +214,8 @@ export function resolveVariants(
     const kind      = stegaClean(variant.kind ?? product.kind ?? 'physical')
     const wine      = variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null
     const rawOpts   = variant.options ?? []
-    const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx)
-    if (filterAcc) accumulateFilterGroups(filterAcc, kind, wine, rawOpts, ctx)
+    const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx, categories)
+    if (filterAcc) accumulateFilterGroups(filterAcc, kind, wine, rawOpts, ctx, categories)
     
     const title = ctx.resolveString(variant.title) || ctx.resolveString(product.title)
 

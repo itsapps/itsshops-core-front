@@ -10,11 +10,21 @@
   {%- endif -%}
 {%- endfor -%}
 
-{% if _groups.length %}
+{%- set _showPrice = activeFilterKeys and 'price' in activeFilterKeys -%}
+{%- if _showPrice -%}
+  {%- set _priceMin = null -%}
+  {%- set _priceMax = null -%}
+  {%- for p in listProducts -%}
+    {%- if _priceMin === null or p.price < _priceMin %}{%- set _priceMin = p.price -%}{%- endif -%}
+    {%- if _priceMax === null or p.price > _priceMax %}{%- set _priceMax = p.price -%}{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{% if _groups.length or _showPrice %}
   <div class="product-filters" data-product-filters data-t-results="{{ 'filters.results' | trans }}">
     {% for group in _groups %}
-      <fieldset class="product-filters__group" data-filter-group="{{ group.key }}">
-        <legend class="product-filters__label">{{ group.label }}</legend>
+      <details class="product-filters__group" data-filter-group="{{ group.key }}"{% if _filterGroupsOpen !== false %} open{% endif %}>
+        <summary class="product-filters__label">{{ group.label }}</summary>
         <div class="product-filters__options">
           {% for val in group.values %}
             <label class="product-filters__option">
@@ -28,8 +38,32 @@
             </label>
           {% endfor %}
         </div>
-      </fieldset>
+      </details>
     {% endfor %}
+    {% if _showPrice and _priceMin !== null and _priceMin !== _priceMax %}
+      {%- set _priceMinEur = (_priceMin / 100) | round(0, 'floor') -%}
+      {%- set _priceMaxEur = (_priceMax / 100) | round(0, 'ceil') -%}
+      <details class="product-filters__group product-filters__group--price" data-filter-group="price"{% if _filterGroupsOpen !== false %} open{% endif %}>
+        <summary class="product-filters__label">{{ 'filters.price' | trans }}</summary>
+        <div class="product-filters__price-range" data-filter-price-range data-price-min="{{ _priceMin }}" data-price-max="{{ _priceMax }}">
+          <div class="product-filters__price-slider" aria-hidden="true">
+            <input type="range" data-filter-price-slider-min min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" value="{{ _priceMinEur }}" step="1">
+            <input type="range" data-filter-price-slider-max min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" value="{{ _priceMaxEur }}" step="1">
+          </div>
+          <div class="product-filters__price-inputs">
+            <label class="product-filters__price-field">
+              <span class="sr-only">{{ 'filters.priceMin' | trans }}</span>
+              <input type="number" data-filter-price-min placeholder="{{ _priceMin | formatPrice }}" min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" step="1">
+            </label>
+            <span class="product-filters__price-sep" aria-hidden="true">–</span>
+            <label class="product-filters__price-field">
+              <span class="sr-only">{{ 'filters.priceMax' | trans }}</span>
+              <input type="number" data-filter-price-max placeholder="{{ _priceMax | formatPrice }}" min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" step="1">
+            </label>
+          </div>
+        </div>
+      </details>
+    {% endif %}
     <button type="button" class="product-filters__reset" data-filter-reset hidden>
       {{ "filters.reset" | trans }}
     </button>

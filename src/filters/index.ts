@@ -225,6 +225,11 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter('formatNumber', function (num: number) {
     return formatNumber(num, this.page?.lang || config.defaultLocale)
   })
+  eleventyConfig.addFilter('log', (value: any, label?: string) => {
+    if (label) console.warn(`⚠️ [itsshops] ${label}`, value)
+    else console.warn('⚠️ [itsshops]', value)
+    return value
+  })
   eleventyConfig.addFilter('nl2br', nl2br)
   eleventyConfig.addFilter('postalCode', postalCode as any)
   eleventyConfig.addFilter('countryName', function (code: string) {
