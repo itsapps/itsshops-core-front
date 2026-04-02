@@ -187,7 +187,7 @@ export type ResolvedVariant = {
   options: ResolvedOption[]
   bundleItems: ResolvedBundleItem[]
   product: { _id: string; title: string }
-  siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string }>
+  siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string; volume: number | null; vintage: string | null }>
   /** URL-safe filter attributes for client-side filtering. Key = filter group key, value = slugified values. */
   filterAttributes: Record<string, string[]>
   // extended fields land here at runtime (e.g. isLimited from customer extensions)

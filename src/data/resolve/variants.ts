@@ -197,7 +197,7 @@ export function resolveVariants(
     const siblings = (siblingsMap.get(product._id) ?? [])
       .filter((s: any) => s._id !== variant._id)
       .map((s: any) => {
-        const sKind  = s.kind ?? product.kind ?? 'physical'
+        const sKind  = stegaClean(s.kind ?? product.kind ?? 'physical')
         const sTitle = ctx.resolveString(s.title) || ctx.resolveString(product.title)
         return {
           _id:    s._id,
@@ -206,10 +206,12 @@ export function resolveVariants(
           url:    variantUrlMap.get(s._id) ?? '',
           status: s.status ?? 'active',
           kind:   sKind,
+          volume:  s.wine?.volume ?? null,
+          vintage: s.wine?.vintage ?? null,
         }
       })
 
-    const kind      = variant.kind ?? product.kind ?? 'physical'
+    const kind      = stegaClean(variant.kind ?? product.kind ?? 'physical')
     const wine      = variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null
     const rawOpts   = variant.options ?? []
     const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx)
@@ -224,7 +226,7 @@ export function resolveVariants(
       slug,
       url,
       locale:         locale,
-      status:         variant.status ?? 'active',
+      status:         stegaClean(variant.status ?? 'active') as ResolvedVariant['status'],
       title,
       ...buildVariantLabel(
         title,

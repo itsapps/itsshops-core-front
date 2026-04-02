@@ -35,7 +35,7 @@
 {% macro productStatus(product, class="product-status") %}
 {%- if product.status != "active" %}
   <span class="{{ class }} {{ class }}--{{ product.status }}">
-    {{- 'product.states.' + product.status | trans(product.locale) -}}
+    {{- ('product.states.' + product.status) | trans(product.locale) -}}
   </span>
 {%- endif %}
 {% endmacro %}

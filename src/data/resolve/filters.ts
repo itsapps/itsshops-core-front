@@ -18,20 +18,20 @@ export function buildFilterAttributes(
   const attrs: Record<string, string[]> = {}
 
   if (kind === 'wine' && wine) {
-    if (wine.vintage) attrs.vintage = [String(wine.vintage)]
+    if (wine.vintage) attrs.vintage = [stegaClean(String(wine.vintage))]
     const w = wine as any
-    if (w.color) attrs.color = [slugify(String(w.color))]
+    if (w.color) attrs.color = [slugify(stegaClean(String(w.color)))]
     if (w.varietals?.length) {
       attrs.varietal = (w.varietals as Array<{ name: string | null }>)
-        .map(v => v.name ? slugify(v.name) : '')
+        .map(v => v.name ? slugify(stegaClean(v.name)) : '')
         .filter(Boolean)
     }
     if (w.classifications?.length) {
       attrs.classification = (w.classifications as Array<{ name: string | null }>)
-        .map(c => c.name ? slugify(c.name) : '')
+        .map(c => c.name ? slugify(stegaClean(c.name)) : '')
         .filter(Boolean)
     }
-    if (wine.volume) attrs.volume = [String(wine.volume)]
+    if (wine.volume) attrs.volume = [stegaClean(String(wine.volume))]
   }
 
   for (const opt of rawOptions) {
@@ -56,27 +56,28 @@ export function accumulateFilterGroups(
 ): void {
   if (kind === 'wine' && wine) {
     if (wine.vintage) {
-      const v = String(wine.vintage)
+      const v = stegaClean(String(wine.vintage))
       addToAcc(acc, 'vintage', ctx.translate('filters.vintage'), v, v)
     }
     const w = wine as any
     if (w.color) {
-      addToAcc(acc, 'color', ctx.translate('filters.color'), slugify(String(w.color)), String(w.color))
+      const c = stegaClean(String(w.color))
+      addToAcc(acc, 'color', ctx.translate('filters.color'), slugify(c), c)
     }
     if (w.varietals?.length) {
       const label = ctx.translate('filters.varietal')
       for (const varietal of w.varietals as Array<{ name: string | null }>) {
-        if (varietal.name) addToAcc(acc, 'varietal', label, slugify(varietal.name), varietal.name)
+        if (varietal.name) addToAcc(acc, 'varietal', label, slugify(stegaClean(varietal.name)), stegaClean(varietal.name))
       }
     }
     if (w.classifications?.length) {
       const label = ctx.translate('filters.classification')
       for (const cl of w.classifications as Array<{ name: string | null }>) {
-        if (cl.name) addToAcc(acc, 'classification', label, slugify(cl.name), cl.name)
+        if (cl.name) addToAcc(acc, 'classification', label, slugify(stegaClean(cl.name)), stegaClean(cl.name))
       }
     }
     if (wine.volume) {
-      addToAcc(acc, 'volume', ctx.translate('filters.volume'), String(wine.volume), formatVolumeMl(wine.volume, ctx.units.volume, ctx.locale))
+      addToAcc(acc, 'volume', ctx.translate('filters.volume'), stegaClean(String(wine.volume)), formatVolumeMl(wine.volume, ctx.units.volume, ctx.locale))
     }
   }
 
@@ -117,8 +118,9 @@ export function resolveFilterSpecs(
 ): ResolvedFilterKey[] {
   return (rawFilters ?? []).flatMap((f: any) => {
     if (!f) return []
-    if (f._type === 'wineFieldFilter' && f.field) return [stegaClean(f.field) as string]
-    if (f._type === 'reference' && f.title) {
+    const fType = stegaClean(f._type)
+    if (fType === 'wineFieldFilter' && f.field) return [stegaClean(f.field) as string]
+    if (fType === 'reference' && f.title) {
       const key = slugify(stegaClean(ctx.resolveString(f.title)) || '')
       return key ? [key] : []
     }

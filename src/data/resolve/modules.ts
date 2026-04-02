@@ -9,7 +9,7 @@ export function resolveModules(
 ): any[] {
   return (modules ?? []).map(m => {
     let resolved: any
-    switch (m._type) {
+    switch (stegaClean(m._type)) {
       case 'productGrid':
       case 'categoryGrid':
         resolved = { ...m, title: ctx.resolveString(m.title) }
