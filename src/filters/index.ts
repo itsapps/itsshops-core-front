@@ -230,6 +230,15 @@ export const createFilters = (ctx: CoreContext) => {
     else console.warn('⚠️ [itsshops]', value)
     return value
   })
+  eleventyConfig.addFilter('sortBy', ((arr: any[], path: string, reverse?: boolean) => {
+    if (!Array.isArray(arr)) return arr
+    const get = (obj: any) => path.split('.').reduce((o, k) => o?.[k], obj) ?? ''
+    return [...arr].sort((a, b) => {
+      const va = get(a), vb = get(b)
+      const cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb))
+      return reverse ? -cmp : cmp
+    })
+  }) as any)
   eleventyConfig.addFilter('nl2br', nl2br)
   eleventyConfig.addFilter('postalCode', postalCode as any)
   eleventyConfig.addFilter('countryName', function (code: string) {
