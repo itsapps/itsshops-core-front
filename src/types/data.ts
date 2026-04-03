@@ -178,6 +178,7 @@ export type ResolvedVariant = {
   price: number
   compareAtPrice: number | null
   image: ResolvedImage | null
+  productImage: ResolvedImage | null
   seo: ResolvedSeo
   categories: ResolvedCategory[]
   manufacturers: ResolvedManufacturer[]

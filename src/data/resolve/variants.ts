@@ -240,6 +240,7 @@ export function resolveVariants(
       price:          variant.price ?? product.price ?? 0,
       compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
       image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
+      productImage:   ctx.resolveLocaleAltImage(product.image),
       seo:            ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),
       categories,
       manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
