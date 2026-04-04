@@ -4,7 +4,7 @@ import type {
   CheckoutCartItem,
   AddressInput,
   ErrorResponse,
-} from './checkout-types'
+} from '../shared/checkout-api'
 
 const MAX_RETRIES = 3
 const BASE_DELAY = 500
@@ -23,16 +23,37 @@ type PaymentCreateBody = {
   orderMetaId?: string
 }
 
-export class CheckoutApiError extends Error {
+/**
+ * Validation/business error — user can fix (bad input, stock exceeded, etc.)
+ */
+export class CheckoutValidationError extends Error {
   constructor(
     message: string,
     public code: string,
     public details?: Record<string, string>,
-    public statusCode?: number,
+    public requestId?: string,
   ) {
     super(message)
-    this.name = 'CheckoutApiError'
+    this.name = 'CheckoutValidationError'
   }
+}
+
+/**
+ * IO/server error — user cannot fix (service down, 500, network failure).
+ * Shows requestId so user can contact support.
+ */
+export class CheckoutIOError extends Error {
+  constructor(
+    message: string,
+    public requestId?: string,
+  ) {
+    super(message)
+    this.name = 'CheckoutIOError'
+  }
+}
+
+function generateRequestId(): string {
+  return crypto.randomUUID().replaceAll('-', '')
 }
 
 async function fetchWithRetry(
@@ -40,13 +61,17 @@ async function fetchWithRetry(
   body: PaymentCreateBody,
   retries = MAX_RETRIES,
 ): Promise<CalculateResponse | CreatePaymentResponse> {
+  const requestId = generateRequestId()
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'x-request-id': requestId,
+        },
         body: JSON.stringify(body),
       })
 
@@ -54,11 +79,20 @@ async function fetchWithRetry(
 
       if (!response.ok) {
         const err = data as ErrorResponse
-        throw new CheckoutApiError(
+        const serverRequestId = err.requestId ?? requestId
+
+        if (response.status >= 500) {
+          throw new CheckoutIOError(
+            err.error?.message ?? 'Server error',
+            serverRequestId,
+          )
+        }
+
+        throw new CheckoutValidationError(
           err.error?.message ?? 'Request failed',
           err.error?.code ?? 'UNKNOWN',
           err.error?.details,
-          response.status,
+          serverRequestId,
         )
       }
 
@@ -66,19 +100,21 @@ async function fetchWithRetry(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
 
-      // Don't retry client errors (4xx) or known API errors
-      if (error instanceof CheckoutApiError && error.statusCode && error.statusCode < 500) {
+      // Don't retry validation errors — user needs to fix
+      if (error instanceof CheckoutValidationError) {
         throw error
       }
 
-      // Retry on network/server errors
+      // Retry IO/network errors
       if (attempt < retries) {
         await new Promise(r => setTimeout(r, BASE_DELAY * Math.pow(2, attempt - 1)))
       }
     }
   }
 
-  throw lastError ?? new Error('Request failed after retries')
+  // All retries exhausted — IO error
+  if (lastError instanceof CheckoutIOError) throw lastError
+  throw new CheckoutIOError(lastError?.message ?? 'Request failed after retries', requestId)
 }
 
 export function calculatePayment(

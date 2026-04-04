@@ -1,4 +1,5 @@
-import type { AddressInput } from './checkout-types'
+import type { AddressInput } from '../shared/checkout-api'
+import { validateEmail, REQUIRED_ADDRESS_FIELDS } from '../shared/validation'
 
 type FieldError = { field: string; message: string }
 
@@ -11,8 +12,6 @@ export type FormErrorLabels = {
   zip: string
   country: string
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export class CheckoutForm {
   private form: HTMLFormElement
@@ -104,45 +103,31 @@ export class CheckoutForm {
     const errors: FieldError[] = []
 
     const email = this.getEmail()
-    if (!email || !EMAIL_RE.test(email)) {
+    if (!email || !validateEmail(email)) {
       errors.push({ field: 'contactEmail', message: this.errorLabels.email })
     }
 
-    const l = this.errorLabels
-    const required: [string, string][] = [
-      ['shipping.prename', l.prename],
-      ['shipping.lastname', l.lastname],
-      ['shipping.line1', l.street],
-      ['shipping.zip', l.zip],
-      ['shipping.city', l.city],
-      ['shipping.country', l.country],
-    ]
-
-    for (const [field, message] of required) {
-      if (!this.getFieldValue(field).trim()) {
-        errors.push({ field, message })
-      }
-    }
+    this.validateAddressFields('shipping', errors)
 
     // Validate billing if separate
     const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
     if (useShippingAsBilling?.checked === false) {
-      const billingRequired: [string, string][] = [
-        ['billing.prename', l.prename],
-        ['billing.lastname', l.lastname],
-        ['billing.line1', l.street],
-        ['billing.zip', l.zip],
-        ['billing.city', l.city],
-        ['billing.country', l.country],
-      ]
-      for (const [field, message] of billingRequired) {
-        if (!this.getFieldValue(field).trim()) {
-          errors.push({ field, message })
-        }
-      }
+      this.validateAddressFields('billing', errors)
     }
 
     return errors
+  }
+
+  private validateAddressFields(prefix: 'shipping' | 'billing', errors: FieldError[]): void {
+    const labelMap: Record<string, keyof FormErrorLabels> = {
+      prename: 'prename', lastname: 'lastname', line1: 'street',
+      zip: 'zip', city: 'city', country: 'country',
+    }
+    for (const field of REQUIRED_ADDRESS_FIELDS) {
+      if (!this.getFieldValue(`${prefix}.${field}`).trim()) {
+        errors.push({ field: `${prefix}.${field}`, message: this.errorLabels[labelMap[field]] })
+      }
+    }
   }
 
   showErrors(errors: FieldError[]): void {

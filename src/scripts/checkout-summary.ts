@@ -1,11 +1,17 @@
 import type { CartItem } from './cart-store'
-import type { CalculateResponse, ValidatedCartItemResponse } from './checkout-types'
+import type { CalculateResponse, ValidatedCartItemResponse } from '../shared/checkout-api'
+import { cloneTemplate, fillSlot, fillImageSlot } from './template-utils'
 
 export type SummaryLabels = {
   subtotal: string
   shipping: string
   total: string
   available: string
+}
+
+export type SummaryEvents = {
+  onQuantityChange: (variantId: string, quantity: number) => void
+  onRemove: (variantId: string) => void
 }
 
 export class CheckoutSummary {
@@ -15,6 +21,7 @@ export class CheckoutSummary {
   private currency: string
   private currencyLabel: string | undefined
   private labels: SummaryLabels
+  private events: SummaryEvents | null = null
 
   constructor(
     itemsContainer: HTMLElement,
@@ -30,6 +37,10 @@ export class CheckoutSummary {
     this.currency = currency
     this.currencyLabel = currencyLabel
     this.labels = labels ?? { subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total', available: 'available' }
+  }
+
+  setEvents(events: SummaryEvents): void {
+    this.events = events
   }
 
   formatPrice(cents: number): string {
@@ -50,26 +61,23 @@ export class CheckoutSummary {
     this.itemsContainer.innerHTML = ''
 
     for (const item of cart) {
-      const div = document.createElement('div')
-      div.className = 'cart-item'
+      const el = cloneTemplate('checkout-item-template')
+      if (!el) continue
 
-      const subtitle = item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''
+      el.dataset.cartItemId = item.id
 
-      div.innerHTML = `
-        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="" class="cart-item__image" loading="lazy">` : ''}
-        <div class="cart-item__body">
-          <span class="cart-item__title">${item.title}</span>
-          ${subtitle}
-          <div class="cart-item__row">
-            <span class="cart-item__qty-count">&times; ${item.quantity}</span>
-            <span class="cart-item__price">${this.formatPrice(item.price * item.quantity)}</span>
-          </div>
-        </div>
-      `
-      this.itemsContainer.appendChild(div)
+      fillImageSlot(el, 'image', item.imageUrl)
+      fillSlot(el, 'title', item.title)
+      if (item.subtitle) fillSlot(el, 'subtitle', item.subtitle)
+      fillSlot(el, 'price', this.formatPrice(item.price * item.quantity))
+
+      const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
+      if (qtyValue) qtyValue.textContent = String(item.quantity)
+
+      this.bindItemEvents(el, item.id, item.quantity, item.price)
+      this.itemsContainer.appendChild(el)
     }
 
-    // Render a preliminary subtotal
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
     this.totalsContainer.innerHTML = `
       <div class="checkout-totals__row checkout-totals__row--total">
@@ -83,28 +91,57 @@ export class CheckoutSummary {
     this.itemsContainer.innerHTML = ''
 
     for (const item of items) {
-      const div = document.createElement('div')
-      div.className = 'cart-item'
+      const el = cloneTemplate('checkout-item-template')
+      if (!el) continue
+
+      el.dataset.cartItemId = item.variantId
 
       const imageUrl = cartImages.get(item.variantId) ?? item.imageUrl ?? ''
-      const subtitle = item.variantTitle ? `<span class="cart-item__subtitle">${item.variantTitle}</span>` : ''
-      const qtyNote = item.requestedQuantity !== item.quantity
-        ? `<span class="cart-item__stock-note" aria-live="polite">(${item.quantity} ${this.labels.available})</span>`
-        : ''
+      fillImageSlot(el, 'image', imageUrl)
+      fillSlot(el, 'title', item.title)
+      if (item.variantTitle) fillSlot(el, 'subtitle', item.variantTitle)
+      fillSlot(el, 'price', this.formatPrice(item.price * item.quantity))
 
-      div.innerHTML = `
-        ${imageUrl ? `<img src="${imageUrl}" alt="" class="cart-item__image" loading="lazy">` : ''}
-        <div class="cart-item__body">
-          <span class="cart-item__title">${item.title}</span>
-          ${subtitle}
-          <div class="cart-item__row">
-            <span class="cart-item__qty-count">&times; ${item.quantity} ${qtyNote}</span>
-            <span class="cart-item__price">${this.formatPrice(item.price * item.quantity)}</span>
-          </div>
-        </div>
-      `
-      this.itemsContainer.appendChild(div)
+      const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
+      if (qtyValue) qtyValue.textContent = String(item.quantity)
+
+      if (item.requestedQuantity !== item.quantity) {
+        fillSlot(el, 'stock-note', `(${item.quantity} ${this.labels.available})`)
+      }
+
+      this.bindItemEvents(el, item.variantId, item.quantity, item.price)
+      this.itemsContainer.appendChild(el)
     }
+  }
+
+  private bindItemEvents(el: HTMLElement, variantId: string, quantity: number, unitPrice: number): void {
+    let qty = quantity
+
+    const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
+    const priceEl = el.querySelector<HTMLElement>('[data-slot="price"]')
+
+    const updateDisplay = () => {
+      if (qtyValue) qtyValue.textContent = String(qty)
+      if (priceEl) priceEl.textContent = this.formatPrice(unitPrice * qty)
+    }
+
+    el.querySelector('[data-qty-decrease]')?.addEventListener('click', () => {
+      if (qty <= 1) return
+      qty--
+      updateDisplay()
+      this.events?.onQuantityChange(variantId, qty)
+    })
+
+    el.querySelector('[data-qty-increase]')?.addEventListener('click', () => {
+      qty++
+      updateDisplay()
+      this.events?.onQuantityChange(variantId, qty)
+    })
+
+    el.querySelector('[data-cart-remove]')?.addEventListener('click', () => {
+      el.remove()
+      this.events?.onRemove(variantId)
+    })
   }
 
   renderTotals(data: CalculateResponse): void {

@@ -16,11 +16,13 @@ export default defineConfig({
   dts: true,
   splitting: false,
   clean: true,
+  sourcemap: true,
   external: ['esbuild'],
   noExternal: ['@portabletext/to-html'],
   onSuccess: async () => {
     copySync('src/templates',          'dist/templates', { overwrite: true });
     copySync('src/scripts',            'dist/scripts',   { overwrite: true });
+    copySync('src/shared',             'dist/shared',    { overwrite: true });
     copySync('src/assets/css/core.css', 'dist/core.css',  { overwrite: true });
     copySync('src/assets/css/reset.css','dist/reset.css', { overwrite: true });
 

@@ -201,6 +201,8 @@ export default {
     cartEmpty: "Dein Warenkorb ist leer.",
     loading: "Wird geladen...",
     error: "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
+    serviceError: "Ein technischer Fehler ist aufgetreten. Bitte versuche es später erneut oder kontaktiere den Support.",
+    serviceErrorContact: "Support kontaktieren",
     itemsUnavailable: "Einige Artikel sind nicht mehr verfügbar und wurden entfernt.",
     available: "verfügbar",
   },

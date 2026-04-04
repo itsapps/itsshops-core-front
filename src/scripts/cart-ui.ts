@@ -1,4 +1,5 @@
 import { addItem, removeItem, updateQuantity, getCart, getCount, getTotal } from './cart-store'
+import { cloneTemplate, fillSlot, fillImageSlot, fillLinkSlot } from './template-utils'
 
 let cartSidebar: HTMLElement | null = null
 let lastCartTrigger: HTMLElement | null = null
@@ -36,49 +37,33 @@ function renderItems(): void {
   if (cartEmptyEl) cartEmptyEl.hidden = items.length > 0
   if (cartTotalEl) cartTotalEl.textContent = formatPrice(getTotal())
 
-  const tRemove   = cartSidebar?.dataset.tRemove   ?? 'Remove'
-  const tDecrease = cartSidebar?.dataset.tDecrease ?? '−'
-  const tIncrease = cartSidebar?.dataset.tIncrease ?? '+'
-
-  cartItemsEl.querySelectorAll('.cart-item').forEach(el => el.remove())
+  cartItemsEl.querySelectorAll('[data-cart-item]').forEach(el => el.remove())
 
   for (const item of items) {
-    const div = document.createElement('div')
-    div.className = 'cart-item'
-    div.dataset.cartItemId = item.id
-    div.innerHTML = `
-      ${item.imageUrl
-        ? `<img src="${item.imageUrl}" alt="" class="cart-item__image" width="${imgWidth}" height="${imgHeight}" loading="lazy">`
-        : '<div class="cart-item__image cart-item__image--placeholder"></div>'
-      }
-      <div class="cart-item__body">
-        <a href="${item.url}" class="cart-item__title">${item.title}</a>
-        ${item.subtitle ? `<span class="cart-item__subtitle">${item.subtitle}</span>` : ''}
-        <div class="cart-item__row">
-          <div class="cart-item__qty">
-            <button type="button" class="cart-item__qty-btn" data-cart-decrease aria-label="${tDecrease}: ${item.title}">−</button>
-            <span class="cart-item__qty-count" aria-live="polite">${item.quantity}</span>
-            <button type="button" class="cart-item__qty-btn" data-cart-increase aria-label="${tIncrease}: ${item.title}">+</button>
-          </div>
-          <span class="cart-item__price">${formatPrice(item.price * item.quantity)}</span>
-          <button type="button" class="cart-item__remove" data-cart-remove aria-label="${tRemove}: ${item.title}">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-      </div>
-    `
+    const el = cloneTemplate('cart-item-template')
+    if (!el) continue
 
-    div.querySelector('[data-cart-decrease]')?.addEventListener('click', () => {
+    el.dataset.cartItemId = item.id
+
+    fillImageSlot(el, 'image', item.imageUrl, imgWidth, imgHeight)
+    fillLinkSlot(el, 'title', item.title, item.url)
+    if (item.subtitle) fillSlot(el, 'subtitle', item.subtitle)
+    fillSlot(el, 'price', formatPrice(item.price * item.quantity))
+
+    const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
+    if (qtyValue) qtyValue.textContent = String(item.quantity)
+
+    el.querySelector('[data-qty-decrease]')?.addEventListener('click', () => {
       updateQuantity(item.id, item.quantity - 1)
     })
-    div.querySelector('[data-cart-increase]')?.addEventListener('click', () => {
+    el.querySelector('[data-qty-increase]')?.addEventListener('click', () => {
       updateQuantity(item.id, item.quantity + 1)
     })
-    div.querySelector('[data-cart-remove]')?.addEventListener('click', () => {
+    el.querySelector('[data-cart-remove]')?.addEventListener('click', () => {
       removeItem(item.id)
     })
 
-    cartItemsEl.appendChild(div)
+    cartItemsEl.appendChild(el)
   }
 }
 
@@ -140,6 +125,9 @@ export function initCart(): void {
 
   // Standalone qty controls (on product pages, not inside cart sidebar)
   document.querySelectorAll<HTMLElement>('[data-qty-control]').forEach(ctrl => {
+    // Skip controls inside the cart sidebar — those are handled above
+    if (cartSidebar?.contains(ctrl)) return
+
     const valueEl = ctrl.querySelector<HTMLElement>('[data-qty-value]')
     if (!valueEl) return
     const decreaseBtn = ctrl.querySelector<HTMLButtonElement>('[data-qty-decrease]')
@@ -191,7 +179,6 @@ export function initCart(): void {
 
       if (!id || !title || !price) return
 
-      // Read quantity from adjacent qty control if present
       const actionsEl = btn.closest('[data-product-actions], .product-card__actions')
       const qtyEl     = actionsEl?.querySelector<HTMLElement>('[data-qty-value]')
       const qty        = qtyEl ? Math.max(1, parseInt(qtyEl.textContent || '1', 10)) : 1
@@ -199,7 +186,6 @@ export function initCart(): void {
       addItem({ id, title, subtitle, price, imageUrl, url }, qty)
       lastCartTrigger = btn
 
-      // Reset qty display back to 1
       if (qtyEl) qtyEl.textContent = '1'
 
       const originalText = btn.textContent

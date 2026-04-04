@@ -3,6 +3,9 @@
  * All prices are in cents (integers).
  */
 
+import type { VatBreakdownItem } from '../../shared/checkout-api'
+export type { VatBreakdownItem }
+
 // ── Sanity query result types ───────────────────────────────────────────────
 
 export type SanityVariantResult = {
@@ -112,13 +115,6 @@ export type ValidatedCartItem = {
   wine: { vintage: string | null; volume: number | null } | null
   options: { groupTitle: string; optionTitle: string }[] | null
   bundleItems: { variantId: string; quantity: number }[] | null
-}
-
-export type VatBreakdownItem = {
-  rate: number
-  net: number
-  vat: number
-  label: string
 }
 
 export type CalculatedTotals = {

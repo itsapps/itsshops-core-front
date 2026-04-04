@@ -1,11 +1,11 @@
 import type { Context } from '@netlify/functions'
 import { validatePaymentRequest } from '../utils/validation'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
-import { createLogger, generateRequestId } from '../utils/logger'
+import { log } from '../utils/logger'
 import { ErrorCode } from '../types/errors'
 import type { PaymentCreateRequest, CalculateResponse, CreatePaymentResponse, ValidatedCartItemResponse } from '../types/api'
 import type { SanityCheckoutQueryResult } from '../types/checkout'
-import { fetchCheckoutData, createOrderMeta, updateOrderMeta } from '../services/sanity-checkout'
+import { fetchCheckoutData, createOrderMeta, updateOrderMeta, fetchOrderMeta } from '../services/sanity'
 import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
 import { resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
@@ -13,13 +13,12 @@ import { calculateTotals } from '../lib/totals'
 import { findTaxRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
 import { serverT, countryName } from '../utils/i18n'
+import { type ServerConfig, resolveServerConfig } from '../types/config'
 
-export type PaymentCreateParams = {
-  request: Request
-  context: Context
-}
+export function createPaymentHandler(config: ServerConfig = {}) {
+  const { defaultLocale, hasStock } = resolveServerConfig(config)
 
-export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<Response> => {
+  return async (request: Request, _context: Context): Promise<Response> => {
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204 })
   }
@@ -32,8 +31,7 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
     return badRequest('Content-Type must be application/json')
   }
 
-  const requestId = generateRequestId()
-  const logger = createLogger('payment-create', requestId)
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID()
 
   let body: unknown
   try {
@@ -44,16 +42,10 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
 
   const validation = validatePaymentRequest(body)
   if (!validation.valid) {
-    logger.warn('Validation failed', { message: validation.message })
-    return validationError(ErrorCode.INVALID_INPUT, validation.message, validation.details)
+    return validationError(ErrorCode.INVALID_INPUT, validation.message, requestId, validation.details)
   }
 
   const req = body as PaymentCreateRequest
-  logger.info('Request received', {
-    createPayment: req.createPayment,
-    locale: req.locale,
-    itemCount: req.cart.items.length,
-  })
 
   try {
     // ── Determine country ───────────────────────────────────────────────
@@ -61,27 +53,23 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       ?? req.address?.shipping.country
       ?? null
 
-    // We need a first fetch to get shopSettings.defaultCountryCode if no country provided
     const variantIds = req.cart.items.map(i => i.variantId)
-    const initialCountry = requestedCountry ?? 'AT' // temporary fallback for first query
+    const initialCountry = requestedCountry ?? 'AT'
 
     // ── Fetch all checkout data in one GROQ query ───────────────────────
-    let data: SanityCheckoutQueryResult = await fetchCheckoutData(variantIds, initialCountry, logger)
+    let data: SanityCheckoutQueryResult = await fetchCheckoutData(variantIds, initialCountry)
 
-    // Resolve the actual country: requested → shopSettings default → AT
     const country = requestedCountry
       ?? data.shopSettings?.defaultCountryCode
       ?? 'AT'
 
-    // If the resolved country differs from what we queried, re-fetch
     if (country !== initialCountry) {
-      data = await fetchCheckoutData(variantIds, country, logger)
+      data = await fetchCheckoutData(variantIds, country)
     }
 
     // ── Validate tax country ────────────────────────────────────────────
     if (!data.taxCountry) {
-      logger.warn('Country not supported', { country })
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.countryShippingNotSupported'))
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.countryShippingNotSupported'), requestId)
     }
 
     // ── Validate cart items ─────────────────────────────────────────────
@@ -91,13 +79,13 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       data.variants,
       data.taxCountry.rules,
       req.locale,
-      'de',
-      true,
+      defaultLocale,
+      hasStock,
       defaultTaxCategoryCode,
     )
 
     if (validatedItems.length === 0) {
-      return validationError(ErrorCode.CART_EMPTY, serverT(req.locale, 'api.errors.payment.noValidProducts'), {
+      return validationError(ErrorCode.CART_EMPTY, serverT(req.locale, 'api.errors.payment.noValidProducts'), requestId, {
         unavailable: unavailableItems.join(', '),
       })
     }
@@ -110,7 +98,7 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       data.shippingMethods,
       validatedItems,
       subtotal,
-      0, // discount — not implemented yet
+      0,
       freeShippingCalc,
       req.locale,
     )
@@ -118,8 +106,7 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
     const selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
 
     if (!selectedShipping && shippingMethods.length === 0) {
-      logger.warn('No shipping methods available', { country })
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'))
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'), requestId)
     }
 
     // ── Calculate totals ────────────────────────────────────────────────
@@ -129,7 +116,7 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
 
     const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate)
 
-    // ── Build response items ────────────────────────────────────────────
+    // ── Build response ──────────────────────────────────────────────────
     const responseItems: ValidatedCartItemResponse[] = validatedItems.map(item => {
       const cartItem = req.cart.items.find(ci => ci.variantId === item.variantId)
       return {
@@ -140,19 +127,17 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
         price: item.price,
         quantity: item.quantity,
         requestedQuantity: cartItem?.quantity ?? item.quantity,
-        stock: null, // don't expose exact stock to client
-        imageUrl: null, // client already has this from cart store
+        stock: null,
+        imageUrl: null,
         weight: item.weight,
       }
     })
 
-    // ── Supported countries ─────────────────────────────────────────────
     const supportedCountries = data.supportedCountries.map(c => ({
       code: c.countryCode,
       title: countryName(req.locale, c.countryCode),
     }))
 
-    // ── Calculate-only response ─────────────────────────────────────────
     const calculateResponse: CalculateResponse = {
       items: responseItems,
       unavailableItems,
@@ -177,20 +162,16 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
     }
 
     if (!req.createPayment) {
-      logger.info('Calculate complete', {
-        itemCount: validatedItems.length,
-        grandTotal: totals.grandTotal,
-      })
       return success(calculateResponse)
     }
 
     // ── Create payment ──────────────────────────────────────────────────
     if (!req.address) {
-      return validationError(ErrorCode.INVALID_ADDRESS, serverT(req.locale, 'api.errors.payment.addressRequired'))
+      return validationError(ErrorCode.INVALID_ADDRESS, serverT(req.locale, 'api.errors.payment.addressRequired'), requestId)
     }
 
     if (!selectedShipping) {
-      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.shippingRateMustBeProvided'))
+      return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.shippingRateMustBeProvided'), requestId)
     }
 
     const orderMetaId = req.orderMetaId ?? `orderMeta-${crypto.randomUUID()}`
@@ -204,76 +185,56 @@ export const paymentCreate = async ({ request }: PaymentCreateParams): Promise<R
       billingAddress: req.address.billing ?? req.address.shipping,
       contactEmail: req.address.contactEmail,
       locale: req.locale,
-      paymentIntentId: '', // will be set after Stripe call
+      paymentIntentId: '',
     })
 
-    // Create or update Stripe PaymentIntent
     if (req.orderMetaId) {
-      // Find existing payment intent ID from orderMeta
-      const { fetchOrderMeta } = await import('../services/sanity-checkout')
-      const existing = await fetchOrderMeta(req.orderMetaId, logger)
+      const existing = await fetchOrderMeta(req.orderMetaId)
       if (!existing) {
-        return errorResponse(ErrorCode.ORDER_META_NOT_FOUND, serverT(req.locale, 'api.errors.orderNotFound'), 404)
+        return errorResponse(ErrorCode.ORDER_META_NOT_FOUND, serverT(req.locale, 'api.errors.orderNotFound'), requestId, 404)
       }
 
-      const intent = await updatePaymentIntent(
-        existing.paymentIntentId,
-        {
-          amount: totals.grandTotal,
-          metadata: { orderMetaId },
-        },
-        logger,
-      )
+      const intent = await updatePaymentIntent(existing.paymentIntentId, {
+        amount: totals.grandTotal,
+        metadata: { orderMetaId },
+      })
 
       orderMetaDoc.paymentIntentId = intent.id
-      await updateOrderMeta(orderMetaId, orderMetaDoc, logger)
+      await updateOrderMeta(orderMetaId, orderMetaDoc)
 
-      const createResponse: CreatePaymentResponse = {
+      log.info('PaymentIntent updated', { paymentIntentId: intent.id, requestId })
+
+      return success<CreatePaymentResponse>({
         ...calculateResponse,
         clientSecret: intent.client_secret!,
         orderMetaId,
-      }
-
-      logger.info('PaymentIntent updated', {
-        paymentIntentId: intent.id,
-        amount: totals.grandTotal,
       })
-
-      return success(createResponse)
     } else {
-      // Create new PaymentIntent
-      const intent = await createPaymentIntent(
-        {
-          amount: totals.grandTotal,
-          currency: 'eur',
-          automatic_payment_methods: { enabled: true },
-          metadata: { orderMetaId },
-        },
-        logger,
-      )
+      const intent = await createPaymentIntent({
+        amount: totals.grandTotal,
+        currency: 'eur',
+        automatic_payment_methods: { enabled: true },
+        metadata: { orderMetaId },
+      })
 
       orderMetaDoc.paymentIntentId = intent.id
-      await createOrderMeta(orderMetaId, orderMetaDoc, logger)
+      await createOrderMeta(orderMetaId, orderMetaDoc)
 
-      const createResponse: CreatePaymentResponse = {
+      log.info('PaymentIntent created', { paymentIntentId: intent.id, orderMetaId, requestId })
+
+      return success<CreatePaymentResponse>({
         ...calculateResponse,
         clientSecret: intent.client_secret!,
         orderMetaId,
-      }
-
-      logger.info('PaymentIntent created', {
-        paymentIntentId: intent.id,
-        orderMetaId,
-        amount: totals.grandTotal,
       })
-
-      return success(createResponse)
     }
   } catch (err) {
-    logger.error('Unhandled error', {
+    log.error('Payment create failed', {
+      requestId,
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
     })
-    return errorResponse(ErrorCode.INTERNAL_ERROR, serverT(req.locale, 'api.errors.payment.general'))
+    return errorResponse(ErrorCode.INTERNAL_ERROR, serverT(req.locale, 'api.errors.payment.general'), requestId)
+  }
   }
 }

@@ -1,4 +1,4 @@
-import type { ShippingMethodResponse } from './checkout-types'
+import type { ShippingMethodResponse } from '../shared/checkout-api'
 
 export class CheckoutShipping {
   private container: HTMLElement

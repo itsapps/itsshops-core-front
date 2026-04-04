@@ -1,10 +1,10 @@
-import { getCart, clearCart, type CartItem } from './cart-store'
-import { calculatePayment, createPayment, CheckoutApiError } from './checkout-api'
+import { getCart, clearCart, updateQuantity, removeItem, type CartItem } from './cart-store'
+import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
 import { CheckoutSummary } from './checkout-summary'
 import { CheckoutStripe } from './checkout-stripe'
-import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from './checkout-types'
+import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from '../shared/checkout-api'
 
 function dispatch(name: string, detail?: unknown): void {
   document.dispatchEvent(new CustomEvent(name, { detail }))
@@ -21,7 +21,6 @@ export async function initCheckout(): Promise<void> {
   const currency = container.dataset.currency ?? 'EUR'
   const currencyLabel = container.dataset.currencyLabel
 
-  // Translations from data-t-* attributes (set in checkout.njk via trans filter)
   const t = {
     subtotal: container.dataset.tSubtotal ?? 'Subtotal',
     shipping: container.dataset.tShipping ?? 'Shipping',
@@ -29,6 +28,7 @@ export async function initCheckout(): Promise<void> {
     freeShipping: container.dataset.tFreeShipping ?? 'Free shipping',
     cartEmpty: container.dataset.tCartEmpty ?? 'Cart is empty',
     error: container.dataset.tError ?? 'An error occurred. Please try again.',
+    serviceError: container.dataset.tServiceError ?? 'A technical error occurred. Please try again later.',
     itemsUnavailable: container.dataset.tItemsUnavailable ?? 'Some items are no longer available.',
     available: container.dataset.tAvailable ?? 'available',
     errorEmail: container.dataset.tErrorEmail ?? 'Valid email required',
@@ -53,6 +53,7 @@ export async function initCheckout(): Promise<void> {
   const paymentEl = container.querySelector<HTMLElement>('[data-checkout-payment]')
   const submitBtn = container.querySelector<HTMLButtonElement>('[data-checkout-submit]')
   const errorEl = container.querySelector<HTMLElement>('[data-checkout-error-global]')
+  const serviceErrorEl = container.querySelector<HTMLElement>('[data-checkout-service-error]')
   const loadingEl = container.querySelector<HTMLElement>('[data-checkout-loading]')
   const countrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-country]')
   const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
@@ -89,48 +90,110 @@ export async function initCheckout(): Promise<void> {
   })
   const stripeCheckout = new CheckoutStripe(stripe)
 
-  // Build cart items from store (only need variantId + quantity for API)
+  // Build cart items from store
   const cart = getCart()
   if (cart.length === 0) {
     container.innerHTML = `<p data-checkout-empty>${t.cartEmpty}</p>`
     return
   }
 
-  const cartItems: CheckoutCartItem[] = cart.map(item => ({
+  let cartItems: CheckoutCartItem[] = cart.map(item => ({
     variantId: item.id,
     quantity: item.quantity,
   }))
 
-  // Show cart items immediately from localStorage
   summary.renderCartItems(cart)
-
-  // Map cart images for display
   const cartImages = new Map(cart.map(item => [item.id, item.imageUrl]))
+
+  // Wire qty changes and removals from summary to cart store + recalculate
+  summary.setEvents({
+    onQuantityChange(variantId, quantity) {
+      updateQuantity(variantId, quantity)
+      const item = cartItems.find(i => i.variantId === variantId)
+      if (item) item.quantity = quantity
+      debouncedRecalculate()
+    },
+    onRemove(variantId) {
+      removeItem(variantId)
+      cartItems = cartItems.filter(i => i.variantId !== variantId)
+      if (cartItems.length === 0) {
+        container.innerHTML = `<p data-checkout-empty>${t.cartEmpty}</p>`
+        return
+      }
+      debouncedRecalculate()
+    },
+  })
+
+  // ── Debounced recalculate (for rapid qty changes) ──────────────────
+  let recalcTimer: ReturnType<typeof setTimeout> | null = null
+  function debouncedRecalculate(): void {
+    if (recalcTimer) clearTimeout(recalcTimer)
+    recalcTimer = setTimeout(() => {
+      const country = form.getCountry() || lastResponse?.selectedCountry
+      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+    }, 400)
+  }
 
   // ── State ─────────────────────────────────────────────────────────────
   let lastResponse: CalculateResponse | null = null
   let orderMetaId: string | undefined
   let isSubmitting = false
 
-  // ── Helpers ───────────────────────────────────────────────────────────
+  // ── Error handling ────────────────────────────────────────────────────
   function setLoading(loading: boolean): void {
     if (loadingEl) loadingEl.hidden = !loading
-    submitBtn.disabled = loading || isSubmitting
+    if (submitBtn) submitBtn.disabled = loading || isSubmitting
   }
 
-  function showError(message: string): void {
+  function showValidationError(message: string): void {
+    hideErrors()
     if (errorEl) {
       errorEl.textContent = message
       errorEl.hidden = false
       errorEl.setAttribute('aria-live', 'assertive')
     }
-    dispatch('checkout:error', { message })
+    dispatch('checkout:error', { type: 'validation', message })
   }
 
-  function clearError(): void {
+  function showServiceError(requestId?: string): void {
+    hideErrors()
+    if (serviceErrorEl) {
+      serviceErrorEl.hidden = false
+      serviceErrorEl.setAttribute('aria-live', 'assertive')
+      const requestIdEl = serviceErrorEl.querySelector('[data-request-id]')
+      if (requestIdEl && requestId) requestIdEl.textContent = requestId
+      const contactLink = serviceErrorEl.querySelector<HTMLAnchorElement>('a[href*="mailto"]')
+      if (contactLink && requestId) {
+        contactLink.href = contactLink.href.replace(/(RequestId:)[^&]*/, `$1${requestId}`)
+      }
+    } else {
+      // Fallback if no service error element exists
+      showValidationError(t.serviceError)
+    }
+    dispatch('checkout:error', { type: 'io', requestId })
+  }
+
+  function hideErrors(): void {
     if (errorEl) {
       errorEl.textContent = ''
       errorEl.hidden = true
+    }
+    if (serviceErrorEl) {
+      serviceErrorEl.hidden = true
+    }
+  }
+
+  function handleError(err: unknown): void {
+    if (err instanceof CheckoutValidationError) {
+      showValidationError(err.message)
+      if (err.details) {
+        const fieldErrors = Object.entries(err.details).map(([field, msg]) => ({ field, message: msg }))
+        form.showErrors(fieldErrors)
+      }
+    } else if (err instanceof CheckoutIOError) {
+      showServiceError(err.requestId)
+    } else {
+      showValidationError(t.error)
     }
   }
 
@@ -154,7 +217,7 @@ export async function initCheckout(): Promise<void> {
   // ── Calculate ─────────────────────────────────────────────────────────
   async function calculate(options: { country?: string; shippingMethodId?: string } = {}): Promise<void> {
     setLoading(true)
-    clearError()
+    hideErrors()
 
     try {
       const response = await calculatePayment(apiUrl, cartItems, locale, options)
@@ -165,7 +228,6 @@ export async function initCheckout(): Promise<void> {
       shipping.render(response.shippingMethods, response.selectedShippingMethodId, summary.formatPrice.bind(summary))
       populateCountries(response.supportedCountries, response.selectedCountry)
 
-      // Init or update Stripe Elements
       if (!stripeCheckout['paymentElementMounted']) {
         stripeCheckout.initElements(response.totals.grandTotal, response.currency.toLowerCase(), locale)
         stripeCheckout.mountPaymentElement(paymentEl)
@@ -174,13 +236,12 @@ export async function initCheckout(): Promise<void> {
       }
 
       if (response.unavailableItems.length > 0) {
-        showError(t.itemsUnavailable)
+        showValidationError(t.itemsUnavailable)
       }
 
       dispatch('checkout:calculated', response)
     } catch (err) {
-      const message = err instanceof CheckoutApiError ? err.message : t.error
-      showError(message)
+      handleError(err)
     } finally {
       setLoading(false)
     }
@@ -200,7 +261,6 @@ export async function initCheckout(): Promise<void> {
     e.preventDefault()
     if (isSubmitting || !lastResponse) return
 
-    // Validate form
     const errors = form.validate()
     if (errors.length > 0) {
       form.showErrors(errors)
@@ -208,17 +268,16 @@ export async function initCheckout(): Promise<void> {
     }
     form.clearErrors()
 
-    // Validate Stripe Elements
     const elementsResult = await stripeCheckout.submitElements()
     if (elementsResult.error) {
-      showError(elementsResult.error.message)
+      showValidationError(elementsResult.error.message)
       return
     }
 
     isSubmitting = true
     submitBtn.disabled = true
     dispatch('checkout:submitting')
-    clearError()
+    hideErrors()
 
     try {
       const response = await createPayment(
@@ -237,30 +296,20 @@ export async function initCheckout(): Promise<void> {
       )
 
       orderMetaId = response.orderMetaId
-
-      // Update summary with final totals
       summary.renderTotals(response)
 
-      // Confirm payment with Stripe
       const confirmResult = await stripeCheckout.confirmPayment(response.clientSecret, returnUrl)
       if (confirmResult.error) {
-        showError(confirmResult.error.message)
+        showValidationError(confirmResult.error.message)
         isSubmitting = false
         submitBtn.disabled = false
         return
       }
 
-      // If we get here, Stripe redirected — this code won't run
       clearCart()
       dispatch('checkout:complete')
     } catch (err) {
-      const message = err instanceof CheckoutApiError ? err.message : t.error
-      showError(message)
-
-      if (err instanceof CheckoutApiError && err.details) {
-        const fieldErrors = Object.entries(err.details).map(([field, msg]) => ({ field, message: msg }))
-        form.showErrors(fieldErrors)
-      }
+      handleError(err)
     } finally {
       isSubmitting = false
       submitBtn.disabled = false

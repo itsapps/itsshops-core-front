@@ -201,6 +201,8 @@ export default {
     cartEmpty: "Your cart is empty.",
     loading: "Loading...",
     error: "An error occurred. Please try again.",
+    serviceError: "A technical error occurred. Please try again later or contact support.",
+    serviceErrorContact: "Contact support",
     itemsUnavailable: "Some items are no longer available and have been removed.",
     available: "available",
   },

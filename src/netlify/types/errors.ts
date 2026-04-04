@@ -10,11 +10,3 @@ export enum ErrorCode {
   ORDER_META_NOT_FOUND = 'ORDER_META_NOT_FOUND',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
-
-export type ErrorResponse = {
-  error: {
-    code: ErrorCode
-    message: string
-    details?: Record<string, string>
-  }
-}

@@ -1,6 +1,6 @@
 /**
- * Client-side checkout types.
- * Mirror the API response types without importing server-side code.
+ * Checkout API types shared between client and server.
+ * No runtime code — types only.
  */
 
 export type CheckoutCartItem = {
@@ -84,4 +84,5 @@ export type ErrorResponse = {
     message: string
     details?: Record<string, string>
   }
+  requestId?: string
 }

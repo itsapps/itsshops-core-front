@@ -1,14 +1,11 @@
 import type { PaymentCreateRequest, AddressInput, CheckoutCartItem } from '../types/api'
+import { validateEmail, REQUIRED_ADDRESS_FIELDS } from '../../shared/validation'
+
+export { validateEmail }
 
 export type ValidationResult =
   | { valid: true }
   | { valid: false; message: string; details?: Record<string, string> }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-export function validateEmail(email: string): boolean {
-  return EMAIL_RE.test(email)
-}
 
 export function validateCartItems(items: unknown): items is CheckoutCartItem[] {
   if (!Array.isArray(items) || items.length === 0) return false
@@ -30,18 +27,9 @@ export function validateAddress(address: unknown, label: string): ValidationResu
   }
   const a = address as Record<string, unknown>
   const details: Record<string, string> = {}
-  const required: [string, string][] = [
-    ['name', 'Full name'],
-    ['prename', 'First name'],
-    ['lastname', 'Last name'],
-    ['line1', 'Address line 1'],
-    ['zip', 'Postal code'],
-    ['city', 'City'],
-    ['country', 'Country'],
-  ]
-  for (const [field, fieldLabel] of required) {
+  for (const field of REQUIRED_ADDRESS_FIELDS) {
     if (typeof a[field] !== 'string' || a[field].trim().length === 0) {
-      details[`${label}.${field}`] = `${fieldLabel} is required`
+      details[`${label}.${field}`] = `${field} is required`
     }
   }
   if (Object.keys(details).length > 0) {

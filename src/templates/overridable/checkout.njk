@@ -16,6 +16,7 @@
     data-t-free-shipping="{{ 'checkout.freeShipping' | trans }}"
     data-t-cart-empty="{{ 'checkout.cartEmpty' | trans }}"
     data-t-error="{{ 'checkout.error' | trans }}"
+    data-t-service-error="{{ 'checkout.serviceError' | trans }}"
     data-t-items-unavailable="{{ 'checkout.itemsUnavailable' | trans }}"
     data-t-available="{{ 'checkout.available' | trans }}"
     data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
@@ -31,8 +32,19 @@
       {{ 'checkout.loading' | trans }}
     </div>
 
-    {# Global error #}
+    {# Validation error #}
     <div data-checkout-error-global class="checkout__error" role="alert" hidden></div>
+
+    {# Service error (IO/server) — shown with requestId for support #}
+    <div data-checkout-service-error class="checkout__service-error" role="alert" hidden>
+      <p>{{ 'checkout.serviceError' | trans }}</p>
+      <p class="checkout__request-id">Request ID: <code data-request-id></code></p>
+      {% if cms[_locale].settings.supportEmail %}
+        <a href="mailto:{{ cms[_locale].settings.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
+          {{ 'checkout.serviceErrorContact' | trans }}
+        </a>
+      {% endif %}
+    </div>
 
     <form data-checkout-form class="checkout__form" novalidate>
       <div class="checkout__columns">
@@ -165,4 +177,26 @@
       </div>
     </form>
   </div>
+
+  <template id="checkout-item-template">
+    <div class="cart-item" data-cart-item>
+      <img src="" alt="" class="cart-item__image" loading="lazy" data-slot="image">
+      <div class="cart-item__body">
+        <span class="cart-item__title" data-slot="title"></span>
+        <span class="cart-item__subtitle" data-slot="subtitle" hidden></span>
+        <div class="cart-item__row">
+          <div class="cart-item__qty" data-qty-control>
+            <button type="button" class="cart-item__qty-btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
+            <output class="cart-item__qty-count" data-qty-value aria-live="polite">1</output>
+            <button type="button" class="cart-item__qty-btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
+          </div>
+          <span class="cart-item__price" data-slot="price"></span>
+          <button type="button" class="cart-item__remove" data-cart-remove aria-label="{{ 'cart.ariaRemoveProduct' | trans }}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <span class="cart-item__stock-note" data-slot="stock-note" aria-live="polite" hidden></span>
+      </div>
+    </div>
+  </template>
 </article>
