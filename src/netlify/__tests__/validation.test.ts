@@ -66,11 +66,11 @@ describe('validateAddress', () => {
   })
 
   it('reports missing required fields', () => {
-    const result = validateAddress({ name: '', prename: 'Max' }, 'billing')
+    const result = validateAddress({ prename: 'Max' }, 'billing')
     expect(result.valid).toBe(false)
     if (!result.valid) {
       expect(result.details).toBeDefined()
-      expect(result.details!['billing.name']).toBeDefined()
+      expect(result.details!['billing.lastname']).toBeDefined()
       expect(result.details!['billing.line1']).toBeDefined()
     }
   })

@@ -198,4 +198,88 @@ program
     });
   });
 
+// ── Sanity commands ────────────────────────────────────────────────────────────
+
+const sanity = program
+  .command('sanity')
+  .description('Sanity data operations');
+
+function loadEnv() {
+  const root = process.cwd();
+  const envPath = path.resolve(root, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf-8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      const value = trimmed.slice(eq + 1).trim();
+      if (!process.env[key]) process.env[key] = value;
+    }
+  }
+}
+
+async function getSanityClient() {
+  const { createClient } = await import('@sanity/client');
+  const projectId = process.env.SANITY_PROJECT_ID;
+  const dataset = process.env.SANITY_DATASET;
+  const token = process.env.SANITY_TOKEN;
+  if (!projectId || !dataset || !token) {
+    console.error('Missing SANITY_PROJECT_ID, SANITY_DATASET, or SANITY_TOKEN in environment');
+    process.exit(1);
+  }
+  return createClient({ projectId, dataset, token, apiVersion: 'v2025-05-25', useCdn: false });
+}
+
+sanity
+  .command('query')
+  .description('Run a GROQ query')
+  .argument('<groq>', 'GROQ query string')
+  .action(async (groq: string) => {
+    loadEnv();
+    const client = await getSanityClient();
+    const result = await client.fetch(groq);
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+sanity
+  .command('delete')
+  .description('Delete documents by type')
+  .argument('<types>', 'Comma-separated document types (e.g. orderMeta,order)')
+  .option('--dry-run', 'Show what would be deleted without deleting')
+  .action(async (types: string, options: { dryRun?: boolean }) => {
+    loadEnv();
+    const client = await getSanityClient();
+    const typeList = types.split(',').map(t => t.trim()).filter(Boolean);
+
+    for (const type of typeList) {
+      const ids: string[] = await client.fetch(`*[_type == $type]._id`, { type });
+      console.log(`${type}: ${ids.length} document(s)`);
+
+      if (options.dryRun || ids.length === 0) continue;
+
+      for (const id of ids) {
+        await client.delete(id);
+        console.log(`  deleted ${id}`);
+      }
+    }
+  });
+
+sanity
+  .command('count')
+  .description('Count documents by type')
+  .argument('<types>', 'Comma-separated document types')
+  .action(async (types: string) => {
+    loadEnv();
+    const client = await getSanityClient();
+    const typeList = types.split(',').map(t => t.trim()).filter(Boolean);
+
+    for (const type of typeList) {
+      const count: number = await client.fetch(`count(*[_type == $type])`, { type });
+      console.log(`${type}: ${count}`);
+    }
+  });
+
 program.parse();

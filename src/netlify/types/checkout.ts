@@ -17,6 +17,7 @@ export type SanityVariantResult = {
   price: number | null
   weight: number | null
   stock: number | null
+  productId: string | null
   taxCategoryCode: string | null
   productTitle: LocaleString[] | null
   productWeight: number | null

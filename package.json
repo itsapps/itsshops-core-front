@@ -27,6 +27,10 @@
     "./scripts": {
       "import": "./dist/scripts/index.ts"
     },
+    "./test-utils": {
+      "types": "./dist/test-utils.d.ts",
+      "import": "./dist/test-utils.js"
+    },
     "./core.css": "./dist/core.css",
     "./reset.css": "./dist/reset.css"
   },

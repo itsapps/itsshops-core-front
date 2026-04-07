@@ -76,7 +76,7 @@ export function validateCart(
 
     validatedItems.push({
       variantId: variant._id,
-      productId: '', // filled from GROQ product reference if needed
+      productId: variant.productId ?? '',
       kind: variant.kind,
       title,
       variantTitle,

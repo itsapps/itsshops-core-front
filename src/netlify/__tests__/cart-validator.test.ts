@@ -17,6 +17,7 @@ function makeVariant(overrides: Partial<SanityVariantResult> = {}): SanityVarian
     price: 1500,
     weight: 1200,
     stock: 10,
+    productId: 'product-123',
     taxCategoryCode: 'standard',
     productTitle: [{ _key: 'de', value: 'Blaufränkisch' }],
     productWeight: null,
