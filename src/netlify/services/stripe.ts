@@ -21,6 +21,16 @@ export function updatePaymentIntent(
   return stripe.paymentIntents.update(id, params)
 }
 
+export function refundPayment(
+  paymentIntentId: string,
+  amount?: number,
+): Promise<Stripe.Refund> {
+  return stripe.refunds.create({
+    payment_intent: paymentIntentId,
+    ...(amount !== undefined && { amount }),
+  })
+}
+
 export function constructWebhookEvent(
   body: string,
   signature: string,

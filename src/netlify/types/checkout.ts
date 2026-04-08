@@ -40,9 +40,15 @@ export type SanityBundleItemResult = {
   quantity: number
   variant: {
     _id: string
+    kind: 'wine' | 'physical' | 'digital' | 'bundle'
     title: LocaleString[] | null
     weight: number | null
+    productWeight: number | null
     stock: number | null
+    wine: {
+      vintage: string | null
+      volume: number | null
+    } | null
   }
 }
 
@@ -106,6 +112,9 @@ export type ValidatedCartItem = {
   kind: 'wine' | 'physical' | 'digital' | 'bundle'
   title: string
   variantTitle: string | null
+  /** Customer-supplied frozen display string. Falls back to a composed default if absent. */
+  displayTitle: string
+  displaySubtitle: string | null
   sku: string | null
   price: number
   weight: number | null
@@ -147,6 +156,9 @@ export type OrderItem = {
   parentId?: string
   title: string
   variantTitle?: string
+  /** Frozen display string shown to the customer at order time — canonical wording for invoices, emails, WC API. */
+  displayTitle: string
+  displaySubtitle?: string
   weight?: number
   sku?: string
   quantity: number
@@ -162,8 +174,8 @@ export type OrderItem = {
 export type AddressStrict = {
   _type: 'addressStrict'
   name: string
-  prename: string
-  lastname: string
+  prename?: string
+  lastname?: string
   phone?: string
   line1: string
   line2?: string

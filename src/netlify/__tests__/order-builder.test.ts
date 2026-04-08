@@ -36,7 +36,7 @@ function makeInput(overrides: Partial<BuildOrderMetaInput> = {}): BuildOrderMeta
     discount: 0,
     tax: 583,
     grandTotal: 3500,
-    vatBreakdown: [{ rate: 20, net: 2917, vat: 583, label: '20% VAT' }],
+    vatBreakdown: [{ rate: 20, net: 2917, vat: 583 }],
   }
 
   return {
@@ -120,6 +120,29 @@ describe('buildOrderMeta', () => {
     expect(meta.fulfillment.method._weak).toBe(true)
     expect(meta.fulfillment.taxSnapshot._type).toBe('vatBreakdownItem')
     expect(meta.fulfillment.taxSnapshot.rate).toBe(20)
+  })
+
+  it('accepts name-only address (express checkout) without prename/lastname', () => {
+    const input = makeInput({
+      shippingAddress: {
+        name: 'Apple Pay User',
+        line1: 'Hauptstr. 1',
+        zip: '7000',
+        city: 'Eisenstadt',
+        country: 'AT',
+      },
+      billingAddress: {
+        name: 'Apple Pay User',
+        line1: 'Hauptstr. 1',
+        zip: '7000',
+        city: 'Eisenstadt',
+        country: 'AT',
+      },
+    })
+    const meta = buildOrderMeta(input)
+    expect(meta.customer.shippingAddress.name).toBe('Apple Pay User')
+    expect(meta.customer.shippingAddress.prename).toBeUndefined()
+    expect(meta.customer.shippingAddress.lastname).toBeUndefined()
   })
 
   it('handles items with options', () => {

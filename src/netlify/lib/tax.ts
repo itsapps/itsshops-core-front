@@ -72,7 +72,6 @@ export function buildVatBreakdown(items: VatLineItem[]): VatBreakdownItem[] {
       rate,
       net: gross - vat,
       vat,
-      label: rate > 0 ? `${rate}% VAT` : 'VAT exempt',
     })
   }
 

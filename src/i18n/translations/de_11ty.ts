@@ -197,6 +197,8 @@ export default {
     subtotal: "Zwischensumme",
     shipping: "Versand",
     total: "Gesamt",
+    vat: "MwSt.",
+    vatExempt: "Steuerfrei",
     freeShipping: "Kostenloser Versand",
     cartEmpty: "Dein Warenkorb ist leer.",
     loading: "Wird geladen...",

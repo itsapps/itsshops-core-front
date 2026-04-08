@@ -1,5 +1,9 @@
 import type { AddressInput } from '../shared/checkout-api'
-import { validateEmail, REQUIRED_ADDRESS_FIELDS } from '../shared/validation'
+import { validateEmail } from '../shared/validation'
+
+// Manual form requires prename + lastname for UX, then combines them into `name`
+// before sending to the server. The server only requires `name`.
+const MANUAL_FORM_REQUIRED_FIELDS = ['prename', 'lastname', 'line1', 'zip', 'city', 'country'] as const
 
 type FieldError = { field: string; message: string }
 
@@ -67,8 +71,8 @@ export class CheckoutForm {
     const lastname = this.getFieldValue('shipping.lastname')
     return {
       name: `${prename} ${lastname}`.trim(),
-      prename: this.getFieldValue('shipping.prename'),
-      lastname: this.getFieldValue('shipping.lastname'),
+      prename,
+      lastname,
       phone: this.getFieldValue('shipping.phone') || undefined,
       line1: this.getFieldValue('shipping.line1'),
       line2: this.getFieldValue('shipping.line2') || undefined,
@@ -123,7 +127,7 @@ export class CheckoutForm {
       prename: 'prename', lastname: 'lastname', line1: 'street',
       zip: 'zip', city: 'city', country: 'country',
     }
-    for (const field of REQUIRED_ADDRESS_FIELDS) {
+    for (const field of MANUAL_FORM_REQUIRED_FIELDS) {
       if (!this.getFieldValue(`${prefix}.${field}`).trim()) {
         errors.push({ field: `${prefix}.${field}`, message: this.errorLabels[labelMap[field]] })
       }

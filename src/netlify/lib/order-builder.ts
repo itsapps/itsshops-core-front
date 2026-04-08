@@ -20,19 +20,20 @@ function generateKey(): string {
 }
 
 function buildAddressStrict(input: AddressInput): AddressStrict {
-  return {
+  const out: AddressStrict = {
     _type: 'addressStrict',
     name: input.name,
-    prename: input.prename,
-    lastname: input.lastname,
-    phone: input.phone,
     line1: input.line1,
-    line2: input.line2,
     zip: input.zip,
     city: input.city,
     country: input.country,
-    state: input.state,
   }
+  if (input.prename) out.prename = input.prename
+  if (input.lastname) out.lastname = input.lastname
+  if (input.phone) out.phone = input.phone
+  if (input.line2) out.line2 = input.line2
+  if (input.state) out.state = input.state
+  return out
 }
 
 function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
@@ -44,6 +45,7 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
       variantId: item.variantId,
       productId: item.productId,
       title: item.title,
+      displayTitle: item.displayTitle,
       quantity: item.quantity,
       price: item.price,
       vatRate: item.vatRate,
@@ -52,6 +54,7 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
     }
 
     if (item.variantTitle) orderItem.variantTitle = item.variantTitle
+    if (item.displaySubtitle) orderItem.displaySubtitle = item.displaySubtitle
     if (item.weight) orderItem.weight = item.weight
     if (item.sku) orderItem.sku = item.sku
 
@@ -119,7 +122,6 @@ function buildFulfillment(
       rate: shippingVatRate,
       net: shippingCost - vat,
       vat,
-      label: shippingVatRate > 0 ? `${shippingVatRate}% VAT` : 'VAT exempt',
     },
     method: {
       _type: 'reference',

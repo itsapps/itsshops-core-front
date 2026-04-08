@@ -40,7 +40,13 @@ const CHECKOUT_QUERY = `{
     "productTaxCategoryCode": product->taxCategory->code.current,
     wine,
     options[]->{ title, "groupTitle": group->title },
-    bundleItems[]{ quantity, "variant": product->{ _id, title, weight, stock } }
+    bundleItems[]{
+      quantity,
+      "variant": product->{
+        _id, kind, title, weight, stock, wine,
+        "productWeight": product->weight
+      }
+    }
   },
   "taxCountry": *[_type == "taxCountry" && countryCode == $country && enabled == true][0]{
     countryCode,
@@ -133,6 +139,79 @@ export async function getNextInvoiceNumber(): Promise<{
     orderNumberPrefix: settings.orderNumberPrefix ?? null,
     invoiceNumberPrefix: settings.invoiceNumberPrefix ?? null,
   }
+}
+
+export async function fetchOrderById(
+  id: string,
+): Promise<(OrderDocument & { _id: string; _createdAt: string; _updatedAt: string }) | null> {
+  const doc = await sanityClient.getDocument<
+    OrderDocument & { _id: string; _createdAt: string; _updatedAt: string }
+  >(id)
+  return doc ?? null
+}
+
+export type EmailSettingsQueryResult = {
+  shopName: string | null
+  senderName: string | null
+  senderEmail: string | null
+  billingAddress: {
+    line1: string | null
+    line2: string | null
+    zip: string | null
+    city: string | null
+    country: string | null
+  } | null
+  bankAccount: {
+    name: string | null
+    bic: string | null
+    iban: string | null
+  } | null
+  orderNumberPrefix: string | null
+  invoiceNumberPrefix: string | null
+}
+
+/**
+ * Fetch the data required to render an email: shop settings (sender, address,
+ * bank account, prefixes) plus the localized shop name from the general
+ * `settings.siteTitle` field.
+ *
+ * Locale is needed because `siteTitle` and `billingAddress.city` are i18nString
+ * arrays — we resolve them via array-find for the requested locale, falling
+ * back to `de`.
+ */
+export async function fetchEmailSettings(
+  locale: string,
+): Promise<EmailSettingsQueryResult | null> {
+  return sanityClient.fetch<EmailSettingsQueryResult | null>(
+    `{
+      "shop": *[_type == "shopSettings"][0]{
+        senderName,
+        senderEmail,
+        orderNumberPrefix,
+        invoiceNumberPrefix,
+        billingAddress{
+          line1,
+          line2,
+          "city": coalesce(city[_key == $locale][0].value, city[_key == "de"][0].value),
+          zip,
+          country
+        },
+        bankAccount{ name, bic, iban }
+      },
+      "site": *[_type == "settings"][0]{
+        "shopName": coalesce(siteTitle[_key == $locale][0].value, siteTitle[_key == "de"][0].value)
+      }
+    }{
+      "shopName": site.shopName,
+      "senderName": shop.senderName,
+      "senderEmail": shop.senderEmail,
+      "billingAddress": shop.billingAddress,
+      "bankAccount": shop.bankAccount,
+      "orderNumberPrefix": shop.orderNumberPrefix,
+      "invoiceNumberPrefix": shop.invoiceNumberPrefix
+    }`,
+    { locale },
+  )
 }
 
 export async function updateOrderPaymentStatus(

@@ -6,12 +6,20 @@
 export type CheckoutCartItem = {
   variantId: string
   quantity: number
+  /**
+   * Frozen display string the customer saw on the product page / cart sidebar.
+   * Snapshotted onto the order item verbatim — server does not re-derive it.
+   * Optional: server falls back to composing one from structural fields if absent.
+   */
+  displayTitle?: string
+  displaySubtitle?: string
 }
 
 export type AddressInput = {
+  /** Canonical full name. Required. Manual forms combine prename + lastname; express checkouts (Apple Pay) provide only this. */
   name: string
-  prename: string
-  lastname: string
+  prename?: string
+  lastname?: string
   phone?: string
   line1: string
   line2?: string
@@ -46,7 +54,6 @@ export type VatBreakdownItem = {
   rate: number
   net: number
   vat: number
-  label: string
 }
 
 export type TotalsResponse = {

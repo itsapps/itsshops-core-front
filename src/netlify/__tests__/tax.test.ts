@@ -89,7 +89,6 @@ describe('buildVatBreakdown', () => {
     expect(result[0].rate).toBe(0)
     expect(result[0].vat).toBe(0)
     expect(result[0].net).toBe(500)
-    expect(result[0].label).toBe('VAT exempt')
   })
 
   it('returns sorted by rate ascending', () => {

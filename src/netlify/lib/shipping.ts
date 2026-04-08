@@ -20,18 +20,40 @@ export function resolveLocalizedTitle(
 }
 
 /**
- * Calculate total weight of physical items in the cart (in kilograms).
- * Weights are stored in grams on variants.
- * For wine products without an explicit weight, volume (ml) is used as a proxy (~1g/ml).
+ * Estimate the shipping weight of a wine bottle from its volume (ml).
+ *
+ * Wine itself is ~1 g/ml. Glass adds a roughly fixed overhead per bottle —
+ * a standard 0.75 l bottle is ~500 g of glass, half bottles ~350 g, magnums
+ * scale up but not linearly. We approximate with a piecewise floor that
+ * undershoots slightly for very large bottles rather than overcharging
+ * standard formats.
+ */
+export function estimateWineBottleWeight(volumeMl: number): number {
+  if (volumeMl <= 0) return 0
+  let glass: number
+  if (volumeMl <= 375) glass = 350
+  else if (volumeMl <= 750) glass = 500
+  else if (volumeMl <= 1000) glass = 600
+  else glass = 800
+  return Math.round(volumeMl + glass)
+}
+
+/**
+ * Calculate total weight of cart items in kilograms.
+ *
+ * `item.weight` is resolved per kind during cart validation
+ * (see `cart-validator.ts`):
+ * - physical → variant/product `weight` (grams)
+ * - wine     → estimated from `wine.volume` via `estimateWineBottleWeight`
+ * - bundle   → sum of children's resolved weights × child quantity
+ * - digital  → null
+ *
+ * This function just sums the pre-resolved grams.
  */
 export function calculateCartWeight(items: ValidatedCartItem[]): number {
   let totalGrams = 0
   for (const item of items) {
-    if (item.kind === 'digital') continue
-    const weight = item.weight ?? (item.wine?.volume ? item.wine.volume : null)
-    if (weight) {
-      totalGrams += weight * item.quantity
-    }
+    if (item.weight) totalGrams += item.weight * item.quantity
   }
   return totalGrams / 1000
 }

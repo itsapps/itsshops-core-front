@@ -53,14 +53,16 @@ function createPaymentAndGetIntent(
   return async () => {
     const variantIds = await config.getVariantIds()
 
+    const lastname = overrides.lastname ?? 'Webhook'
     const res = await paymentHandler(
       buildJsonRequest('/api/payment/create', {
         cart: { items: [{ variantId: variantIds[0], quantity: 1 }] },
         createPayment: true,
         address: {
           shipping: {
+            name: `Test ${lastname}`,
             prename: 'Test',
-            lastname: overrides.lastname ?? 'Webhook',
+            lastname,
             line1: 'Teststraße 1',
             zip: '1010',
             city: 'Wien',

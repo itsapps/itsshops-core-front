@@ -154,14 +154,25 @@ describe('validateCart', () => {
     ])
   })
 
-  it('resolves bundle items', () => {
+  it('resolves bundle items and aggregates child weights', () => {
     const result = validateCart(
       [{ variantId: 'v1', quantity: 1 }],
       [makeVariant({
         kind: 'bundle',
         wine: null,
         bundleItems: [
-          { quantity: 3, variant: { _id: 'child1', title: null, weight: 750, stock: 100 } },
+          {
+            quantity: 3,
+            variant: {
+              _id: 'child1',
+              kind: 'physical',
+              title: null,
+              weight: 750,
+              productWeight: null,
+              stock: 100,
+              wine: null,
+            },
+          },
         ],
       })],
       taxRules,
@@ -170,5 +181,57 @@ describe('validateCart', () => {
     expect(result.items[0].bundleItems).toEqual([
       { variantId: 'child1', quantity: 3 },
     ])
+    // 3 × 750 g = 2250 g
+    expect(result.items[0].weight).toBe(2250)
+  })
+
+  it('aggregates bundle weight from mixed wine + physical children', () => {
+    const result = validateCart(
+      [{ variantId: 'v1', quantity: 1 }],
+      [makeVariant({
+        kind: 'bundle',
+        wine: null,
+        bundleItems: [
+          {
+            quantity: 6,
+            variant: {
+              _id: 'wine1', kind: 'wine', title: null, weight: null, productWeight: null,
+              stock: 100, wine: { vintage: '2022', volume: 750 },
+            },
+          },
+          {
+            quantity: 1,
+            variant: {
+              _id: 'phys1', kind: 'physical', title: null, weight: 400, productWeight: null,
+              stock: 100, wine: null,
+            },
+          },
+        ],
+      })],
+      taxRules,
+      'de',
+    )
+    // 6 × estimateWineBottleWeight(750) + 1 × 400 = 6 × 1250 + 400 = 7900 g
+    expect(result.items[0].weight).toBe(7900)
+  })
+
+  it('resolves wine variant weight from bottle volume', () => {
+    const result = validateCart(
+      [{ variantId: 'v1', quantity: 1 }],
+      [makeVariant()], // default fixture is wine, 0.75 l
+      taxRules,
+      'de',
+    )
+    expect(result.items[0].weight).toBe(1250)
+  })
+
+  it('resolves physical variant weight from explicit field', () => {
+    const result = validateCart(
+      [{ variantId: 'v1', quantity: 1 }],
+      [makeVariant({ kind: 'physical', wine: null, weight: 850 })],
+      taxRules,
+      'de',
+    )
+    expect(result.items[0].weight).toBe(850)
   })
 })

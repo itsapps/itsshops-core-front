@@ -197,6 +197,8 @@ export default {
     subtotal: "Subtotal",
     shipping: "Shipping",
     total: "Total",
+    vat: "VAT",
+    vatExempt: "VAT exempt",
     freeShipping: "Free shipping",
     cartEmpty: "Your cart is empty.",
     loading: "Loading...",

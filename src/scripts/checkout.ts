@@ -1,9 +1,10 @@
-import { getCart, clearCart, updateQuantity, removeItem, type CartItem } from './cart-store'
+import { getCart, updateQuantity, removeItem, syncPricesFromServer, type CartItem } from './cart-store'
 import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
 import { CheckoutSummary } from './checkout-summary'
 import { CheckoutStripe } from './checkout-stripe'
+import { CheckoutExpress } from './checkout-express'
 import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from '../shared/checkout-api'
 
 function dispatch(name: string, detail?: unknown): void {
@@ -25,6 +26,8 @@ export async function initCheckout(): Promise<void> {
     subtotal: container.dataset.tSubtotal ?? 'Subtotal',
     shipping: container.dataset.tShipping ?? 'Shipping',
     total: container.dataset.tTotal ?? 'Total',
+    vat: container.dataset.tVat ?? 'VAT',
+    vatExempt: container.dataset.tVatExempt ?? 'VAT exempt',
     freeShipping: container.dataset.tFreeShipping ?? 'Free shipping',
     cartEmpty: container.dataset.tCartEmpty ?? 'Cart is empty',
     error: container.dataset.tError ?? 'An error occurred. Please try again.',
@@ -51,6 +54,7 @@ export async function initCheckout(): Promise<void> {
   const totalsEl = container.querySelector<HTMLElement>('[data-checkout-totals]')
   const shippingEl = container.querySelector<HTMLElement>('[data-checkout-shipping]')
   const paymentEl = container.querySelector<HTMLElement>('[data-checkout-payment]')
+  const expressEl = container.querySelector<HTMLElement>('[data-checkout-express]')
   const submitBtn = container.querySelector<HTMLButtonElement>('[data-checkout-submit]')
   const errorEl = container.querySelector<HTMLElement>('[data-checkout-error-global]')
   const serviceErrorEl = container.querySelector<HTMLElement>('[data-checkout-service-error]')
@@ -62,6 +66,8 @@ export async function initCheckout(): Promise<void> {
     console.error('[checkout] Missing required DOM elements')
     return
   }
+  // Local non-null aliases — narrowing through closures defined below is unreliable.
+  const paymentMount: HTMLElement = paymentEl
 
   // ── Load Stripe ───────────────────────────────────────────────────────
   const { loadStripe } = await import('@stripe/stripe-js')
@@ -86,6 +92,8 @@ export async function initCheckout(): Promise<void> {
     subtotal: t.subtotal,
     shipping: t.shipping,
     total: t.total,
+    vat: t.vat,
+    vatExempt: t.vatExempt,
     available: t.available,
   })
   const stripeCheckout = new CheckoutStripe(stripe)
@@ -100,10 +108,14 @@ export async function initCheckout(): Promise<void> {
   let cartItems: CheckoutCartItem[] = cart.map(item => ({
     variantId: item.id,
     quantity: item.quantity,
+    displayTitle: item.title,
+    ...(item.subtitle && { displaySubtitle: item.subtitle }),
   }))
 
   summary.renderCartItems(cart)
-  const cartImages = new Map(cart.map(item => [item.id, item.imageUrl]))
+  // Live snapshot of local cart entries by id — used by renderItems to keep titles
+  // consistent with the product page / cart sidebar even after server recalculation.
+  const localCartMap = new Map<string, CartItem>(cart.map(item => [item.id, item]))
 
   // Wire qty changes and removals from summary to cart store + recalculate
   summary.setEvents({
@@ -214,6 +226,58 @@ export async function initCheckout(): Promise<void> {
     populateCountrySelect(billingCountrySelect, countries, selected)
   }
 
+  // ── Express checkout (Apple Pay / Google Pay) ─────────────────────────
+  let expressCheckout: CheckoutExpress | null = null
+
+  function mountExpressCheckout(initial: CalculateResponse): void {
+    if (!expressEl || expressCheckout) return
+    expressCheckout = new CheckoutExpress({
+      stripe: stripeCheckout,
+      container: expressEl,
+      returnUrl,
+      allowedCountries: initial.supportedCountries.map(c => c.code),
+      labels: { shipping: t.shipping },
+      getLatest: () => lastResponse,
+      onAddressChange: async (partial) => {
+        try {
+          return await calculatePayment(apiUrl, cartItems, locale, {
+            country: partial.country,
+            shippingMethodId: shipping.getSelectedId(),
+          })
+        } catch {
+          return null
+        }
+      },
+      onRateChange: async (methodId) => {
+        try {
+          const country = form.getCountry() || lastResponse?.selectedCountry
+          return await calculatePayment(apiUrl, cartItems, locale, {
+            country,
+            shippingMethodId: methodId,
+          })
+        } catch {
+          return null
+        }
+      },
+      onCreatePayment: async ({ address, email, shippingMethodId }) => {
+        try {
+          const response = await createPayment(
+            apiUrl,
+            cartItems,
+            locale,
+            { shipping: address, contactEmail: email },
+            { shippingMethodId, orderMetaId },
+          )
+          orderMetaId = response.orderMetaId
+          return { clientSecret: response.clientSecret }
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : 'Payment creation failed' }
+        }
+      },
+    })
+    expressCheckout.mount()
+  }
+
   // ── Calculate ─────────────────────────────────────────────────────────
   async function calculate(options: { country?: string; shippingMethodId?: string } = {}): Promise<void> {
     setLoading(true)
@@ -223,14 +287,19 @@ export async function initCheckout(): Promise<void> {
       const response = await calculatePayment(apiUrl, cartItems, locale, options)
       lastResponse = response
 
-      summary.renderItems(response.items, cartImages)
+      // Sync authoritative server prices into local cart so the cart sidebar / badge
+      // and any future visit reflect the true price (silent — no UI alert).
+      syncPricesFromServer(response.items.map(i => ({ id: i.variantId, price: i.price })))
+
+      summary.renderItems(response.items, localCartMap)
       summary.renderTotals(response)
       shipping.render(response.shippingMethods, response.selectedShippingMethodId, summary.formatPrice.bind(summary))
       populateCountries(response.supportedCountries, response.selectedCountry)
 
-      if (!stripeCheckout['paymentElementMounted']) {
+      if (!stripeCheckout.hasPaymentElement()) {
         stripeCheckout.initElements(response.totals.grandTotal, response.currency.toLowerCase(), locale)
-        stripeCheckout.mountPaymentElement(paymentEl)
+        stripeCheckout.mountPaymentElement(paymentMount)
+        mountExpressCheckout(response)
       } else {
         stripeCheckout.updateAmount(response.totals.grandTotal)
       }
@@ -298,6 +367,8 @@ export async function initCheckout(): Promise<void> {
       orderMetaId = response.orderMetaId
       summary.renderTotals(response)
 
+      // On success, confirmPayment redirects to returnUrl — code below only runs on error.
+      // Cart is cleared on the order-thanks page (see scripts/order-thanks.ts).
       const confirmResult = await stripeCheckout.confirmPayment(response.clientSecret, returnUrl)
       if (confirmResult.error) {
         showValidationError(confirmResult.error.message)
@@ -305,9 +376,6 @@ export async function initCheckout(): Promise<void> {
         submitBtn.disabled = false
         return
       }
-
-      clearCart()
-      dispatch('checkout:complete')
     } catch (err) {
       handleError(err)
     } finally {

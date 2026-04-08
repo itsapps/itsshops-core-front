@@ -6,7 +6,19 @@ import type {
 } from '../types/checkout'
 import type { CheckoutCartItem } from '../types/api'
 import { findTaxRate, extractVat } from './tax'
-import { resolveLocalizedTitle } from './shipping'
+import { resolveLocalizedTitle, estimateWineBottleWeight } from './shipping'
+import { composeDisplayTitle } from './order-item-display'
+
+const MAX_DISPLAY_LEN = 300
+
+function sanitize(s: string | undefined): string | null {
+  if (!s) return null
+  // Strip control chars + clamp length. The string is otherwise opaque to us.
+  // eslint-disable-next-line no-control-regex
+  const cleaned = s.replace(/[\x00-\x1F\x7F]/g, '').trim()
+  if (!cleaned) return null
+  return cleaned.slice(0, MAX_DISPLAY_LEN)
+}
 
 export type CartValidationResult = {
   items: ValidatedCartItem[]
@@ -62,7 +74,31 @@ export function validateCart(
 
     const title = resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)
     const variantTitle = resolveLocalizedTitle(variant.title, locale, defaultLocale) || null
-    const weight = variant.weight ?? variant.productWeight
+
+    // Resolve shipping weight (grams).
+    // - physical: explicit weight on variant or parent product
+    // - wine:     estimated from bottle volume (no schema weight field)
+    // - bundle:   sum of children's resolved weights × child quantity
+    // - digital:  null (skipped by shipping calculator)
+    let weight: number | null = null
+    if (variant.kind === 'physical') {
+      weight = variant.weight ?? variant.productWeight ?? null
+    } else if (variant.kind === 'wine' && variant.wine?.volume) {
+      weight = estimateWineBottleWeight(variant.wine.volume)
+    } else if (variant.kind === 'bundle' && variant.bundleItems) {
+      let total = 0
+      for (const bi of variant.bundleItems) {
+        const child = bi.variant
+        let childGrams = 0
+        if (child.kind === 'physical') {
+          childGrams = child.weight ?? child.productWeight ?? 0
+        } else if (child.kind === 'wine' && child.wine?.volume) {
+          childGrams = estimateWineBottleWeight(child.wine.volume)
+        }
+        total += childGrams * bi.quantity
+      }
+      weight = total > 0 ? total : null
+    }
 
     const options = variant.options?.map(o => ({
       groupTitle: resolveLocalizedTitle(o.groupTitle, locale, defaultLocale),
@@ -74,15 +110,17 @@ export function validateCart(
       quantity: bi.quantity,
     })) ?? null
 
-    validatedItems.push({
+    const item: ValidatedCartItem = {
       variantId: variant._id,
       productId: variant.productId ?? '',
       kind: variant.kind,
       title,
       variantTitle,
+      displayTitle: '', // assigned below
+      displaySubtitle: sanitize(cartItem.displaySubtitle),
       sku: variant.sku,
       price,
-      weight: weight ?? null,
+      weight,
       quantity,
       taxCategoryCode,
       vatRate,
@@ -93,7 +131,20 @@ export function validateCart(
       } : null,
       options,
       bundleItems,
-    })
+    }
+
+    // Customer-supplied display string is canonical. Fall back to a composed
+    // default only if the client did not provide one (older client, manual API call).
+    const clientTitle = sanitize(cartItem.displayTitle)
+    if (clientTitle) {
+      item.displayTitle = clientTitle
+    } else {
+      const fallback = composeDisplayTitle(item)
+      item.displayTitle = fallback.title
+      if (!item.displaySubtitle) item.displaySubtitle = fallback.subtitle
+    }
+
+    validatedItems.push(item)
   }
 
   return { items: validatedItems, unavailableItems }

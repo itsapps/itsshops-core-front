@@ -162,6 +162,7 @@ export function paymentCreateTests(config: TestConfig) {
           createPayment: true,
           address: {
             shipping: {
+              name: 'Test User',
               prename: 'Test',
               lastname: 'User',
               line1: 'Teststraße 1',
@@ -189,6 +190,7 @@ export function paymentCreateTests(config: TestConfig) {
       const locale = config.defaultLocale ?? 'de'
       const address = {
         shipping: {
+          name: 'Test User',
           prename: 'Test',
           lastname: 'User',
           line1: 'Teststraße 1',
@@ -249,6 +251,7 @@ export function paymentCreateTests(config: TestConfig) {
           createPayment: true,
           address: {
             shipping: {
+              name: 'Test User',
               prename: 'Test',
               lastname: 'User',
               line1: 'Teststraße 1',

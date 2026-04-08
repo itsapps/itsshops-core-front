@@ -5,8 +5,7 @@ export function validateEmail(email: string): boolean {
 }
 
 export const REQUIRED_ADDRESS_FIELDS = [
-  'prename',
-  'lastname',
+  'name',
   'line1',
   'zip',
   'city',

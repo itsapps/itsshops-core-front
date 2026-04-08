@@ -11,6 +11,8 @@ export default defineConfig({
     preview: 'src/netlify/functions/preview.ts',
     'payment-create': 'src/netlify/functions/payment-create.ts',
     'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
+    'payment-refund': 'src/netlify/functions/payment-refund.ts',
+    'order-notify': 'src/netlify/functions/order-notify.tsx',
     'test-utils': 'src/test-utils/index.ts',
   },
   format: ['esm'],

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   calculateCartWeight,
+  estimateWineBottleWeight,
   findShippingRate,
   isFreeShipping,
   resolveShippingMethods,
@@ -15,6 +16,8 @@ function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem
     kind: 'physical',
     title: 'Test',
     variantTitle: null,
+    displayTitle: 'Test',
+    displaySubtitle: null,
     sku: null,
     price: 1000,
     weight: 500, // grams
@@ -38,9 +41,9 @@ describe('calculateCartWeight', () => {
     expect(calculateCartWeight(items)).toBe(2) // (500*2 + 1000*1) / 1000
   })
 
-  it('ignores digital items', () => {
+  it('ignores digital items (validator sets their weight to null)', () => {
     const items = [
-      makeItem({ kind: 'digital', weight: 500, quantity: 1 }),
+      makeItem({ kind: 'digital', weight: null, quantity: 1 }),
     ]
     expect(calculateCartWeight(items)).toBe(0)
   })
@@ -50,8 +53,38 @@ describe('calculateCartWeight', () => {
     expect(calculateCartWeight(items)).toBe(0)
   })
 
+  it('skips items with null weight', () => {
+    const items = [
+      makeItem({ kind: 'wine', weight: null, quantity: 1, wine: { vintage: null, volume: null } }),
+    ]
+    expect(calculateCartWeight(items)).toBe(0)
+  })
+
   it('returns 0 for empty cart', () => {
     expect(calculateCartWeight([])).toBe(0)
+  })
+})
+
+describe('estimateWineBottleWeight', () => {
+  it('estimates standard 0.75 l bottle at 1250 g', () => {
+    expect(estimateWineBottleWeight(750)).toBe(1250)
+  })
+
+  it('estimates half bottle (0.375 l) with smaller glass overhead', () => {
+    expect(estimateWineBottleWeight(375)).toBe(725)
+  })
+
+  it('estimates 1 l bottle with heavier glass', () => {
+    expect(estimateWineBottleWeight(1000)).toBe(1600)
+  })
+
+  it('estimates magnum (1.5 l) with heaviest glass tier', () => {
+    expect(estimateWineBottleWeight(1500)).toBe(2300)
+  })
+
+  it('returns 0 for non-positive volume', () => {
+    expect(estimateWineBottleWeight(0)).toBe(0)
+    expect(estimateWineBottleWeight(-100)).toBe(0)
   })
 })
 

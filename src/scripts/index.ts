@@ -21,3 +21,7 @@ if (document.getElementById('cart-sidebar')) {
 if (document.querySelector('[data-checkout]')) {
   import('./checkout').then(m => m.initCheckout())
 }
+
+if (document.querySelector('[data-order-thanks]')) {
+  import('./order-thanks').then(m => m.initOrderThanks())
+}

@@ -59,6 +59,23 @@ export function clearCart(): void {
   save([])
 }
 
+/**
+ * Update local cart prices from authoritative server values.
+ * No-op (no save, no event) if nothing actually changed.
+ */
+export function syncPricesFromServer(updates: { id: string; price: number }[]): void {
+  const items = getCart()
+  let changed = false
+  for (const update of updates) {
+    const item = items.find(i => i.id === update.id)
+    if (item && item.price !== update.price) {
+      item.price = update.price
+      changed = true
+    }
+  }
+  if (changed) save(items)
+}
+
 export function getCount(): number {
   return getCart().reduce((sum, i) => sum + i.quantity, 0)
 }

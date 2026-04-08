@@ -70,9 +70,20 @@ describe('validateAddress', () => {
     expect(result.valid).toBe(false)
     if (!result.valid) {
       expect(result.details).toBeDefined()
-      expect(result.details!['billing.lastname']).toBeDefined()
+      expect(result.details!['billing.name']).toBeDefined()
       expect(result.details!['billing.line1']).toBeDefined()
     }
+  })
+
+  it('accepts name-only address (express checkout, no prename/lastname)', () => {
+    const expressAddress = {
+      name: 'Apple Pay User',
+      line1: 'Hauptstr. 1',
+      zip: '7000',
+      city: 'Eisenstadt',
+      country: 'AT',
+    }
+    expect(validateAddress(expressAddress, 'shipping')).toEqual({ valid: true })
   })
 })
 

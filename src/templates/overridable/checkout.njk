@@ -13,6 +13,8 @@
     data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
     data-t-shipping="{{ 'checkout.shipping' | trans }}"
     data-t-total="{{ 'checkout.total' | trans }}"
+    data-t-vat="{{ 'checkout.vat' | trans }}"
+    data-t-vat-exempt="{{ 'checkout.vatExempt' | trans }}"
     data-t-free-shipping="{{ 'checkout.freeShipping' | trans }}"
     data-t-cart-empty="{{ 'checkout.cartEmpty' | trans }}"
     data-t-error="{{ 'checkout.error' | trans }}"
@@ -45,6 +47,9 @@
         </a>
       {% endif %}
     </div>
+
+    {# Express checkout (Apple Pay / Google Pay) — mounts after first calculate #}
+    <div data-checkout-express class="checkout-express"></div>
 
     <form data-checkout-form class="checkout__form" novalidate>
       <div class="checkout__columns">

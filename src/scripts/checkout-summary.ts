@@ -6,6 +6,8 @@ export type SummaryLabels = {
   subtotal: string
   shipping: string
   total: string
+  vat: string
+  vatExempt: string
   available: string
 }
 
@@ -36,7 +38,14 @@ export class CheckoutSummary {
     this.locale = locale
     this.currency = currency
     this.currencyLabel = currencyLabel
-    this.labels = labels ?? { subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total', available: 'available' }
+    this.labels = labels ?? {
+      subtotal: 'Subtotal',
+      shipping: 'Shipping',
+      total: 'Total',
+      vat: 'VAT',
+      vatExempt: 'VAT exempt',
+      available: 'available',
+    }
   }
 
   setEvents(events: SummaryEvents): void {
@@ -87,7 +96,7 @@ export class CheckoutSummary {
     `
   }
 
-  renderItems(items: ValidatedCartItemResponse[], cartImages: Map<string, string>): void {
+  renderItems(items: ValidatedCartItemResponse[], localCart: Map<string, CartItem>): void {
     this.itemsContainer.innerHTML = ''
 
     for (const item of items) {
@@ -96,10 +105,16 @@ export class CheckoutSummary {
 
       el.dataset.cartItemId = item.variantId
 
-      const imageUrl = cartImages.get(item.variantId) ?? item.imageUrl ?? ''
+      // Prefer the local cart's display strings (consistent with product page + cart sidebar).
+      // Fall back to the server's split title/variantTitle only if the local entry is missing.
+      const local = localCart.get(item.variantId)
+      const title = local?.title ?? item.title
+      const subtitle = local?.subtitle ?? item.variantTitle ?? undefined
+      const imageUrl = local?.imageUrl ?? item.imageUrl ?? ''
+
       fillImageSlot(el, 'image', imageUrl)
-      fillSlot(el, 'title', item.title)
-      if (item.variantTitle) fillSlot(el, 'subtitle', item.variantTitle)
+      fillSlot(el, 'title', title)
+      if (subtitle) fillSlot(el, 'subtitle', subtitle)
       fillSlot(el, 'price', this.formatPrice(item.price * item.quantity))
 
       const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
@@ -159,7 +174,7 @@ export class CheckoutSummary {
       </div>
       ${totals.vatBreakdown.map(v => `
         <div class="checkout-totals__row checkout-totals__row--vat">
-          <span>${v.label}</span>
+          <span>${v.rate > 0 ? `${v.rate}% ${this.labels.vat}` : this.labels.vatExempt}</span>
           <span>${this.formatPrice(v.vat)}</span>
         </div>
       `).join('')}
