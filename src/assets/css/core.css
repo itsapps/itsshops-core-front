@@ -165,7 +165,7 @@
 
 .checkout__summary {
   position: sticky;
-  top: 2rem;
+  top: calc(var(--header-height-scrolled, 0px) + var(--space-s, 1rem));
   align-self: start;
 }
 
