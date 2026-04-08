@@ -119,13 +119,13 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
 export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
   const { hasStock } = resolveServerConfig(options)
 
-  return async (request: Request, _context: Context): Promise<void> => {
-    if (request.method !== 'POST') return
+  return async (request: Request, _context: Context): Promise<Response> => {
+    if (request.method !== 'POST') return new Response(null, { status: 405 })
 
     const signature = request.headers.get('stripe-signature')
     if (!signature) {
       log.warn('Missing stripe-signature header')
-      return
+      return new Response(null, { status: 400 })
     }
 
     let body: string
@@ -133,7 +133,7 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
       body = await request.text()
     } catch {
       log.warn('Failed to read request body')
-      return
+      return new Response(null, { status: 400 })
     }
 
     try {
@@ -157,6 +157,9 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
         error: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,
       })
+      return new Response(null, { status: 400 })
     }
+
+    return new Response(null, { status: 200 })
   }
 }
