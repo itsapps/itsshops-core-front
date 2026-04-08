@@ -4,7 +4,7 @@
 // to "false" for the US region.
 import FormData from 'form-data'
 import Mailgun from 'mailgun.js'
-import type { MailgunMessageData, MessageAttachment, MessagesSendResult } from 'mailgun.js/Types'
+import type { MailgunMessageData, MessageAttachment, MessagesSendResult } from 'mailgun.js/definitions'
 
 let _client: ReturnType<ReturnType<typeof getMailgun>['client']> | null = null
 let _domain: string | null = null
@@ -43,7 +43,7 @@ export type SendMailParams = {
   subject: string
   text: string
   html?: string
-  attachments?: MessageAttachment | MessageAttachment[]
+  attachment?: MessageAttachment
 }
 
 export async function sendMail(params: SendMailParams): Promise<MessagesSendResult> {
@@ -55,7 +55,7 @@ export async function sendMail(params: SendMailParams): Promise<MessagesSendResu
     subject: params.subject,
     text: params.text,
     ...(params.html && { html: params.html }),
-    ...(params.attachments && { attachment: params.attachments }),
+    ...(params.attachment && { attachment: params.attachment }),
   }
   return client.messages.create(domain, data)
 }

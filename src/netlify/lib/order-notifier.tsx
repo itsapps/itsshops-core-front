@@ -116,17 +116,15 @@ export async function sendOrderNotification(
   const text = ctx.t(`emails.${mailType}.text`)
 
   const wantsInvoice = options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType)
-  let attachments: { filename: string; data: Buffer; contentType: string }[] | undefined
+  let attachment: { filename: string; data: Buffer; contentType: string } | undefined
   if (wantsInvoice) {
     const InvoiceComponent = options.invoicePdf ?? InvoicePdf
     const pdfBuffer = await renderToBuffer(<InvoiceComponent ctx={ctx} order={order} />)
-    attachments = [
-      {
-        filename: `${order.invoiceNumber}.pdf`,
-        data: pdfBuffer,
-        contentType: 'application/pdf',
-      },
-    ]
+    attachment = {
+      filename: `${order.invoiceNumber}.pdf`,
+      data: pdfBuffer,
+      contentType: 'application/pdf',
+    }
   }
 
   const result = await sendMail({
@@ -136,7 +134,7 @@ export async function sendOrderNotification(
     subject,
     text,
     html,
-    ...(attachments && { attachments }),
+    ...(attachment && { attachment }),
   })
 
   return {
