@@ -74,7 +74,10 @@ async function handlePaymentSucceeded(
   // Send the order confirmation email. Failures here must NOT abort the
   // webhook (Stripe would retry and we'd duplicate the order) — log and move on.
   try {
-    const result = await sendOrderNotification(created._id, 'orderConfirmation', notifyOptions)
+    const result = await sendOrderNotification(created._id, 'orderConfirmation', {
+      ...notifyOptions,
+      bccSender: true,
+    })
     log.info('Order confirmation sent', {
       orderId: created._id,
       to: result.to,
@@ -138,7 +141,12 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
 
       switch (event.type) {
         case 'payment_intent.succeeded':
-          await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent, hasStock, options.onOrderCreated)
+          await handlePaymentSucceeded(
+            event.data.object as Stripe.PaymentIntent,
+            hasStock,
+            options.onOrderCreated,
+            options.notify,
+          )
           break
         case 'charge.refunded':
           await handleChargeRefunded(event.data.object as Stripe.Charge)

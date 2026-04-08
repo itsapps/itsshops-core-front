@@ -39,6 +39,7 @@ function getClient() {
 export type SendMailParams = {
   from: string
   to: string | string[]
+  bcc?: string | string[]
   subject: string
   text: string
   html?: string
@@ -50,6 +51,7 @@ export async function sendMail(params: SendMailParams): Promise<MessagesSendResu
   const data: MailgunMessageData = {
     from: params.from,
     to: params.to,
+    ...(params.bcc && { bcc: params.bcc }),
     subject: params.subject,
     text: params.text,
     ...(params.html && { html: params.html }),

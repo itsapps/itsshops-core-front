@@ -9,7 +9,6 @@
  * Throws `OrderNotifierError` with a typed code so callers can map failures
  * to HTTP responses (HTTP handler) or just log them (webhook).
  */
-import * as React from 'react'
 import type { ComponentType } from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 
@@ -33,6 +32,8 @@ export type SendOrderNotificationOptions = {
   baseUrl?: string
   /** Force-attach the invoice PDF regardless of mailType. */
   attachInvoice?: boolean
+  /** BCC the sender (shop admin) on the outgoing mail. */
+  bccSender?: boolean
 }
 
 export type SendOrderNotificationResult = {
@@ -131,6 +132,7 @@ export async function sendOrderNotification(
   const result = await sendMail({
     from: `${settings.senderName} <${settings.senderEmail}>`,
     to: order.customer.contactEmail,
+    ...(options.bccSender && { bcc: settings.senderEmail }),
     subject,
     text,
     html,
