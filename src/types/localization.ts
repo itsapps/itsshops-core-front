@@ -23,3 +23,17 @@ export type PermalinkTranslations = {
   recover?:     string
   login?:       string
 }
+
+/** Fixed (non-configurable) auth page path segments, keyed by locale. */
+export type UserPaths = {
+  userLogin:               string
+  userRegistration:        string
+  userRegistrationSuccess: string
+  userConfirm:             string
+  userConfirmSuccess:      string
+  userRecover:             string
+  userRecoverSuccess:      string
+  userReset:               string
+  userResetSuccess:        string
+  userOrders:              string
+}

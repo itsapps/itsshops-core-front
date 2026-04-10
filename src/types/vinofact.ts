@@ -49,9 +49,10 @@ export type VinofactImage = {
 
 /** Fields that can be requested via VinofactConfig.fields (excludes always-fetched base fields). */
 export type VinofactField =
-  | 'year' | 'color' | 'type' | 'description'
-  | 'alcohol' | 'tartaricAcid' | 'totalSulfur' | 'freeSulfur' | 'phValue' | 'histamine'
+  | 'year' | 'color' | 'flavor' | 'type' | 'description'
+  | 'alcohol' | 'residualSugar' | 'tartaricAcid' | 'totalSulfur' | 'freeSulfur' | 'phValue' | 'histamine'
   | 'varietals' | 'classifications' | 'normClassifications' | 'awards' | 'bottleImage' | 'terroir'
+  | 'factsheetPdfUrl' | 'factsheetHtmlUrl'
 
 /** Resolved wine data from the Vinofact API (all locale maps already resolved to strings). */
 export type VinofactWine = {
@@ -62,9 +63,11 @@ export type VinofactWine = {
   // Optional — included via VinofactConfig.fields
   year?: string | null
   color?: string | null
+  flavor?: string | null
   type?: string | null
   description?: string | null
   alcohol?: number | null
+  residualSugar?: number | null
   tartaricAcid?: number | null
   totalSulfur?: number | null
   freeSulfur?: number | null
@@ -76,4 +79,6 @@ export type VinofactWine = {
   awards?: VinofactAward[]
   bottleImage?: VinofactImage | null
   terroir?: VinofactTerroir | null
+  factsheetPdfUrl?: string | null
+  factsheetHtmlUrl?: string | null
 }

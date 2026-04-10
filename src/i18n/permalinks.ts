@@ -1,4 +1,6 @@
-import type { Locale, PermalinkTranslations } from '../types'
+import type { Locale, PermalinkTranslations, UserPaths } from '../types'
+import deShared from './translations/de_shared'
+import enShared from './translations/en_shared'
 
 const defaults: Record<Locale, Required<PermalinkTranslations>> = {
   de: {
@@ -34,6 +36,18 @@ export function buildPermalinkTranslations(
     acc[locale] = { ...defaults[locale], ...overrides[locale] }
     return acc
   }, {} as Record<Locale, Required<PermalinkTranslations>>)
+}
+
+const sharedTranslations: Record<string, { urlPaths: UserPaths }> = {
+  de: deShared as { urlPaths: UserPaths },
+  en: enShared as { urlPaths: UserPaths },
+}
+
+export function buildUserPaths(): Record<Locale, UserPaths> {
+  return (Object.keys(sharedTranslations) as Locale[]).reduce((acc, locale) => {
+    acc[locale] = sharedTranslations[locale].urlPaths
+    return acc
+  }, {} as Record<Locale, UserPaths>)
 }
 
 export function getPermalink(

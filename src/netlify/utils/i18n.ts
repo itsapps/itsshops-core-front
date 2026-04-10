@@ -1,7 +1,12 @@
 import de from '../../i18n/translations/de_server'
 import en from '../../i18n/translations/en_server'
+import deShared from '../../i18n/translations/de_shared'
+import enShared from '../../i18n/translations/en_shared'
 
-const translations: Record<string, typeof de> = { de, en }
+const translations: Record<string, object> = {
+  de: { ...de, ...deShared },
+  en: { ...en, ...enShared },
+}
 
 /**
  * Get a nested translation value by dot-separated key.

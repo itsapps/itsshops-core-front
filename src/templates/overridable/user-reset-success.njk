@@ -1,0 +1,7 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.userResetSuccess.title' | trans }}</h1>
+  <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userLogin }}/" class="btn">
+    {{ 'staticPages.userLogin.title' | trans }}
+  </a>
+</article>

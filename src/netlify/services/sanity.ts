@@ -214,6 +214,70 @@ export async function fetchEmailSettings(
   )
 }
 
+export type CustomerDocument = {
+  _type: 'customer'
+  email: string
+  locale: string
+  supabaseId: string
+  status: 'registered' | 'invited' | 'active'
+  customerNumber: string
+  receiveNewsletter: boolean
+  address?: {
+    prename?: string
+    lastname?: string
+    phone?: string
+    line1?: string
+    line2?: string
+    zip?: string
+    city?: string
+    country?: string
+    state?: string
+  }
+}
+
+export async function getCustomer(supabaseId: string): Promise<(CustomerDocument & { _id: string }) | null> {
+  const doc = await sanityClient.fetch<(CustomerDocument & { _id: string }) | null>(
+    `*[_type == "customer" && supabaseId == $supabaseId][0]`,
+    { supabaseId },
+  )
+  return doc ?? null
+}
+
+export async function createCustomer(doc: CustomerDocument): Promise<{ _id: string }> {
+  return sanityClient.create(doc)
+}
+
+export async function upsertCustomer(
+  supabaseId: string,
+  doc: Omit<CustomerDocument, '_type' | 'supabaseId' | 'customerNumber'>,
+): Promise<void> {
+  const existing = await getCustomer(supabaseId)
+  if (existing) {
+    await sanityClient
+      .patch(existing._id)
+      .set({ receiveNewsletter: doc.receiveNewsletter, status: doc.status })
+      .setIfMissing({
+        email: doc.email,
+        locale: doc.locale,
+        ...doc.address?.prename && { 'address.prename': doc.address.prename },
+        ...doc.address?.lastname && { 'address.lastname': doc.address.lastname },
+        ...doc.address?.phone && { 'address.phone': doc.address.phone },
+      })
+      .commit()
+  } else {
+    const customerNumber = await getLatestCustomerNumber()
+    await createCustomer({ _type: 'customer', supabaseId, customerNumber, ...doc })
+  }
+}
+
+export async function getLatestCustomerNumber(): Promise<string> {
+  const latest = await sanityClient.fetch<{ customerNumber: string } | null>(
+    `*[_type == "customer"] | order(customerNumber desc)[0]{ customerNumber }`,
+  )
+  const last = parseInt(latest?.customerNumber ?? '10000', 10)
+  return String(last + 1)
+}
+
 export async function updateOrderPaymentStatus(
   paymentIntentId: string,
   status: 'refunded' | 'partiallyRefunded',

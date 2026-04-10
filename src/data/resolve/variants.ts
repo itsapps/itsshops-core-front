@@ -133,7 +133,7 @@ function resolveWine(
 
   const resolved = resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as Record<string, unknown>
 
-  const numbersMultipliedFields = ['alcohol', 'tartaricAcid', 'totalSulfur', 'freeSulfur', 'phValue', 'histamine']
+  const numbersMultipliedFields = ['alcohol', 'residualSugar', 'tartaricAcid', 'totalSulfur', 'freeSulfur', 'phValue', 'histamine']
   for (const field of numbersMultipliedFields) {
     if (typeof resolved[field] === 'number') {
       resolved[field] = resolved[field] / 100

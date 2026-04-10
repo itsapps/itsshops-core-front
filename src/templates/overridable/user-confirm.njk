@@ -1,0 +1,20 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.userConfirm.title' | trans }}</h1>
+
+  <div data-user-confirm
+    data-api="/api/user/confirm"
+    data-locale="{{ _locale }}"
+    data-recover-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/"
+    data-register-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/"
+  >
+    <div data-confirm-loading class="user-form__loading" aria-live="polite" hidden></div>
+
+    <div data-confirm-error class="user-form__error" role="alert" hidden>
+      <p data-confirm-error-message></p>
+      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/" class="btn">
+        {{ 'staticPages.userRecover.title' | trans }}
+      </a>
+    </div>
+  </div>
+</article>

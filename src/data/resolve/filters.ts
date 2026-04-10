@@ -22,6 +22,7 @@ export function buildFilterAttributes(
     if (wine.vintage) attrs.vintage = [stegaClean(String(wine.vintage))]
     const w = wine as any
     if (w.color) attrs.color = [slugify(stegaClean(String(w.color)))]
+    if (w.flavor) attrs.flavor = [slugify(stegaClean(String(w.flavor)))]
     if (w.varietals?.length) {
       attrs.varietal = (w.varietals as Array<{ name: string | null }>)
         .map(v => v.name ? slugify(stegaClean(v.name)) : '')
@@ -69,6 +70,10 @@ export function accumulateFilterGroups(
     if (w.color) {
       const c = stegaClean(String(w.color))
       addToAcc(acc, 'color', ctx.translate('filters.color'), slugify(c), c)
+    }
+    if (w.flavor) {
+      const f = stegaClean(String(w.flavor))
+      addToAcc(acc, 'flavor', ctx.translate('filters.flavor'), slugify(f), f)
     }
     if (w.varietals?.length) {
       const label = ctx.translate('filters.varietal')

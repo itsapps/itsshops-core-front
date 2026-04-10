@@ -97,7 +97,7 @@ export default {
       trackShipment: "Sendung verfolgen",
     },
     orderConfirmation: {
-      subject: "Order confirmation 🐠",
+      subject: "Order confirmation 🍷",
       preview: "Thanks for shopping with us!",
       text: "Thank you for your order. We are pleased to confirm your order with the number",
     },

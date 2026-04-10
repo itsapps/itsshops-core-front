@@ -65,6 +65,14 @@ function isStateEmpty(state: FilterState): boolean {
   return state.attrs.size === 0 && state.priceMin === null && state.priceMax === null
 }
 
+function isCollapsedState(state: FilterState, collapseOnlyKeys: Set<string>): boolean {
+  if (state.priceMin !== null || state.priceMax !== null) return false
+  for (const key of state.attrs.keys()) {
+    if (!collapseOnlyKeys.has(key)) return false
+  }
+  return true
+}
+
 function itemMatchesPrice(priceCents: number | null, state: FilterState): boolean {
   if (priceCents === null) return true
   // Price inputs are in whole currency units (euros), data-filter-price is in cents
@@ -84,6 +92,28 @@ function applyState(state: FilterState): void {
       || (itemMatchesState(attrs, state.attrs) && itemMatchesPrice(price, state))
     item.hidden = !visible
     if (visible) visibleCount++
+  })
+
+  // Collapse-by-product: optional grouping — one card per product when only passive filters active
+  document.querySelectorAll<HTMLElement>('[data-product-list]').forEach(list => {
+    if (!list.hasAttribute('data-collapse-by-product')) return
+    const collapseOnlyKeys = new Set(
+      (list.dataset.collapseOnlyKeys ?? '').split(',').map(s => s.trim()).filter(Boolean),
+    )
+    const collapsed = isCollapsedState(state, collapseOnlyKeys)
+    if (collapsed) {
+      list.setAttribute('data-filter-collapsed', '')
+      const seen = new Set<string>()
+      list.querySelectorAll<HTMLElement>('[data-filter-item]').forEach(item => {
+        if (item.hidden) return
+        const ref = item.dataset.productRef
+        if (!ref) return
+        if (seen.has(ref)) { item.hidden = true; visibleCount-- }
+        else seen.add(ref)
+      })
+    } else {
+      list.removeAttribute('data-filter-collapsed')
+    }
   })
 
   // Sync checkbox states

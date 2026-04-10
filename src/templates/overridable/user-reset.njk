@@ -1,0 +1,25 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.userReset.title' | trans }}</h1>
+
+  <div data-user-reset
+    data-api="/api/user/reset"
+    data-locale="{{ _locale }}"
+    data-t-error-password="{{ 'forms.fields.password.errorMessage' | trans }}"
+  >
+    <form class="user-form" novalidate>
+      <div class="user-form__field">
+        <label for="reset-password">{{ 'forms.fields.password.label' | trans }}</label>
+        <input type="password" id="reset-password" name="password" required autocomplete="new-password">
+        <span class="user-form__field-error" data-field-error="password"></span>
+      </div>
+
+      <div class="user-form__error" role="alert" hidden data-form-error></div>
+
+      <button type="submit" class="btn" disabled data-reset-submit>
+        <span data-submit-text>{{ 'forms.userReset.submit.text' | trans }}</span>
+        <span data-submit-loading hidden>{{ 'forms.userReset.submit.loadingText' | trans }}</span>
+      </button>
+    </form>
+  </div>
+</article>

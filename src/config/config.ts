@@ -1,6 +1,6 @@
 import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName, CspDirectives, ResolvedCspDirectives } from '../types'
 import type { ClientPerspective } from '@sanity/client'
-import { buildPermalinkTranslations } from '../i18n/permalinks'
+import { buildPermalinkTranslations, buildUserPaths } from '../i18n/permalinks'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
@@ -53,6 +53,7 @@ export function resolveConfig(config: Config): CoreConfig {
     features,
     permalinks:         config.permalinks ?? {},
     resolvedPermalinks: buildPermalinkTranslations(config.permalinks),
+    userPaths: buildUserPaths(),
     translations:       config.translations ?? {},
     headers: {
       extra:  resolveCspDirectives(config.headers?.extra),
@@ -221,7 +222,13 @@ function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<ty
         integration: vinofactIntegration,
       },
     },
-    blog:  input?.blog  ?? false,
-    users: input?.users ?? false,
+    blog: input?.blog ?? false,
+    users: {
+      enabled: !!input?.users,
+      registrationFields:
+        input?.users && typeof input.users === 'object'
+          ? (input.users.registrationFields ?? [])
+          : [],
+    },
   }
 }

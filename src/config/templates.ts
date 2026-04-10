@@ -195,7 +195,7 @@ function shouldIgnoreTemplate({
   const features = config.features
 
   if (dir === 'standard') {
-    if (file.startsWith('user-') && !features.users) return true
+    if (file.startsWith('user-') && !features.users.enabled) return true
     if (file.startsWith('blog-') && !features.blog) return true
     if (file === 'products.njk' && !features.shop.enabled) return true
     if (file === 'categories.njk' && !features.shop.category) return true

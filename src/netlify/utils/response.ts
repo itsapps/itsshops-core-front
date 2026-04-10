@@ -39,3 +39,7 @@ export function methodNotAllowed(): Response {
 export function badRequest(message: string): Response {
   return errorResponse(ErrorCode.INVALID_INPUT, message, undefined, 400)
 }
+
+export function unauthorized(code: ErrorCode, message: string, requestId?: string): Response {
+  return errorResponse(code, message, requestId, 401)
+}

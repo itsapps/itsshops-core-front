@@ -81,6 +81,7 @@ export default {
       alcohol:         "Alkohol",
       tartaricAcid:    "Gesamtsäure",
       freeSulfur:      "Freie Schwefelsäure",
+      residualSugar:   "Restzucker",
       totalSulfur:     "Gesamte Schwefelsäure",
       phValue:         "pH-Wert",
       histamine:       "Histamin",
@@ -89,9 +90,7 @@ export default {
       terroir:         "Gebiet",
       soils:           "Boden",
       awards:          "Auszeichnungen",
-      factsheet: {
-        pdfUrl: "Factsheet (PDF)",
-      },
+      factsheet: "Datenblatt",
     },
     allProducts: "Alle Produkte",
 
@@ -107,6 +106,7 @@ export default {
     vintage: "Jahrgang",
     varietal: "Rebsorte",
     color: "Farbe",
+    flavor: "Geschmack",
     classification: "Klassifikation",
     volume: "Flaschengröße",
     price: "Preis",
@@ -245,6 +245,7 @@ export default {
     userRecoverSuccess: {
       title: "Passwort zurückgesetzt",
       description: "Passwort wurde erfolgreich zurückgesetzt",
+      info: "Du bekommst in Kürze eine E-Mail mit einem Link zum Zurücksetzen deines Passworts.",
     },
     userReset: {
       title: "Passwort ändern",
@@ -253,6 +254,7 @@ export default {
     userResetSuccess: {
       title: "Super!",
       description: "Passwort erfolgreich geändert",
+      info: "Dein Passwort wurde erfolgreich geändert.",
     },
     userOrders: {
       title: "Bestellungen",
@@ -316,8 +318,18 @@ export default {
         errorMessage: "Land darf nicht leer sein",
         none: "Land auswählen",
       },
+      phone: {
+        label: "Telefon",
+        errorMessage: "Telefonnummer darf nicht leer sein",
+      },
       registerForNewsletter: {
         label: "Newsletter abonnieren",
+      }
+    },
+    userLogin: {
+      submit: {
+        text: "Anmelden",
+        loadingText: "Anmelden ...",
       }
     },
     userRegistration: {
@@ -334,8 +346,8 @@ export default {
     },
     userReset: {
       submit: {
-        text: "Passwort zurücksetzen",
-        loadingText: "Passwort wird zurückgesetzt ...",
+        text: "Passwort speichern",
+        loadingText: "Passwort wird gespeichert ...",
       }
     },
     checkout: {

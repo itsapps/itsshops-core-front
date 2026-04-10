@@ -123,7 +123,9 @@ export type VinofactConfig = {
 
 // ─── Features ────────────────────────────────────────────────────────────────
 
-/** Fully resolved internal feature config — all fields guaranteed present */
+import type { UserRegistrationField } from './user'
+
+/** Fully resolved internal feature config — all fields guaranteed present. */
 export type Features = {
   shop: {
     enabled: boolean
@@ -134,7 +136,10 @@ export type Features = {
     vinofact: VinofactConfig
   }
   blog: boolean
-  users: boolean
+  users: {
+    enabled: boolean
+    registrationFields: UserRegistrationField[]
+  }
 }
 
 /** Customer-facing input — omitting shop = shop disabled, omitting sub-flags = default off */
@@ -147,7 +152,9 @@ export type ItsshopsFeatures = {
     vinofact?: VinofactConfig
   }
   blog?: boolean
-  users?: boolean
+  users?: boolean | {
+    registrationFields?: UserRegistrationField[]
+  }
 }
 
 // ─── Sanity ───────────────────────────────────────────────────────────────────
@@ -388,6 +395,7 @@ export type CoreConfig = {
   features: Features
   permalinks: Partial<Record<Locale, PermalinkTranslations>>
   resolvedPermalinks: Record<Locale, Required<PermalinkTranslations>>
+  userPaths: Record<Locale, import('./localization').UserPaths>
   translations: Record<string, any>
   headers: {
     extra:  ResolvedCspDirectives

@@ -292,6 +292,13 @@
         <dd class="{{ class }}__value">{{ wine.freeSulfur }} mg/l</dd>
       </div>
     {%- endif %}
+    
+    {%- if wine.residualSugar %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.residualSugar' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.residualSugar }} g/l</dd>
+      </div>
+    {%- endif %}
 
     {%- if wine.totalSulfur %}
       <div class="{{ class }}__row">

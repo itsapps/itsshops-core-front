@@ -5,8 +5,8 @@ pagination:
   size: 1
   alias: _locale
   addAllPagesToCollections: false
-permalink: "/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/"
+permalink: "/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/"
 eleventyExcludeFromCollections: true
 noindex: true
 ---
-{%- include "overridable/user-register.njk" -%}
+{%- include "overridable/user-recover.njk" -%}

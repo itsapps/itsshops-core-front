@@ -1,0 +1,41 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="region wrapper flow">
+  <h1>{{ 'staticPages.userLogin.title' | trans }}</h1>
+
+  <div data-user-login
+    data-api="/api/user/login"
+    data-locale="{{ _locale }}"
+    data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+    data-t-error-password="{{ 'forms.fields.password.errorMessage' | trans }}"
+  >
+    <form class="user-form" novalidate>
+      <div class="user-form__field">
+        <label for="login-email">{{ 'forms.fields.email.label' | trans }}</label>
+        <input type="email" id="login-email" name="email" required autocomplete="email">
+        <span class="user-form__field-error" data-field-error="email"></span>
+      </div>
+
+      <div class="user-form__field">
+        <label for="login-password">{{ 'forms.fields.password.label' | trans }}</label>
+        <input type="password" id="login-password" name="password" required autocomplete="current-password">
+        <span class="user-form__field-error" data-field-error="password"></span>
+      </div>
+
+      <div class="user-form__error" role="alert" hidden data-form-error></div>
+
+      <button type="submit" class="btn">
+        <span data-submit-text>{{ 'forms.userLogin.submit.text' | trans }}</span>
+        <span data-submit-loading hidden>{{ 'forms.userLogin.submit.loadingText' | trans }}</span>
+      </button>
+    </form>
+
+    <div class="user-form__links">
+      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/">
+        {{ 'staticPages.userRegistration.title' | trans }}
+      </a>
+      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/">
+        {{ 'staticPages.userRecover.title' | trans }}
+      </a>
+    </div>
+  </div>
+</article>

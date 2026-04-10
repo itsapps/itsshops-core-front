@@ -81,6 +81,7 @@ export default {
       alcohol:         "Alcohol",
       tartaricAcid:    "Total acidity",
       freeSulfur:      "Free sulphur",
+      residualSugar:   "Residual Sugar",
       totalSulfur:     "Total sulphur",
       phValue:         "pH value",
       histamine:       "Histamine",
@@ -89,9 +90,7 @@ export default {
       terroir:         "Region",
       soils:           "Soil",
       awards:          "Awards",
-      factsheet: {
-        pdfUrl: "Factsheet (PDF)",
-      },
+      factsheet: 'Factsheet',
     },
     allProducts: "All products",
 
@@ -107,6 +106,7 @@ export default {
     vintage: "Vintage",
     varietal: "Grape variety",
     color: "Colour",
+    flavor: "Taste",
     classification: "Classification",
     volume: "Bottle size",
     price: "Price",
@@ -245,6 +245,7 @@ export default {
     userRecoverSuccess: {
       title: "Password reset",
       description: "Password has been successfully reset",
+      info: "You will receive an email shortly with a link to reset your password.",
     },
     userReset: {
       title: "Change password",
@@ -253,6 +254,7 @@ export default {
     userResetSuccess: {
       title: "Great!",
       description: "Password successfully changed",
+      info: "Your password has been successfully changed.",
     },
     userOrders: {
       title: "Orders",
@@ -316,8 +318,18 @@ export default {
         errorMessage: "Country must not be empty",
         none: "Select country",
       },
+      phone: {
+        label: "Phone",
+        errorMessage: "Phone number must not be empty",
+      },
       registerForNewsletter: {
         label: "Subscribe to newsletter",
+      }
+    },
+    userLogin: {
+      submit: {
+        text: "Sign in",
+        loadingText: "Signing in ...",
       }
     },
     userRegistration: {
@@ -334,8 +346,8 @@ export default {
     },
     userReset: {
       submit: {
-        text: "Reset password",
-        loadingText: "Resetting password ...",
+        text: "Save password",
+        loadingText: "Saving password ...",
       }
     },
     checkout: {

@@ -99,7 +99,7 @@ function buildNetlifyHeaders(
     }
   }
 
-  if (config.features.users) {
+  if (config.features.users.enabled) {
     const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
     const usersSrc = mergeExtra(merged, {
       'script-src':  captcha,

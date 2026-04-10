@@ -5,9 +5,11 @@ const BASE_FIELDS = 'id slug title'
 const FIELD_SELECTIONS: Record<VinofactField, string> = {
   year:                'year',
   color:               'color',
+  flavor:              'flavor',
   type:                'type',
   description:         'description',
   alcohol:             'alcohol',
+  residualSugar:       'residualSugar',
   tartaricAcid:        'tartaricAcid',
   totalSulfur:         'totalSulfur',
   freeSulfur:          'freeSulfur',
@@ -19,6 +21,8 @@ const FIELD_SELECTIONS: Record<VinofactField, string> = {
   awards:              'awards { name value }',
   bottleImage:         'bottleImage { url alt }',
   terroir:             'terroir { id name description soils { id name } }',
+  factsheetPdfUrl:     'factsheetPdfUrl',
+  factsheetHtmlUrl:    'factsheetHtmlUrl',
 }
 
 function buildFieldsSelection(fields: VinofactField[] | undefined): string {
