@@ -55,7 +55,8 @@ const CHECKOUT_QUERY = `{
   "shippingMethods": *[_type == "shippingMethod" && references(*[_type == "taxCountry" && countryCode == $country]._id)]{
     _id, title, methodType, pickupFee, freeShippingThreshold,
     "taxCategoryCode": taxCategory->code.current,
-    rates[]{ maxWeight, price }
+    rates[]{ maxWeight, price },
+    packagingConfigs[]{ volume, packages[]{ count, price } }
   },
   "shopSettings": *[_type == "shopSettings"][0]{
     "defaultCountryCode": defaultCountry->countryCode,

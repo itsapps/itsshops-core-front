@@ -27,6 +27,10 @@ export type VinofactClassification = {
   name: string | null
 }
 
+export type VinofactCertificate = {
+  name: string | null
+}
+
 export type VinofactAward = {
   name: string | null
   value: string | null
@@ -51,7 +55,7 @@ export type VinofactImage = {
 export type VinofactField =
   | 'year' | 'color' | 'flavor' | 'type' | 'description'
   | 'alcohol' | 'residualSugar' | 'tartaricAcid' | 'totalSulfur' | 'freeSulfur' | 'phValue' | 'histamine'
-  | 'varietals' | 'classifications' | 'normClassifications' | 'awards' | 'bottleImage' | 'terroir'
+  | 'varietals' | 'classifications' | 'normClassifications' | 'certificates' | 'awards' | 'bottleImage' | 'terroir'
   | 'factsheetPdfUrl' | 'factsheetHtmlUrl'
 
 /** Resolved wine data from the Vinofact API (all locale maps already resolved to strings). */
@@ -76,6 +80,7 @@ export type VinofactWine = {
   varietals?: VinofactVarietal[]
   classifications?: VinofactClassification[]
   normClassifications?: VinofactClassification[]
+  certificates?: VinofactCertificate[]
   awards?: VinofactAward[]
   bottleImage?: VinofactImage | null
   terroir?: VinofactTerroir | null

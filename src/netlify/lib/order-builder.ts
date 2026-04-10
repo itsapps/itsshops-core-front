@@ -112,6 +112,12 @@ function buildFulfillment(
     ? Math.round(shippingCost - shippingCost / (1 + shippingVatRate / 100))
     : 0
 
+  const packagingLines = selectedShipping.packagingLines?.map((line, i) => ({
+    _key: `pkg_${i}`,
+    _type: 'fulfillmentPackagingLine' as const,
+    ...line,
+  }))
+
   return {
     _type: 'fulfillment',
     methodTitle: selectedShipping.title,
@@ -128,6 +134,7 @@ function buildFulfillment(
       _ref: selectedShipping._id,
       _weak: true,
     },
+    ...(packagingLines?.length && { packagingLines }),
   }
 }
 

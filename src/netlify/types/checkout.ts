@@ -71,10 +71,21 @@ export type SanityShippingMethodResult = {
   freeShippingThreshold: number | null
   taxCategoryCode: string | null
   rates: SanityShippingRateResult[] | null
+  packagingConfigs: SanityWinePackagingConfigResult[] | null
 }
 
 export type SanityShippingRateResult = {
   maxWeight: number
+  price: number
+}
+
+export type SanityWinePackagingConfigResult = {
+  volume: number
+  packages: SanityWinePackageResult[]
+}
+
+export type SanityWinePackageResult = {
+  count: number
   price: number
 }
 
@@ -143,6 +154,7 @@ export type AvailableShippingMethod = {
   price: number
   isFree: boolean
   taxCategoryCode: string | null
+  packagingLines?: Array<{ volume: number; packSize: number; quantity: number; price: number }>
 }
 
 // ── Sanity order document types (for mutations) ─────────────────────────────
@@ -205,6 +217,15 @@ export type OrderTotals = {
   currency: 'EUR'
 }
 
+export type FulfillmentPackagingLine = {
+  _key: string
+  _type: 'fulfillmentPackagingLine'
+  volume: number
+  packSize: number
+  quantity: number
+  price: number
+}
+
 export type Fulfillment = {
   _type: 'fulfillment'
   methodTitle: string
@@ -212,6 +233,7 @@ export type Fulfillment = {
   shippingCost: number
   taxSnapshot: VatBreakdownItem & { _type: 'vatBreakdownItem' }
   method: { _type: 'reference'; _ref: string; _weak: true }
+  packagingLines?: FulfillmentPackagingLine[]
   trackingCode?: string
   pickupLocation?: string
 }

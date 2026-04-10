@@ -1,6 +1,8 @@
 import type {
   SanityShippingMethodResult,
   SanityShippingRateResult,
+  SanityWinePackagingConfigResult,
+  SanityWinePackageResult,
   AvailableShippingMethod,
   ValidatedCartItem,
   LocaleString,
@@ -71,6 +73,108 @@ export function findShippingRate(
   return sorted.find(r => r.maxWeight >= cartWeightKg) ?? null
 }
 
+export type PackagingLine = {
+  volume: number
+  packSize: number
+  quantity: number
+  price: number
+}
+
+/**
+ * Minimum-cost packaging for N bottles using available package sizes.
+ *
+ * Uses DP over bottle-slots 0..N+maxPackageSize so we can cover cases where
+ * exact coverage isn't possible (e.g. only 6-packs available for 5 bottles).
+ * Returns null if no combination can cover N bottles (no packages configured).
+ * Also reconstructs which packages were chosen for the fulfillment snapshot.
+ */
+export function calcMinPackagingCost(
+  bottleCount: number,
+  packages: SanityWinePackageResult[],
+): { cost: number; lines: Array<{ packSize: number; quantity: number; price: number }> } | null {
+  if (packages.length === 0 || bottleCount <= 0) return null
+  const maxPkg = Math.max(...packages.map(p => p.count))
+  const limit = bottleCount + maxPkg - 1
+  const dp = new Array<number>(limit + 1).fill(Infinity)
+  const parent = new Array<number>(limit + 1).fill(-1)
+  dp[0] = 0
+  for (let i = 1; i <= limit; i++) {
+    for (const pkg of packages) {
+      if (pkg.count <= i && dp[i - pkg.count] + pkg.price < dp[i]) {
+        dp[i] = dp[i - pkg.count] + pkg.price
+        parent[i] = pkg.count
+      }
+    }
+  }
+
+  // Find minimum-cost endpoint covering >= bottleCount bottles
+  let bestI = bottleCount
+  for (let i = bottleCount + 1; i <= limit; i++) {
+    if (dp[i] < dp[bestI]) bestI = i
+  }
+  if (dp[bestI] === Infinity) return null
+
+  // Reconstruct which packages were used
+  const used = new Map<number, number>()
+  let cur = bestI
+  while (cur > 0) {
+    const packSize = parent[cur]
+    used.set(packSize, (used.get(packSize) ?? 0) + 1)
+    cur -= packSize
+  }
+
+  const lines = Array.from(used.entries()).map(([packSize, quantity]) => ({
+    packSize,
+    quantity,
+    price: packages.find(p => p.count === packSize)!.price,
+  }))
+
+  return { cost: dp[bestI], lines }
+}
+
+/**
+ * Calculate total packaging cost for a cart using wine packaging configs.
+ *
+ * Groups wine items by volume, looks up each volume's config, sums costs.
+ * Non-wine items are returned separately as grams for weight-based fallback.
+ * Returns null if any wine volume has no matching config (method not applicable).
+ */
+export function calcWinePackagingCost(
+  items: ValidatedCartItem[],
+  configs: SanityWinePackagingConfigResult[],
+): { packagingCost: number; nonWineWeightGrams: number; packagingLines: PackagingLine[] } | null {
+  const configByVolume = new Map(configs.map(c => [c.volume, c.packages]))
+
+  const bottlesByVolume = new Map<number, number>()
+  let nonWineWeightGrams = 0
+
+  for (const item of items) {
+    if (item.kind === 'wine') {
+      const volume = item.wine?.volume
+      if (!volume) return null
+      bottlesByVolume.set(volume, (bottlesByVolume.get(volume) ?? 0) + item.quantity)
+    } else {
+      if (item.weight) nonWineWeightGrams += item.weight * item.quantity
+    }
+  }
+
+  let packagingCost = 0
+  const packagingLines: PackagingLine[] = []
+
+  for (const [volume, count] of bottlesByVolume) {
+    const packages = configByVolume.get(volume)
+    if (!packages) return null
+    const result = calcMinPackagingCost(count, packages)
+    if (!result) return null
+    packagingCost += result.cost
+    for (const line of result.lines) {
+      packagingLines.push({ volume, ...line })
+    }
+  }
+
+  return { packagingCost, nonWineWeightGrams, packagingLines }
+}
+
 /**
  * Check if free shipping applies based on threshold and subtotal.
  */
@@ -117,9 +221,28 @@ export function resolveShippingMethods(
       continue
     }
 
-    // Delivery method — find rate by weight
-    const rate = findShippingRate(method.rates ?? [], cartWeightKg)
-    if (!rate) continue // skip if no rate covers the cart weight
+    // Delivery method — packaging-based or weight-based pricing
+    let price: number
+    let packagingLines: PackagingLine[] | undefined
+
+    if (method.packagingConfigs?.length) {
+      const packaging = calcWinePackagingCost(items, method.packagingConfigs)
+      if (!packaging) continue // volume not covered — method not applicable
+      packagingLines = packaging.packagingLines
+
+      if (packaging.nonWineWeightGrams > 0) {
+        const nonWineWeightKg = packaging.nonWineWeightGrams / 1000
+        const rate = findShippingRate(method.rates ?? [], nonWineWeightKg)
+        if (!rate) continue
+        price = packaging.packagingCost + rate.price
+      } else {
+        price = packaging.packagingCost
+      }
+    } else {
+      const rate = findShippingRate(method.rates ?? [], cartWeightKg)
+      if (!rate) continue
+      price = rate.price
+    }
 
     const free = isFreeShipping(method.freeShippingThreshold, subtotal, discount, freeShippingCalculation)
 
@@ -127,9 +250,10 @@ export function resolveShippingMethods(
       _id: method._id,
       title,
       methodType: 'delivery',
-      price: free ? 0 : rate.price,
+      price: free ? 0 : price,
       isFree: free,
       taxCategoryCode: method.taxCategoryCode,
+      ...(packagingLines && { packagingLines }),
     })
   }
 

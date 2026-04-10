@@ -18,6 +18,7 @@ const FIELD_SELECTIONS: Record<VinofactField, string> = {
   varietals:           'varietals { id varietalId name amount trainingSystem }',
   classifications:     'classifications { id classificationId name }',
   normClassifications: 'normClassifications { id classificationId name }',
+  certificates:        'certificates { name }',
   awards:              'awards { name value }',
   bottleImage:         'bottleImage { url alt }',
   terroir:             'terroir { id name description soils { id name } }',
