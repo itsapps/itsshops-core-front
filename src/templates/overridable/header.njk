@@ -110,7 +110,7 @@
           {%- for _l in coreConfig.locales -%}
             {%- if _l != _locale -%}
               <a
-                href="{{ cms[_l].urlMap[_currentId] or cms[_l].homeUrl }}"
+                href="{{ cms[_l].urlMap[_currentId] or (pageKey and cms[_l][pageKey]) or cms[_l].homeUrl }}"
                 hreflang="{{ _l }}"
                 lang="{{ _l }}"
                 class="locale-switcher__link"

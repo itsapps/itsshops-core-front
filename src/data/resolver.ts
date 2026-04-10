@@ -196,7 +196,12 @@ export async function buildCmsData(
       homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
       shopUrl:     urlMap[shopSettings?.shopPageId ?? '']    ?? '#',
       privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
-      checkoutUrl: features.shop.checkout ? `/${locale}/${permalinks[locale].checkout}/` : '#',
+      checkoutUrl:    features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/`    : '#',
+      orderThanksUrl: features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/${permalinks[locale].orderThanks}/` : '#',
+      loginUrl:       features.users          ? `/${locale}/${permalinks[locale].login}/`        : '#',
+      registerUrl:    features.users          ? `/${locale}/${permalinks[locale].register}/`     : '#',
+      recoverUrl:     features.users          ? `/${locale}/${permalinks[locale].recover}/`      : '#',
+      accountUrl:     features.users          ? `/${locale}/${permalinks[locale].account}/`      : '#',
       ...extensionData,
     }
 
