@@ -1,6 +1,28 @@
 import type { SanityImageHotspot, SanityImageCrop } from './sanity'
 import type { VinofactWine } from './vinofact'
 
+export type SearchEntry = {
+  /** Unique identifier — required by MiniSearch */
+  id: string
+  /** Page URL — required for linking results */
+  slug: string
+  [key: string]: unknown
+}
+
+/**
+ * Standard search result shape understood by the core search renderer.
+ * Return this from buildEntry / buildProductEntry for zero-config rendering.
+ * Extends SearchEntry — extra fields are passed through to custom renderers.
+ */
+export type SearchItem = SearchEntry & {
+  title: string
+  /** Secondary line, e.g. "2021 · 750 ml" or option values */
+  subtitle?: string | null
+  /** Price in cents */
+  price?: number | null
+  image?: import('./config').SearchImageData | null
+}
+
 /**
  * Resolved types — all localized fields are plain strings, ready for templates.
  * These are what the cms global data exposes to Nunjucks.
@@ -244,6 +266,10 @@ export type CmsLocaleData = {
   privacyUrl: string
   /** URL of the checkout page for the current locale. */
   checkoutUrl: string
+  /** Search index entries for the current locale. Empty array when search is not configured. */
+  searchIndex: SearchEntry[]
+  /** Fields passed to MiniSearch for full-text indexing. */
+  searchFields: string[]
   [key: string]: unknown
 }
 

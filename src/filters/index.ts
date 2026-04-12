@@ -1,5 +1,4 @@
-import { slugify, toIsoString } from "../utils"
-import { linkActiveState } from "../utils/linkActiveState"
+import { slugify } from "../data/slugify"
 import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
@@ -8,7 +7,25 @@ import { imageUrl, imageSizeUrl, image } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
-import { map } from "../utils/map"
+
+function toIsoString(text: string) {
+  return new Date(text).toISOString()
+}
+
+function map(arr: any, key: string) {
+  if (!Array.isArray(arr)) return []
+  return arr.map(item => item?.[key])
+}
+
+function hasDepth(url: string): boolean {
+  return url.replace(/^\/|\/$/g, '').split('/').length > 1
+}
+
+function linkActiveState(itemUrl: string, pageUrl: string): string {
+  if (itemUrl === pageUrl) return 'aria-current="page"'
+  if (hasDepth(itemUrl) && pageUrl.startsWith(itemUrl)) return 'data-state="active"'
+  return ''
+}
 /**
  * Format a price in cents to a locale-aware currency string.
  * Usage: {{ product.price | formatPrice('de', 'EUR') }}

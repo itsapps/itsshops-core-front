@@ -1,4 +1,4 @@
-import { slugify } from '../../utils/slugify'
+import { slugify } from '../slugify'
 import { stegaClean } from '@sanity/client/stega'
 import { formatVolumeMl } from '../../filters'
 import type { ResolveContext } from '../../types'

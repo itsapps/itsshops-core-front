@@ -6,9 +6,9 @@ import type { TranslatorFunction } from './t9n'
 import { type ImageUrlBuilder } from '@sanity/image-url'
 import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
-import type { CmsData } from './data'
+import type { CmsData, SearchEntry } from './data'
 import type { PictureSize, PictureOptions } from '../image'
-import type { ResolvedImage } from './data'
+import type { ResolvedImage, ResolvedVariant } from './data'
 
 export type PortableTextExtensionContext = {
   imageBuilder: ImageUrlBuilder
@@ -205,9 +205,55 @@ export type Js = {
   minify?: boolean
 }
 
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+export type SearchImageData = {
+  src: string
+  srcset: string
+  sizes: string
+  width: number
+  height: number | undefined
+}
+
+export type SearchBuildContext = {
+  /** Build a Sanity CDN URL for a resolved image. Returns empty string when image is absent. */
+  imageUrl: (image: ResolvedImage | null | undefined, width?: number) => string
+  /**
+   * Build srcset/src data for a responsive image using a named size from the customer's imageSizes config.
+   * Returns null when image is absent or the size name is not found.
+   * Store the result in the search entry and use it in the JS renderer to build an <img> tag.
+   */
+  imageSrcset: (image: ResolvedImage | null | undefined, sizeName: string) => SearchImageData | null
+  /** The customer's configured image sizes — use to check what's available. */
+  imageSizes: Record<string, PictureSize>
+  /** Format a volume in ml using the configured unit (ml, cl, l). */
+  formatVolume: (ml: number, locale: string) => string
+}
+
+export type SearchConfig = {
+  /**
+   * Fields MiniSearch will index for full-text search.
+   * Default: ['title']
+   */
+  searchFields?: string[]
+  /**
+   * Build one search entry per variant. Return null to exclude the variant.
+   * Mutually exclusive with buildProductEntry.
+   */
+  buildEntry?: (variant: ResolvedVariant, locale: string, ctx: SearchBuildContext) => SearchEntry | null
+  /**
+   * Build one search entry per product (all variants grouped).
+   * Return null to exclude the product.
+   * Mutually exclusive with buildEntry.
+   */
+  buildProductEntry?: (variants: ResolvedVariant[], locale: string, ctx: SearchBuildContext) => SearchEntry | null
+}
+
 // ─── Extensions ───────────────────────────────────────────────────────────────
 
 export type Extensions = {
+  /** Search index configuration. When set, generates a per-locale search-{locale}.json file. */
+  search?: SearchConfig
   /** Custom document type queries — results merged into cms global data */
   queries?: Record<string, string>
   /** Extra GROQ projection fields on core document/object types */

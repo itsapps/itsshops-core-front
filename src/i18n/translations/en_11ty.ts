@@ -114,6 +114,7 @@ export default {
     priceMin: "Minimum price",
     priceMax: "Maximum price",
     category: "Category",
+    label: "Filter",
     reset: "Reset filters",
     showResults: "Show results",
     results: "{count} products",
@@ -166,14 +167,11 @@ export default {
   //   ariaCloseCustomerCenter: "Close customer centre",
   //   yourOrders: "Your orders",
   // },
-  // search: {
-  //   products: "Products",
-  //   categories: "Categories",
-  //   manufacturers: "Manufacturers",
-  //   closeSearchAria: "Close search",
-  //   retrySearchAria: "Reload search",
-  //   inputPlaceholder: "Search products",
-  // },
+  search: {
+    placeholder: "Search...",
+    noResults: "No results",
+    close: "Close search",
+  },
   // footer: {
   //   contact: "Contact",
   // },

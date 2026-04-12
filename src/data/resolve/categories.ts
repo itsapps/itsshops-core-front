@@ -1,4 +1,4 @@
-import { slugify as coreSlugify } from '../../utils/slugify'
+import { slugify as coreSlugify } from '../slugify'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
 import type { ResolvedCategory } from '../../types/data'

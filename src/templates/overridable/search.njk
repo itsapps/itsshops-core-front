@@ -1,0 +1,28 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- set _searchFields = cms[_locale].searchFields | dump -%}
+<div class="search-modal" data-search-modal hidden>
+  <div class="search-modal__backdrop" data-search-close aria-hidden="true"></div>
+  <div class="search-modal__inner" data-search>
+    <div class="search-modal__header">
+      <input
+        class="search-modal__input"
+        type="search"
+        autocomplete="off"
+        data-search-input
+        data-search-index-url="/{{ _locale }}/search.json"
+        data-search-fields="{{ _searchFields | escape }}"
+        data-currency="{{ coreConfig.units.price.currency }}"
+        {%- if coreConfig.units.price.currencyLabel %} data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+        placeholder="{{ 'search.placeholder' | trans }}"
+        aria-label="{{ 'search.placeholder' | trans }}"
+      >
+      <button
+        type="button"
+        class="search-modal__close"
+        data-search-close
+        aria-label="{{ 'search.close' | trans }}"
+      >&times;</button>
+    </div>
+    <div class="search-modal__results" data-search-results aria-live="polite"></div>
+  </div>
+</div>

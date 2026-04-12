@@ -118,6 +118,26 @@ export function image(
   return `<img ${attrs}>`
 }
 
+/**
+ * Build srcset/src data for use in search index entries.
+ * Returns null when image is absent or the size has no entries.
+ * Store the result in the search entry JSON; the runtime renderer builds the <img> tag from it.
+ */
+export function imageSrcsetData(
+  builder: ImageUrlBuilder,
+  image: ResolvedImage | null | undefined,
+  size: PictureSize,
+): { src: string; srcset: string; sizes: string; width: number; height: number | undefined } | null {
+  if (!image || !size.sizes.length) return null
+  const fmt = (size.formats ?? ['webp'])[0]
+  const lastIndex = size.sizes.length - 1
+  const [fw, fhSpec] = size.sizes[lastIndex]
+  const fh = resolveHeight(fhSpec, fw, image)
+  const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(size.quality, lastIndex), size.fit)
+  const srcset = buildSanitySrcset(builder, image, size, size.quality)
+  return { src, srcset, sizes: size.widths, width: fw, height: fh }
+}
+
 /** Plain URL for a given size — use for og:image, JSON-LD, CSS backgrounds etc. */
 export function imageUrl(
   builder: ImageUrlBuilder,

@@ -21,6 +21,7 @@ export function getTailwindConfig(css: Css): Config {
   const {
     viewport = { min: 320, max: 1350 },
     screens = {
+      '2xs': '20em',
       xs: '30em',
       sm: '40em',
       md: '50em',

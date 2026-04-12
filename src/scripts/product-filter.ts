@@ -137,6 +137,13 @@ function applyState(state: FilterState): void {
     btn.hidden = empty
   })
 
+  // Update active-filter count badge on toggle button
+  const activeCount = state.attrs.size + (state.priceMin !== null || state.priceMax !== null ? 1 : 0)
+  document.querySelectorAll<HTMLElement>('[data-filter-active-count]').forEach(el => {
+    el.textContent = activeCount > 0 ? String(activeCount) : ''
+    el.hidden = activeCount === 0
+  })
+
   // Announce result count to screen readers
   document.querySelectorAll<HTMLElement>('[data-filter-count]').forEach(el => {
     if (empty) {

@@ -1,6 +1,7 @@
 import type { SanityClient } from '@sanity/client'
-import { slugify as coreSlugify } from '../utils/slugify'
+import { slugify as coreSlugify } from './slugify'
 import { stegaClean } from '@sanity/client/stega'
+import { imageUrl as buildImageUrl, imageSrcsetData } from '../image'
 import type { CoreContext } from '../types'
 import type { CmsData, CmsLocaleData, ResolvedPage, ResolvedPost, Sitemap, SitemapEntry } from '../types/data'
 import { buildPermalinkTranslations } from '../i18n/permalinks'
@@ -22,12 +23,14 @@ import { resolveVariants } from './resolve/variants'
 import { resolveMenus } from './resolve/menus'
 import { resolveSettings, resolveShopSettings } from './resolve/settings'
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
+import { buildSearchIndex, resolveSearchFields } from './search'
+import { formatVolumeMl } from '../filters'
 
 export async function buildCmsData(
   client: SanityClient,
   context: CoreContext,
 ): Promise<CmsData> {
-  const { config, translate } = context
+  const { config, translate, imageBuilder } = context
 
   console.log('\n\x1b[36m▶ Fetching CMS data from Sanity...\x1b[0m\n')
 
@@ -202,6 +205,21 @@ export async function buildCmsData(
       registerUrl:    features.users          ? `/${locale}/${permalinks[locale].register}/`     : '#',
       recoverUrl:     features.users          ? `/${locale}/${permalinks[locale].recover}/`      : '#',
       accountUrl:     features.users          ? `/${locale}/${permalinks[locale].account}/`      : '#',
+      searchIndex: extensions.search
+        ? buildSearchIndex(products, extensions.search, locale, {
+            imageUrl: (img, width) => buildImageUrl(imageBuilder, img, width),
+            imageSrcset: (img, sizeName) => {
+              const size = context.imageSizes[sizeName]
+              if (!size) return null
+              return imageSrcsetData(imageBuilder, img, size)
+            },
+            imageSizes: context.imageSizes,
+            formatVolume: (ml, locale) => formatVolumeMl(ml, config.units.volume, locale),
+          })
+        : [],
+      searchFields: extensions.search
+        ? resolveSearchFields(extensions.search)
+        : [],
       ...extensionData,
     }
 
