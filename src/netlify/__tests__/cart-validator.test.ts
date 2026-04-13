@@ -46,7 +46,7 @@ describe('validateCart', () => {
     expect(item.price).toBe(1500)
     expect(item.quantity).toBe(2)
     expect(item.vatRate).toBe(20)
-    expect(item.title).toBe('Blaufränkisch')
+    expect(item.title).toBe('Blaufränkisch 2023')
     expect(item.subtitle).toBe('2023 · 750 ml')
     expect(item.wine).toEqual({ vintage: '2023', volume: 750 })
   })
@@ -215,10 +215,20 @@ describe('validateCart', () => {
     expect(result.items[0].weight).toBe(7900)
   })
 
-  it('resolves wine variant weight from bottle volume', () => {
+  it('resolves wine variant weight from explicit field first', () => {
     const result = validateCart(
       [{ variantId: 'v1', quantity: 1 }],
-      [makeVariant()], // default fixture is wine, 0.75 l
+      [makeVariant()], // default fixture has weight: 1200
+      taxRules,
+      'de',
+    )
+    expect(result.items[0].weight).toBe(1200)
+  })
+
+  it('estimates wine variant weight from bottle volume when no explicit weight', () => {
+    const result = validateCart(
+      [{ variantId: 'v1', quantity: 1 }],
+      [makeVariant({ weight: null })],
       taxRules,
       'de',
     )

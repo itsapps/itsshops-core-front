@@ -163,7 +163,11 @@ export function calcWinePackagingCost(
 
   for (const [volume, count] of bottlesByVolume) {
     const packages = configByVolume.get(volume)
-    if (!packages) return null
+    if (!packages) {
+      // No packaging config for this volume — fall back to weight-based shipping
+      nonWineWeightGrams += estimateWineBottleWeight(volume) * count
+      continue
+    }
     const result = calcMinPackagingCost(count, packages)
     if (!result) return null
     packagingCost += result.cost
