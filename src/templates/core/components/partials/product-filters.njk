@@ -3,6 +3,7 @@
   Expects: filterGroups (array of FilterGroup), activeFilterKeys (array of group keys to show)
   activeFilterKeys: subset of filterGroups to render. If empty/undefined, renders all.
 #}
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
 {%- set _groups = [] -%}
 {%- for group in filterGroups -%}
   {%- if not activeFilterKeys or activeFilterKeys.length == 0 or group.key in activeFilterKeys -%}
@@ -64,9 +65,10 @@
         </div>
       </details>
     {% endif %}
-    <button type="button" class="product-filters__reset" data-filter-reset hidden>
-      {{ "filters.reset" | trans }}
-    </button>
+    {% block product_filter_reset_button %}
+      {% from "macros/product.njk" import productFilterResetButton %}
+      {{ productFilterResetButton(locale=_locale) }}
+    {% endblock %}
     <p class="sr-only" aria-live="polite" aria-atomic="true" data-filter-count></p>
   </div>
 {% endif %}

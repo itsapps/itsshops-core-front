@@ -365,3 +365,9 @@
   </dl>
 {%- endif %}
 {% endmacro %}
+
+{% macro productFilterResetButton(locale) %}
+  <button type="button" class="product-filters__reset" data-filter-reset hidden>
+    {{ "filters.reset" | trans( { lng: locale }) }}
+  </button>
+{% endmacro %}
