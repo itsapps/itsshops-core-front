@@ -119,11 +119,14 @@ export class CheckoutExpress {
 
   private handleClick(event: StripeExpressCheckoutElementClickEvent): void {
     const calc = this.config.getLatest()
-    if (!calc) {
-      // Without a current calculation, abort the express flow.
-      return
-    }
-    event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
+    if (!calc) return
+    // Pass line items without shipping — the shippingaddresschange event fires
+    // immediately with the user's actual wallet address and recalculates the
+    // correct shipping methods for their country.
+    event.resolve({
+      lineItems: buildLineItems(calc.items, undefined, this.config.labels.shipping),
+      shippingRates: [],
+    })
   }
 
   private async handleShippingAddressChange(
