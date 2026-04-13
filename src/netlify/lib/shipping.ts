@@ -234,9 +234,9 @@ export function resolveShippingMethods(
       if (!packaging) continue // volume not covered — method not applicable
       packagingLines = packaging.packagingLines
 
-      if (packaging.nonWineWeightGrams > 0) {
+      if (packaging.nonWineWeightGrams > 0 && method.rates?.length) {
         const nonWineWeightKg = packaging.nonWineWeightGrams / 1000
-        const rate = findShippingRate(method.rates ?? [], nonWineWeightKg)
+        const rate = findShippingRate(method.rates, nonWineWeightKg)
         if (!rate) continue
         price = packaging.packagingCost + rate.price
       } else {
