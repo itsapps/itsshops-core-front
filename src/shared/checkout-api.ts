@@ -6,13 +6,10 @@
 export type CheckoutCartItem = {
   variantId: string
   quantity: number
-  /**
-   * Frozen display string the customer saw on the product page / cart sidebar.
-   * Snapshotted onto the order item verbatim — server does not re-derive it.
-   * Optional: server falls back to composing one from structural fields if absent.
-   */
-  displayTitle?: string
-  displaySubtitle?: string
+  /** Product/variant title as shown in the cart. Snapshotted onto the order item. */
+  title?: string
+  /** Kind-specific info (e.g. "2021 · 0.75l"). Snapshotted onto the order item. */
+  subtitle?: string
 }
 
 export type AddressInput = {
@@ -33,7 +30,7 @@ export type ValidatedCartItemResponse = {
   variantId: string
   kind: 'wine' | 'physical' | 'digital' | 'bundle'
   title: string
-  variantTitle: string | null
+  subtitle: string | null
   price: number
   quantity: number
   requestedQuantity: number

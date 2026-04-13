@@ -8,7 +8,7 @@ function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem
     productId: 'p1',
     kind: 'wine',
     title: 'Wine A',
-    variantTitle: null,
+    subtitle: null,
     sku: null,
     price: 1200,
     weight: 750,

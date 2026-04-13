@@ -122,10 +122,7 @@ export type ValidatedCartItem = {
   productId: string
   kind: 'wine' | 'physical' | 'digital' | 'bundle'
   title: string
-  variantTitle: string | null
-  /** Customer-supplied frozen display string. Falls back to a composed default if absent. */
-  displayTitle: string
-  displaySubtitle: string | null
+  subtitle: string | null
   sku: string | null
   price: number
   weight: number | null
@@ -167,10 +164,7 @@ export type OrderItem = {
   productId: string
   parentId?: string
   title: string
-  variantTitle?: string
-  /** Frozen display string shown to the customer at order time — canonical wording for invoices, emails, WC API. */
-  displayTitle: string
-  displaySubtitle?: string
+  subtitle?: string
   weight?: number
   sku?: string
   quantity: number

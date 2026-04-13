@@ -123,7 +123,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         variantId: item.variantId,
         kind: item.kind,
         title: item.title,
-        variantTitle: item.variantTitle,
+        subtitle: item.subtitle,
         price: item.price,
         quantity: item.quantity,
         requestedQuantity: cartItem?.quantity ?? item.quantity,

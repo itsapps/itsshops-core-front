@@ -19,6 +19,7 @@ export default defineConfig({
     'user-confirm': 'src/netlify/functions/user-confirm.ts',
     'user-recover': 'src/netlify/functions/user-recover.ts',
     'user-reset': 'src/netlify/functions/user-reset.ts',
+    'wc-api': 'src/netlify/functions/wc-api.ts',
     'test-utils': 'src/test-utils/index.ts',
   },
   format: ['esm'],

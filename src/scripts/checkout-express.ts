@@ -46,7 +46,7 @@ export function buildLineItems(
   shippingLabel: string,
 ): LineItem[] {
   const lines: LineItem[] = items.map(i => ({
-    name: `${i.quantity}x ${i.title}${i.variantTitle ? ` ${i.variantTitle}` : ''}`,
+    name: `${i.quantity}x ${i.title}${i.subtitle ? ` ${i.subtitle}` : ''}`,
     amount: i.price * i.quantity,
   }))
   if (selectedShipping) {

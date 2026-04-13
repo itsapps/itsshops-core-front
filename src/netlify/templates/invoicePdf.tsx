@@ -150,9 +150,9 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
               <Text>
                 <Text>{item.quantity}x </Text>
                 {item.sku ? <Text style={styles.small}>{`[${item.sku}] `}</Text> : null}
-                <Text style={styles.bold}>{item.displayTitle}</Text>
+                <Text style={styles.bold}>{item.title}</Text>
               </Text>
-              {item.displaySubtitle && <Text style={styles.small}>{item.displaySubtitle}</Text>}
+              {item.subtitle && <Text style={styles.small}>{item.subtitle}</Text>}
               {item.options?.map((option, i) => (
                 <Text key={i} style={styles.small}>
                   {option.groupTitle}: {option.optionTitle}

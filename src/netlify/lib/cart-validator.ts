@@ -7,7 +7,7 @@ import type {
 import type { CheckoutCartItem } from '../types/api'
 import { findTaxRate, extractVat } from './tax'
 import { resolveLocalizedTitle, estimateWineBottleWeight } from './shipping'
-import { composeDisplayTitle } from './order-item-display'
+import { composeSubtitle } from './order-item-display'
 
 const MAX_DISPLAY_LEN = 300
 
@@ -72,8 +72,8 @@ export function validateCart(
     const vatRate = findTaxRate(taxRules, taxCategoryCode, defaultTaxCategoryCode)
     const vatAmount = extractVat(price * quantity, vatRate)
 
-    const title = resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)
-    const variantTitle = resolveLocalizedTitle(variant.title, locale, defaultLocale) || null
+    const title = resolveLocalizedTitle(variant.title, locale, defaultLocale)
+      || resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)
 
     // Resolve shipping weight (grams).
     // - physical: explicit weight on variant or parent product
@@ -83,8 +83,9 @@ export function validateCart(
     let weight: number | null = null
     if (variant.kind === 'physical') {
       weight = variant.weight ?? variant.productWeight ?? null
-    } else if (variant.kind === 'wine' && variant.wine?.volume) {
-      weight = estimateWineBottleWeight(variant.wine.volume)
+    } else if (variant.kind === 'wine') {
+      weight = variant.weight ?? variant.productWeight
+        ?? (variant.wine?.volume ? estimateWineBottleWeight(variant.wine.volume) : null)
     } else if (variant.kind === 'bundle' && variant.bundleItems) {
       let total = 0
       for (const bi of variant.bundleItems) {
@@ -110,14 +111,19 @@ export function validateCart(
       quantity: bi.quantity,
     })) ?? null
 
+    // Client-supplied subtitle is canonical. Fall back to a composed default
+    // from structural data if the client didn't provide one.
+    const clientSubtitle = sanitize(cartItem.subtitle)
+
     const item: ValidatedCartItem = {
       variantId: variant._id,
       productId: variant.productId ?? '',
       kind: variant.kind,
-      title,
-      variantTitle,
-      displayTitle: '', // assigned below
-      displaySubtitle: sanitize(cartItem.displaySubtitle),
+      title: sanitize(cartItem.title) || title,
+      subtitle: clientSubtitle ?? composeSubtitle(variant.kind, variant.wine ? {
+        vintage: variant.wine.vintage ?? null,
+        volume: variant.wine.volume ?? null,
+      } : null, options),
       sku: variant.sku,
       price,
       weight,
@@ -131,17 +137,6 @@ export function validateCart(
       } : null,
       options,
       bundleItems,
-    }
-
-    // Customer-supplied display string is canonical. Fall back to a composed
-    // default only if the client did not provide one (older client, manual API call).
-    const clientTitle = sanitize(cartItem.displayTitle)
-    if (clientTitle) {
-      item.displayTitle = clientTitle
-    } else {
-      const fallback = composeDisplayTitle(item)
-      item.displayTitle = fallback.title
-      if (!item.displaySubtitle) item.displaySubtitle = fallback.subtitle
     }
 
     validatedItems.push(item)

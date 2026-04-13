@@ -27,7 +27,7 @@ function initSanityClient() {
   })
 }
 
-const sanityClient = initSanityClient()
+export const sanityClient = initSanityClient()
 
 const CHECKOUT_QUERY = `{
   "variants": *[_type == "productVariant" && _id in $variantIds]{

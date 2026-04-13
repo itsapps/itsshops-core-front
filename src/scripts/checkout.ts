@@ -108,8 +108,8 @@ export async function initCheckout(): Promise<void> {
   let cartItems: CheckoutCartItem[] = cart.map(item => ({
     variantId: item.id,
     quantity: item.quantity,
-    displayTitle: item.title,
-    ...(item.subtitle && { displaySubtitle: item.subtitle }),
+    title: item.title,
+    ...(item.subtitle && { subtitle: item.subtitle }),
   }))
 
   summary.renderCartItems(cart)

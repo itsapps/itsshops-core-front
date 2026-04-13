@@ -106,10 +106,10 @@ export class CheckoutSummary {
       el.dataset.cartItemId = item.variantId
 
       // Prefer the local cart's display strings (consistent with product page + cart sidebar).
-      // Fall back to the server's split title/variantTitle only if the local entry is missing.
+      // Fall back to the server's title/subtitle only if the local entry is missing.
       const local = localCart.get(item.variantId)
       const title = local?.title ?? item.title
-      const subtitle = local?.subtitle ?? item.variantTitle ?? undefined
+      const subtitle = local?.subtitle ?? item.subtitle ?? undefined
       const imageUrl = local?.imageUrl ?? item.imageUrl ?? ''
 
       fillImageSlot(el, 'image', imageUrl)

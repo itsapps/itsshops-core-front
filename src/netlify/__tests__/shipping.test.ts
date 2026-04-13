@@ -15,9 +15,7 @@ function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem
     productId: 'p1',
     kind: 'physical',
     title: 'Test',
-    variantTitle: null,
-    displayTitle: 'Test',
-    displaySubtitle: null,
+    subtitle: null,
     sku: null,
     price: 1000,
     weight: 500, // grams

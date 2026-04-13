@@ -32,6 +32,10 @@
       "types": "./dist/order-notify.d.ts",
       "import": "./dist/order-notify.js"
     },
+    "./functions/wc-api": {
+      "types": "./dist/wc-api.d.ts",
+      "import": "./dist/wc-api.js"
+    },
     "./scripts": {
       "import": "./dist/scripts/index.ts"
     },

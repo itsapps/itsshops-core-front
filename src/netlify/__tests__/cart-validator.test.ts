@@ -47,7 +47,7 @@ describe('validateCart', () => {
     expect(item.quantity).toBe(2)
     expect(item.vatRate).toBe(20)
     expect(item.title).toBe('Blaufränkisch')
-    expect(item.variantTitle).toBe('Blaufränkisch 2023')
+    expect(item.subtitle).toBe('2023 · 750 ml')
     expect(item.wine).toEqual({ vintage: '2023', volume: 750 })
   })
 

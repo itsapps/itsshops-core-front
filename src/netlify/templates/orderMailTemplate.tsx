@@ -46,8 +46,8 @@ function ItemRow({
         <Row>
           <Column>
             <Text style={lineStyle}>{item.quantity}x</Text>
-            <Text style={{ ...lineStyle, fontWeight: 700 }}>{item.displayTitle}</Text>
-            {item.displaySubtitle && <Text style={lineStyle}>{item.displaySubtitle}</Text>}
+            <Text style={{ ...lineStyle, fontWeight: 700 }}>{item.title}</Text>
+            {item.subtitle && <Text style={lineStyle}>{item.subtitle}</Text>}
             {item.sku && <Text style={lineStyle}>{`[${item.sku}]`}</Text>}
             {item.options?.map((option, i) => (
               <Text style={lineStyle} key={i}>

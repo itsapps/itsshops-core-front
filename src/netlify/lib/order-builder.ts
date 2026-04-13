@@ -45,7 +45,6 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
       variantId: item.variantId,
       productId: item.productId,
       title: item.title,
-      displayTitle: item.displayTitle,
       quantity: item.quantity,
       price: item.price,
       vatRate: item.vatRate,
@@ -53,8 +52,7 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
       packed: false,
     }
 
-    if (item.variantTitle) orderItem.variantTitle = item.variantTitle
-    if (item.displaySubtitle) orderItem.displaySubtitle = item.displaySubtitle
+    if (item.subtitle) orderItem.subtitle = item.subtitle
     if (item.weight) orderItem.weight = item.weight
     if (item.sku) orderItem.sku = item.sku
 
