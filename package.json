@@ -62,10 +62,7 @@
     "test:watch": "vitest",
     "prepare": "npm run build"
   },
-  "simple-git-hooks": {
-    "pre-commit": "npm run build"
-  },
-  "dependencies": {
+"dependencies": {
     "@11ty/eleventy": "^3.1.2",
     "@11ty/eleventy-img": "^6.0.4",
     "@iarna/toml": "^2.2.5",
@@ -121,7 +118,6 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "11ty.ts": "^0.0.7",
-    "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.2"
