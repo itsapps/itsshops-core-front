@@ -250,7 +250,8 @@ export async function initCheckout(): Promise<void> {
       },
       onRateChange: async (methodId) => {
         try {
-          const country = form.getCountry() || lastResponse?.selectedCountry
+          // Use the express checkout's last address country, not the manual form's.
+          const country = expressCheckout?.getLastCountry() || lastResponse?.selectedCountry
           return await calculatePayment(apiUrl, cartItems, locale, {
             country,
             shippingMethodId: methodId,

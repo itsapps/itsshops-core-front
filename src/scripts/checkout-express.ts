@@ -115,6 +115,10 @@ export class CheckoutExpress {
     this.element = null
   }
 
+  getLastCountry(): string | null {
+    return this.lastAddress?.country ?? null
+  }
+
   // ── Event handlers ──────────────────────────────────────────────────────
 
   private handleClick(event: StripeExpressCheckoutElementClickEvent): void {
