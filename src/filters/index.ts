@@ -116,6 +116,10 @@ function findById(arr: any[], id: string): any {
   return (arr ?? []).find((item: any) => item._id === id) ?? null
 }
 
+function findByProductId(arr: any[], id: string): any {
+  return (arr ?? []).find((item: any) => item.product?._id === id) ?? null
+}
+
 function formatDate(
   date: string,
   locale: string,
@@ -217,6 +221,7 @@ export const createFilters = (ctx: CoreContext) => {
   );
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
+  eleventyConfig.addFilter("findByProductId", findByProductId as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height, format, fit) =>
     imageUrl(ctx.imageBuilder, image, width, height, format, fit)
   );
