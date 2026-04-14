@@ -221,7 +221,13 @@ export function initProductFilter(): void {
   // Checkbox filter changes
   document.addEventListener('change', (e) => {
     const input = (e.target as Element).closest<HTMLInputElement>('input[data-filter-key]')
-    if (input) toggleFilter(input.dataset.filterKey!, input.dataset.filterValue!)
+    if (input) {
+      toggleFilter(input.dataset.filterKey!, input.dataset.filterValue!)
+      // Collapse the group's <details> when a value was just checked
+      if (input.checked) {
+        input.closest<HTMLDetailsElement>('details.product-filters__group')?.removeAttribute('open')
+      }
+    }
   })
 
   // Price range inputs + sliders
