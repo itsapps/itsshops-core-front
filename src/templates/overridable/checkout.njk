@@ -41,8 +41,8 @@
     <div data-checkout-service-error class="checkout__service-error" role="alert" hidden>
       <p>{{ 'checkout.serviceError' | trans }}</p>
       <p class="checkout__request-id">Request ID: <code data-request-id></code></p>
-      {% if cms[_locale].settings.supportEmail %}
-        <a href="mailto:{{ cms[_locale].settings.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
+      {% if coreConfig.supportEmail %}
+        <a href="mailto:{{ coreConfig.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
           {{ 'checkout.serviceErrorContact' | trans }}
         </a>
       {% endif %}

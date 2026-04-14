@@ -17,19 +17,6 @@ export function resolveConfig(config: Config): CoreConfig {
   // optional but important — warn if absent
   const sanityToken   = config.sanity?.token     ?? env.sanity.token
   const studioUrl     = config.sanity?.studioUrl ?? env.sanity.studioUrl
-  warnMissing({
-    'SANITY_TOKEN':              sanityToken,
-    'SANITY_STUDIO_URL':         previewEnabled ? studioUrl : 'skip',
-    'URL':                       env.rawUrl,
-    'SUPPORT_EMAIL':             config.supportEmail             ?? env.supportEmail,
-    'STRIPE_PUBLISHABLE_API_KEY': features.shop.checkout
-      ? (config.stripe?.publishableApiKey ?? env.stripe.publishableApiKey)
-      : 'skip',
-    'CAPTCHA_SITE_KEY':          config.captchaSiteKey ?? env.captchaSiteKey,
-    'VINOFACT_API_URL':          features.shop.vinofact.enabled ? features.shop.vinofact.integration?.endpoint    : 'skip',
-    'VINOFACT_API_TOKEN':        features.shop.vinofact.enabled ? features.shop.vinofact.integration?.accessToken : 'skip',
-    'VINOFACT_PROFILE_SLUG':     features.shop.vinofact.enabled ? features.shop.vinofact.integration?.profileSlug : 'skip',
-  })
 
   const baseUrl = config.baseUrl ?? env.baseUrl
   const hostname = baseUrl ? new URL(baseUrl).hostname : ''
@@ -166,16 +153,6 @@ function readEnv() {
 function requireVar(name: EnvVarName, value: string | undefined): string {
   if (!value) throw new Error(`[itsshops] Missing required config: ${name}`)
   return value
-}
-
-/** Warn about missing optional-but-important vars. Pass 'skip' to suppress a check conditionally. */
-function warnMissing(vars: Partial<Record<EnvVarName, string | undefined>>): void {
-  const missing = Object.entries(vars)
-    .filter(([, v]) => v !== 'skip' && !v)
-    .map(([k]) => k)
-  if (missing.length > 0) {
-    console.warn(`[itsshops] Missing config (using defaults or disabled): ${missing.join(', ')}`)
-  }
 }
 
 function parseBool(value: string | undefined, fallback: boolean): boolean {
