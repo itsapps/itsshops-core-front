@@ -39,6 +39,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
   productList: `{
     _type,
     ${proj.i18nStringField('title')},
+    ${proj.refsField('products')},
     "filters": filters[]{
       _type == 'productFieldFilter' => { _type, field },
       _type == 'wineFieldFilter' => { _type, field },
