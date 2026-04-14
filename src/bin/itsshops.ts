@@ -3,7 +3,6 @@ import { Command } from 'commander';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-// import { syncNetlifyConfig } from './lib/netlifySync.js';
 
 const program = new Command();
 
@@ -15,9 +14,6 @@ program
 program
   .command('eleventy')
   .description('🚀 Run eleventy')
-  // .hook('preAction', async () => {
-  //   await syncNetlifyConfig({dev: true});
-  // })
   .option('-e, --env <path>', 'Path to environment file', '.env')
   .option('--serve', 'Start the local server')
   .option('--watch', 'Watch for file changes')
@@ -105,9 +101,6 @@ program
 program
   .command('netlify')
   .description('🚀 Start netlify dev')
-  // .hook('preAction', async () => {
-  //   await syncNetlifyConfig({dev: true});
-  // })
   .action(() => {
     console.log(`\n📦 ITSSHOPS | Starting netlify functions...\n`);
 

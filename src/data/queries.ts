@@ -88,7 +88,6 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
   ${proj.i18nStringField('title')},
   sku,
   kind,
-  featured,
   price,
   compareAtPrice,
   ${proj.i18nAltImageField('image')},
@@ -105,13 +104,12 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
 }
 
 export function buildCategoryQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'category'${idFilter(documentId)}] | order(sortOrder asc){
+  return `*[_type == 'category'${idFilter(documentId)}]{
   _id,
   _type,
   _updatedAt,
   ${proj.i18nStringField('title')},
   ${proj.i18nStringField('description')},
-  sortOrder,
   "parent": parent->{ _id },
   seo ${proj.seo},
   "filters": filters[]{

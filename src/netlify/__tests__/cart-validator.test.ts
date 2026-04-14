@@ -3,8 +3,8 @@ import { validateCart } from '../lib/cart-validator'
 import type { SanityVariantResult, SanityTaxRuleResult } from '../types/checkout'
 
 const taxRules: SanityTaxRuleResult[] = [
-  { taxCategoryCode: 'standard', rate: 20, exciseDuty: null },
-  { taxCategoryCode: 'food', rate: 10, exciseDuty: null },
+  { taxCategoryCode: 'standard', rate: 20 },
+  { taxCategoryCode: 'food', rate: 10 },
 ]
 
 function makeVariant(overrides: Partial<SanityVariantResult> = {}): SanityVariantResult {

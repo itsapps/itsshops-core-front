@@ -50,7 +50,7 @@ const CHECKOUT_QUERY = `{
   },
   "taxCountry": *[_type == "taxCountry" && countryCode == $country && enabled == true][0]{
     countryCode,
-    rules[]{ "taxCategoryCode": taxCategory->code.current, rate, exciseDuty }
+    rules[]{ "taxCategoryCode": taxCategory->code.current, rate }
   },
   "shippingMethods": *[_type == "shippingMethod" && references(*[_type == "taxCountry" && countryCode == $country]._id)]{
     _id, title, methodType, pickupFee, freeShippingThreshold,

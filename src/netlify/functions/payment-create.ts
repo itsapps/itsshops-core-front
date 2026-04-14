@@ -10,7 +10,7 @@ import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
 import { resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
 import { calculateTotals } from '../lib/totals'
-import { findTaxRate } from '../lib/tax'
+import { dominantItemVatRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
 import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
@@ -110,9 +110,9 @@ export function createPaymentHandler(config: ServerConfig = {}) {
     }
 
     // ── Calculate totals ────────────────────────────────────────────────
-    const shippingVatRate = selectedShipping
-      ? findTaxRate(data.taxCountry.rules, selectedShipping.taxCategoryCode, defaultTaxCategoryCode)
-      : 0
+    // Shipping VAT follows the "dominant goods" rule: use the rate that
+    // contributes the most VAT across cart items (AT tax practice).
+    const shippingVatRate = selectedShipping ? dominantItemVatRate(validatedItems) : 0
 
     const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate)
 

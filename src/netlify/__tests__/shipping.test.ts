@@ -159,6 +159,7 @@ describe('resolveShippingMethods', () => {
         { maxWeight: 5, price: 500 },
         { maxWeight: 30, price: 1200 },
       ],
+      packagingConfigs: null,
     },
     {
       _id: 'sm2',
@@ -168,6 +169,7 @@ describe('resolveShippingMethods', () => {
       freeShippingThreshold: null,
       taxCategoryCode: 'standard',
       rates: null,
+      packagingConfigs: null,
     },
   ]
 

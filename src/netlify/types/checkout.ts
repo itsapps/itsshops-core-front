@@ -60,7 +60,6 @@ export type SanityTaxCountryResult = {
 export type SanityTaxRuleResult = {
   taxCategoryCode: string
   rate: number
-  exciseDuty: number | null
 }
 
 export type SanityShippingMethodResult = {

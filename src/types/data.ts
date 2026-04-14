@@ -1,5 +1,20 @@
-import type { SanityImageHotspot, SanityImageCrop } from './sanity'
 import type { VinofactWine } from './vinofact'
+
+type SanityImageHotspot = {
+  _type: 'sanity.imageHotspot'
+  x?: number
+  y?: number
+  height?: number
+  width?: number
+}
+
+type SanityImageCrop = {
+  _type: 'sanity.imageCrop'
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
 
 export type SearchEntry = {
   /** Unique identifier — required by MiniSearch */
@@ -64,7 +79,6 @@ export type ResolvedCategory = {
   slug: string
   url: string
   locale: string
-  sortOrder: number
   parentId: string | null
   seo: ResolvedSeo
   /** Filter group keys to show on the category page (resolved from Sanity filter config) */
@@ -196,7 +210,6 @@ export type ResolvedVariant = {
   label: string
   sku: string
   kind: 'wine' | 'physical' | 'digital' | 'bundle'
-  featured: boolean
   price: number
   compareAtPrice: number | null
   image: ResolvedImage | null

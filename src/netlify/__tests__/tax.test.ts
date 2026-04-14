@@ -1,12 +1,33 @@
 import { describe, it, expect } from 'vitest'
-import { findTaxRate, extractVat, extractNet, buildVatBreakdown } from '../lib/tax'
-import type { SanityTaxRuleResult } from '../types/checkout'
+import { findTaxRate, extractVat, extractNet, buildVatBreakdown, dominantItemVatRate } from '../lib/tax'
+import type { SanityTaxRuleResult, ValidatedCartItem } from '../types/checkout'
+
+function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem {
+  return {
+    variantId: 'v1',
+    productId: 'p1',
+    kind: 'physical',
+    title: 'Test',
+    subtitle: null,
+    sku: null,
+    price: 1000,
+    weight: null,
+    quantity: 1,
+    taxCategoryCode: 'standard',
+    vatRate: 20,
+    vatAmount: 167,
+    wine: null,
+    options: null,
+    bundleItems: null,
+    ...overrides,
+  }
+}
 
 const rules: SanityTaxRuleResult[] = [
-  { taxCategoryCode: 'standard', rate: 20, exciseDuty: null },
-  { taxCategoryCode: 'food', rate: 10, exciseDuty: null },
-  { taxCategoryCode: 'books', rate: 10, exciseDuty: null },
-  { taxCategoryCode: 'exempt', rate: 0, exciseDuty: null },
+  { taxCategoryCode: 'standard', rate: 20 },
+  { taxCategoryCode: 'food', rate: 10 },
+  { taxCategoryCode: 'books', rate: 10 },
+  { taxCategoryCode: 'exempt', rate: 0 },
 ]
 
 describe('findTaxRate', () => {
@@ -102,5 +123,49 @@ describe('buildVatBreakdown', () => {
 
   it('returns empty array for empty input', () => {
     expect(buildVatBreakdown([])).toEqual([])
+  })
+})
+
+describe('dominantItemVatRate', () => {
+  it('returns 0 for empty cart', () => {
+    expect(dominantItemVatRate([])).toBe(0)
+  })
+
+  it('returns the single rate when all items share it', () => {
+    const items = [makeItem({ vatRate: 20, price: 1000, quantity: 2 })]
+    expect(dominantItemVatRate(items)).toBe(20)
+  })
+
+  it('picks the rate contributing the most VAT', () => {
+    // 20% on 2000 cents → ~333 VAT; 13% on 10000 cents → ~1150 VAT → 13 wins
+    const items = [
+      makeItem({ vatRate: 20, price: 1000, quantity: 2 }),
+      makeItem({ variantId: 'v2', vatRate: 13, price: 5000, quantity: 2 }),
+    ]
+    expect(dominantItemVatRate(items)).toBe(13)
+  })
+
+  it('breaks ties toward the higher rate', () => {
+    // Equal gross → equal VAT contributions are not possible at different rates,
+    // but when totals happen to match, prefer the higher rate.
+    const items = [
+      makeItem({ vatRate: 20, price: 1000, quantity: 1 }),
+      makeItem({ variantId: 'v2', vatRate: 10, price: 1000, quantity: 1 }),
+    ]
+    // 20% of 1000 = 167; 10% of 1000 = 91 → 20 wins on amount already
+    expect(dominantItemVatRate(items)).toBe(20)
+  })
+
+  it('ignores zero-rate items', () => {
+    const items = [
+      makeItem({ vatRate: 0, price: 100000, quantity: 1 }),
+      makeItem({ variantId: 'v2', vatRate: 10, price: 1000, quantity: 1 }),
+    ]
+    expect(dominantItemVatRate(items)).toBe(10)
+  })
+
+  it('returns 0 when all items are exempt', () => {
+    const items = [makeItem({ vatRate: 0, price: 1000, quantity: 1 })]
+    expect(dominantItemVatRate(items)).toBe(0)
   })
 })

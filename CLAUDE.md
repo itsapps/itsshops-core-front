@@ -122,9 +122,9 @@ Core defaults (de/en). Customers override per-locale segments via `config.permal
 | blog | blog | blog |
 | page | seiten | pages |
 
-### Sanity types (`src/types/sanity.ts`)
+### Sanity types
 
-Copied and trimmed from `itsshops-core-back/src/types/sanity.types.ts`. Contains only frontend-relevant types (no orders/customers/shipping). Re-copy when core backend schema changes. Customer projects generate their own full `sanity.types.ts` via `sanity typegen`.
+Core-front does not carry a copy of the generated Sanity schema types. The resolved shapes it actually consumes (`ResolvedVariant`, `ResolvedCategory`, etc.) live in `src/types/data.ts`. Customer projects generate their own full `sanity.types.ts` via `sanity typegen`.
 
 ### Build outputs (tsup)
 

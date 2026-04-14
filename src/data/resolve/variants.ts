@@ -236,7 +236,6 @@ export function resolveVariants(
       ),
       sku:            variant.sku ?? '',
       kind,
-      featured:       variant.featured ?? false,
       price:          variant.price ?? product.price ?? 0,
       compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
       image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
