@@ -190,7 +190,7 @@ export default {
       delivery: "Lieferung",
       billing: "Rechnungsadresse",
       payment: "Zahlung",
-      shippingMethod: "Versandart",
+      shippingMethod: "Versand",
       summary: "Zusammenfassung",
     },
     subtotal: "Zwischensumme",
@@ -206,6 +206,7 @@ export default {
     serviceErrorContact: "Support kontaktieren",
     itemsUnavailable: "Einige Artikel sind nicht mehr verfügbar und wurden entfernt.",
     available: "verfügbar",
+    orDivider: "oder",
   },
   staticPages: {
     errorPage: {
@@ -269,7 +270,7 @@ export default {
       },
     },
     checkout: {
-      title: "Bestellung",
+      title: "Kasse",
       description: "Bestellung bezahlen",
     },
   },

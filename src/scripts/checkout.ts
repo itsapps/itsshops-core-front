@@ -55,10 +55,11 @@ export async function initCheckout(): Promise<void> {
   const shippingEl = container.querySelector<HTMLElement>('[data-checkout-shipping]')
   const paymentEl = container.querySelector<HTMLElement>('[data-checkout-payment]')
   const expressEl = container.querySelector<HTMLElement>('[data-checkout-express]')
+  const orDividerEl = container.querySelector<HTMLElement>('[data-checkout-or-divider]')
   const submitBtn = container.querySelector<HTMLButtonElement>('[data-checkout-submit]')
   const errorEl = container.querySelector<HTMLElement>('[data-checkout-error-global]')
   const serviceErrorEl = container.querySelector<HTMLElement>('[data-checkout-service-error]')
-  const loadingEl = container.querySelector<HTMLElement>('[data-checkout-loading]')
+  const progressEl = container.querySelector<HTMLElement>('[data-checkout-progress]')
   const countrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-country]')
   const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
 
@@ -153,7 +154,14 @@ export async function initCheckout(): Promise<void> {
 
   // ── Error handling ────────────────────────────────────────────────────
   function setLoading(loading: boolean): void {
-    if (loadingEl) loadingEl.hidden = !loading
+    if (loading) {
+      container.setAttribute('data-checkout-state', isSubmitting ? 'submitting' : 'loading')
+      container.setAttribute('aria-busy', 'true')
+    } else {
+      container.setAttribute('data-checkout-state', isSubmitting ? 'submitting' : 'ready')
+      container.setAttribute('aria-busy', isSubmitting ? 'true' : 'false')
+    }
+    if (progressEl) progressEl.hidden = !loading && !isSubmitting
     if (submitBtn) submitBtn.disabled = loading || isSubmitting
   }
 
@@ -260,6 +268,9 @@ export async function initCheckout(): Promise<void> {
           return null
         }
       },
+      onReady: () => {
+        if (orDividerEl) orDividerEl.hidden = false
+      },
       onCreatePayment: async ({ address, email, shippingMethodId }) => {
         try {
           const response = await createPayment(
@@ -346,6 +357,9 @@ export async function initCheckout(): Promise<void> {
 
     isSubmitting = true
     submitBtn.disabled = true
+    container.setAttribute('data-checkout-state', 'submitting')
+    container.setAttribute('aria-busy', 'true')
+    if (progressEl) progressEl.hidden = false
     dispatch('checkout:submitting')
     hideErrors()
 
@@ -382,6 +396,9 @@ export async function initCheckout(): Promise<void> {
     } finally {
       isSubmitting = false
       submitBtn.disabled = false
+      container.setAttribute('data-checkout-state', 'ready')
+      container.setAttribute('aria-busy', 'false')
+      if (progressEl) progressEl.hidden = true
     }
   })
 

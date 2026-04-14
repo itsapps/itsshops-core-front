@@ -154,9 +154,11 @@ export const loadTemplates = (ctx: CoreContext) => {
 
   // Log loaded and ignored templates
   console.log('BUILD MODE: ', config.buildMode.toUpperCase());
-  console.log(`✅ Loaded templates:\n${loadedTemplates.map(t => `   - ${t}`).join('\n')}`);
-  if (ignoredTemplates.length > 0) {
-    console.warn(`⚠️ Ignored templates:\n${ignoredTemplates.map(t => `   - ${t}`).join('\n')}`);
+  if (config.debug) {
+    console.log(`✅ Loaded templates:\n${loadedTemplates.map(t => `   - ${t}`).join('\n')}`);
+    if (ignoredTemplates.length > 0) {
+      console.warn(`⚠️ Ignored templates:\n${ignoredTemplates.map(t => `   - ${t}`).join('\n')}`);
+    }
   }
 }
 

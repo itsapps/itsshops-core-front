@@ -36,6 +36,8 @@ export type ExpressCheckoutConfig = {
     phone?: string
     shippingMethodId: string
   }) => Promise<{ clientSecret: string } | { error: string }>
+  /** Fired once when Stripe reports the express element has rendered at least one payment method. */
+  onReady?: (event: { availablePaymentMethods?: Record<string, boolean> }) => void
 }
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
@@ -101,6 +103,11 @@ export class CheckoutExpress {
 
     element.mount(this.config.container)
 
+    element.on('ready', e => {
+      const available = (e as { availablePaymentMethods?: Record<string, boolean> }).availablePaymentMethods
+      const hasAny = available ? Object.values(available).some(Boolean) : true
+      if (hasAny) this.config.onReady?.({ availablePaymentMethods: available })
+    })
     element.on('click', e => this.handleClick(e))
     element.on('shippingaddresschange', e => this.handleShippingAddressChange(e))
     element.on('shippingratechange', e => this.handleShippingRateChange(e))

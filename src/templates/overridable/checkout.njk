@@ -5,6 +5,8 @@
   <div
     id="checkout"
     data-checkout
+    data-checkout-state="loading"
+    aria-busy="true"
     data-checkout-api="/api/payment/create"
     data-stripe-key="{{ coreConfig.stripe.publishableApiKey }}"
     data-return-url="{{ coreConfig.baseUrl }}{{ cms[_locale].checkoutUrl }}{{ coreConfig.resolvedPermalinks[_locale].orderThanks }}/"
@@ -29,27 +31,33 @@
     data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
     data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
   >
-    {# Loading state #}
-    <div data-checkout-loading class="checkout__loading" aria-live="polite">
-      {{ 'checkout.loading' | trans }}
-    </div>
+    {# Top progress bar — drives loading feedback without layout shift #}
+    <div data-checkout-progress class="checkout__progress" aria-hidden="true"></div>
 
-    {# Validation error #}
-    <div data-checkout-error-global class="checkout__error" role="alert" hidden></div>
+    {# Error slot — reserved height prevents jumpy layout when toggled #}
+    <div class="checkout__errors" data-checkout-errors>
+      {# Validation error #}
+      <div data-checkout-error-global class="checkout__error" role="alert" hidden></div>
 
-    {# Service error (IO/server) — shown with requestId for support #}
-    <div data-checkout-service-error class="checkout__service-error" role="alert" hidden>
-      <p>{{ 'checkout.serviceError' | trans }}</p>
-      <p class="checkout__request-id">Request ID: <code data-request-id></code></p>
-      {% if coreConfig.supportEmail %}
-        <a href="mailto:{{ coreConfig.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
-          {{ 'checkout.serviceErrorContact' | trans }}
-        </a>
-      {% endif %}
+      {# Service error (IO/server) — shown with requestId for support #}
+      <div data-checkout-service-error class="checkout__service-error" role="alert" hidden>
+        <p>{{ 'checkout.serviceError' | trans }}</p>
+        <p class="checkout__request-id">Request ID: <code data-request-id></code></p>
+        {% if coreConfig.supportEmail %}
+          <a href="mailto:{{ coreConfig.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
+            {{ 'checkout.serviceErrorContact' | trans }}
+          </a>
+        {% endif %}
+      </div>
     </div>
 
     {# Express checkout (Apple Pay / Google Pay) — mounts after first calculate #}
     <div data-checkout-express class="checkout-express"></div>
+
+    {# "— or —" divider between express and manual checkout. Hidden until express mounts. #}
+    <div data-checkout-or-divider class="checkout__or-divider" role="separator" aria-hidden="true" hidden>
+      <span>{{ 'checkout.orDivider' | trans }}</span>
+    </div>
 
     <form data-checkout-form class="checkout__form" novalidate>
       <div class="checkout__columns">
@@ -156,6 +164,16 @@
             </div>
           </fieldset>
 
+        </div>
+
+        {# ── Right column: summary → shipping → payment → submit ───────── #}
+        <aside class="checkout__summary">
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.summary' | trans }}</legend>
+            <div data-checkout-items class="checkout-items"></div>
+            <div data-checkout-totals class="checkout-totals"></div>
+          </fieldset>
+
           {# Shipping method #}
           <fieldset class="checkout__section">
             <legend>{{ 'checkout.sections.shippingMethod' | trans }}</legend>
@@ -171,13 +189,6 @@
           <button type="submit" data-checkout-submit class="checkout__submit btn">
             {{ 'forms.checkout.submit.text' | trans }}
           </button>
-        </div>
-
-        {# ── Right column: order summary ───────────────────────────────── #}
-        <aside class="checkout__summary">
-          <h2>{{ 'checkout.sections.summary' | trans }}</h2>
-          <div data-checkout-items class="checkout-items"></div>
-          <div data-checkout-totals class="checkout-totals"></div>
         </aside>
       </div>
     </form>

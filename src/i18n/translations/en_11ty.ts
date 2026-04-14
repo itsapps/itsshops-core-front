@@ -206,6 +206,7 @@ export default {
     serviceErrorContact: "Contact support",
     itemsUnavailable: "Some items are no longer available and have been removed.",
     available: "available",
+    orDivider: "or",
   },
   staticPages: {
     errorPage: {
