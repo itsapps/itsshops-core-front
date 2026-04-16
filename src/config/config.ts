@@ -178,6 +178,7 @@ function resolveCspDirectives(input: CspDirectives | undefined): ResolvedCspDire
     'connect-src': input?.['connect-src'] ?? [],
     'frame-src':   input?.['frame-src']   ?? [],
     'img-src':     input?.['img-src']     ?? [],
+    'media-src':   input?.['media-src']   ?? [],
     'style-src':   input?.['style-src']   ?? [],
   }
 }

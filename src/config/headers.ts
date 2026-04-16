@@ -31,6 +31,7 @@ type CspSources = {
   scriptSrc:  string[]
   connectSrc: string[]
   imgSrc:     string[]
+  mediaSrc:   string[]
   styleSrc:   string[]
   frameSrc:   string[]
 }
@@ -41,6 +42,7 @@ function buildCsp(s: CspSources): string {
     `script-src ${s.scriptSrc.join(' ')}`,
     `connect-src ${s.connectSrc.join(' ')}`,
     `img-src ${s.imgSrc.join(' ')}`,
+    `media-src ${s.mediaSrc.join(' ')}`,
     `style-src ${s.styleSrc.join(' ')}`,
     `frame-src ${s.frameSrc.join(' ')}`,
     "frame-ancestors 'none'",
@@ -63,6 +65,7 @@ function mergeExtra(base: CspSources, extra: ResolvedCspDirectives): CspSources 
     scriptSrc:  [...base.scriptSrc,  ...extra['script-src']],
     connectSrc: [...base.connectSrc, ...extra['connect-src']],
     imgSrc:     [...base.imgSrc,     ...extra['img-src']],
+    mediaSrc:   [...base.mediaSrc,   ...extra['media-src']],
     styleSrc:   [...base.styleSrc,   ...extra['style-src']],
     frameSrc:   [...base.frameSrc,   ...extra['frame-src']],
   }
@@ -79,6 +82,7 @@ function buildNetlifyHeaders(
     scriptSrc:  ["'self'", ...inlineScriptHashes,                      ...(gtmId ? ['https://www.googletagmanager.com'] : [])],
     connectSrc: ["'self'",                                              ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com'] : [])],
     imgSrc:     ["'self'", 'data:', 'https://cdn.sanity.io',           ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com'] : [])],
+    mediaSrc:   ["'self'", 'https://cdn.sanity.io'],
     styleSrc:   ["'self'", "'unsafe-inline'"],
     frameSrc:   ["'self'"],
   }

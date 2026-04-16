@@ -164,6 +164,7 @@ export type CspDirectives = Partial<{
   'connect-src': string[]
   'frame-src':   string[]
   'img-src':     string[]
+  'media-src':   string[]
   'style-src':   string[]
 }>
 
@@ -173,6 +174,7 @@ export type ResolvedCspDirectives = {
   'connect-src': string[]
   'frame-src':   string[]
   'img-src':     string[]
+  'media-src':   string[]
   'style-src':   string[]
 }
 
