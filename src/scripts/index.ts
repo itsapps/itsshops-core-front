@@ -7,7 +7,7 @@ console.groupCollapsed(
 )
 console.log(
   '%cDesign and Development by Thomas Heingärtner\nhttps://www.itsapps.at',
-  'display:block;font-family:courier;font-size:19px;font-weight:bold;line-height:1;color:white;'
+  'display:block;font-family:courier;font-size:19px;font-weight:bold;line-height:1;'
 )
 console.groupEnd()
 
