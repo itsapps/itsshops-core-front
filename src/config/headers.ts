@@ -95,6 +95,7 @@ function buildNetlifyHeaders(
       'script-src':  ['https://js.stripe.com', 'https://*.js.stripe.com'],
       'connect-src': ['https://api.stripe.com'],
       'img-src':     [],
+      'media-src':   [],
       'style-src':   ['https://m.stripe.network'],
       'frame-src':   ['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'],
     })
@@ -109,6 +110,7 @@ function buildNetlifyHeaders(
       'script-src':  captcha,
       'connect-src': captcha,
       'img-src':     [],
+      'media-src':   [],
       'style-src':   captcha,
       'frame-src':   captcha,
     })
