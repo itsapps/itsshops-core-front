@@ -14,7 +14,7 @@ function hashDir(dir: string): string[] {
   return fs.readdirSync(dir)
     .filter(f => f.endsWith('.js'))
     .map(f => {
-      const content = fs.readFileSync(path.join(dir, f), 'utf8').trimEnd()
+      const content = fs.readFileSync(path.join(dir, f), 'utf8')
       const hash = createHash('sha256').update(content, 'utf8').digest('base64')
       return `'sha256-${hash}'`
     })
