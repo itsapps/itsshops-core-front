@@ -2,13 +2,16 @@
 
 <article class="product-card">
   <a href="{{ product.url }}" class="product-card__link">
+    {% block product_card_image %}
     <figure class="product-card__image">
-      {%- if product.image %}
-        {% image product.image, imageSizes.card %}
+      {%- set _img = product.image or product.productImage -%}
+      {%- if _img %}
+        {% image _img, imageSizes.card %}
       {%- else %}
         {% include "overridable/product/placeholder.njk" %}
       {%- endif %}
     </figure>
+    {% endblock %}
     <div class="product-card__body">
       <h2 class="product-card__title">{{ product.title }}</h2>
       {% block product_card_label %}

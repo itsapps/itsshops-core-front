@@ -93,6 +93,10 @@ export function resolveConfig(config: Config): CoreConfig {
     },
     captchaSiteKey: config.captchaSiteKey ?? env.captchaSiteKey,
     supportEmail:   config.supportEmail   ?? env.supportEmail,
+    ageGate: {
+      enabled: config.ageGate?.enabled ?? false,
+      minAge:  config.ageGate?.minAge  ?? 16,
+    },
   }
 }
 

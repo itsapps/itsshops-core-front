@@ -208,6 +208,14 @@ export default {
     available: "verfügbar",
     orDivider: "oder",
   },
+  ageGate: {
+    title:       "Bist du mindestens {{age}} Jahre alt?",
+    text:        "Um diesen Shop zu betreten, musst du das gesetzliche Mindestalter für den Kauf von Alkohol erreicht haben.",
+    confirm:     "Ja, ich bin mindestens {{age}}",
+    deny:        "Nein, ich bin jünger",
+    note:        "Mit der Bestätigung akzeptierst du, dass wir deine Angabe lokal in deinem Browser speichern.",
+    deniedText:  "Du musst mindestens {{age}} Jahre alt sein, um diesen Shop nutzen zu können.",
+  },
   staticPages: {
     errorPage: {
       title: "Ich kann diese Seite nicht finden!",

@@ -39,7 +39,7 @@ export default defineConfig({
     // Pre-build core inline scripts into dist/templates so {% include %} works
     // even when customers have no src/assets/scripts/inline/ of their own.
     await esbuild.build({
-      entryPoints: ['src/scripts/inline/theme.ts'],
+      entryPoints: ['src/scripts/inline/theme.ts', 'src/scripts/inline/age-gate.ts'],
       outdir: 'dist/templates/scripts/inline',
       bundle: true,
       format: 'iife',

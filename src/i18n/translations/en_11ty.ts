@@ -208,6 +208,14 @@ export default {
     available: "available",
     orDivider: "or",
   },
+  ageGate: {
+    title:       "Are you at least {{age}} years old?",
+    text:        "To enter this shop you must have reached the legal minimum age for buying alcohol.",
+    confirm:     "Yes, I'm at least {{age}}",
+    deny:        "No, I'm younger",
+    note:        "By confirming you accept that we store your age confirmation locally in your browser.",
+    deniedText:  "You must be at least {{age}} years old to use this shop.",
+  },
   staticPages: {
     errorPage: {
       title: "I can't find this page!",

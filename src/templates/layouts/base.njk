@@ -25,6 +25,7 @@
 
     {%- include "overridable/footer.njk" -%}
     {%- if coreConfig.features.shop.checkout -%}{%- include "overridable/cart.njk" -%}{%- endif -%}
+    {%- if coreConfig.ageGate.enabled and not coreConfig.preview.enabled -%}{%- include "overridable/age-gate.njk" -%}{%- endif -%}
 
     {%- getBundle "html", "externalJS" -%}
     <script src="/assets/scripts/index.js" type="module"></script>

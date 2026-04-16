@@ -426,6 +426,17 @@ export type Config = {
   }
   captchaSiteKey?: string
   supportEmail?: string
+
+  /**
+   * Age gate — opt-in overlay shown on first visit that requires the visitor
+   * to confirm they are at least `minAge` years old before entering the site.
+   * UX gate only; legal enforcement happens at delivery.
+   */
+  ageGate?: {
+    enabled?: boolean
+    /** Minimum age required to enter. Default: 16. */
+    minAge?: number
+  }
 }
 
 // ─── Core config ──────────────────────────────────────────────────────────────
@@ -484,6 +495,10 @@ export type CoreConfig = {
   }
   captchaSiteKey: string | undefined
   supportEmail: string | undefined
+  ageGate: {
+    enabled: boolean
+    minAge: number
+  }
 }
 
 export type CoreContext = {

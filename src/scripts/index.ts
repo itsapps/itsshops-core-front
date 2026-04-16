@@ -1,5 +1,17 @@
 import { initMenu } from './menu'
+import { initAgeGate } from './age-gate'
 
+console.groupCollapsed(
+  '%c🍺 Site Credits',
+  'display:block;padding:0.125em 4em;font-family:courier;font-size:24px;font-weight:bold;line-height:2;text-transform:uppercase;background:black;color:white;'
+)
+console.log(
+  '%cDesign and Development by Thomas Heingärtner\nhttps://www.itsapps.at',
+  'display:block;font-family:courier;font-size:19px;font-weight:bold;line-height:1;color:white;'
+)
+console.groupEnd()
+
+initAgeGate()
 initMenu()
 
 if (document.querySelector('[data-carousel]')) {

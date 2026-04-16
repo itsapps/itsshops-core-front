@@ -1,4 +1,9 @@
-{%- js "inline" -%}
-{% include "scripts/inline/theme.js" %}
-{%- endjs -%}
-<script>{% getBundle "js", "inline" %}</script>
+{#
+  Each inline script is emitted as its own <script> tag so the per-file sha256
+  hashes produced by config/headers.ts match what the browser sees (CSP). Do
+  not concatenate them into a single <script> — that would invalidate hashes.
+#}
+<script>{% include "scripts/inline/theme.js" %}</script>
+{%- if coreConfig.ageGate.enabled and not coreConfig.preview.enabled -%}
+<script>{% include "scripts/inline/age-gate.js" %}</script>
+{%- endif -%}
