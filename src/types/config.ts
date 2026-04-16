@@ -55,15 +55,12 @@ export type EnvVars = {
   PUBLIC_DEVELOPER_NAME:    string | undefined
   PUBLIC_DEVELOPER_WEBSITE: string | undefined
   DEVELOPER_EMAIL:          string | undefined
-  SHOP_ADMIN_EMAIL:         string | undefined
   SUPPORT_EMAIL:            string | undefined
 
   // Email — Mailgun
   MAILGUN_API_KEY:          string | undefined
   MAILGUN_DOMAIN:           string | undefined
   MAILGUN_USE_EU_REGION_URL: string | undefined  // 'true' | 'false'
-  SEND_BUILD_EMAIL:         string | undefined   // 'true' | 'false'
-  SEND_LOW_STOCK_EMAIL:     string | undefined   // 'true' | 'false'
 
   // Vinofact
   VINOFACT_API_URL:      string | undefined
@@ -87,7 +84,6 @@ export type EnvVars = {
   // Netlify functions
   SERVER_FUNCTIONS_ALLOWED_ORIGINS: string | undefined
   SERVER_FUNCTIONS_SECRET:          string | undefined  // server-side only
-  SERVER_JWT_SECRET:                string | undefined  // server-side only
 
   // Testing
   TEST_USER_EMAIL:    string | undefined  // dev only

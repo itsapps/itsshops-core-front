@@ -34,24 +34,25 @@
                 {%- set _submenuId = "site-nav-sub-" + _menuIdx + "-" + loop.index -%}
 
                 {%- if item.linkType == 'internal' and item.internal -%}
+                  {%- set _itemTitle = item.title or (item.internal._id | docById).title -%}
                   <li class="site-nav__item{% if item.children.length %} site-nav__item--has-children{% endif %}">
                     <a
                       href="{{ item.internal._id | pageUrl }}"
                       class="site-nav__link"
                       {{ item.internal._id | pageUrl | linkActiveState | safe }}
-                    >{{ item.title }}</a>
+                    >{{ _itemTitle }}</a>
                     {%- if item.children.length -%}
                       <button
                         type="button"
                         class="site-nav__submenu-toggle"
                         aria-expanded="false"
                         aria-controls="{{ _submenuId }}"
-                      ><span class="sr-only">{{ 'navigation.ariaOpenSubmenu' | trans }}: {{ item.title }}</span></button>
+                      ><span class="sr-only">{{ 'navigation.ariaOpenSubmenu' | trans }}: {{ _itemTitle }}</span></button>
                       <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
                             </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">
@@ -81,7 +82,7 @@
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
                             </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">

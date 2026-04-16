@@ -20,7 +20,7 @@
                 {%- for item in _menu.items -%}
                   {%- if item.linkType == 'internal' and item.internal -%}
                     <li>
-                      <a href="{{ item.internal._id | pageUrl }}" class="footer-nav__link">{{ item.title }}</a>
+                      <a href="{{ item.internal._id | pageUrl }}" class="footer-nav__link">{{ item.title or (item.internal._id | docById).title }}</a>
                     </li>
                   {%- elif item.linkType == 'external' -%}
                     <li>

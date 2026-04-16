@@ -199,6 +199,12 @@ function nl2br(text: string): string {
 export const createFilters = (ctx: CoreContext) => {
   const { eleventyConfig, config, translate } = ctx
 
+  eleventyConfig.addFilter('log', (value: any, label?: string) => {
+    if (label) console.warn(`⚠️ [itsshops] ${label}`, value)
+    else console.warn('⚠️ [itsshops]', value)
+    return value
+  })
+  
   // translation
   eleventyConfig.addFilter('trans', function (key: string, params: TranslatorParams = {}) {
     return translate(key, params, this.page?.lang || config.defaultLocale)
@@ -246,11 +252,6 @@ export const createFilters = (ctx: CoreContext) => {
   })
   eleventyConfig.addFilter('formatNumber', function (num: number) {
     return formatNumber(num, this.page?.lang || config.defaultLocale)
-  })
-  eleventyConfig.addFilter('log', (value: any, label?: string) => {
-    if (label) console.warn(`⚠️ [itsshops] ${label}`, value)
-    else console.warn('⚠️ [itsshops]', value)
-    return value
   })
   eleventyConfig.addFilter('sortBy', ((arr: any[], path: string, reverse?: boolean) => {
     if (!Array.isArray(arr)) return arr

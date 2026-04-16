@@ -529,13 +529,10 @@ All env vars recognized by the core. Server-side-only vars are not safe to expos
 | `PUBLIC_DEVELOPER_NAME` | Developer name (public) |
 | `PUBLIC_DEVELOPER_WEBSITE` | Developer website (public) |
 | `DEVELOPER_EMAIL` | Developer contact email |
-| `SHOP_ADMIN_EMAIL` | Admin email for stock alerts etc. |
 | `SUPPORT_EMAIL` | Support email shown to customers |
 | `MAILGUN_API_KEY` | Mailgun API key |
 | `MAILGUN_DOMAIN` | Mailgun sending domain |
 | `MAILGUN_USE_EU_REGION_URL` | `true` for EU Mailgun endpoint |
-| `SEND_BUILD_EMAIL` | `true` to send build notification email |
-| `SEND_LOW_STOCK_EMAIL` | `true` to send low stock alert emails |
 | `VINOFACT_API_URL` | Vinofact API endpoint |
 | `VINOFACT_API_TOKEN` | Vinofact access token |
 | `VINOFACT_PROFILE_SLUG` | Vinofact profile slug |
@@ -549,6 +546,5 @@ All env vars recognized by the core. Server-side-only vars are not safe to expos
 | `SUPABASE_EMAIL_HOOKS_SECRET` | Supabase email hook secret — server-side only |
 | `SERVER_FUNCTIONS_ALLOWED_ORIGINS` | Comma-separated allowed origins for functions |
 | `SERVER_FUNCTIONS_SECRET` | Shared secret for internal function calls — server-side only |
-| `SERVER_JWT_SECRET` | JWT signing secret — server-side only |
 | `TEST_USER_EMAIL` | Test user email — dev only |
 | `TEST_USER_PASSWORD` | Test user password — dev only |
