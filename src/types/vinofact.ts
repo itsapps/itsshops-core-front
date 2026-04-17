@@ -56,7 +56,7 @@ export type VinofactField =
   | 'year' | 'color' | 'flavor' | 'type' | 'description'
   | 'alcohol' | 'residualSugar' | 'tartaricAcid' | 'totalSulfur' | 'freeSulfur' | 'phValue' | 'histamine'
   | 'varietals' | 'classifications' | 'normClassifications' | 'certificates' | 'awards' | 'bottleImage' | 'terroir'
-  | 'factsheetPdfUrl' | 'factsheetHtmlUrl'
+  | 'factsheetPdfUrl' | 'factsheetHtmlUrl' | 'elabelUrl'
 
 /** Resolved wine data from the Vinofact API (all locale maps already resolved to strings). */
 export type VinofactWine = {
@@ -86,4 +86,5 @@ export type VinofactWine = {
   terroir?: VinofactTerroir | null
   factsheetPdfUrl?: string | null
   factsheetHtmlUrl?: string | null
+  elabelUrl?: string | null
 }

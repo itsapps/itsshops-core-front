@@ -91,7 +91,8 @@ export default {
       terroir:         "Region",
       soils:           "Soil",
       awards:          "Awards",
-      factsheet: 'Factsheet',
+      factsheet:      'Factsheet',
+      elabel:          "Nutrition Information",
     },
     allProducts: "All products",
 

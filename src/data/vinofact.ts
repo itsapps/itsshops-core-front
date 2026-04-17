@@ -24,6 +24,7 @@ const FIELD_SELECTIONS: Record<VinofactField, string> = {
   terroir:             'terroir { id name description soils { id name } }',
   factsheetPdfUrl:     'factsheetPdfUrl',
   factsheetHtmlUrl:    'factsheetHtmlUrl',
+  elabelUrl:           'elabelUrl',
 }
 
 function buildFieldsSelection(fields: VinofactField[] | undefined): string {
