@@ -13,18 +13,18 @@ export type BoundLocalizers = {
 }
 
 /**
- * Resolve a locale entry from an i18nObject array `[{ _key, value: T }]`.
+ * Resolve a locale entry from an i18nObject array `[{ language, value: T }]`.
  * Returns the value for the given locale, falling back to defaultLocale, then first entry.
  * Use when `value` is an object (e.g. i18nStandardContent) rather than a plain string.
  */
 export function resolveLocaleValue(
-  arr: Array<{ _key: string; value: unknown }> | null | undefined,
+  arr: Array<{ language: string; value: unknown }> | null | undefined,
   locale: Locale,
   defaultLocale: Locale,
 ): unknown {
   return (
-    (arr ?? []).find(e => e._key === locale)
-    ?? (arr ?? []).find(e => e._key === defaultLocale)
+    (arr ?? []).find(e => e.language === locale)
+    ?? (arr ?? []).find(e => e.language === defaultLocale)
     ?? (arr ?? [])[0]
   )?.value
 }
@@ -36,8 +36,8 @@ export function resolveString(
 ): string {
   if (!arr?.length) return ''
   return (
-    arr.find(e => e._key === locale)?.value ??
-    arr.find(e => e._key === defaultLocale)?.value ??
+    arr.find(e => e.language === locale)?.value ??
+    arr.find(e => e.language === defaultLocale)?.value ??
     arr[0]?.value ??
     ''
   )
@@ -52,8 +52,8 @@ export function resolveImage(
   if (!raw?.image?.length) return null
 
   const entry =
-    raw.image.find(e => e._key === locale) ??
-    raw.image.find(e => e._key === defaultLocale) ??
+    raw.image.find(e => e.language === locale) ??
+    raw.image.find(e => e.language === defaultLocale) ??
     raw.image[0]
 
   const img = entry?.value

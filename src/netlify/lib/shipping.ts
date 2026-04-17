@@ -17,7 +17,7 @@ export function resolveLocalizedTitle(
   defaultLocale = 'de',
 ): string {
   if (!title || title.length === 0) return ''
-  const match = title.find(t => t._key === locale) ?? title.find(t => t._key === defaultLocale)
+  const match = title.find(t => t.language === locale) ?? title.find(t => t.language === defaultLocale)
   return match?.value ?? title[0]?.value ?? ''
 }
 

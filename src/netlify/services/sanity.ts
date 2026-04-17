@@ -193,14 +193,14 @@ export async function fetchEmailSettings(
         billingAddress{
           line1,
           line2,
-          "city": coalesce(city[_key == $locale][0].value, city[_key == "de"][0].value),
+          "city": coalesce(city[language == $locale][0].value, city[language == "de"][0].value),
           zip,
           country
         },
         bankAccount{ name, bic, iban }
       },
       "site": *[_type == "settings"][0]{
-        "shopName": coalesce(siteTitle[_key == $locale][0].value, siteTitle[_key == "de"][0].value)
+        "shopName": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "de"][0].value)
       }
     }{
       "shopName": site.shopName,

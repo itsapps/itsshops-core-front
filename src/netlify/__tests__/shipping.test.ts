@@ -150,7 +150,7 @@ describe('resolveShippingMethods', () => {
   const methods: SanityShippingMethodResult[] = [
     {
       _id: 'sm1',
-      title: [{ _key: 'de', value: 'Standardversand' }, { _key: 'en', value: 'Standard Shipping' }],
+      title: [{ language: 'de', value: 'Standardversand' }, { language: 'en', value: 'Standard Shipping' }],
       methodType: 'delivery',
       pickupFee: null,
       freeShippingThreshold: 10000,
@@ -163,7 +163,7 @@ describe('resolveShippingMethods', () => {
     },
     {
       _id: 'sm2',
-      title: [{ _key: 'de', value: 'Selbstabholung' }, { _key: 'en', value: 'Self Pickup' }],
+      title: [{ language: 'de', value: 'Selbstabholung' }, { language: 'en', value: 'Self Pickup' }],
       methodType: 'pickup',
       pickupFee: 0,
       freeShippingThreshold: null,
@@ -201,7 +201,7 @@ describe('resolveShippingMethods', () => {
   it('falls back to weight-based rate when wine volume has no packaging config', () => {
     const methodWithPackaging: SanityShippingMethodResult[] = [{
       _id: 'sm-pkg',
-      title: [{ _key: 'de', value: 'Weinversand' }],
+      title: [{ language: 'de', value: 'Weinversand' }],
       methodType: 'delivery',
       pickupFee: null,
       freeShippingThreshold: null,
@@ -225,7 +225,7 @@ describe('resolveShippingMethods', () => {
   it('allows packaging-only method when uncovered volume has no weight rates', () => {
     const methodWithPackaging: SanityShippingMethodResult[] = [{
       _id: 'sm-pkg',
-      title: [{ _key: 'de', value: 'Weinversand' }],
+      title: [{ language: 'de', value: 'Weinversand' }],
       methodType: 'delivery',
       pickupFee: null,
       freeShippingThreshold: null,
@@ -247,7 +247,7 @@ describe('resolveShippingMethods', () => {
   it('combines packaging and weight-based fallback for mixed volumes', () => {
     const methodWithPackaging: SanityShippingMethodResult[] = [{
       _id: 'sm-pkg',
-      title: [{ _key: 'de', value: 'Weinversand' }],
+      title: [{ language: 'de', value: 'Weinversand' }],
       methodType: 'delivery',
       pickupFee: null,
       freeShippingThreshold: null,

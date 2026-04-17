@@ -27,8 +27,8 @@ export const cropHotspotImage = `{ _type, ${imageAssetField}, crop, hotspot }`
  * Used on product/category images where both image and alt text are localized.
  */
 export const i18nImage = `{
-  "image": image[]{ _key, value { _type, ${imageAssetField}, crop, hotspot } },
-  "alt": alt[]{ _key, value }
+  "image": image[]{ language, value { _type, ${imageAssetField}, crop, hotspot } },
+  "alt": alt[]{ language, value }
 }`
 
 export const i18nImageField = (fieldName: string) => `${fieldName} ${i18nImage}`
@@ -37,7 +37,7 @@ export const i18nImageField = (fieldName: string) => `${fieldName} ${i18nImage}`
  * localeAltImage — Sanity image with hotspot + i18nString alt.
  * Used in carousels and wherever a single image has per-locale alt text.
  */
-export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, "alt": alt[]{ _key, value } }`
+export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, "alt": alt[]{ language, value } }`
 
 export const i18nAltImageField = (fieldName: string) => `${fieldName} ${i18nAltImage}`
 
@@ -50,10 +50,10 @@ export const baseImageField = (fieldName: string) => `${fieldName} ${baseImage}`
 // Localized fields
 // ---------------------------------------------------------------------------
 
-export const i18nStringField = (fieldName: string) => `${fieldName}[]{ _key, value }`
+export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language, value }`
 
 export const i18nObjectField = (fieldName: string, subquery: string) =>
-  `${fieldName}[]{ _key, value { ${subquery} } }`
+  `${fieldName}[]{ language, value { ${subquery} } }`
 
 // ---------------------------------------------------------------------------
 // Portable text
@@ -89,11 +89,11 @@ export const portableTextBlocks = `[]{
 export const portableTextField = (fieldName: string) => `${fieldName} ${portableTextBlocks}`
 
 /**
- * i18nPortableText — localized rich text stored as i18nText (array of { _key: locale, value: blocks[] }).
+ * i18nPortableText — localized rich text stored as i18nText (array of { language: locale, value: blocks[] }).
  * Use for fields of type i18nText / i18nStandardContent.
  */
 export const i18nPortableText = `[]{
-  _key,
+  language,
   value[]{
     ...,
     markDefs[]{
@@ -117,7 +117,7 @@ export const i18nTextField = (fieldName: string) => `${fieldName} ${i18nPortable
  * Flattens to [{ _key, value: blocks[] }] so resolvePortableText handles it directly.
  */
 export const i18nStandardContentField = (fieldName: string) =>
-  `${fieldName}[]{ _key, "value": value.content ${portableTextBlocks} }`
+  `${fieldName}[]{ language, "value": value.content ${portableTextBlocks} }`
 
 // ---------------------------------------------------------------------------
 // SEO

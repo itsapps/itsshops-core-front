@@ -43,7 +43,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     "filters": filters[]{
       _type == 'productFieldFilter' => { _type, field },
       _type == 'wineFieldFilter' => { _type, field },
-      _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+      _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
     }
   }`,
   carousel: `{
@@ -98,7 +98,7 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory->{ _id },
   wine,
-  "options": options[]->{ _id, "name": title[]{ _key, value }, "group": group->{ _id, "title": title[]{ _key, value } } },
+  "options": options[]->{ _id, "name": ${proj.i18nStringField('title')}, "group": group->{ _id, "title": ${proj.i18nStringField('title')} } },
   "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
   "productId": product._ref${extraFields('variant', extensions)}
 }`
@@ -116,7 +116,7 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
   "filters": filters[]{
     _type == 'productFieldFilter' => { _type, field },
     _type == 'wineFieldFilter' => { _type, field },
-    _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
   }${extraFields('category', extensions)}
 }`
 }
@@ -154,7 +154,7 @@ function buildMenuItemProjection(depth: number, extraFields: string): string {
     _key,
     ${proj.i18nStringField('title')},
     linkType,
-    "url": url[]{ _key, value },
+    "url": ${proj.i18nStringField('url')},
     "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${extraFields}${children}
   }`
 }
@@ -163,7 +163,7 @@ export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1):
   const itemProjection = buildMenuItemProjection(maxDepth, extraFields('menuItem', extensions))
   return `*[_type == 'menu']{
   _id,
-  "title": title[]{ _key, value },
+  "title": ${proj.i18nStringField('title')},
   "items": items[]${itemProjection}
 }`
 }
@@ -206,7 +206,7 @@ export function buildShopSettingsQuery(): string {
   "filters": filters[]{
     _type == 'productFieldFilter' => { _type, field },
     _type == 'wineFieldFilter' => { _type, field },
-    _type == 'reference' => { _type, "_ref": _ref, "title": @->title[]{ _key, value } }
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
   }
 }`
 }

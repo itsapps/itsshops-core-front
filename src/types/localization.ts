@@ -4,13 +4,8 @@ export interface ITSi18nDictValue<T = string> {
   [key: string]: T | undefined
 }
 
-// export interface ITSi18nEntry<T = string> {
-//   _key: string
-//   value?: T
-// }
-
 // export type ITSi18nArray<T = string> = ITSi18nEntry<T>[]
-export type LocalizedStringArray = Array<{ _key: string; value?: string }> | undefined
+export type LocalizedStringArray = Array<{ language: string; value?: string }> | undefined
 
 export type PermalinkTranslations = {
   product?:     string

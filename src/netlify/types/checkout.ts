@@ -110,7 +110,7 @@ export type SanityCheckoutQueryResult = {
 }
 
 export type LocaleString = {
-  _key: string
+  language: string
   value: string
 }
 

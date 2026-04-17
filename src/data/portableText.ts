@@ -64,10 +64,10 @@ export function resolvePortableText(
 ): any[] {
   if (!raw) return []
 
-  if (Array.isArray(raw) && raw[0]?._key && 'value' in (raw[0] ?? {})) {
+  if (Array.isArray(raw) && raw[0]?.language && 'value' in (raw[0] ?? {})) {
     const entry =
-      raw.find((e: any) => e._key === locale) ??
-      raw.find((e: any) => e._key === defaultLocale) ??
+      raw.find((e: any) => e.language === locale) ??
+      raw.find((e: any) => e.language === defaultLocale) ??
       raw[0]
     return entry?.value ?? []
   }
