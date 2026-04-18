@@ -1,6 +1,6 @@
 import type { CartItem } from './cart-store'
 import type { CalculateResponse, ValidatedCartItemResponse } from '../shared/checkout-api'
-import { cloneTemplate, fillSlot, fillImageSlot } from './template-utils'
+import { cloneTemplate, fillSlot, fillLinkSlot, fillImageSlot } from './template-utils'
 
 export type SummaryLabels = {
   subtotal: string
@@ -76,7 +76,7 @@ export class CheckoutSummary {
       el.dataset.cartItemId = item.id
 
       fillImageSlot(el, 'image', item.imageUrl)
-      fillSlot(el, 'title', item.title)
+      fillLinkSlot(el, 'title', item.title, item.url)
       if (item.subtitle) fillSlot(el, 'subtitle', item.subtitle)
       fillSlot(el, 'price', this.formatPrice(item.price * item.quantity))
 
@@ -113,7 +113,7 @@ export class CheckoutSummary {
       const imageUrl = local?.imageUrl ?? item.imageUrl ?? ''
 
       fillImageSlot(el, 'image', imageUrl)
-      fillSlot(el, 'title', title)
+      fillLinkSlot(el, 'title', title, local?.url ?? '#')
       if (subtitle) fillSlot(el, 'subtitle', subtitle)
       fillSlot(el, 'price', this.formatPrice(item.price * item.quantity))
 
