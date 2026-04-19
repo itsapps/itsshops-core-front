@@ -8,9 +8,9 @@ export function createUserLogoutHandler() {
   return async (request: Request, context: Context): Promise<Response> => {
     if (request.method !== 'POST' && request.method !== 'GET') return methodNotAllowed()
 
+    const accessToken = getAccessToken(context)
     deleteSessionCookies(context)
 
-    const accessToken = getAccessToken(context)
     if (accessToken) {
       const { error } = await supabase.auth.admin.signOut(accessToken)
       if (error) {
