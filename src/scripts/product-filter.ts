@@ -223,8 +223,8 @@ export function initProductFilter(): void {
     const input = (e.target as Element).closest<HTMLInputElement>('input[data-filter-key]')
     if (input) {
       toggleFilter(input.dataset.filterKey!, input.dataset.filterValue!)
-      // Collapse the group's <details> when a value was just checked
-      if (input.checked) {
+      // Collapse the group's <details> when a value was just checked (opt-in)
+      if (input.checked && input.closest<HTMLElement>('[data-product-filters]')?.hasAttribute('data-filter-auto-collapse')) {
         input.closest<HTMLDetailsElement>('details.product-filters__group')?.removeAttribute('open')
       }
     }

@@ -22,7 +22,7 @@
 {%- endif -%}
 
 {% if _groups.length or _showPrice %}
-  <div class="product-filters" data-product-filters data-t-results="{{ 'filters.results' | trans }}">
+  <div class="product-filters" data-product-filters data-t-results="{{ 'filters.results' | trans }}"{% if _filterGroupsOpen === false %} data-filter-auto-collapse{% endif %}>
     {% for group in _groups %}
       <details class="product-filters__group" data-filter-group="{{ group.key }}"{% if _filterGroupsOpen !== false %} open{% endif %}>
         <summary class="product-filters__label">{{ group.label }}</summary>
