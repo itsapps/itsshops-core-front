@@ -13,6 +13,7 @@ export function initMenu() {
       btn.dataset.closing = ''
       el.classList.remove('is-open')
       el.setAttribute('aria-hidden', 'true')
+      el.setAttribute('inert', '')
       btn.setAttribute('aria-expanded', 'false')
       if (startsHidden) el.setAttribute('hidden', '')
       setTimeout(() => delete btn.dataset.closing, 300)
@@ -23,6 +24,7 @@ export function initMenu() {
       if (startsHidden) el.removeAttribute('hidden')
       el.classList.add('is-open')
       el.setAttribute('aria-hidden', 'false')
+      el.removeAttribute('inert')
       btn.setAttribute('aria-expanded', 'true')
       const firstFocusable = el.querySelector<HTMLElement>(
         'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'

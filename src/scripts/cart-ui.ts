@@ -77,6 +77,7 @@ function openCart(): void {
   if (!cartSidebar) return
   cartSidebar.classList.add('is-open')
   cartSidebar.setAttribute('aria-hidden', 'false')
+  cartSidebar.removeAttribute('inert')
   document.querySelector('[data-cart-overlay]')?.classList.add('is-visible')
   setCartTogglesExpanded(true)
   cartSidebar.focus()
@@ -86,6 +87,7 @@ function closeCart(): void {
   if (!cartSidebar) return
   cartSidebar.classList.remove('is-open')
   cartSidebar.setAttribute('aria-hidden', 'true')
+  cartSidebar.setAttribute('inert', '')
   document.querySelector('[data-cart-overlay]')?.classList.remove('is-visible')
   setCartTogglesExpanded(false)
   lastCartTrigger?.focus()
