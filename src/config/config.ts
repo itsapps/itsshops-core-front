@@ -83,6 +83,7 @@ export function resolveConfig(config: Config): CoreConfig {
     manifest: {
       themeBgColor: config.manifest?.themeBgColor ?? '#ffffff',
       themeColor:   config.manifest?.themeColor   ?? '#000000',
+      colorScheme:  config.manifest?.colorScheme  ?? 'light',
     },
     developer: {
       name:    config.developer?.name    ?? env.developer.name,

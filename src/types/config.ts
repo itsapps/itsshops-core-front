@@ -412,6 +412,7 @@ export type Config = {
   manifest?: {
     themeBgColor?: string
     themeColor?: string
+    colorScheme?: 'light' | 'dark' | 'light dark'
   }
   developer?: {
     name?: string
@@ -483,6 +484,7 @@ export type CoreConfig = {
   manifest: {
     themeBgColor: string
     themeColor: string
+    colorScheme: 'light' | 'dark' | 'light dark'
   }
   developer: {
     name: string | undefined
