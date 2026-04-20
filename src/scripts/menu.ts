@@ -1,3 +1,5 @@
+import { lockInertOutside } from './inert-lock'
+
 export function initMenu() {
   document.querySelectorAll<HTMLButtonElement>('[data-menu-toggle]').forEach(btn => {
     // Prefer data-menu-toggle value, fall back to aria-controls
@@ -8,6 +10,7 @@ export function initMenu() {
 
     // If the element starts hidden, manage the hidden attribute alongside aria-hidden
     const startsHidden = el.hasAttribute('hidden')
+    let lock: { release: () => void } | null = null
 
     function close() {
       btn.dataset.closing = ''
@@ -17,6 +20,8 @@ export function initMenu() {
       btn.setAttribute('aria-expanded', 'false')
       if (startsHidden) el.setAttribute('hidden', '')
       setTimeout(() => delete btn.dataset.closing, 300)
+      lock?.release()
+      lock = null
       btn.focus()
     }
 
@@ -26,6 +31,7 @@ export function initMenu() {
       el.setAttribute('aria-hidden', 'false')
       el.removeAttribute('inert')
       btn.setAttribute('aria-expanded', 'true')
+      lock = lockInertOutside([el, btn])
       const firstFocusable = el.querySelector<HTMLElement>(
         'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
       )

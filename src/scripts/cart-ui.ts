@@ -1,8 +1,10 @@
 import { addItem, removeItem, updateQuantity, getCart, getCount, getTotal } from './cart-store'
 import { cloneTemplate, fillSlot, fillImageSlot, fillLinkSlot } from './template-utils'
+import { lockInertOutside } from './inert-lock'
 
 let cartSidebar: HTMLElement | null = null
 let lastCartTrigger: HTMLElement | null = null
+let cartLock: { release: () => void } | null = null
 let cartItemsEl: HTMLElement | null = null
 let cartTotalEl: HTMLElement | null = null
 let cartEmptyEl: HTMLElement | null = null
@@ -80,6 +82,9 @@ function openCart(): void {
   cartSidebar.removeAttribute('inert')
   document.querySelector('[data-cart-overlay]')?.classList.add('is-visible')
   setCartTogglesExpanded(true)
+  const keep: HTMLElement[] = [cartSidebar]
+  if (lastCartTrigger) keep.push(lastCartTrigger)
+  cartLock = lockInertOutside(keep)
   cartSidebar.focus()
 }
 
@@ -90,6 +95,8 @@ function closeCart(): void {
   cartSidebar.setAttribute('inert', '')
   document.querySelector('[data-cart-overlay]')?.classList.remove('is-visible')
   setCartTogglesExpanded(false)
+  cartLock?.release()
+  cartLock = null
   lastCartTrigger?.focus()
 }
 
