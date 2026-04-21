@@ -32,7 +32,7 @@ export const sanityClient = initSanityClient()
 const CHECKOUT_QUERY = `{
   "variants": *[_type == "productVariant" && _id in $variantIds]{
     _id, status, kind, title, sku, price, weight, stock,
-    "productId": product->._id,
+    "productId": product._ref,
     "taxCategoryCode": taxCategory->code.current,
     "productTitle": product->title,
     "productWeight": product->weight,

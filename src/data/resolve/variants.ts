@@ -246,7 +246,7 @@ export function resolveVariants(
         _id:  m._id,
         name: ctx.resolveString(m.name),
       })),
-      taxCategoryId: variant.taxCategory?._id ?? product.taxCategory?._id ?? null,
+      taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
       stock: variant.stock ?? null,
       wine,
       options: (variant.options ?? []).map((o: any) => ({

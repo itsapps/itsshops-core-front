@@ -11,8 +11,8 @@ export function resolveSettings(
     _id:                  raw._id,
     siteTitle:            ctx.resolveString(raw.siteTitle),
     siteShortDescription: ctx.resolveString(raw.siteShortDescription),
-    homePageId:           raw.homePage?._id ?? null,
-    privacyPageId:        raw.privacyPage?._id ?? null,
+    homePageId:           raw.homePage?._ref ?? null,
+    privacyPageId:        raw.privacyPage?._ref ?? null,
     mainMenus:            (raw.mainMenus  ?? []).map((m: any) => m._ref),
     footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
     gtmId:                raw.gtmId ?? null,
@@ -46,7 +46,7 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
   return {
     filters: resolveFilterSpecs(raw.filters, ctx),
     _id:                     raw._id,
-    shopPageId:              raw.shopPage?._id ?? null,
+    shopPageId:              raw.shopPage?._ref ?? null,
     defaultCountry:          raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,

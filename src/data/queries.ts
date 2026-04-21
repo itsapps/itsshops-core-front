@@ -76,7 +76,7 @@ export function buildProductQuery(extensions?: Config['extensions'], documentId?
   seo ${proj.seo},
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},
-  "taxCategory": taxCategory->{ _id }${extraFields('product', extensions)}
+  "taxCategory": taxCategory{ _ref }${extraFields('product', extensions)}
 }`
 }
 
@@ -96,7 +96,7 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
   stock,
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},
-  "taxCategory": taxCategory->{ _id },
+  "taxCategory": taxCategory{ _ref },
   wine,
   "options": options[]->{ _id, "name": ${proj.i18nStringField('title')}, "group": group->{ _id, "title": ${proj.i18nStringField('title')} } },
   "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
@@ -111,7 +111,7 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
   _updatedAt,
   ${proj.i18nStringField('title')},
   ${proj.i18nStringField('description')},
-  "parent": parent->{ _id },
+  "parent": parent{ _ref },
   seo ${proj.seo},
   "filters": filters[]{
     _type == 'productFieldFilter' => { _type, field },
@@ -175,8 +175,8 @@ export function buildSettingsQuery(extensions: Record<string, string> = {}): str
   ${proj.i18nStringField('siteTitle')},
   ${proj.i18nStringField('siteShortDescription')},
   "defaultShareImage": defaultShareImage ${proj.baseImage},
-  "homePage": homePage->{ _id },
-  "privacyPage": privacyPage->{ _id },
+  "homePage": homePage{ _ref },
+  "privacyPage": privacyPage{ _ref },
   "mainMenus": mainMenus[]{ _ref },
   "footerMenus": footerMenus[]{ _ref },
   gtmId,
@@ -194,7 +194,7 @@ export function buildSettingsQuery(extensions: Record<string, string> = {}): str
 export function buildShopSettingsQuery(): string {
   return `*[_type == 'shopSettings'][0]{
   _id,
-  "shopPage": shopPage->{ _id },
+  "shopPage": shopPage{ _ref },
   "defaultCountry": defaultCountry->{ _id, countryCode },
   freeShippingCalculation,
   stockThreshold,
