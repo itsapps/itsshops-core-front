@@ -80,9 +80,11 @@ function openCart(): void {
   cartSidebar.classList.add('is-open')
   cartSidebar.setAttribute('aria-hidden', 'false')
   cartSidebar.removeAttribute('inert')
-  document.querySelector('[data-cart-overlay]')?.classList.add('is-visible')
+  const overlay = document.querySelector<HTMLElement>('[data-cart-overlay]')
+  overlay?.classList.add('is-visible')
   setCartTogglesExpanded(true)
   const keep: HTMLElement[] = [cartSidebar]
+  if (overlay) keep.push(overlay)
   if (lastCartTrigger) keep.push(lastCartTrigger)
   cartLock = lockInertOutside(keep)
   cartSidebar.focus()
