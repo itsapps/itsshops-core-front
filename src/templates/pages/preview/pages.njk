@@ -2,6 +2,4 @@
 layout: base.njk
 permalink: "/{{ coreConfig.preview.locale }}/preview/"
 ---
-{%- set _locale = coreConfig.preview.locale or coreConfig.defaultLocale -%}
-{%- set pageDoc = cms[_locale].pages | findById(coreConfig.preview.documentId) -%}
 {%- include "overridable/page/container.njk" -%}

@@ -104,7 +104,23 @@ export const loadTemplates = (ctx: CoreContext) => {
       if (ignoreTemplate) {
         ignoredTemplates.push(templatePath)
       } else {
-        eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'), {})
+        const templateData: Record<string, unknown> = {}
+        if (dir === 'preview') {
+          templateData.eleventyComputed = {
+            pageDoc: (data: any) => {
+              const locale = data.coreConfig.preview.locale || data.coreConfig.defaultLocale
+              const docType = data.coreConfig.preview.documentType
+              const collection =
+                docType === 'page'           ? 'pages'      :
+                docType === 'productVariant' ? 'products'   :
+                docType === 'category'       ? 'categories' :
+                docType === 'post'           ? 'posts'      : null
+              if (!collection) return null
+              return data.cms[locale][collection].find((d: any) => d._id === data.coreConfig.preview.documentId) ?? null
+            },
+          }
+        }
+        eleventyConfig.addTemplate(`pages/${dir}/${file}`, fs.readFileSync(corePath, 'utf8'), templateData)
         loadedTemplates.push(templatePath)
       }
     }

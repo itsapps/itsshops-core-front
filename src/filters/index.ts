@@ -210,6 +210,7 @@ export const createFilters = (ctx: CoreContext) => {
     return translate(key, params, this.page?.lang || config.defaultLocale)
   })
 
+  eleventyConfig.addFilter("json", JSON.stringify);
   eleventyConfig.addFilter("slugify", slugify);
   eleventyConfig.addFilter("toIsoString", toIsoString);
   // eleventyConfig.addFilter("formatPrice", formatPrice);
