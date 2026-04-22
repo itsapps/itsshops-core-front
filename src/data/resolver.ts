@@ -134,7 +134,7 @@ export async function buildCmsData(
       : []
     const filterGroups = buildFilterGroups(filterAcc)
 
-    const homePageId = rawSettings?.homePage?._id ?? null
+    const homePageId = rawSettings?.homePage?._ref ?? null
 
     if (rawSettings && !homePageId) {
       console.warn(`[itsshops] No home page configured in settings for locale "${locale}". Set a home page in Sanity settings to generate /${locale}/.`)
