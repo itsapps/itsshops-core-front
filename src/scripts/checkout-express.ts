@@ -105,7 +105,7 @@ export class CheckoutExpress {
 
     element.on('ready', e => {
       const available = (e as { availablePaymentMethods?: Record<string, boolean> }).availablePaymentMethods
-      const hasAny = available ? Object.values(available).some(Boolean) : true
+      const hasAny = available ? Object.values(available).some(Boolean) : false
       if (hasAny) this.config.onReady?.({ availablePaymentMethods: available })
     })
     element.on('click', e => this.handleClick(e))
