@@ -12,7 +12,7 @@ function dispatch(name: string, detail?: unknown): void {
 }
 
 export async function initCheckout(): Promise<void> {
-  const container = document.querySelector<HTMLElement>('[data-checkout]')
+  const container = document.querySelector<HTMLElement>('[data-checkout]')!
   if (!container) return
 
   const apiUrl = container.dataset.checkoutApi ?? '/api/payment/create'
