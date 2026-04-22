@@ -1,5 +1,4 @@
 export * from './config'
-export * from './constants'
 export * from './context'
 export * from './localization'
 export * from './t9n'

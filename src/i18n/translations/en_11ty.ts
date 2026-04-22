@@ -17,6 +17,10 @@ export default {
     ariaSelect: "Select language",
     change: "Change language",
     ariaChange: "Change language",
+    names: {
+      de: "Deutsch",
+      en: "English",
+    },
   },
   skipLink: {
     title: 'Skip to main content',
