@@ -369,13 +369,15 @@ async function handleListOrders(
   const start = (page - 1) * perPage
   const end = start + perPage
 
-  const query = `*[${filters.join(' && ')}] | order(_createdAt desc) [$start...$end] ${ORDER_PROJECTION}`
+  const base = `*[${filters.join(' && ')}]`
+  const query = `{
+    "orders": ${base} | order(_createdAt desc) [$start...$end] ${ORDER_PROJECTION},
+    "total":  count(${base})
+  }`
   params.start = start
   params.end = end
 
-  const orders = await sanityClient.fetch<SanityOrder[]>(query, params)
-  const totalQuery = `count(*[${filters.join(' && ')}])`
-  const total = await sanityClient.fetch<number>(totalQuery, params)
+  const { orders, total } = await sanityClient.fetch<{ orders: SanityOrder[]; total: number }>(query, params)
   const totalPages = Math.ceil(total / perPage)
 
   const mapped = orders.map(o => mapOrder(o, config.timezone))
