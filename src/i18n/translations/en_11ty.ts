@@ -283,7 +283,7 @@ export default {
       },
     },
     checkout: {
-      title: "Order",
+      title: "Checkout",
       description: "Pay for order",
     },
   },
