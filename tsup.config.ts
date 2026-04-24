@@ -12,7 +12,7 @@ export default defineConfig({
     'payment-create': 'src/netlify/functions/payment-create.ts',
     'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
     'payment-refund': 'src/netlify/functions/payment-refund.ts',
-    'order-notify': 'src/netlify/functions/order-notify.tsx',
+    'order-notify': 'src/netlify/functions/order-notify.ts',
     'user-register': 'src/netlify/functions/user-register.ts',
     'user-login': 'src/netlify/functions/user-login.ts',
     'user-logout': 'src/netlify/functions/user-logout.ts',

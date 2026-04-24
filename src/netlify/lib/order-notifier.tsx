@@ -3,7 +3,7 @@
  * matching email template + optional invoice PDF, and sends it via Mailgun.
  *
  * Used by:
- *   - `functions/order-notify.tsx`  — studio-triggered HTTP endpoint
+ *   - `functions/order-notify.ts`  — studio-triggered HTTP endpoint
  *   - `functions/payment-webhooks.ts` — Stripe `payment_intent.succeeded`
  *
  * Throws `OrderNotifierError` with a typed code so callers can map failures
