@@ -417,8 +417,8 @@ async function handleUpdateOrder(
 
   // Find order by numeric suffix
   const suffix = idToSuffix(orderId)
-  const order = await sanityClient.fetch<{ _id: string; status: string } | null>(
-    `*[_type == "order" && orderNumber match $suffix][0]{ _id, status }`,
+  const order = await sanityClient.fetch<SanityOrder | null>(
+    `*[_type == "order" && orderNumber match $suffix][0] ${ORDER_PROJECTION}`,
     { suffix: `*${suffix}` },
   )
 
@@ -426,7 +426,6 @@ async function handleUpdateOrder(
     return wcError('woocommerce_rest_order_invalid_id', `Order ${orderId} not found`, 404)
   }
 
-  // Update status + append to history
   const historyEntry = {
     _type: 'orderStatusHistory',
     _key: crypto.randomUUID(),
@@ -442,13 +441,7 @@ async function handleUpdateOrder(
     .append('statusHistory', [historyEntry])
     .commit()
 
-  // Refetch and return updated order
-  const updated = await sanityClient.fetch<SanityOrder>(
-    `*[_type == "order" && _id == $id][0] ${ORDER_PROJECTION}`,
-    { id: order._id },
-  )
-
-  return json(mapOrder(updated, config.timezone))
+  return json(mapOrder({ ...order, status: internalStatus }, config.timezone))
 }
 
 // ── Main handler factory ─────────────────────────────────────────────────────
