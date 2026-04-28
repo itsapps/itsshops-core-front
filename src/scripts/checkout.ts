@@ -1,10 +1,20 @@
-import { getCart, updateQuantity, removeItem, syncPricesFromServer, type CartItem } from './cart-store'
+import {
+  getCart,
+  updateQuantity,
+  removeItem,
+  syncPricesFromServer,
+  getAppliedCouponCode,
+  setAppliedCouponCode,
+  clearAppliedCouponCode,
+  type CartItem,
+} from './cart-store'
 import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
 import { CheckoutSummary } from './checkout-summary'
 import { CheckoutStripe } from './checkout-stripe'
 import { CheckoutExpress } from './checkout-express'
+import { CheckoutCoupon, type CouponLabels } from './checkout-coupon'
 import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from '../shared/checkout-api'
 
 function dispatch(name: string, detail?: unknown): void {
@@ -41,6 +51,17 @@ export async function initCheckout(): Promise<void> {
     errorCity: container.dataset.tErrorCity ?? 'City is required',
     errorZip: container.dataset.tErrorZip ?? 'Postal code is required',
     errorCountry: container.dataset.tErrorCountry ?? 'Country is required',
+    discount: container.dataset.tDiscount ?? 'Discount',
+    couponApply: container.dataset.tCouponApply ?? 'Apply',
+    couponRemove: container.dataset.tCouponRemove ?? 'Remove',
+    couponApplied: container.dataset.tCouponApplied ?? 'Coupon applied',
+    couponErrorFallback: container.dataset.tCouponError ?? 'Could not apply coupon',
+    couponErrorNotFound: container.dataset.tCouponNotFound ?? 'Coupon not found',
+    couponErrorDisabled: container.dataset.tCouponDisabled ?? 'Coupon is disabled',
+    couponErrorExpired: container.dataset.tCouponExpired ?? 'Coupon has expired',
+    couponErrorNotYet: container.dataset.tCouponNotYet ?? 'Coupon is not yet valid',
+    couponErrorExhausted: container.dataset.tCouponExhausted ?? 'Coupon limit reached',
+    couponErrorBelowMinimum: container.dataset.tCouponBelowMinimum ?? 'Cart total is below the coupon minimum',
   }
 
   if (!stripeKey) {
@@ -62,6 +83,7 @@ export async function initCheckout(): Promise<void> {
   const progressEl = container.querySelector<HTMLElement>('[data-checkout-progress]')
   const countrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-country]')
   const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
+  const couponEl = container.querySelector<HTMLElement>('[data-checkout-coupon]')
 
   if (!formEl || !itemsEl || !totalsEl || !shippingEl || !paymentEl || !submitBtn) {
     console.error('[checkout] Missing required DOM elements')
@@ -96,8 +118,25 @@ export async function initCheckout(): Promise<void> {
     vat: t.vat,
     vatExempt: t.vatExempt,
     available: t.available,
+    discount: t.discount,
   })
   const stripeCheckout = new CheckoutStripe(stripe)
+
+  const couponLabels: CouponLabels = {
+    apply: t.couponApply,
+    remove: t.couponRemove,
+    applied: t.couponApplied,
+    errorFallback: t.couponErrorFallback,
+    errors: {
+      COUPON_NOT_FOUND: t.couponErrorNotFound,
+      COUPON_DISABLED: t.couponErrorDisabled,
+      COUPON_EXPIRED: t.couponErrorExpired,
+      COUPON_NOT_YET_VALID: t.couponErrorNotYet,
+      COUPON_EXHAUSTED: t.couponErrorExhausted,
+      COUPON_BELOW_MINIMUM: t.couponErrorBelowMinimum,
+    },
+  }
+  const coupon = couponEl ? new CheckoutCoupon(couponEl, couponLabels) : null
 
   // Build cart items from store
   const cart = getCart()
@@ -146,6 +185,20 @@ export async function initCheckout(): Promise<void> {
       calculate({ country, shippingMethodId: shipping.getSelectedId() })
     }, 400)
   }
+
+  // ── Coupon ────────────────────────────────────────────────────────────
+  coupon?.setEvents({
+    onApply(code) {
+      setAppliedCouponCode(code)
+      const country = form.getCountry() || lastResponse?.selectedCountry
+      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+    },
+    onRemove() {
+      clearAppliedCouponCode()
+      const country = form.getCountry() || lastResponse?.selectedCountry
+      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+    },
+  })
 
   // ── State ─────────────────────────────────────────────────────────────
   let lastResponse: CalculateResponse | null = null
@@ -251,6 +304,7 @@ export async function initCheckout(): Promise<void> {
           return await calculatePayment(apiUrl, cartItems, locale, {
             country: partial.country,
             shippingMethodId: shipping.getSelectedId(),
+            appliedCouponCode: getAppliedCouponCode() ?? undefined,
           })
         } catch {
           return null
@@ -263,6 +317,7 @@ export async function initCheckout(): Promise<void> {
           return await calculatePayment(apiUrl, cartItems, locale, {
             country,
             shippingMethodId: methodId,
+            appliedCouponCode: getAppliedCouponCode() ?? undefined,
           })
         } catch {
           return null
@@ -278,7 +333,11 @@ export async function initCheckout(): Promise<void> {
             cartItems,
             locale,
             { shipping: address, contactEmail: email },
-            { shippingMethodId, orderMetaId },
+            {
+              shippingMethodId,
+              orderMetaId,
+              appliedCouponCode: getAppliedCouponCode() ?? undefined,
+            },
           )
           orderMetaId = response.orderMetaId
           return { clientSecret: response.clientSecret }
@@ -294,10 +353,22 @@ export async function initCheckout(): Promise<void> {
   async function calculate(options: { country?: string; shippingMethodId?: string } = {}): Promise<void> {
     setLoading(true)
     hideErrors()
+    coupon?.setBusy(true)
 
     try {
-      const response = await calculatePayment(apiUrl, cartItems, locale, options)
+      const response = await calculatePayment(apiUrl, cartItems, locale, {
+        ...options,
+        appliedCouponCode: getAppliedCouponCode() ?? undefined,
+      })
       lastResponse = response
+
+      // If the server rejected the stored coupon, drop it from the store so it
+      // doesn't keep producing the same error on subsequent recalculations.
+      if (response.couponError && response.appliedCoupons.length === 0) {
+        clearAppliedCouponCode()
+      }
+
+      coupon?.render(response.appliedCoupons, response.couponError)
 
       // Sync authoritative server prices into local cart so the cart sidebar / badge
       // and any future visit reflect the true price (silent — no UI alert).
@@ -325,6 +396,7 @@ export async function initCheckout(): Promise<void> {
       handleError(err)
     } finally {
       setLoading(false)
+      coupon?.setBusy(false)
     }
   }
 
@@ -376,6 +448,7 @@ export async function initCheckout(): Promise<void> {
         {
           shippingMethodId: shipping.getSelectedId(),
           orderMetaId,
+          appliedCouponCode: getAppliedCouponCode() ?? undefined,
         },
       )
 

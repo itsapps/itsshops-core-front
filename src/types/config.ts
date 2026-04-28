@@ -129,6 +129,7 @@ export type Features = {
     manufacturer: boolean
     stock: boolean
     category: boolean
+    coupons: boolean
     vinofact: VinofactConfig
   }
   blog: boolean
@@ -145,6 +146,7 @@ export type ItsshopsFeatures = {
     manufacturer?: boolean
     stock?: boolean
     category?: boolean
+    coupons?: boolean
     vinofact?: VinofactConfig
   }
   blog?: boolean

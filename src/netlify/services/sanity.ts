@@ -64,14 +64,25 @@ const CHECKOUT_QUERY = `{
     "defaultTaxCategoryCode": defaultTaxCategory->code.current,
     orderNumberPrefix, invoiceNumberPrefix, lastInvoiceNumber
   },
-  "supportedCountries": *[_type == "taxCountry" && enabled == true]{ countryCode }
+  "supportedCountries": *[_type == "taxCountry" && enabled == true]{ countryCode },
+  "coupon": *[_type == "coupon" && $couponEnabled && defined($couponCode) && code == $couponCode][0]{
+    _id, code, enabled, discountType, value,
+    validFrom, validTo, minSubtotal, maxRedemptions, redemptionCount
+  }
 }`
 
 export function fetchCheckoutData(
   variantIds: string[],
   country: string,
+  couponCode?: string | null,
+  couponEnabled = false,
 ): Promise<SanityCheckoutQueryResult> {
-  return sanityClient.fetch<SanityCheckoutQueryResult>(CHECKOUT_QUERY, { variantIds, country })
+  return sanityClient.fetch<SanityCheckoutQueryResult>(CHECKOUT_QUERY, {
+    variantIds,
+    country,
+    couponCode: couponCode ?? null,
+    couponEnabled,
+  })
 }
 
 export async function createOrderMeta(
@@ -101,14 +112,31 @@ export async function createOrder(
   return sanityClient.create(doc)
 }
 
-export async function decrementStock(
-  variantId: string,
-  quantity: number,
-): Promise<void> {
-  await sanityClient
-    .patch(variantId)
-    .dec({ stock: quantity })
-    .commit()
+export type CommitOrderInput = {
+  doc: OrderDocument & { _type: 'order' }
+  stockDecrements: { variantId: string; quantity: number }[]
+  couponIncrements: { couponId: string; by: number }[]
+}
+
+/**
+ * Atomically create the order, decrement stock on each variant, and bump
+ * redemptionCount on each applied coupon. One Sanity round trip.
+ */
+export async function commitOrderTransaction(
+  input: CommitOrderInput,
+): Promise<{ _id: string }> {
+  const newOrderId = `order-${crypto.randomUUID()}`
+  const tx = sanityClient.transaction().create({ _id: newOrderId, ...input.doc })
+
+  for (const { variantId, quantity } of input.stockDecrements) {
+    tx.patch(variantId, (p) => p.dec({ stock: quantity }))
+  }
+  for (const { couponId, by } of input.couponIncrements) {
+    tx.patch(couponId, (p) => p.inc({ redemptionCount: by }))
+  }
+
+  await tx.commit()
+  return { _id: newOrderId }
 }
 
 export async function findOrderByPaymentIntent(

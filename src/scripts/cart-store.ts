@@ -1,4 +1,5 @@
 const STORAGE_KEY = `itsshops_cart_${location.host}`
+const COUPON_STORAGE_KEY = `itsshops_coupon_${location.host}`
 
 export type CartItem = {
   id: string
@@ -12,6 +13,12 @@ export type CartItem = {
 
 function dispatch(): void {
   document.dispatchEvent(new CustomEvent('cart:updated', { detail: getCart() }))
+}
+
+function dispatchCoupon(): void {
+  document.dispatchEvent(
+    new CustomEvent('cart:coupon-changed', { detail: getAppliedCouponCode() }),
+  )
 }
 
 export function getCart(): CartItem[] {
@@ -57,6 +64,35 @@ export function updateQuantity(id: string, quantity: number): void {
 
 export function clearCart(): void {
   save([])
+  clearAppliedCouponCode()
+}
+
+// ── Applied coupon ───────────────────────────────────────────────────────────
+
+export function getAppliedCouponCode(): string | null {
+  try {
+    const value = localStorage.getItem(COUPON_STORAGE_KEY)
+    return value && value.trim() ? value : null
+  } catch {
+    return null
+  }
+}
+
+export function setAppliedCouponCode(code: string): void {
+  const trimmed = code.trim()
+  if (!trimmed) {
+    clearAppliedCouponCode()
+    return
+  }
+  if (localStorage.getItem(COUPON_STORAGE_KEY) === trimmed) return
+  localStorage.setItem(COUPON_STORAGE_KEY, trimmed)
+  dispatchCoupon()
+}
+
+export function clearAppliedCouponCode(): void {
+  if (localStorage.getItem(COUPON_STORAGE_KEY) == null) return
+  localStorage.removeItem(COUPON_STORAGE_KEY)
+  dispatchCoupon()
 }
 
 /**

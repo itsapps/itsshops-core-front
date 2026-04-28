@@ -32,6 +32,14 @@ export default {
       },
       orderNotFound: "Bestellung nicht gefunden",
       refundFailed: "Rückerstattung fehlgeschlagen",
+      coupon: {
+        COUPON_NOT_FOUND: "Rabattcode nicht gefunden",
+        COUPON_DISABLED: "Dieser Rabattcode ist nicht mehr aktiv",
+        COUPON_EXPIRED: "Dieser Rabattcode ist abgelaufen",
+        COUPON_NOT_YET_VALID: "Dieser Rabattcode ist noch nicht gültig",
+        COUPON_EXHAUSTED: "Dieser Rabattcode hat sein Einlöselimit erreicht",
+        COUPON_BELOW_MINIMUM: "Der Warenkorb-Wert liegt unter dem Mindestwert für diesen Code",
+      },
     },
     voucher: {
       condition: {

@@ -10,6 +10,7 @@ import type {
   Fulfillment,
   AddressStrict,
   OrderStatusHistoryEntry,
+  AppliedCouponSnapshot,
 } from '../types/checkout'
 import type { AddressInput } from '../types/api'
 import { findTaxRate } from './tax'
@@ -146,6 +147,7 @@ export type BuildOrderMetaInput = {
   contactEmail: string
   locale: string
   paymentIntentId: string
+  appliedCoupons?: AppliedCouponSnapshot[]
 }
 
 export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
@@ -166,6 +168,7 @@ export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
       input.shippingVatRate,
       input.totals.shipping,
     ),
+    ...(input.appliedCoupons?.length && { appliedCoupons: input.appliedCoupons }),
   }
 }
 
@@ -199,6 +202,9 @@ export function buildOrder(input: BuildOrderInput): OrderDocument {
     customer: input.orderMeta.customer,
     totals: input.orderMeta.totals,
     fulfillment: input.orderMeta.fulfillment,
+    ...(input.orderMeta.appliedCoupons?.length && {
+      appliedCoupons: input.orderMeta.appliedCoupons,
+    }),
   }
 }
 

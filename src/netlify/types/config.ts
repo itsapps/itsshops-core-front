@@ -7,6 +7,7 @@ export type ServerConfig = {
   features?: {
     shop?: {
       stock?: boolean
+      coupons?: boolean
     }
   }
 }
@@ -15,5 +16,6 @@ export function resolveServerConfig(config: ServerConfig = {}) {
   return {
     defaultLocale: config.defaultLocale ?? 'de',
     hasStock: config.features?.shop?.stock !== false,
+    hasCoupons: !!config.features?.shop?.coupons,
   }
 }

@@ -16,6 +16,8 @@ export type {
   CalculateResponse,
   CreatePaymentResponse,
   ErrorResponse,
+  AppliedCouponResponse,
+  CouponErrorResponse,
 } from '../../shared/checkout-api'
 
 export type PaymentCreateRequest = {
@@ -30,4 +32,5 @@ export type PaymentCreateRequest = {
   shippingMethodId?: string
   locale: string
   orderMetaId?: string
+  appliedCouponCode?: string
 }

@@ -101,12 +101,26 @@ export type SanitySupportedCountryResult = {
   countryCode: string
 }
 
+export type SanityCouponResult = {
+  _id: string
+  code: string
+  enabled: boolean
+  discountType: 'percent' | 'fixed' | 'freeShipping'
+  value: number | null
+  validFrom: string | null
+  validTo: string | null
+  minSubtotal: number | null
+  maxRedemptions: number | null
+  redemptionCount: number | null
+}
+
 export type SanityCheckoutQueryResult = {
   variants: SanityVariantResult[]
   taxCountry: SanityTaxCountryResult
   shippingMethods: SanityShippingMethodResult[]
   shopSettings: SanityShopSettingsResult
   supportedCountries: SanitySupportedCountryResult[]
+  coupon: SanityCouponResult | null
 }
 
 export type LocaleString = {
@@ -141,6 +155,16 @@ export type CalculatedTotals = {
   tax: number
   grandTotal: number
   vatBreakdown: VatBreakdownItem[]
+}
+
+export type AppliedCouponSnapshot = {
+  _key: string
+  _type: 'appliedCoupon'
+  couponRef: { _type: 'reference'; _ref: string; _weak: true }
+  code: string
+  discountType: 'percent' | 'fixed' | 'freeShipping'
+  value: number | null
+  discountAmount: number
 }
 
 export type AvailableShippingMethod = {
@@ -248,6 +272,7 @@ export type OrderMetaDocument = {
   customer: OrderCustomer
   totals: OrderTotals
   fulfillment: Fulfillment
+  appliedCoupons?: AppliedCouponSnapshot[]
 }
 
 export type OrderDocument = {
@@ -262,4 +287,5 @@ export type OrderDocument = {
   customer: OrderCustomer
   totals: OrderTotals
   fulfillment: Fulfillment
+  appliedCoupons?: AppliedCouponSnapshot[]
 }

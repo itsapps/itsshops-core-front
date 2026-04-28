@@ -30,6 +30,19 @@
     data-t-error-city="{{ 'forms.fields.city.errorMessage' | trans }}"
     data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
     data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
+    {%- if coreConfig.features.shop.coupons %}
+    data-t-discount="{{ 'checkout.discount' | trans }}"
+    data-t-coupon-apply="{{ 'checkout.coupon.apply' | trans }}"
+    data-t-coupon-remove="{{ 'checkout.coupon.remove' | trans }}"
+    data-t-coupon-applied="{{ 'checkout.coupon.applied' | trans }}"
+    data-t-coupon-error="{{ 'checkout.coupon.error.fallback' | trans }}"
+    data-t-coupon-not-found="{{ 'checkout.coupon.error.notFound' | trans }}"
+    data-t-coupon-disabled="{{ 'checkout.coupon.error.disabled' | trans }}"
+    data-t-coupon-expired="{{ 'checkout.coupon.error.expired' | trans }}"
+    data-t-coupon-not-yet="{{ 'checkout.coupon.error.notYet' | trans }}"
+    data-t-coupon-exhausted="{{ 'checkout.coupon.error.exhausted' | trans }}"
+    data-t-coupon-below-minimum="{{ 'checkout.coupon.error.belowMinimum' | trans }}"
+    {%- endif %}
   >
     {# Top progress bar — drives loading feedback without layout shift #}
     <div data-checkout-progress class="checkout__progress" aria-hidden="true"></div>
@@ -173,6 +186,37 @@
             <div data-checkout-items class="checkout-items"></div>
             <div data-checkout-totals class="checkout-totals"></div>
           </fieldset>
+
+          {%- if coreConfig.features.shop.coupons -%}
+          {# Coupon code #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.coupon' | trans }}</legend>
+            <div data-checkout-coupon class="checkout-coupon">
+              <div class="checkout-coupon__row">
+                <label class="sr-only" for="checkout-coupon-input">{{ 'checkout.coupon.label' | trans }}</label>
+                <input
+                  type="text"
+                  id="checkout-coupon-input"
+                  data-checkout-coupon-input
+                  class="checkout-coupon__input"
+                  placeholder="{{ 'checkout.coupon.placeholder' | trans }}"
+                  autocomplete="off"
+                  spellcheck="false"
+                >
+                <button type="button" data-checkout-coupon-apply class="checkout-coupon__apply btn">
+                  {{ 'checkout.coupon.apply' | trans }}
+                </button>
+                <button type="button" data-checkout-coupon-remove class="checkout-coupon__remove btn" hidden>
+                  {{ 'checkout.coupon.remove' | trans }}
+                </button>
+              </div>
+              <p data-checkout-coupon-applied class="checkout-coupon__applied" hidden>
+                {{ 'checkout.coupon.applied' | trans }}: <code data-checkout-coupon-applied-code></code>
+              </p>
+              <p data-checkout-coupon-error class="checkout-coupon__error" role="alert" hidden></p>
+            </div>
+          </fieldset>
+          {%- endif -%}
 
           {# Shipping method #}
           <fieldset class="checkout__section">

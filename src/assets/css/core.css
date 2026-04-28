@@ -314,6 +314,32 @@
   margin-top: 0.25rem;
 }
 
+/* ─── Coupon input ─────────────────────────────────────────────────────────── */
+
+.checkout-coupon__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.checkout-coupon__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.checkout-coupon__error[hidden],
+.checkout-coupon__applied[hidden] {
+  display: none;
+}
+
+.checkout-coupon__error {
+  margin-top: 0.5rem;
+}
+
+.checkout-coupon__applied {
+  margin-top: 0.5rem;
+}
+
 
 /* ─── Price range slider ───────────────────────────────────────────────────
  * Structural layout for dual-thumb range slider.

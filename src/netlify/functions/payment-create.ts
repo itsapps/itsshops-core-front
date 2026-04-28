@@ -3,20 +3,28 @@ import { validatePaymentRequest } from '../utils/validation'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
 import { log } from '../utils/logger'
 import { ErrorCode } from '../types/errors'
-import type { PaymentCreateRequest, CalculateResponse, CreatePaymentResponse, ValidatedCartItemResponse } from '../types/api'
-import type { SanityCheckoutQueryResult } from '../types/checkout'
+import type {
+  PaymentCreateRequest,
+  CalculateResponse,
+  CreatePaymentResponse,
+  ValidatedCartItemResponse,
+  AppliedCouponResponse,
+  CouponErrorResponse,
+} from '../types/api'
+import type { SanityCheckoutQueryResult, AppliedCouponSnapshot } from '../types/checkout'
 import { fetchCheckoutData, createOrderMeta, updateOrderMeta, fetchOrderMeta } from '../services/sanity'
 import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
 import { resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
-import { calculateTotals } from '../lib/totals'
+import { calculateTotals, type CouponDiscount } from '../lib/totals'
 import { dominantItemVatRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
+import { validateCoupon, buildAppliedCouponSnapshot } from '../lib/coupon'
 import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
 
 export function createPaymentHandler(config: ServerConfig = {}) {
-  const { defaultLocale, hasStock } = resolveServerConfig(config)
+  const { defaultLocale, hasStock, hasCoupons } = resolveServerConfig(config)
 
   return async (request: Request, _context: Context): Promise<Response> => {
   if (request.method === 'OPTIONS') {
@@ -55,16 +63,22 @@ export function createPaymentHandler(config: ServerConfig = {}) {
 
     const variantIds = req.cart.items.map(i => i.variantId)
     const initialCountry = requestedCountry ?? 'AT'
+    const couponCode = hasCoupons && req.appliedCouponCode ? req.appliedCouponCode.trim() : null
 
     // ── Fetch all checkout data in one GROQ query ───────────────────────
-    let data: SanityCheckoutQueryResult = await fetchCheckoutData(variantIds, initialCountry)
+    let data: SanityCheckoutQueryResult = await fetchCheckoutData(
+      variantIds,
+      initialCountry,
+      couponCode,
+      hasCoupons,
+    )
 
     const country = requestedCountry
       ?? data.shopSettings?.defaultCountryCode
       ?? 'AT'
 
     if (country !== initialCountry) {
-      data = await fetchCheckoutData(variantIds, country)
+      data = await fetchCheckoutData(variantIds, country, couponCode, hasCoupons)
     }
 
     // ── Validate tax country ────────────────────────────────────────────
@@ -109,12 +123,48 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'), requestId)
     }
 
+    // ── Validate coupon (if any) ────────────────────────────────────────
+    let appliedCoupons: AppliedCouponResponse[] = []
+    let appliedCouponSnapshots: AppliedCouponSnapshot[] = []
+    let couponDiscount: CouponDiscount | null = null
+    let couponError: CouponErrorResponse | null = null
+
+    if (couponCode) {
+      const result = validateCoupon(
+        couponCode,
+        data.coupon,
+        subtotal,
+        selectedShipping?.price ?? 0,
+      )
+      if (result.ok) {
+        couponDiscount = {
+          discountAmount: result.discountAmount,
+          zeroShipping: result.zeroShipping,
+        }
+        appliedCoupons = [{
+          code: result.coupon.code,
+          discountType: result.coupon.discountType,
+          value: result.coupon.value,
+          discountAmount: result.discountAmount,
+        }]
+        appliedCouponSnapshots = [
+          buildAppliedCouponSnapshot(result.coupon, result.discountAmount),
+        ]
+      } else {
+        couponError = {
+          code: result.code,
+          errorCode: result.errorCode,
+          message: serverT(req.locale, `api.errors.coupon.${result.errorCode}`),
+        }
+      }
+    }
+
     // ── Calculate totals ────────────────────────────────────────────────
     // Shipping VAT follows the "dominant goods" rule: use the rate that
     // contributes the most VAT across cart items (AT tax practice).
     const shippingVatRate = selectedShipping ? dominantItemVatRate(validatedItems) : 0
 
-    const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate)
+    const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate, couponDiscount)
 
     // ── Build response ──────────────────────────────────────────────────
     const responseItems: ValidatedCartItemResponse[] = validatedItems.map(item => {
@@ -145,6 +195,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         subtotal: totals.subtotal,
         shipping: totals.shipping,
         tax: totals.tax,
+        discount: totals.discount,
         grandTotal: totals.grandTotal,
         vatBreakdown: totals.vatBreakdown,
       },
@@ -159,6 +210,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       selectedCountry: country,
       supportedCountries,
       currency: 'EUR',
+      appliedCoupons,
+      couponError,
     }
 
     if (!req.createPayment) {
@@ -186,6 +239,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       contactEmail: req.address.contactEmail,
       locale: req.locale,
       paymentIntentId: '',
+      appliedCoupons: appliedCouponSnapshots,
     })
 
     if (req.orderMetaId) {

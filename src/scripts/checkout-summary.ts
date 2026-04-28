@@ -9,6 +9,7 @@ export type SummaryLabels = {
   vat: string
   vatExempt: string
   available: string
+  discount?: string
 }
 
 export type SummaryEvents = {
@@ -162,12 +163,21 @@ export class CheckoutSummary {
   renderTotals(data: CalculateResponse): void {
     const totals = data.totals
     const shippingText = totals.shipping === 0 ? '—' : this.formatPrice(totals.shipping)
+    const discountLabel = this.labels.discount ?? 'Discount'
+
+    const discountRows = data.appliedCoupons.map(coupon => `
+      <div class="checkout-totals__row checkout-totals__row--discount">
+        <span>${discountLabel} <code>${coupon.code}</code></span>
+        <span>− ${this.formatPrice(coupon.discountAmount)}</span>
+      </div>
+    `).join('')
 
     this.totalsContainer.innerHTML = `
       <div class="checkout-totals__row">
         <span>${this.labels.subtotal}</span>
         <span>${this.formatPrice(totals.subtotal)}</span>
       </div>
+      ${discountRows}
       <div class="checkout-totals__row">
         <span>${this.labels.shipping}</span>
         <span>${shippingText}</span>

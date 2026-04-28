@@ -199,6 +199,7 @@ function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<ty
       manufacturer: input?.shop?.manufacturer ?? false,
       stock:        input?.shop?.stock        ?? false,
       category:     input?.shop?.category     ?? false,
+      coupons:      input?.shop?.coupons      ?? false,
       vinofact: {
         enabled:     vinofactInput?.enabled     ?? false,
         fields:      vinofactInput?.fields,

@@ -57,8 +57,22 @@ export type TotalsResponse = {
   subtotal: number
   shipping: number
   tax: number
+  discount: number
   grandTotal: number
   vatBreakdown: VatBreakdownItem[]
+}
+
+export type AppliedCouponResponse = {
+  code: string
+  discountType: 'percent' | 'fixed' | 'freeShipping'
+  value: number | null
+  discountAmount: number
+}
+
+export type CouponErrorResponse = {
+  code: string
+  errorCode: string
+  message: string
 }
 
 export type SupportedCountry = {
@@ -75,6 +89,8 @@ export type CalculateResponse = {
   selectedCountry: string
   supportedCountries: SupportedCountry[]
   currency: 'EUR'
+  appliedCoupons: AppliedCouponResponse[]
+  couponError: CouponErrorResponse | null
 }
 
 export type CreatePaymentResponse = CalculateResponse & {

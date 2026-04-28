@@ -21,6 +21,7 @@ type PaymentCreateBody = {
   partialAddress?: { country: string }
   shippingMethodId?: string
   orderMetaId?: string
+  appliedCouponCode?: string
 }
 
 /**
@@ -124,6 +125,7 @@ export function calculatePayment(
   options: {
     country?: string
     shippingMethodId?: string
+    appliedCouponCode?: string
   } = {},
 ): Promise<CalculateResponse> {
   return fetchWithRetry(apiUrl, {
@@ -132,6 +134,7 @@ export function calculatePayment(
     locale,
     ...(options.country && { partialAddress: { country: options.country } }),
     ...(options.shippingMethodId && { shippingMethodId: options.shippingMethodId }),
+    ...(options.appliedCouponCode && { appliedCouponCode: options.appliedCouponCode }),
   }) as Promise<CalculateResponse>
 }
 
@@ -147,6 +150,7 @@ export function createPayment(
   options: {
     shippingMethodId?: string
     orderMetaId?: string
+    appliedCouponCode?: string
   } = {},
 ): Promise<CreatePaymentResponse> {
   return fetchWithRetry(apiUrl, {
@@ -156,5 +160,6 @@ export function createPayment(
     address,
     ...(options.shippingMethodId && { shippingMethodId: options.shippingMethodId }),
     ...(options.orderMetaId && { orderMetaId: options.orderMetaId }),
+    ...(options.appliedCouponCode && { appliedCouponCode: options.appliedCouponCode }),
   }) as Promise<CreatePaymentResponse>
 }

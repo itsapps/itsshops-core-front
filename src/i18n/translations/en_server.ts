@@ -30,8 +30,16 @@ export default {
         addressRequired: "Address is required for payment",
         general: "An error occurred during payment",
       },
-      orderNotFound: "Bestellung nicht gefunden",
+      orderNotFound: "Order not found",
       refundFailed: "Refund failed",
+      coupon: {
+        COUPON_NOT_FOUND: "Coupon code not found",
+        COUPON_DISABLED: "This coupon is no longer active",
+        COUPON_EXPIRED: "This coupon has expired",
+        COUPON_NOT_YET_VALID: "This coupon is not yet valid",
+        COUPON_EXHAUSTED: "This coupon has reached its redemption limit",
+        COUPON_BELOW_MINIMUM: "Cart total is below the coupon's minimum",
+      },
     },
     voucher: {
       condition: {

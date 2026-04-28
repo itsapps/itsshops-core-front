@@ -3,8 +3,7 @@ import type Stripe from 'stripe'
 import { constructWebhookEvent } from '../services/stripe'
 import {
   fetchOrderMeta,
-  createOrder,
-  decrementStock,
+  commitOrderTransaction,
   updateOrderPaymentStatus,
   findOrderByPaymentIntent,
   getNextInvoiceNumber,
@@ -52,6 +51,11 @@ async function handlePaymentSucceeded(
     return
   }
 
+  log.info('OrderMeta loaded', {
+    orderMetaId,
+    appliedCoupons: orderMeta.appliedCoupons?.length ?? 0,
+  })
+
   const { invoiceNumber, orderNumberPrefix, invoiceNumberPrefix } = await getNextInvoiceNumber()
 
   const orderDoc = buildOrder({
@@ -60,16 +64,33 @@ async function handlePaymentSucceeded(
     invoiceNumber: formatOrderNumber(invoiceNumberPrefix, invoiceNumber),
   })
 
-  const created = await createOrder(orderDoc)
-  log.info('Order created', { orderId: created._id, orderNumber: orderDoc.orderNumber })
+  log.info('Order doc built', {
+    orderNumber: orderDoc.orderNumber,
+    appliedCoupons: orderDoc.appliedCoupons?.length ?? 0,
+  })
 
-  if (hasStock) {
-    for (const item of orderDoc.orderItems) {
-      if (item.variantId) {
-        await decrementStock(item.variantId, item.quantity)
-      }
-    }
-  }
+  const stockDecrements = hasStock
+    ? orderDoc.orderItems
+        .filter((item): item is typeof item & { variantId: string } => !!item.variantId)
+        .map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
+    : []
+
+  const couponIncrements = (orderDoc.appliedCoupons ?? []).map((c) => ({
+    couponId: c.couponRef._ref,
+    by: 1,
+  }))
+
+  const created = await commitOrderTransaction({
+    doc: orderDoc,
+    stockDecrements,
+    couponIncrements,
+  })
+  log.info('Order created', {
+    orderId: created._id,
+    orderNumber: orderDoc.orderNumber,
+    stockUpdates: stockDecrements.length,
+    couponUpdates: couponIncrements.length,
+  })
 
   // Send the order confirmation email. Failures here must NOT abort the
   // webhook (Stripe would retry and we'd duplicate the order) — log and move on.

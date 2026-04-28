@@ -5,7 +5,13 @@ import type {
   StripeExpressCheckoutElementShippingAddressChangeEvent,
   StripeExpressCheckoutElementShippingRateChangeEvent,
 } from '@stripe/stripe-js'
-import type { CalculateResponse, ShippingMethodResponse, AddressInput, ValidatedCartItemResponse } from '../shared/checkout-api'
+import type {
+  CalculateResponse,
+  ShippingMethodResponse,
+  AddressInput,
+  ValidatedCartItemResponse,
+  AppliedCouponResponse,
+} from '../shared/checkout-api'
 import type { CheckoutStripe } from './checkout-stripe'
 
 // Stripe ExpressCheckout shapes (subset).
@@ -46,6 +52,7 @@ export function buildLineItems(
   items: ValidatedCartItemResponse[],
   selectedShipping: ShippingMethodResponse | undefined,
   shippingLabel: string,
+  appliedCoupons: AppliedCouponResponse[] = [],
 ): LineItem[] {
   const lines: LineItem[] = items.map(i => ({
     name: `${i.quantity}x ${i.title}${i.subtitle ? ` ${i.subtitle}` : ''}`,
@@ -56,6 +63,14 @@ export function buildLineItems(
       name: `${shippingLabel} (${selectedShipping.title})`,
       amount: selectedShipping.price,
     })
+  }
+  for (const coupon of appliedCoupons) {
+    if (coupon.discountAmount > 0) {
+      lines.push({
+        name: coupon.code,
+        amount: -coupon.discountAmount,
+      })
+    }
   }
   return lines
 }
@@ -71,7 +86,7 @@ export function buildShippingRates(methods: ShippingMethodResponse[]): StripeShi
 function buildPayloadFromCalculation(calc: CalculateResponse, shippingLabel: string): ResolvedClickPayload {
   const selected = calc.shippingMethods.find(m => m._id === calc.selectedShippingMethodId)
   return {
-    lineItems: buildLineItems(calc.items, selected, shippingLabel),
+    lineItems: buildLineItems(calc.items, selected, shippingLabel, calc.appliedCoupons),
     shippingRates: buildShippingRates(calc.shippingMethods),
   }
 }
@@ -135,7 +150,7 @@ export class CheckoutExpress {
     // immediately with the user's actual wallet address and recalculates the
     // correct shipping methods for their country.
     event.resolve({
-      lineItems: buildLineItems(calc.items, undefined, this.config.labels.shipping),
+      lineItems: buildLineItems(calc.items, undefined, this.config.labels.shipping, calc.appliedCoupons),
       shippingRates: [],
     })
   }
