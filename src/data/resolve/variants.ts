@@ -99,10 +99,21 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
 // ---------------------------------------------------------------------------
 
 /**
- * Recursively resolve locale maps ({ de: '...', en: '...' }) anywhere in a
- * Vinofact API response — top-level fields, nested objects, and arrays.
+ * Recursively resolve locale maps ({ de: '...', en: '...', zhCn: '...' }) anywhere
+ * in a Vinofact API response — top-level fields, nested objects, and arrays.
  * Plain scalars pass through unchanged.
+ *
+ * Vinofact exposes `LocalizedString` objects with one camelCased field per
+ * locale — `de`, `en`, `zhCn` (for `zh-cn`), etc.
  */
+function localeFieldName(locale: string): string {
+  return locale.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+}
+
+function isLocaleKey(k: string): boolean {
+  return /^[a-z]{2}([A-Z][a-z]+)?$/.test(k)
+}
+
 function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string): unknown {
   if (value === null || value === undefined) return value
   if (Array.isArray(value)) {
@@ -110,8 +121,9 @@ function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string
   }
   if (typeof value === 'object') {
     const keys = Object.keys(value as object)
-    if (keys.length > 0 && keys.every(k => /^[a-z]{2}(-[A-Z]{2})?$/.test(k))) {
-      return (value as any)[locale] ?? (value as any)[defaultLocale] ?? null
+    if (keys.length > 0 && keys.every(isLocaleKey)) {
+      const v = value as Record<string, unknown>
+      return v[localeFieldName(locale)] ?? v[localeFieldName(defaultLocale)] ?? null
     }
     const resolved: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(value as object)) {

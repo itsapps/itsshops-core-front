@@ -2,34 +2,51 @@ import type { VinofactConfig, VinofactField } from '../types'
 
 const BASE_FIELDS = 'id slug title'
 
-const FIELD_SELECTIONS: Record<VinofactField, string> = {
-  year:                'year',
-  color:               'color',
-  flavor:              'flavor',
-  type:                'type',
-  description:         'description',
-  alcohol:             'alcohol',
-  residualSugar:       'residualSugar',
-  tartaricAcid:        'tartaricAcid',
-  totalSulfur:         'totalSulfur',
-  freeSulfur:          'freeSulfur',
-  phValue:             'phValue',
-  histamine:           'histamine',
-  varietals:           'varietals { id varietalId name amount trainingSystem }',
-  classifications:     'classifications { id classificationId name }',
-  normClassifications: 'normClassifications { id classificationId name }',
-  certificates:        'certificates { name }',
-  awards:              'awards { name value }',
-  bottleImage:         'bottleImage { url alt }',
-  terroir:             'terroir { id name description soils { id name } }',
-  factsheetPdfUrl:     'factsheetPdfUrl',
-  factsheetHtmlUrl:    'factsheetHtmlUrl',
-  elabelUrl:           'elabelUrl',
+/**
+ * Vinofact returns localized strings as a typed `LocalizedString` object.
+ * Each query must select the locales it wants as sub-fields, e.g. `name { de en }`.
+ * Locale codes with hyphens (only `zh-cn` today) are exposed as camelCase fields
+ * (`zhCn`) because GraphQL field names cannot contain hyphens.
+ */
+function localeFieldName(locale: string): string {
+  return locale.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
 }
 
-function buildFieldsSelection(fields: VinofactField[] | undefined): string {
+function buildLocaleSel(locales: string[]): string {
+  return `{ ${locales.map(localeFieldName).join(' ')} }`
+}
+
+function fieldSelections(L: string): Record<VinofactField, string> {
+  return {
+    year:                'year',
+    color:               `color ${L}`,
+    flavor:              `flavor ${L}`,
+    type:                `type ${L}`,
+    description:         `description ${L}`,
+    alcohol:             'alcohol',
+    residualSugar:       'residualSugar',
+    tartaricAcid:        'tartaricAcid',
+    totalSulfur:         'totalSulfur',
+    freeSulfur:          'freeSulfur',
+    phValue:             'phValue',
+    histamine:           'histamine',
+    varietals:           `varietals { id varietalId name ${L} amount trainingSystem ${L} }`,
+    classifications:     `classifications { id classificationId name ${L} }`,
+    normClassifications: `normClassifications { id classificationId name ${L} }`,
+    certificates:        `certificates { name ${L} }`,
+    awards:              `awards { name ${L} value ${L} }`,
+    bottleImage:         'bottleImage { url alt }',
+    terroir:             `terroir { id name ${L} description ${L} soils { id name ${L} } }`,
+    factsheetPdfUrl:     'factsheetPdfUrl',
+    factsheetHtmlUrl:    'factsheetHtmlUrl',
+    elabelUrl:           'elabelUrl',
+  }
+}
+
+function buildFieldsSelection(fields: VinofactField[] | undefined, locales: string[]): string {
   if (!fields?.length) return ''
-  return fields.map(f => FIELD_SELECTIONS[f]).join('\n        ')
+  const selections = fieldSelections(buildLocaleSel(locales))
+  return fields.map(f => selections[f]).join('\n        ')
 }
 
 /**
@@ -47,10 +64,10 @@ export async function fetchVinofactWines(
 
   const { endpoint, accessToken, profileSlug } = config.integration
   const query = `
-    query ($profileSlug: String!, $locales: [String!]!, $ids: [ID!]) {
-      wines(profileSlug: $profileSlug, locales: $locales, ids: $ids) {
+    query ($profileSlug: String!, $ids: [ID!]) {
+      wines(profileSlug: $profileSlug, ids: $ids) {
         ${BASE_FIELDS}
-        ${buildFieldsSelection(config.fields)}
+        ${buildFieldsSelection(config.fields, locales)}
       }
     }
   `
@@ -65,7 +82,7 @@ export async function fetchVinofactWines(
       },
       body: JSON.stringify({
         query,
-        variables: { profileSlug, locales, ids: wineIds },
+        variables: { profileSlug, ids: wineIds },
       }),
     })
   } catch (err) {
