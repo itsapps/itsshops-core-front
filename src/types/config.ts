@@ -84,10 +84,6 @@ export type EnvVars = {
   // Netlify functions
   SERVER_FUNCTIONS_ALLOWED_ORIGINS: string | undefined
   SERVER_FUNCTIONS_SECRET:          string | undefined  // server-side only
-
-  // Testing
-  TEST_USER_EMAIL:    string | undefined  // dev only
-  TEST_USER_PASSWORD: string | undefined  // dev only
 }
 
 export type EnvVarName = keyof EnvVars

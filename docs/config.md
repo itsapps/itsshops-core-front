@@ -546,5 +546,3 @@ All env vars recognized by the core. Server-side-only vars are not safe to expos
 | `SUPABASE_EMAIL_HOOKS_SECRET` | Supabase email hook secret — server-side only |
 | `SERVER_FUNCTIONS_ALLOWED_ORIGINS` | Comma-separated allowed origins for functions |
 | `SERVER_FUNCTIONS_SECRET` | Shared secret for internal function calls — server-side only |
-| `TEST_USER_EMAIL` | Test user email — dev only |
-| `TEST_USER_PASSWORD` | Test user password — dev only |
