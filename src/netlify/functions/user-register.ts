@@ -90,10 +90,14 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
       return errorResponse(ErrorCode.AUTH_FAILED, t('api.errors.auth.unknown'))
     }
 
-    // Send confirmation email
-    const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
-    if (resendError) {
-      log.warn('user-register: resend confirmation failed', { email: emailObfuscated, error: resendError.message })
+    // Send confirmation email. Gated so local dev doesn't trigger Supabase's
+    // built-in SMTP (rate-limited to 2/h on free) when the Send Email Hook is
+    // unreachable from Supabase's cloud (e.g. localhost without a tunnel).
+    if (process.env.SKIP_AUTH_EMAILS !== 'true') {
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
+      if (resendError) {
+        log.warn('user-register: resend confirmation failed', { email: emailObfuscated, error: resendError.message })
+      }
     }
 
     return success<RegisterResult>({

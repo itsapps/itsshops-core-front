@@ -32,7 +32,7 @@ export function createUserRecoverHandler() {
       })
     }
 
-    const secret = process.env.HCAPTCHA_SECRET_KEY
+    const secret = process.env.CAPTCHA_SECRET_KEY
     if (secret) {
       if (!captchaToken) return badRequest('captchaToken is required')
       const captchaValid = await verifyCaptcha(captchaToken)
@@ -44,10 +44,15 @@ export function createUserRecoverHandler() {
     deleteSessionCookies(context)
 
     const emailObfuscated = email.slice(0, 4) + '…'
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
-    if (error) {
-      // Log but don't expose to client — always return success to avoid email enumeration
-      log.warn('user-recover: resetPasswordForEmail failed', { email: emailObfuscated, error: error.message })
+    // Gated so local dev doesn't trigger Supabase's built-in SMTP (rate-limited
+    // to 2/h on free) when the Send Email Hook is unreachable from Supabase's
+    // cloud (e.g. localhost without a tunnel).
+    if (process.env.SKIP_AUTH_EMAILS !== 'true') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      if (error) {
+        // Log but don't expose to client — always return success to avoid email enumeration
+        log.warn('user-recover: resetPasswordForEmail failed', { email: emailObfuscated, error: error.message })
+      }
     }
 
     return success<RecoverResult>({ redirectUrl: `/${locale}/${t('urlPaths.userRecoverSuccess')}/` })

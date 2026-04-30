@@ -83,4 +83,6 @@ export type SimpleEmailProps = {
   headline?: string
   /** Body text shown in the email. Plain string; line breaks become `<br/>`. */
   text: string
+  /** Optional call-to-action button rendered below the body. Used by auth emails (confirm, reset, invite). */
+  cta?: { url: string; label: string }
 }

@@ -32,6 +32,34 @@
       "types": "./dist/order-notify.d.ts",
       "import": "./dist/order-notify.js"
     },
+    "./functions/user-confirm": {
+      "types": "./dist/user-confirm.d.ts",
+      "import": "./dist/user-confirm.js"
+    },
+    "./functions/user-login": {
+      "types": "./dist/user-login.d.ts",
+      "import": "./dist/user-login.js"
+    },
+    "./functions/user-logout": {
+      "types": "./dist/user-logout.d.ts",
+      "import": "./dist/user-logout.js"
+    },
+    "./functions/user-recover": {
+      "types": "./dist/user-recover.d.ts",
+      "import": "./dist/user-recover.js"
+    },
+    "./functions/user-register": {
+      "types": "./dist/user-register.d.ts",
+      "import": "./dist/user-register.js"
+    },
+    "./functions/user-reset": {
+      "types": "./dist/user-reset.d.ts",
+      "import": "./dist/user-reset.js"
+    },
+    "./functions/auth-webhooks": {
+      "types": "./dist/auth-webhooks.d.ts",
+      "import": "./dist/auth-webhooks.js"
+    },
     "./functions/wc-api": {
       "types": "./dist/wc-api.d.ts",
       "import": "./dist/wc-api.js"
@@ -62,7 +90,7 @@
     "test:watch": "vitest",
     "prepare": "npm run build"
   },
-"dependencies": {
+  "dependencies": {
     "@11ty/eleventy": "^3.1.2",
     "@11ty/eleventy-img": "^6.0.4",
     "@iarna/toml": "^2.2.5",
@@ -104,6 +132,7 @@
     "postcss-nesting": "^13.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "standardwebhooks": "^1.0.0",
     "stripe": "^21.0.1",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.21.0"

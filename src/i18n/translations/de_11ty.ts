@@ -267,6 +267,7 @@ export default {
     userConfirmSuccess: {
       title: "Willkommen!",
       description: "Benutzer erfolgreich bestätigt",
+      info: "Dein Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!",
     },
     userRecover: {
       title: "Passwort zurücksetzen",
@@ -388,32 +389,18 @@ export default {
       },
       useShippingAsBilling: "Versandadresse auch als Rechnungsadresse verwenden",
     },
-  },
-  userConfirm: {
-    submit: {
-      text: "Account bestätigen",
-      loadingText: "Account wird bestätigt ...",
-    }
-  },
-  userOrders: {
-    submit: {
-      text: "Bestellungen laden",
-      loadingText: "Bestellungen werden geladen ...",
-    }
-  },
-  confirmUserExpired: {
-    headline: 'Sorry!',
-    text: 'Der aufgerufene Link ist ungültig. Entweder hast Du Dein Kundenkonto über diesen Link bereits aktiviert oder die Aktivierungsfrist dieses Links ist inzwischen abgelaufen. Um Mißbrauch vorzubeugen, begrenzen wir aus Datenschutzgründen die Gültigkeit von Aktivierungslinks. Du kannst Dir aber jederzeit eine neue E-Mail mit einem gültigen Aktivierungslink zusenden lassen.',
-    action: 'Email anfordern'
-  },
-  userRegistered: {
-    text: 'Falls die angegebene Emailadresse bei uns hinterlegt ist, erhälts Du in Kürze eine Email, mit der Du Dein Passwort zurücksetzen kannst.'
-  },
-  userConfirmed: {
-    text: 'Dein Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!'
-  },
-  userResetSuccess: {
-    text: 'Dein Password wurde erfolgreich geändert. Viel Spass beim Einkaufen!'
+    userConfirm: {
+      submit: {
+        text: "Account bestätigen",
+        loadingText: "Account wird bestätigt ...",
+      }
+    },
+    userOrders: {
+      submit: {
+        text: "Bestellungen laden",
+        loadingText: "Bestellungen werden geladen ...",
+      }
+    },
   },
   cookies: {
     title: "Cookie Einwilligung",

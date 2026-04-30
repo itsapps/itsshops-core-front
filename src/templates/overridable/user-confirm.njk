@@ -8,7 +8,10 @@
     data-recover-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/"
     data-register-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/"
   >
-    <div data-confirm-loading class="user-form__loading" aria-live="polite" hidden></div>
+    <button type="button" class="btn" data-user-confirm-submit>
+      <span data-submit-text>{{ 'forms.userConfirm.submit.text' | trans }}</span>
+      <span data-submit-loading hidden>{{ 'forms.userConfirm.submit.loadingText' | trans }}</span>
+    </button>
 
     <div data-confirm-error class="user-form__error" role="alert" hidden>
       <p data-confirm-error-message></p>

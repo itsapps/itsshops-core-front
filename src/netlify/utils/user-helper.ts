@@ -50,7 +50,7 @@ export async function getUserWithRefresh(context: Context, locale: string): Prom
 
 /**
  * Create or update the Sanity customer record from Supabase user data.
- * Called after OTP verification (confirm + reset flows).
+ * Called after OTP verification (confirm + reset flows) or after an invite is dispatched.
  * Failures are logged but do not throw — the auth flow must not be blocked by a Sanity error.
  */
 export async function storeCustomer(
@@ -63,12 +63,13 @@ export async function storeCustomer(
     phone?: string
     newsletter?: boolean
   },
+  options: { status?: 'active' | 'invited' } = {},
 ): Promise<void> {
   try {
     await upsertCustomer(supabaseId, {
       email,
       locale,
-      status: 'active',
+      status: options.status ?? 'active',
       receiveNewsletter: meta.newsletter ?? false,
       address: {
         ...meta.prename && { prename: meta.prename },

@@ -267,6 +267,7 @@ export default {
     userConfirmSuccess: {
       title: "Welcome!",
       description: "User successfully confirmed",
+      info: "Your account has been successfully activated. Enjoy shopping!",
     },
     userRecover: {
       title: "Reset password",
@@ -388,32 +389,18 @@ export default {
       },
       useShippingAsBilling: "Use shipping address as billing address",
     },
-  },
-  userConfirm: {
-    submit: {
-      text: "Confirm account",
-      loadingText: "Confirming account ...",
-    }
-  },
-  userOrders: {
-    submit: {
-      text: "Load orders",
-      loadingText: "Loading orders ...",
-    }
-  },
-  confirmUserExpired: {
-    headline: 'Sorry!',
-    text: 'The link you followed is invalid. Either you have already activated your account via this link, or the activation period has expired. To prevent misuse, we limit the validity of activation links for data protection reasons. However, you can request a new email with a valid activation link at any time.',
-    action: 'Request email'
-  },
-  userRegistered: {
-    text: 'If the email address provided is registered with us, you will shortly receive an email with which you can reset your password.'
-  },
-  userConfirmed: {
-    text: 'Your account has been successfully activated. Enjoy shopping!'
-  },
-  userResetSuccess: {
-    text: 'Your password has been successfully changed. Enjoy shopping!'
+    userConfirm: {
+      submit: {
+        text: "Confirm account",
+        loadingText: "Confirming account ...",
+      }
+    },
+    userOrders: {
+      submit: {
+        text: "Load orders",
+        loadingText: "Loading orders ...",
+      }
+    },
   },
   cookies: {
     title: "Cookie consent",
