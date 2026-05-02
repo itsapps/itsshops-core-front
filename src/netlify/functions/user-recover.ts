@@ -8,7 +8,14 @@ import { validateEmail } from '../../shared/validation'
 import { serverT } from '../utils/i18n'
 import type { RecoverInput, RecoverResult } from '../../shared/user-api'
 
-export function createUserRecoverHandler() {
+export type UserRecoverConfig = {
+  /** Set to false to skip captcha (dev/test). Defaults to true. */
+  captcha?: boolean
+}
+
+export function createUserRecoverHandler(config: UserRecoverConfig = {}) {
+  const { captcha: captchaEnabled = true } = config
+
   return async (request: Request, context: Context): Promise<Response> => {
     if (request.method !== 'POST') return methodNotAllowed()
 
@@ -32,8 +39,7 @@ export function createUserRecoverHandler() {
       })
     }
 
-    const secret = process.env.CAPTCHA_SECRET_KEY
-    if (secret) {
+    if (captchaEnabled) {
       if (!captchaToken) return badRequest('captchaToken is required')
       const captchaValid = await verifyCaptcha(captchaToken)
       if (!captchaValid) {
