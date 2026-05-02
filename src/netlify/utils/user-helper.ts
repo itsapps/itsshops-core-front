@@ -84,7 +84,16 @@ export async function storeCustomer(
         ...meta.line1 && { line1: meta.line1 },
         ...meta.line2 && { line2: meta.line2 },
         ...meta.zip && { zip: meta.zip },
-        ...meta.city && { city: meta.city },
+        // city is stored as i18nString in the customer's `address` schema —
+        // wrap as a one-entry internationalized array keyed by registration locale.
+        ...meta.city && {
+          city: [{
+            _type: 'internationalizedArrayStringValue' as const,
+            _key: locale,
+            language: locale,
+            value: meta.city,
+          }],
+        },
         ...meta.country && { country: meta.country },
         ...meta.state && { state: meta.state },
       },

@@ -145,9 +145,13 @@ export function createAuthWebhookHandler(options: AuthWebhookHandlerOptions) {
         messageId: result.messageId,
       })
     } catch (err) {
+      const e = err as { message?: string; status?: number; statusCode?: number; details?: unknown; name?: string; stack?: string }
       log.error('Auth webhook: send failed', {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
+        error: e?.message ?? String(err),
+        name: e?.name,
+        status: e?.status ?? e?.statusCode,
+        details: e?.details,
+        stack: e?.stack,
       })
       return new Response(null, { status: 500 })
     }

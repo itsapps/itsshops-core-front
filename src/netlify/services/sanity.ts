@@ -243,6 +243,14 @@ export async function fetchEmailSettings(
   )
 }
 
+/** One entry in a Sanity `internationalizedArray` (sanity-plugin-internationalized-array). */
+export type InternationalizedString = {
+  _type: 'internationalizedArrayStringValue'
+  _key: string
+  language: string
+  value: string
+}
+
 export type CustomerDocument = {
   _type: 'customer'
   email: string
@@ -251,6 +259,11 @@ export type CustomerDocument = {
   status: 'registered' | 'invited' | 'active'
   customerNumber: string
   receiveNewsletter: boolean
+  /**
+   * Customer address. Note that `city` is stored as an i18nString array
+   * (matches core-back's `address` schema), while the other fields are plain
+   * strings.
+   */
   address?: {
     prename?: string
     lastname?: string
@@ -258,7 +271,7 @@ export type CustomerDocument = {
     line1?: string
     line2?: string
     zip?: string
-    city?: string
+    city?: InternationalizedString[]
     country?: string
     state?: string
   }
@@ -291,6 +304,12 @@ export async function upsertCustomer(
         ...doc.address?.prename && { 'address.prename': doc.address.prename },
         ...doc.address?.lastname && { 'address.lastname': doc.address.lastname },
         ...doc.address?.phone && { 'address.phone': doc.address.phone },
+        ...doc.address?.line1 && { 'address.line1': doc.address.line1 },
+        ...doc.address?.line2 && { 'address.line2': doc.address.line2 },
+        ...doc.address?.zip && { 'address.zip': doc.address.zip },
+        ...doc.address?.city && { 'address.city': doc.address.city },
+        ...doc.address?.country && { 'address.country': doc.address.country },
+        ...doc.address?.state && { 'address.state': doc.address.state },
       })
       .commit()
   } else {
