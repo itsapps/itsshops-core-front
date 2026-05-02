@@ -337,6 +337,12 @@ export default {
         label: "Hausnummer",
         errorMessage: "Hausnummer darf nicht leer sein",
       },
+      line2: {
+        label: "Adresszusatz (optional)",
+      },
+      state: {
+        label: "Bundesland (optional)",
+      },
       city: {
         label: "Ort/Stadt",
         errorMessage: "Ort/Stadt darf nicht leer sein",
@@ -356,6 +362,9 @@ export default {
       },
       registerForNewsletter: {
         label: "Newsletter abonnieren",
+      },
+      captcha: {
+        errorMessage: "Bitte löse das Captcha, um fortzufahren.",
       }
     },
     userLogin: {

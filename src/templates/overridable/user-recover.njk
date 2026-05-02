@@ -7,6 +7,7 @@
     data-api="/api/user/recover"
     data-locale="{{ _locale }}"
     data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+    data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
   >
     <form class="user-form" novalidate>
       <div class="user-form__field">
@@ -14,6 +15,10 @@
         <input type="email" id="recover-email" name="email" required autocomplete="email">
         <span class="user-form__field-error" data-field-error="email"></span>
       </div>
+
+      {%- if coreConfig.captchaSiteKey %}
+      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}"></div>
+      {%- endif %}
 
       <div class="user-form__error" role="alert" hidden data-form-error></div>
 
@@ -28,3 +33,7 @@
     </a>
   </div>
 </article>
+
+{%- if coreConfig.captchaSiteKey %}
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+{%- endif %}

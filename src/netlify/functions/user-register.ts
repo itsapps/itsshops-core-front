@@ -20,7 +20,7 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
 
   const requiresPrename = registrationFields.includes('prename')
   const requiresLastname = registrationFields.includes('lastname')
-  const requiresPhone = registrationFields.includes('phone')
+  const showAddress = registrationFields.includes('address')
   const showNewsletter = registrationFields.includes('newsletter')
 
   return async (request: Request, _context: Context): Promise<Response> => {
@@ -36,8 +36,12 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
       return badRequest('Invalid JSON body')
     }
 
-    const { email, password, prename, lastname, phone, newsletter, captchaToken } =
-      body as RegisterInput
+    const {
+      email, password,
+      prename, lastname, phone,
+      line1, line2, zip, city, country, state,
+      newsletter, captchaToken,
+    } = body as RegisterInput
 
     if (!email || !password) return badRequest('email and password are required')
 
@@ -45,15 +49,23 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
     const passwordValid = validatePassword(password)
     const prenameValid = !requiresPrename || !isEmptyOrNull(prename)
     const lastnameValid = !requiresLastname || !isEmptyOrNull(lastname)
-    const phoneValid = !requiresPhone || !isEmptyOrNull(phone)
+    // Address: line1, zip, city, country required when shown; line2/state optional.
+    const line1Valid   = !showAddress || !isEmptyOrNull(line1)
+    const zipValid     = !showAddress || !isEmptyOrNull(zip)
+    const cityValid    = !showAddress || !isEmptyOrNull(city)
+    const countryValid = !showAddress || !isEmptyOrNull(country)
 
-    if (!emailValid || !passwordValid || !prenameValid || !lastnameValid || !phoneValid) {
+    if (!emailValid || !passwordValid || !prenameValid || !lastnameValid
+        || !line1Valid || !zipValid || !cityValid || !countryValid) {
       return validationError(ErrorCode.INVALID_INPUT, t('api.errors.validation.message'), undefined, {
         ...!emailValid && { email: t('api.errors.validation.email') },
         ...!passwordValid && { password: t('api.errors.validation.password') },
         ...!prenameValid && { prename: t('api.errors.validation.empty') },
         ...!lastnameValid && { lastname: t('api.errors.validation.empty') },
-        ...!phoneValid && { phone: t('api.errors.validation.empty') },
+        ...!line1Valid && { line1: t('api.errors.validation.empty') },
+        ...!zipValid && { zip: t('api.errors.validation.empty') },
+        ...!cityValid && { city: t('api.errors.validation.empty') },
+        ...!countryValid && { country: t('api.errors.validation.empty') },
       })
     }
 
@@ -75,6 +87,12 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
         ...prename && { prename },
         ...lastname && { lastname },
         ...phone && { phone },
+        ...showAddress && line1 && { line1 },
+        ...showAddress && line2 && { line2 },
+        ...showAddress && zip && { zip },
+        ...showAddress && city && { city },
+        ...showAddress && country && { country },
+        ...showAddress && state && { state },
         newsletter: showNewsletter ? (newsletter ?? false) : false,
       },
     })

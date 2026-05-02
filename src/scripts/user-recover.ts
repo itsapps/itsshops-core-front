@@ -1,4 +1,5 @@
 import type { RecoverInput, RecoverResult } from '../shared/user-api'
+import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
 
 export function initUserRecover(): void {
   const root = document.querySelector<HTMLElement>('[data-user-recover]')
@@ -31,10 +32,22 @@ export function initUserRecover(): void {
     e.preventDefault()
     if (formError) formError.hidden = true
     setFieldError('email', null)
+
+    const captchaPresent = hasCaptcha(root)
+    const captchaToken = captchaPresent ? getCaptchaToken() : ''
+    if (captchaPresent && !captchaToken) {
+      if (formError) {
+        formError.textContent = root.dataset.tErrorCaptcha ?? 'Please solve the captcha.'
+        formError.hidden = false
+      }
+      return
+    }
+
     setLoading(true)
 
     const body: RecoverInput = {
       email: (new FormData(form).get('email') as string) ?? '',
+      ...(captchaToken && { captchaToken }),
     }
 
     try {
@@ -56,11 +69,13 @@ export function initUserRecover(): void {
         formError.textContent = json.error.message
         formError.hidden = false
       }
+      if (captchaPresent) resetCaptcha()
     } catch {
       if (formError) {
         formError.textContent = root.dataset.tErrorService ?? 'Service unavailable'
         formError.hidden = false
       }
+      if (captchaPresent) resetCaptcha()
     } finally {
       setLoading(false)
     }

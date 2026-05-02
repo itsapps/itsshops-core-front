@@ -1,4 +1,5 @@
 import type { RegisterInput, RegisterResult } from '../shared/user-api'
+import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
 
 export function initUserRegister(): void {
   const root = document.querySelector<HTMLElement>('[data-user-register]')
@@ -44,6 +45,20 @@ export function initUserRegister(): void {
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
     clearErrors()
+
+    // Captcha gate: when the widget is on the page, require a solved token
+    // before sending. The user gets a clear inline message instead of a
+    // server-side 400.
+    const captchaPresent = hasCaptcha(root)
+    const captchaToken = captchaPresent ? getCaptchaToken() : ''
+    if (captchaPresent && !captchaToken) {
+      if (formError) {
+        formError.textContent = root.dataset.tErrorCaptcha ?? 'Please solve the captcha.'
+        formError.hidden = false
+      }
+      return
+    }
+
     setLoading(true)
 
     const data = new FormData(form)
@@ -53,7 +68,14 @@ export function initUserRegister(): void {
       prename: (data.get('prename') as string) || undefined,
       lastname: (data.get('lastname') as string) || undefined,
       phone: (data.get('phone') as string) || undefined,
+      line1: (data.get('line1') as string) || undefined,
+      line2: (data.get('line2') as string) || undefined,
+      zip: (data.get('zip') as string) || undefined,
+      city: (data.get('city') as string) || undefined,
+      country: (data.get('country') as string) || undefined,
+      state: (data.get('state') as string) || undefined,
       newsletter: data.has('newsletter'),
+      ...(captchaToken && { captchaToken }),
     }
 
     try {
@@ -77,11 +99,14 @@ export function initUserRegister(): void {
         formError.textContent = json.error.message
         formError.hidden = false
       }
+      // Reset captcha on any non-success response so the user can retry.
+      if (captchaPresent) resetCaptcha()
     } catch {
       if (formError) {
         formError.textContent = root.dataset.tErrorService ?? 'Service unavailable'
         formError.hidden = false
       }
+      if (captchaPresent) resetCaptcha()
     } finally {
       setLoading(false)
     }

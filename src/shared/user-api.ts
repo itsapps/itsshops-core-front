@@ -11,6 +11,12 @@ export type RegisterInput = {
   prename?: string
   lastname?: string
   phone?: string
+  line1?: string
+  line2?: string
+  zip?: string
+  city?: string
+  country?: string
+  state?: string
   newsletter?: boolean
   captchaToken?: string
 }

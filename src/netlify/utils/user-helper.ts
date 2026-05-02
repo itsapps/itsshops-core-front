@@ -61,6 +61,12 @@ export async function storeCustomer(
     prename?: string
     lastname?: string
     phone?: string
+    line1?: string
+    line2?: string
+    zip?: string
+    city?: string
+    country?: string
+    state?: string
     newsletter?: boolean
   },
   options: { status?: 'active' | 'invited' } = {},
@@ -75,6 +81,12 @@ export async function storeCustomer(
         ...meta.prename && { prename: meta.prename },
         ...meta.lastname && { lastname: meta.lastname },
         ...meta.phone && { phone: meta.phone },
+        ...meta.line1 && { line1: meta.line1 },
+        ...meta.line2 && { line2: meta.line2 },
+        ...meta.zip && { zip: meta.zip },
+        ...meta.city && { city: meta.city },
+        ...meta.country && { country: meta.country },
+        ...meta.state && { state: meta.state },
       },
     })
   } catch (err) {

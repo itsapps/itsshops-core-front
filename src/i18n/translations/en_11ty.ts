@@ -337,6 +337,12 @@ export default {
         label: "House number",
         errorMessage: "House number must not be empty",
       },
+      line2: {
+        label: "Address line 2 (optional)",
+      },
+      state: {
+        label: "State / Region (optional)",
+      },
       city: {
         label: "City/Town",
         errorMessage: "City/Town must not be empty",
@@ -356,6 +362,9 @@ export default {
       },
       registerForNewsletter: {
         label: "Subscribe to newsletter",
+      },
+      captcha: {
+        errorMessage: "Please solve the captcha to continue.",
       }
     },
     userLogin: {

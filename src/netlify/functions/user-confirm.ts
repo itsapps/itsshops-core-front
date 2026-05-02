@@ -55,6 +55,12 @@ export function createUserConfirmHandler() {
         prename: meta.prename as string | undefined,
         lastname: meta.lastname as string | undefined,
         phone: meta.phone as string | undefined,
+        line1: meta.line1 as string | undefined,
+        line2: meta.line2 as string | undefined,
+        zip: meta.zip as string | undefined,
+        city: meta.city as string | undefined,
+        country: meta.country as string | undefined,
+        state: meta.state as string | undefined,
         newsletter: meta.newsletter as boolean | undefined,
       }),
     )

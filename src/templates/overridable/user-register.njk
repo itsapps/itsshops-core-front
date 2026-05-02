@@ -11,6 +11,7 @@
     data-t-error-password="{{ 'forms.fields.password.errorMessage' | trans }}"
     data-t-error-prename="{{ 'forms.fields.prename.errorMessage' | trans }}"
     data-t-error-lastname="{{ 'forms.fields.lastname.errorMessage' | trans }}"
+    data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
   >
     <form class="user-form" novalidate>
       <div class="user-form__field">
@@ -37,6 +38,49 @@
         <span class="user-form__field-error" data-field-error="phone"></span>
       </div>
 
+      <div class="user-form__address" data-register-field="address" hidden>
+        <div class="user-form__field">
+          <label for="register-line1">{{ 'forms.fields.street.label' | trans }}</label>
+          <input type="text" id="register-line1" name="line1" autocomplete="address-line1">
+          <span class="user-form__field-error" data-field-error="line1"></span>
+        </div>
+
+        <div class="user-form__field">
+          <label for="register-line2">{{ 'forms.fields.line2.label' | trans }}</label>
+          <input type="text" id="register-line2" name="line2" autocomplete="address-line2">
+          <span class="user-form__field-error" data-field-error="line2"></span>
+        </div>
+
+        <div class="user-form__field">
+          <label for="register-zip">{{ 'forms.fields.zip.label' | trans }}</label>
+          <input type="text" id="register-zip" name="zip" autocomplete="postal-code">
+          <span class="user-form__field-error" data-field-error="zip"></span>
+        </div>
+
+        <div class="user-form__field">
+          <label for="register-city">{{ 'forms.fields.city.label' | trans }}</label>
+          <input type="text" id="register-city" name="city" autocomplete="address-level2">
+          <span class="user-form__field-error" data-field-error="city"></span>
+        </div>
+
+        <div class="user-form__field">
+          <label for="register-state">{{ 'forms.fields.state.label' | trans }}</label>
+          <input type="text" id="register-state" name="state" autocomplete="address-level1">
+          <span class="user-form__field-error" data-field-error="state"></span>
+        </div>
+
+        <div class="user-form__field">
+          <label for="register-country">{{ 'forms.fields.country.label' | trans }}</label>
+          <select id="register-country" name="country" autocomplete="country">
+            <option value="">{{ 'forms.fields.country.none' | trans }}</option>
+            {%- for c in _locale | countryList %}
+            <option value="{{ c.code }}">{{ c.name }}</option>
+            {%- endfor %}
+          </select>
+          <span class="user-form__field-error" data-field-error="country"></span>
+        </div>
+      </div>
+
       <div class="user-form__field">
         <label for="register-password">{{ 'forms.fields.password.label' | trans }}</label>
         <input type="password" id="register-password" name="password" required autocomplete="new-password">
@@ -47,6 +91,10 @@
         <input type="checkbox" name="newsletter">
         {{ 'forms.fields.registerForNewsletter.label' | trans }}
       </label>
+
+      {%- if coreConfig.captchaSiteKey %}
+      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}"></div>
+      {%- endif %}
 
       <div class="user-form__error" role="alert" hidden data-form-error></div>
 
@@ -61,3 +109,7 @@
     </a>
   </div>
 </article>
+
+{%- if coreConfig.captchaSiteKey %}
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+{%- endif %}
