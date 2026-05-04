@@ -108,7 +108,9 @@ export function createPaymentHandler(config: ServerConfig = {}) {
     const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const freeShippingCalc = data.shopSettings?.freeShippingCalculation ?? 'afterDiscount'
 
-    const shippingMethods = resolveShippingMethods(
+    // Pass 1: resolve with discount=0 so we have a shipping price to feed the
+    // coupon validator (free-shipping coupons need it).
+    let shippingMethods = resolveShippingMethods(
       data.shippingMethods,
       validatedItems,
       subtotal,
@@ -117,7 +119,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       req.locale,
     )
 
-    const selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
+    let selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
 
     if (!selectedShipping && shippingMethods.length === 0) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'), requestId)
@@ -157,6 +159,21 @@ export function createPaymentHandler(config: ServerConfig = {}) {
           message: serverT(req.locale, `api.errors.coupon.${result.errorCode}`),
         }
       }
+    }
+
+    // Pass 2: when a percent/fixed coupon is applied AND shop uses
+    // `afterDiscount` free-shipping, re-resolve so the threshold check sees
+    // the post-discount subtotal. Pure local recomputation, no extra fetch.
+    if (couponDiscount && freeShippingCalc === 'afterDiscount' && couponDiscount.discountAmount > 0) {
+      shippingMethods = resolveShippingMethods(
+        data.shippingMethods,
+        validatedItems,
+        subtotal,
+        couponDiscount.discountAmount,
+        freeShippingCalc,
+        req.locale,
+      )
+      selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
     }
 
     // ── Calculate totals ────────────────────────────────────────────────

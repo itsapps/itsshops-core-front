@@ -6,17 +6,30 @@ import { ErrorCode } from '../types/errors'
 import { verifyCaptcha } from '../utils/captcha'
 import { validateEmail, validatePassword, isEmptyOrNull } from '../../shared/validation'
 import { serverT } from '../utils/i18n'
+import { sendDirectSignupEmail, sendDirectRecoveryEmail, type DirectAuthEmailConfig } from '../utils/auth-email'
 import type { UserRegistrationField, RegisterInput, RegisterResult } from '../../shared/user-api'
+
+export { buildUserPaths } from '../../i18n/permalinks'
 
 export type UserRegisterConfig = {
   /** Fields beyond email+password that are required. 'newsletter' shows the checkbox but is never strictly required. */
   registrationFields?: UserRegistrationField[]
   /** Set to false to skip captcha (dev/test). Defaults to true. */
   captcha?: boolean
+  /**
+   * When set, the function generates the confirmation link via
+   * `admin.generateLink` and sends the email itself via Mailgun. This
+   * bypasses Supabase's email-related rate limit (2/h on free tier) which
+   * applies to `auth.resend` even when a Send Email Hook is configured.
+   *
+   * When omitted, falls back to `auth.resend({ type: 'signup' })` and
+   * relies on the Send Email Hook for delivery (subject to rate limits).
+   */
+  email?: DirectAuthEmailConfig
 }
 
 export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
-  const { registrationFields = [], captcha: captchaEnabled = true } = config
+  const { registrationFields = [], captcha: captchaEnabled = true, email: emailConfig } = config
 
   const requiresPrename = registrationFields.includes('prename')
   const requiresLastname = registrationFields.includes('lastname')
@@ -79,38 +92,66 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
 
     const emailObfuscated = email.slice(0, 4) + '…'
 
-    const { data, error } = await supabase.auth.admin.createUser({
+    const userMetadata = {
+      locale,
+      ...prename && { prename },
+      ...lastname && { lastname },
+      ...phone && { phone },
+      ...showAddress && line1 && { line1 },
+      ...showAddress && line2 && { line2 },
+      ...showAddress && zip && { zip },
+      ...showAddress && city && { city },
+      ...showAddress && country && { country },
+      ...showAddress && state && { state },
+      newsletter: showNewsletter ? (newsletter ?? false) : false,
+    }
+
+    const successResp = success<RegisterResult>({
+      redirectUrl: `/${locale}/${t('urlPaths.userRegistrationSuccess')}/`,
+    })
+
+    // Two modes for email delivery:
+    //   - emailConfig set → `admin.generateLink({ type: 'signup' })` creates
+    //     the user AND returns the confirmation link in one call; we send
+    //     via Mailgun. Bypasses Supabase's email rate limit (2/h on free).
+    //   - emailConfig omitted → fallback: `admin.createUser` + `auth.resend`
+    //     (Send Email Hook flow, subject to rate limits).
+    if (emailConfig) {
+      const result = await sendDirectSignupEmail(
+        { email, password, userMetadata },
+        locale,
+        emailConfig,
+      )
+      if (!result.ok) {
+        if (result.emailExists) {
+          // Mask existence by sending a recovery email instead.
+          await sendDirectRecoveryEmail(email, locale, emailConfig)
+          return successResp
+        }
+        log.error('user-register: direct signup failed', { email: emailObfuscated, error: result.error })
+        return errorResponse(ErrorCode.AUTH_FAILED, t('api.errors.auth.unknown'))
+      }
+      return successResp
+    }
+
+    // Fallback path (Supabase Send Email Hook flow)
+    const { error } = await supabase.auth.admin.createUser({
       email,
       password,
-      user_metadata: {
-        locale,
-        ...prename && { prename },
-        ...lastname && { lastname },
-        ...phone && { phone },
-        ...showAddress && line1 && { line1 },
-        ...showAddress && line2 && { line2 },
-        ...showAddress && zip && { zip },
-        ...showAddress && city && { city },
-        ...showAddress && country && { country },
-        ...showAddress && state && { state },
-        newsletter: showNewsletter ? (newsletter ?? false) : false,
-      },
+      user_metadata: userMetadata,
     })
 
     if (error) {
       if (error.code === 'email_exists') {
-        // Send a password reset so the existing user isn't exposed
-        await supabase.auth.resetPasswordForEmail(email).catch(() => {})
-        // Return success to avoid leaking whether the email exists
-        return success<RegisterResult>({ redirectUrl: `/${locale}/${t('urlPaths.userRegistrationSuccess')}/` })
+        if (process.env.SKIP_AUTH_EMAILS !== 'true') {
+          await supabase.auth.resetPasswordForEmail(email).catch(() => {})
+        }
+        return successResp
       }
       log.error('user-register: createUser failed', { email: emailObfuscated, error: error.message })
       return errorResponse(ErrorCode.AUTH_FAILED, t('api.errors.auth.unknown'))
     }
 
-    // Send confirmation email. Gated so local dev doesn't trigger Supabase's
-    // built-in SMTP (rate-limited to 2/h on free) when the Send Email Hook is
-    // unreachable from Supabase's cloud (e.g. localhost without a tunnel).
     if (process.env.SKIP_AUTH_EMAILS !== 'true') {
       const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
       if (resendError) {
@@ -118,8 +159,6 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
       }
     }
 
-    return success<RegisterResult>({
-      redirectUrl: `/${locale}/${t('urlPaths.userRegistrationSuccess')}/`,
-    })
+    return successResp
   }
 }
