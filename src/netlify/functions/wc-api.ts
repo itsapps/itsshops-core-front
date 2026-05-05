@@ -280,7 +280,6 @@ function mapOrder(order: SanityOrder, tz: string) {
       // subtotal/subtotal_tax = pre-discount; total/total_tax = post-discount.
       const lineTax = item.vatAmount
       const lineNet = lineGross - lineTax
-      const unitPrice = Math.round(lineNet / item.quantity)
 
       const discountedGross = Math.round(lineGross * (1 - discountFactor))
       const lineTaxDiscounted = Math.round(discountedGross * item.vatRate / (100 + item.vatRate))
@@ -292,7 +291,7 @@ function mapOrder(order: SanityOrder, tz: string) {
         product_id: stableId(item.productId),
         quantity: item.quantity,
         sku: item.sku ?? '',
-        price: price(unitPrice),
+        price: price(item.price), // gross unit price, consistent with prices_include_tax: true
         subtotal: price(lineNet),
         subtotal_tax: price(lineTax),
         total: price(lineNetDiscounted),
