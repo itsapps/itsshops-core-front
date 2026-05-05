@@ -153,6 +153,20 @@ export function calcWinePackagingCost(
       const volume = item.wine?.volume
       if (!volume) return null
       bottlesByVolume.set(volume, (bottlesByVolume.get(volume) ?? 0) + item.quantity)
+    } else if (item.kind === 'bundle') {
+      if (item.bundleItems && item.bundleItems.length > 0) {
+        for (const bi of item.bundleItems) {
+          if (bi.kind === 'wine') {
+            const volume = bi.wine?.volume
+            if (!volume) return null
+            bottlesByVolume.set(volume, (bottlesByVolume.get(volume) ?? 0) + bi.quantity * item.quantity)
+          } else {
+            if (bi.weight) nonWineWeightGrams += bi.weight * bi.quantity * item.quantity
+          }
+        }
+      } else {
+        if (item.weight) nonWineWeightGrams += item.weight * item.quantity
+      }
     } else {
       if (item.weight) nonWineWeightGrams += item.weight * item.quantity
     }

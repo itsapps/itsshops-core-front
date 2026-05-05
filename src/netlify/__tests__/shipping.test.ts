@@ -270,6 +270,101 @@ describe('resolveShippingMethods', () => {
     expect(result[0].packagingLines![0]).toMatchObject({ volume: 750, packSize: 1, quantity: 1 })
   })
 
+  it('counts wine bottles inside bundles for packaging', () => {
+    const methodWithPackaging: SanityShippingMethodResult[] = [{
+      _id: 'sm-pkg',
+      title: [{ language: 'de', value: 'Weinversand' }],
+      methodType: 'delivery',
+      pickupFee: null,
+      freeShippingThreshold: null,
+      taxCategoryCode: 'standard',
+      rates: null,
+      packagingConfigs: [
+        { volume: 750, packages: [{ count: 6, price: 600 }] },
+      ],
+    }]
+    // bundle of 6x 750ml wine bottles
+    const items = [
+      makeItem({
+        kind: 'bundle',
+        weight: 7500,
+        quantity: 1,
+        wine: null,
+        bundleItems: [
+          { variantId: 'w1', quantity: 6, kind: 'wine', weight: 1250, wine: { volume: 750 } },
+        ],
+      }),
+    ]
+    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
+    expect(result).toHaveLength(1)
+    // 6 bottles → 1x 6-pack at 600
+    expect(result[0].price).toBe(600)
+    expect(result[0].packagingLines).toHaveLength(1)
+    expect(result[0].packagingLines![0]).toMatchObject({ volume: 750, packSize: 6, quantity: 1 })
+  })
+
+  it('multiplies bundle wine children by bundle quantity', () => {
+    const methodWithPackaging: SanityShippingMethodResult[] = [{
+      _id: 'sm-pkg',
+      title: [{ language: 'de', value: 'Weinversand' }],
+      methodType: 'delivery',
+      pickupFee: null,
+      freeShippingThreshold: null,
+      taxCategoryCode: 'standard',
+      rates: null,
+      packagingConfigs: [
+        { volume: 750, packages: [{ count: 6, price: 600 }] },
+      ],
+    }]
+    // 2x bundle of 3x 750ml = 6 bottles total
+    const items = [
+      makeItem({
+        kind: 'bundle',
+        weight: 3750,
+        quantity: 2,
+        wine: null,
+        bundleItems: [
+          { variantId: 'w1', quantity: 3, kind: 'wine', weight: 1250, wine: { volume: 750 } },
+        ],
+      }),
+    ]
+    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
+    expect(result).toHaveLength(1)
+    expect(result[0].price).toBe(600)
+  })
+
+  it('handles mixed bundle: wine children packaged, non-wine children weight-based', () => {
+    const methodWithPackaging: SanityShippingMethodResult[] = [{
+      _id: 'sm-pkg',
+      title: [{ language: 'de', value: 'Weinversand' }],
+      methodType: 'delivery',
+      pickupFee: null,
+      freeShippingThreshold: null,
+      taxCategoryCode: 'standard',
+      rates: [{ maxWeight: 30, price: 400 }],
+      packagingConfigs: [
+        { volume: 750, packages: [{ count: 1, price: 300 }] },
+      ],
+    }]
+    // bundle: 1x 750ml wine + 1x physical (500g)
+    const items = [
+      makeItem({
+        kind: 'bundle',
+        weight: 1750,
+        quantity: 1,
+        wine: null,
+        bundleItems: [
+          { variantId: 'w1', quantity: 1, kind: 'wine', weight: 1250, wine: { volume: 750 } },
+          { variantId: 'p1', quantity: 1, kind: 'physical', weight: 500, wine: null },
+        ],
+      }),
+    ]
+    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
+    expect(result).toHaveLength(1)
+    // 1x 750ml → packaging 300, 1x physical 500g → weight rate 400
+    expect(result[0].price).toBe(700)
+  })
+
   it('skips delivery method if weight exceeds all rates', () => {
     const items = [makeItem({ weight: 31000, quantity: 1 })] // 31kg > max 30kg
     const result = resolveShippingMethods(methods, items, 5000, 0, 'afterDiscount', 'de')

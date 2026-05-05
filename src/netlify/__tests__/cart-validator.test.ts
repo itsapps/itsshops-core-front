@@ -179,7 +179,7 @@ describe('validateCart', () => {
       'de',
     )
     expect(result.items[0].bundleItems).toEqual([
-      { variantId: 'child1', quantity: 3 },
+      { variantId: 'child1', quantity: 3, kind: 'physical', weight: 750, wine: null },
     ])
     // 3 × 750 g = 2250 g
     expect(result.items[0].weight).toBe(2250)

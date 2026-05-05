@@ -106,10 +106,23 @@ export function validateCart(
       optionTitle: resolveLocalizedTitle(o.title, locale, defaultLocale),
     })) ?? null
 
-    const bundleItems = variant.bundleItems?.map(bi => ({
-      variantId: bi.variant._id,
-      quantity: bi.quantity,
-    })) ?? null
+    const bundleItems = variant.bundleItems?.map(bi => {
+      const childKind = bi.variant.kind
+      let childWeight: number | null = null
+      if (childKind === 'physical') {
+        childWeight = bi.variant.weight ?? bi.variant.productWeight ?? null
+      } else if (childKind === 'wine') {
+        childWeight = bi.variant.weight ?? bi.variant.productWeight
+          ?? (bi.variant.wine?.volume ? estimateWineBottleWeight(bi.variant.wine.volume) : null)
+      }
+      return {
+        variantId: bi.variant._id,
+        quantity: bi.quantity,
+        kind: childKind,
+        weight: childWeight,
+        wine: bi.variant.wine ? { volume: bi.variant.wine.volume ?? null } : null,
+      }
+    }) ?? null
 
     // Client-supplied subtitle is canonical. Fall back to a composed default
     // from structural data if the client didn't provide one.

@@ -145,7 +145,7 @@ export type ValidatedCartItem = {
   vatAmount: number
   wine: { vintage: string | null; volume: number | null } | null
   options: { groupTitle: string; optionTitle: string }[] | null
-  bundleItems: { variantId: string; quantity: number }[] | null
+  bundleItems: { variantId: string; quantity: number; kind: 'wine' | 'physical' | 'digital' | 'bundle'; weight: number | null; wine: { volume: number | null } | null }[] | null
 }
 
 export type CalculatedTotals = {
