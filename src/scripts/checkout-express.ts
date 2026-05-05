@@ -67,7 +67,9 @@ export function buildLineItems(
     })
   }
   for (const coupon of appliedCoupons) {
-    if (coupon.discountAmount > 0) {
+    // freeShipping coupons are already reflected in the shipping rate being 0 —
+    // adding them as a separate negative line item would break the sum.
+    if (coupon.discountAmount > 0 && coupon.discountType !== 'freeShipping') {
       lines.push({
         name: coupon.code,
         amount: -coupon.discountAmount,

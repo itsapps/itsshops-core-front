@@ -143,14 +143,20 @@ export function createPaymentHandler(config: ServerConfig = {}) {
           discountAmount: result.discountAmount,
           zeroShipping: result.zeroShipping,
         }
+        // For freeShipping coupons, the monetary discount is the shipping cost
+        // that was waived — use that for display so the summary shows the actual
+        // saving (e.g. "-7,00€") rather than "-0,00€".
+        const displayDiscountAmount = result.zeroShipping
+          ? (selectedShipping?.price ?? 0)
+          : result.discountAmount
         appliedCoupons = [{
           code: result.coupon.code,
           discountType: result.coupon.discountType,
           value: result.coupon.value,
-          discountAmount: result.discountAmount,
+          discountAmount: displayDiscountAmount,
         }]
         appliedCouponSnapshots = [
-          buildAppliedCouponSnapshot(result.coupon, result.discountAmount),
+          buildAppliedCouponSnapshot(result.coupon, displayDiscountAmount),
         ]
       } else {
         couponError = {
@@ -220,8 +226,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         _id: m._id,
         title: m.title,
         methodType: m.methodType,
-        price: m.price,
-        isFree: m.isFree,
+        price: couponDiscount?.zeroShipping ? 0 : m.price,
+        isFree: couponDiscount?.zeroShipping ? true : m.isFree,
       })),
       selectedShippingMethodId: selectedShipping?._id ?? null,
       selectedCountry: country,
