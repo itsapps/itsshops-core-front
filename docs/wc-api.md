@@ -194,3 +194,35 @@ All price values are decimal strings (e.g. `"12.34"`), matching WC convention. P
 | `delivered` | `completed` |
 | `canceled` | `cancelled` |
 | `returned` | `refunded` |
+
+
+## Coupons/Discount
+
+In real WooCommerce, subtotal/subtotal_tax on a line item are pre-discount, while total/total_tax are post-discount (coupon distributed proportionally across lines). tax_lines[].tax_total is then the sum of
+line_items[].total_tax — so they always reconcile.
+
+Our wc-api currently sets total = subtotal (no discount applied to line items), so line_items[0].total_tax = "12.65" but tax_lines[0].tax_total = "11.50" — they don't reconcile. We need to distribute the
+discount proportionally into each line's total and total_tax.
+
+The fix is to distribute the discount proportionally into each line's total/total_tax, keeping subtotal/subtotal_tax as the pre-discount figures. While there, we can also properly compute discount_total (net) and discount_tax.
+
+
+
+For the test order (2× Spargelpaket at 55€, fixed 10€ coupon, free shipping):
+
+subtotal / subtotal_tax — what the item costs before any coupon. Taken directly from orderItem.vatAmount (pre-discount VAT stored at order creation time). wineNET can show this as the original line price.
+
+total / total_tax — what was actually charged after the coupon. Computed by applying the discount proportionally: the gross discount (1000) divided by the subtotal (11000) gives a factor (≈9.09%), applied to
+each line's gross to get the discounted gross, then VAT is extracted from that at the item's rate. For this order, that gives discountedGross = 10000, total_tax = floor(10000 × 13/113) = 1150.
+
+tax_lines[0].tax_total — sourced from totals.vatBreakdown.vat, which calculateTotals computed the same way (discount applied proportionally before extracting VAT). So it's always 1150 and always matches
+sum(line_items[].total_tax).
+
+discount_total / discount_tax — the net/tax split of the coupon saving. Derived by comparing pre-discount item VAT (sum of orderItem.vatAmount = 1265) against post-discount item VAT (totals.totalVat -
+shippingTax = 1150). The difference (115) is the tax portion of the discount, remainder (885) is the net portion. So discount_total = "8.85", discount_tax = "1.15", and 8.85 + 1.15 = 10.00 (the full coupon
+value).
+
+The invariants wineNET can rely on:
+- sum(line_items[].total_tax) == tax_lines[].tax_total ✓
+- discount_total + discount_tax == coupon face value ✓
+- sum(line_items[].total) + shipping_total - discount_total == order.total - total_tax ✓
