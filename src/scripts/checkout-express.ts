@@ -44,6 +44,8 @@ export type ExpressCheckoutConfig = {
   }) => Promise<{ clientSecret: string } | { error: string }>
   /** Fired once when Stripe reports the express element has rendered at least one payment method. */
   onReady?: (event: { availablePaymentMethods?: Record<string, boolean> }) => void
+  /** Fired when confirmPayment returns an error (e.g. card declined) so the page can show a message. */
+  onError?: (message: string) => void
 }
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
@@ -244,8 +246,9 @@ export class CheckoutExpress {
     )
 
     if (confirmResult.error) {
-      event.paymentFailed({ reason: 'fail' })
+      this.config.onError?.(confirmResult.error.message)
+      return
     }
-    // Success: Stripe redirects to returnUrl. Cart cleared on order-thanks page.
+    // On success Stripe redirects to returnUrl. Cart cleared on order-thanks page.
   }
 }

@@ -326,6 +326,7 @@ export async function initCheckout(): Promise<void> {
       onReady: () => {
         if (orDividerEl) orDividerEl.hidden = false
       },
+      onError: (message) => showValidationError(message),
       onCreatePayment: async ({ address, email, shippingMethodId }) => {
         try {
           const response = await createPayment(
