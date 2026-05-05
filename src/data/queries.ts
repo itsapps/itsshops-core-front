@@ -11,9 +11,14 @@ export function extraFields(type: string, extensions?: Config['extensions']): st
 }
 
 export function buildModulesProjection(docType: string, extensions?: Config['extensions']): string {
-  const modules = {
-    ...CORE_MODULE_PROJECTIONS,
-    ...(extensions?.modules?.[docType] ?? {}),
+  const modules: Record<string, string> = { ...CORE_MODULE_PROJECTIONS }
+  for (const [type, ext] of Object.entries(extensions?.modules?.[docType] ?? {})) {
+    if (typeof ext === 'string') {
+      modules[type] = ext
+    } else {
+      const core = CORE_MODULE_PROJECTIONS[type] ?? '{ _type }'
+      modules[type] = core.trimEnd().replace(/\}$/, `,\n    ${ext.extraFields}\n  }`)
+    }
   }
   const conditions = Object.entries(modules)
     .map(([type, projection]) => `_type == '${type}' => ${projection}`)

@@ -90,7 +90,6 @@ textarea:not([rows]) {
 }
 
 button,
-label,
 select,
 summary,
 [role='button'],

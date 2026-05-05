@@ -254,8 +254,10 @@ export type Extensions = {
   queries?: Record<string, string>
   /** Extra GROQ projection fields on core document/object types */
   fields?: Record<string, string>
-  /** Custom module type projections per document type (page, post, ...) */
-  modules?: Record<string, Record<string, string>>
+  /** Custom module type projections per document type (page, post, ...).
+   *  String value replaces the core projection entirely.
+   *  Object with `extraFields` appends to the core projection. */
+  modules?: Record<string, Record<string, string | { extraFields: string }>>
   /** Named portable text extension sets. Use 'default' for the unnamed filter call.
    *  Usage in templates: {{ content | portableText | safe }}  or  {{ content | portableText('rich') | safe }} */
   portableTexts?: Record<string, (ctx: PortableTextExtensionContext) => Partial<PortableTextHtmlComponents>>
