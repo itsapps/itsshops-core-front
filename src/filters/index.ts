@@ -3,7 +3,7 @@ import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { Locale, CoreContext, TranslatorParams } from "../types";
 import { resolveString } from "../data/localizers";
-import { imageUrl, imageSizeUrl, image } from "../image"
+import { imageUrl, imageSizeUrl, image, imageSrcsetData } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
@@ -254,6 +254,9 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("imageSizeUrl", (image, size, format) =>
     imageSizeUrl(ctx.imageBuilder, image, size, format)
   );
+  eleventyConfig.addFilter("imageSrcsetData", ((image: any, size: any) =>
+    imageSrcsetData(ctx.imageBuilder, image, size)
+  ) as any);
   eleventyConfig.addFilter("stegaClean", stegaClean);
   eleventyConfig.addFilter("focalPoint", ((image: any) => {
     const hx = image?.hotspot?.x ?? 0.5
