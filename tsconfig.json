@@ -11,8 +11,7 @@
     "strict": true,
     "esModuleInterop": true,       // Helps with default imports
     "skipLibCheck": true,
-    "jsx": "react-jsx",
-    "outDir": "dist"
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
