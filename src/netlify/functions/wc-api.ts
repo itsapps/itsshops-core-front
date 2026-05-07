@@ -223,11 +223,21 @@ function mapOrder(order: SanityOrder, tz: string) {
   // discount_total (net) / discount_tax split.
   const preDiscountItemVat = order.orderItems.reduce((sum, item) => sum + item.vatAmount, 0)
   const postDiscountItemVat = t.totalVat - shippingTax
-  const discountTax = preDiscountItemVat - postDiscountItemVat
-  const discountTotal = t.discount - discountTax  // net discount excl. tax
+  const discountTax = t.discount > 0 ? preDiscountItemVat - postDiscountItemVat : 0
+  const discountTotal = t.discount > 0 ? t.discount - discountTax : 0
 
   // Proportional factor used to distribute the gross discount across line items.
   const discountFactor = t.subtotal > 0 ? t.discount / t.subtotal : 0
+
+  // Pre-compute discounted gross per line item, then absorb the rounding remainder
+  // in the last item so that sum(discountedGross) + shippingCost == grandTotal exactly.
+  const discountedGrossPerItem = order.orderItems.map(item =>
+    Math.round(item.price * item.quantity * (1 - discountFactor))
+  )
+  const expectedLineTotal = t.grandTotal - (f ? f.shippingCost : 0)
+  const roundingRemainder = expectedLineTotal - discountedGrossPerItem.reduce((s, v) => s + v, 0)
+  if (discountedGrossPerItem.length > 0)
+    discountedGrossPerItem[discountedGrossPerItem.length - 1] += roundingRemainder
 
   // Tax lines from vatBreakdown
   const taxLines = (t.vatBreakdown ?? []).map((vb, i) => ({
@@ -274,21 +284,22 @@ function mapOrder(order: SanityOrder, tz: string) {
     payment_method_title: 'Stripe',
     transaction_id: order.paymentIntentId ?? '',
     meta_data: [],
-    line_items: order.orderItems.map((item) => {
+    line_items: order.orderItems.map((item, i) => {
       const lineGross = item.price * item.quantity
       // vatAmount is already the VAT for the full line (price × quantity), not per unit.
       // subtotal/subtotal_tax = pre-discount; total/total_tax = post-discount.
       const lineTax = item.vatAmount
       const lineNet = lineGross - lineTax
 
-      const discountedGross = Math.round(lineGross * (1 - discountFactor))
+      const discountedGross = discountedGrossPerItem[i]
       const lineTaxDiscounted = Math.round(discountedGross * item.vatRate / (100 + item.vatRate))
       const lineNetDiscounted = discountedGross - lineTaxDiscounted
 
       return {
-        id: stableId(item.variantId),
+        id: stableId(`${order.orderNumber}:${item._key}`),
         name: item.subtitle ? `${item.title} – ${item.subtitle}` : item.title,
         product_id: stableId(item.productId),
+        variation_id: stableId(item.variantId),
         quantity: item.quantity,
         sku: item.sku ?? '',
         price: price(item.price), // gross unit price, consistent with prices_include_tax: true
@@ -303,6 +314,10 @@ function mapOrder(order: SanityOrder, tz: string) {
             subtotal: price(lineTax),
             total: price(lineTaxDiscounted),
           })),
+        meta_data: [
+          { key: '_sanity_product_id', value: item.productId },
+          { key: '_sanity_variant_id', value: item.variantId },
+        ],
       }
     }),
     tax_lines: taxLines,
