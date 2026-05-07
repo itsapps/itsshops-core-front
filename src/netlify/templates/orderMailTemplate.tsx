@@ -153,10 +153,10 @@ export function OrderMailTemplate({ ctx, order, mailType }: OrderEmailProps) {
             <Text style={{ ...lineStyle, color: '#888888' }}>{t('emails.orderNumber')}</Text>
             <Text style={{ ...lineStyle, fontWeight: 700 }}>{order.orderNumber}</Text>
           </Column>
-          <Column style={{ verticalAlign: 'top' }}>
+          {/* <Column style={{ verticalAlign: 'top' }}>
             <Text style={{ ...lineStyle, color: '#888888' }}>{t('emails.invoiceNumber')}</Text>
             <Text style={{ ...lineStyle, fontWeight: 700 }}>{order.invoiceNumber}</Text>
-          </Column>
+          </Column> */}
         </Row>
       </Section>
 
