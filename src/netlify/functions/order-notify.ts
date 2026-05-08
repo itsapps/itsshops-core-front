@@ -71,7 +71,7 @@ export function createNotifyHandler(options: NotifyHandlerOptions = {}) {
         attachInvoice: body.attachInvoice,
       })
 
-      log.info('Order notification sent', {
+      log.debug('Order notification sent', {
         requestId,
         orderId: body.orderId,
         mailType: body.mailType,

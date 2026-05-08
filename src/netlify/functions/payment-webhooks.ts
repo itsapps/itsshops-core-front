@@ -51,7 +51,7 @@ async function handlePaymentSucceeded(
     return
   }
 
-  log.info('OrderMeta loaded', {
+  log.debug('OrderMeta loaded', {
     orderMetaId,
     appliedCoupons: orderMeta.appliedCoupons?.length ?? 0,
   })
@@ -64,7 +64,7 @@ async function handlePaymentSucceeded(
     invoiceNumber: formatOrderNumber(invoiceNumberPrefix, invoiceNumber),
   })
 
-  log.info('Order doc built', {
+  log.debug('Order doc built', {
     orderNumber: orderDoc.orderNumber,
     appliedCoupons: orderDoc.appliedCoupons?.length ?? 0,
   })
@@ -85,7 +85,7 @@ async function handlePaymentSucceeded(
     stockDecrements,
     couponIncrements,
   })
-  log.info('Order created', {
+  log.debug('Order created', {
     orderId: created._id,
     orderNumber: orderDoc.orderNumber,
     stockUpdates: stockDecrements.length,
@@ -99,7 +99,7 @@ async function handlePaymentSucceeded(
       ...notifyOptions,
       bccSender: true,
     })
-    log.info('Order confirmation sent', {
+    log.debug('Order confirmation sent', {
       orderId: created._id,
       to: result.to,
       messageId: result.messageId,

@@ -16,6 +16,7 @@
 
 import type { Context } from '@netlify/functions'
 import { sanityClient } from '../services/sanity'
+import { log } from '../utils/logger'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -351,6 +352,7 @@ const ORDER_PROJECTION = `{
 // ── Route handlers ───────────────────────────────────────────────────────────
 
 function handleSystemStatus(config: Required<WcApiConfig>): Response {
+  log.debug('System status')
   return json({
     environment: {
       version: config.version,
@@ -412,6 +414,17 @@ async function handleListOrders(
   const { orders, total } = await sanityClient.fetch<{ orders: SanityOrder[]; total: number }>(query, params)
   const totalPages = Math.ceil(total / perPage)
 
+  log.debug('List orders', {
+    page,
+    perPage,
+    statusFilter,
+    after,
+    before,
+    total,
+    totalPages,
+    orders: orders.length,
+  })
+
   const mapped = orders.map(o => mapOrder(o, config.timezone))
 
   return new Response(JSON.stringify(mapped), {
@@ -438,12 +451,14 @@ async function handleUpdateOrder(
 
   const wcStatus = typeof body.status === 'string' ? body.status : null
   if (!wcStatus) {
+    log.error('Update order: Missing status parameter', { body })
     return wcError('woocommerce_rest_missing_status', 'Missing status parameter')
   }
 
   const internalStatus = STATUS_FROM_WC[wcStatus] ?? wcStatus
   const validStatuses = ['created', 'processing', 'shipped', 'delivered', 'canceled', 'returned']
   if (!validStatuses.includes(internalStatus)) {
+    log.error('Update order: Invalid status', { wcStatus })
     return wcError('woocommerce_rest_invalid_status', `Invalid status: ${wcStatus}`)
   }
 
@@ -455,6 +470,7 @@ async function handleUpdateOrder(
   )
 
   if (!order) {
+    log.error('Update order: order not found', { orderId, suffix })
     return wcError('woocommerce_rest_order_invalid_id', `Order ${orderId} not found`, 404)
   }
 
@@ -466,6 +482,12 @@ async function handleUpdateOrder(
     timestamp: new Date().toISOString(),
     source: 'wc-api',
   }
+
+  log.debug('Update order', {
+    orderId,
+    wcStatus,
+    internalStatus,
+  })
 
   await sanityClient
     .patch(order._id)
@@ -512,9 +534,10 @@ export function createWcApiHandler(userConfig: WcApiConfig = {}) {
         return handleUpdateOrder(id, request, config)
       }
 
+      log.error('No route found', { method: request.method, path })
       return wcError('woocommerce_rest_no_route', `No route found for ${request.method} ${path}`, 404)
     } catch (err) {
-      console.error('[wc-api] Error:', err)
+      log.error('Internal server error', { err })
       return wcError('woocommerce_rest_internal_error', 'Internal server error', 500)
     }
   }
