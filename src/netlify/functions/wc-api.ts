@@ -16,6 +16,7 @@
 
 import type { Context } from '@netlify/functions'
 import { sanityClient } from '../services/sanity'
+import { sendOrderNotification, type SendOrderNotificationOptions } from '../lib/order-notifier'
 import { log } from '../utils/logger'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -23,6 +24,13 @@ import { log } from '../utils/logger'
 type WcApiConfig = {
   timezone?: string
   version?: string
+  /** If provided, sends an orderShipping email when status changes to shipped. */
+  notify?: SendOrderNotificationOptions
+}
+
+type ResolvedWcApiConfig = {
+  timezone: string
+  version: string
 }
 
 type SanityOrder = {
@@ -351,7 +359,7 @@ const ORDER_PROJECTION = `{
 
 // ── Route handlers ───────────────────────────────────────────────────────────
 
-function handleSystemStatus(config: Required<WcApiConfig>): Response {
+function handleSystemStatus(config: ResolvedWcApiConfig): Response {
   log.debug('System status')
   return json({
     environment: {
@@ -367,7 +375,7 @@ function handleSystemStatus(config: Required<WcApiConfig>): Response {
 
 async function handleListOrders(
   request: Request,
-  config: Required<WcApiConfig>,
+  config: ResolvedWcApiConfig,
 ): Promise<Response> {
   const url = new URL(request.url)
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10))
@@ -440,7 +448,9 @@ async function handleListOrders(
 async function handleUpdateOrder(
   orderId: number,
   request: Request,
-  config: Required<WcApiConfig>,
+  context: Context,
+  config: ResolvedWcApiConfig,
+  notify?: SendOrderNotificationOptions,
 ): Promise<Response> {
   let body: Record<string, unknown>
   try {
@@ -495,18 +505,30 @@ async function handleUpdateOrder(
     .append('statusHistory', [historyEntry])
     .commit()
 
+  if (internalStatus === 'shipped' && notify) {
+    context.waitUntil(
+      sendOrderNotification(order._id, 'orderShipping', notify).catch(err =>
+        log.error('Shipping notification failed', {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
+    )
+  }
+
   return json(mapOrder({ ...order, status: internalStatus }, config.timezone))
 }
 
 // ── Main handler factory ─────────────────────────────────────────────────────
 
 export function createWcApiHandler(userConfig: WcApiConfig = {}) {
-  const config: Required<WcApiConfig> = {
+  const config: ResolvedWcApiConfig = {
     timezone: userConfig.timezone ?? process.env.WC_TIMEZONE ?? 'Europe/Vienna',
     version: userConfig.version ?? '9.0.0',
   }
 
-  return async (request: Request, _context: Context): Promise<Response> => {
+  return async (request: Request, context: Context): Promise<Response> => {
     // Auth
     if (!authenticate(request)) {
       return wcError('woocommerce_rest_cannot_view', 'Unauthorized', 401)
@@ -531,7 +553,7 @@ export function createWcApiHandler(userConfig: WcApiConfig = {}) {
       const orderMatch = path.match(/^orders\/(\d+)$/)
       if (orderMatch && request.method === 'PUT') {
         const id = parseInt(orderMatch[1], 10)
-        return handleUpdateOrder(id, request, config)
+        return handleUpdateOrder(id, request, context, config, userConfig.notify)
       }
 
       log.error('No route found', { method: request.method, path })
