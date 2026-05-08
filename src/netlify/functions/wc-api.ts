@@ -159,8 +159,9 @@ const STATUS_FROM_WC: Record<string, string> = {
   completed: 'shipped',
   cancelled: 'canceled',
   refunded: 'returned',
-  'on-hold': 'processing',
 }
+
+const VALID_INTERNAL_STATUSES = new Set(Object.keys(STATUS_TO_WC))
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -384,18 +385,26 @@ async function handleListOrders(
   const after = url.searchParams.get('after') ?? ''
   const before = url.searchParams.get('before') ?? ''
 
-  // Map WC status to internal status for GROQ filter
-  const internalStatuses = statusFilter
-    ? Object.entries(STATUS_TO_WC)
-      .filter(([, wc]) => wc === statusFilter)
-      .map(([internal]) => internal)
+  // Map WC status (or comma-separated list) to internal statuses for GROQ filter.
+  // Unknown WC statuses (e.g. "pending", "on-hold") are silently ignored — they
+  // have no equivalent in our system and should not block known statuses in the list.
+  const requestedWcStatuses = statusFilter ? statusFilter.split(',').map(s => s.trim()) : []
+  const internalStatuses = requestedWcStatuses.length > 0
+    ? [...new Set(
+        Object.entries(STATUS_TO_WC)
+          .filter(([, wc]) => requestedWcStatuses.includes(wc))
+          .map(([internal]) => internal)
+      )]
     : []
 
   // Build GROQ filter
   const filters = ['_type == "order"']
   const params: Record<string, unknown> = {}
 
-  if (internalStatuses.length > 0) {
+  if (requestedWcStatuses.length > 0 && internalStatuses.length === 0) {
+    // All requested statuses are unknown — return nothing rather than all orders
+    filters.push('false')
+  } else if (internalStatuses.length > 0) {
     filters.push('status in $statuses')
     params.statuses = internalStatuses
   }
@@ -466,8 +475,7 @@ async function handleUpdateOrder(
   }
 
   const internalStatus = STATUS_FROM_WC[wcStatus] ?? wcStatus
-  const validStatuses = ['created', 'processing', 'shipped', 'delivered', 'canceled', 'returned']
-  if (!validStatuses.includes(internalStatus)) {
+  if (!VALID_INTERNAL_STATUSES.has(internalStatus)) {
     log.error('Update order: Invalid status', { wcStatus })
     return wcError('woocommerce_rest_invalid_status', `Invalid status: ${wcStatus}`)
   }
