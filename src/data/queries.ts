@@ -116,6 +116,7 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
   _updatedAt,
   ${proj.i18nStringField('title')},
   ${proj.i18nStringField('description')},
+  sortOrder,
   "parent": parent{ _ref },
   seo ${proj.seo},
   "filters": filters[]{

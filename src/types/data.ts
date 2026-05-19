@@ -79,6 +79,7 @@ export type ResolvedCategory = {
   slug: string
   url: string
   locale: string
+  sortOrder: number
   parentId: string | null
   seo: ResolvedSeo
   /** Filter group keys to show on the category page (resolved from Sanity filter config) */

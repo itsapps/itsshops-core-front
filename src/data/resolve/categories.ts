@@ -21,6 +21,7 @@ export function resolveCategories(
       slug,
       url: `/${ctx.locale}/${permalinks[ctx.locale].category}/${slug}/`,
       locale: ctx.locale,
+      sortOrder: c.sortOrder ?? 0,
       parentId: c.parent?._ref ?? null,
       seo: ctx.resolveSeo(c.seo),
       filters: resolveFilterSpecs(c.filters, ctx),
