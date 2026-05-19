@@ -66,6 +66,7 @@ function isStateEmpty(state: FilterState): boolean {
 }
 
 function isCollapsedState(state: FilterState, collapseOnlyKeys: Set<string>): boolean {
+  if (collapseOnlyKeys.size === 0) return true
   if (state.priceMin !== null || state.priceMax !== null) return false
   for (const key of state.attrs.keys()) {
     if (!collapseOnlyKeys.has(key)) return false

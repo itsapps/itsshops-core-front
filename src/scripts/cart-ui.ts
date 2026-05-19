@@ -200,17 +200,24 @@ export function initCart(): void {
       if (qtyEl) qtyEl.textContent = '1'
 
       const originalText = btn.textContent
+      const originalAriaLabel = btn.getAttribute('aria-label')
       const addedText = btn.dataset.addedToCart
+      const ariaTemplate = btn.dataset.ariaAddTemplate ?? ''
+      const ariaAdded = ariaTemplate
+        ? ariaTemplate.replace('{qty}', String(qty)).replace('{title}', title)
+        : addedText ?? ''
       btn.classList.add('is-added')
       if (addedText) {
         btn.setAttribute('aria-live', 'assertive')
         btn.textContent = addedText
+        if (ariaAdded) btn.setAttribute('aria-label', ariaAdded)
       }
       setTimeout(() => {
         btn.classList.remove('is-added')
         if (addedText) {
           btn.removeAttribute('aria-live')
           btn.textContent = originalText
+          if (originalAriaLabel) btn.setAttribute('aria-label', originalAriaLabel)
         }
       }, 2000)
 
