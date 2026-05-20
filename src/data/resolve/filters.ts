@@ -6,7 +6,7 @@ import type { FilterGroup, ResolvedCategory, ResolvedFilterKey, ResolvedWine } f
 
 export type FilterAccumulator = Map<string, {
   label: string
-  values: Map<string, { label: string; count: number }>
+  values: Map<string, { label: string; count: number; sortOrder?: number }>
 }>
 
 export function buildFilterAttributes(
@@ -106,7 +106,7 @@ export function accumulateFilterGroups(
   if (categories?.length) {
     const label = ctx.translate('filters.category')
     for (const cat of categories) {
-      if (cat.slug) addToAcc(acc, 'category', label, cat.slug, cat.title)
+      if (cat.slug) addToAcc(acc, 'category', label, cat.slug, cat.title, cat.sortOrder)
     }
   }
 }
@@ -117,12 +117,13 @@ function addToAcc(
   groupLabel: string,
   valueSlug: string,
   valueLabel: string,
+  sortOrder?: number,
 ): void {
   if (!acc.has(groupKey)) acc.set(groupKey, { label: groupLabel, values: new Map() })
   const group = acc.get(groupKey)!
   const existing = group.values.get(valueSlug)
   if (existing) existing.count++
-  else group.values.set(valueSlug, { label: valueLabel, count: 1 })
+  else group.values.set(valueSlug, { label: valueLabel, count: 1, sortOrder })
 }
 
 /**
@@ -147,17 +148,18 @@ export function resolveFilterSpecs(
 }
 
 export function buildFilterGroups(acc: FilterAccumulator): FilterGroup[] {
-  return Array.from(acc.entries()).map(([key, { label, values }]) => ({
-    key,
-    label,
-    values: Array.from(values.entries())
-      .map(([value, { label: vLabel, count }]) => ({ value, label: vLabel, count }))
+  return Array.from(acc.entries()).map(([key, { label, values }]) => {
+    const sorted = Array.from(values.entries())
+      .map(([value, { label: vLabel, count, sortOrder }]) => ({ value, label: vLabel, count, sortOrder }))
       .sort((a, b) =>
         key === 'vintage'
           ? b.value.localeCompare(a.value)
           : key === 'volume'
             ? Number(a.value) - Number(b.value)
-            : a.label.localeCompare(b.label)
-      ),
-  }))
+            : key === 'category'
+              ? (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+              : a.label.localeCompare(b.label)
+      )
+    return { key, label, values: sorted.map(({ sortOrder: _, ...v }) => v) }
+  })
 }
