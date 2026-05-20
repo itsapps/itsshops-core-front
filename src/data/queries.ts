@@ -201,6 +201,7 @@ export function buildShopSettingsQuery(): string {
   return `*[_type == 'shopSettings'][0]{
   _id,
   "shopPage": shopPage{ _ref },
+  "termsPage": termsPage{ _ref },
   "defaultCountry": defaultCountry->{ _id, countryCode },
   freeShippingCalculation,
   stockThreshold,

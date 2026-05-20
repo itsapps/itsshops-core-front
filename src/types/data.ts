@@ -162,6 +162,7 @@ export type ResolvedSettings = {
 export type ResolvedShopSettings = {
   _id: string
   shopPageId: string | null
+  termsPageId: string | null
   defaultCountry: { _id: string; countryCode: string } | null
   freeShippingCalculation: 'beforeDiscount' | 'afterDiscount'
   stockThreshold: number | null

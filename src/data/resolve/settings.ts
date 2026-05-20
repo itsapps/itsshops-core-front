@@ -47,6 +47,7 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
     filters: resolveFilterSpecs(raw.filters, ctx),
     _id:                     raw._id,
     shopPageId:              raw.shopPage?._ref ?? null,
+    termsPageId:              raw.termsPage?._ref ?? null,
     defaultCountry:          raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,
