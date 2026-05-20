@@ -340,6 +340,11 @@
   margin-top: 0.5rem;
 }
 
+.checkout__confirmation {
+  font-weight: bold;
+  padding-block-start: 0.5rem;
+}
+
 
 /* ─── Price range slider ───────────────────────────────────────────────────
  * Structural layout for dual-thumb range slider.

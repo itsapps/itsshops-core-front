@@ -190,6 +190,10 @@ export default {
   //   orderStatus: "Status",
   // },
   checkout: {
+    confirmations: {
+      terms: 'Ich habe die <a href="{{url}}">AGB</a> gelesen und stimme ihnen zu.',
+      age: "Ich bestätige, dass ich mindestens 18 Jahre alt bin.",
+    },
     sections: {
       contact: "Kontakt",
       delivery: "Lieferung",
@@ -350,6 +354,7 @@ export default {
       zip: {
         label: "PLZ",
         errorMessage: "Postleitzahl darf nicht leer sein",
+        errorMessageFormat: "Ungültige Postleitzahl",
       },
       country: {
         label: "Land",

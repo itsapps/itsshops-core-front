@@ -50,6 +50,7 @@ export async function initCheckout(): Promise<void> {
     errorStreet: container.dataset.tErrorStreet ?? 'Address is required',
     errorCity: container.dataset.tErrorCity ?? 'City is required',
     errorZip: container.dataset.tErrorZip ?? 'Postal code is required',
+    errorZipFormat: container.dataset.tErrorZipFormat ?? 'Invalid postal code format',
     errorCountry: container.dataset.tErrorCountry ?? 'Country is required',
     discount: container.dataset.tDiscount ?? 'Discount',
     couponApply: container.dataset.tCouponApply ?? 'Apply',
@@ -108,6 +109,7 @@ export async function initCheckout(): Promise<void> {
     street: t.errorStreet,
     city: t.errorCity,
     zip: t.errorZip,
+    zipFormat: t.errorZipFormat,
     country: t.errorCountry,
   })
   const shipping = new CheckoutShipping(shippingEl)

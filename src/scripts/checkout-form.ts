@@ -5,6 +5,40 @@ import { validateEmail } from '../shared/validation'
 // before sending to the server. The server only requires `name`.
 const MANUAL_FORM_REQUIRED_FIELDS = ['prename', 'lastname', 'line1', 'zip', 'city', 'country'] as const
 
+const ZIP_PATTERNS: Record<string, RegExp> = {
+  AT: /^\d{4}$/,
+  BE: /^\d{4}$/,
+  BG: /^\d{4}$/,
+  CH: /^\d{4}$/,
+  CY: /^\d{4}$/,
+  CZ: /^\d{3}\s?\d{2}$/,
+  DE: /^\d{5}$/,
+  DK: /^\d{4}$/,
+  EE: /^\d{5}$/,
+  ES: /^\d{5}$/,
+  FI: /^\d{5}$/,
+  FR: /^\d{5}$/,
+  GB: /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i,
+  GR: /^\d{3}\s?\d{2}$/,
+  HR: /^\d{5}$/,
+  HU: /^\d{4}$/,
+  IE: /^[A-Z\d]{3}\s?[A-Z\d]{4}$/i,
+  IT: /^\d{5}$/,
+  LI: /^\d{4}$/,
+  LT: /^\d{5}$/,
+  LU: /^\d{4}$/,
+  LV: /^\d{4}$/,
+  MT: /^[A-Z]{3}\s?\d{4}$/i,
+  NL: /^\d{4}\s?[A-Z]{2}$/i,
+  NO: /^\d{4}$/,
+  PL: /^\d{2}-\d{3}$/,
+  PT: /^\d{4}-\d{3}$/,
+  RO: /^\d{6}$/,
+  SE: /^\d{3}\s?\d{2}$/,
+  SI: /^\d{4}$/,
+  SK: /^\d{3}\s?\d{2}$/,
+}
+
 type FieldError = { field: string; message: string }
 
 export type FormErrorLabels = {
@@ -14,6 +48,7 @@ export type FormErrorLabels = {
   street: string
   city: string
   zip: string
+  zipFormat: string
   country: string
 }
 
@@ -31,6 +66,7 @@ export class CheckoutForm {
       street: 'Address is required',
       city: 'City is required',
       zip: 'Postal code is required',
+      zipFormat: 'Invalid postal code format',
       country: 'Country is required',
     }
     this.bindCountryListener()
@@ -131,6 +167,13 @@ export class CheckoutForm {
       if (!this.getFieldValue(`${prefix}.${field}`).trim()) {
         errors.push({ field: `${prefix}.${field}`, message: this.errorLabels[labelMap[field]] })
       }
+    }
+
+    const zip = this.getFieldValue(`${prefix}.zip`).trim()
+    const country = this.getFieldValue(`${prefix}.country`).trim().toUpperCase()
+    const pattern = ZIP_PATTERNS[country]
+    if (zip && pattern && !pattern.test(zip)) {
+      errors.push({ field: `${prefix}.zip`, message: this.errorLabels.zipFormat })
     }
   }
 

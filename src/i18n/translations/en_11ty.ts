@@ -190,6 +190,10 @@ export default {
   //   orderStatus: "Status",
   // },
   checkout: {
+    confirmations: {
+      terms: 'I have read the <a href="{{url}}">Terms & Conditions</a> and agree to them.',
+      age: "I confirm that I am at least 18 years old.",
+    },
     sections: {
       contact: "Contact",
       delivery: "Delivery",
@@ -350,6 +354,7 @@ export default {
       zip: {
         label: "Postal code",
         errorMessage: "Postal code must not be empty",
+        errorMessageFormat: "Invalid postal code",
       },
       country: {
         label: "Country",

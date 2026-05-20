@@ -29,6 +29,7 @@
     data-t-error-street="{{ 'forms.fields.street.errorMessage' | trans }}"
     data-t-error-city="{{ 'forms.fields.city.errorMessage' | trans }}"
     data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
+    data-t-error-zip-format="{{ 'forms.fields.zip.errorMessageFormat' | trans }}"
     data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
     {%- if coreConfig.features.shop.coupons %}
     data-t-discount="{{ 'checkout.discount' | trans }}"
@@ -230,6 +231,19 @@
             <div data-checkout-payment class="checkout-payment"></div>
           </fieldset>
 
+          {% block checkout_confirmations %}
+            {%- if coreConfig.features.shop.checkoutAgeConfirmation %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.age' | trans }}
+              </p>
+            {%- endif %}
+            {%- set _termsPageId = cms[_locale].shopSettings.termsPageId -%}
+            {%- if _termsPageId %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.terms' | trans({ url: _termsPageId | pageUrl }) | safe }}
+              </p>
+            {%- endif %}
+          {% endblock %}
           <button type="submit" data-checkout-submit class="checkout__submit btn">
             {{ 'forms.checkout.submit.text' | trans }}
           </button>
