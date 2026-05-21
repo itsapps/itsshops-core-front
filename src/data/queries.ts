@@ -23,7 +23,7 @@ export function buildModulesProjection(docType: string, extensions?: Config['ext
   const conditions = Object.entries(modules)
     .map(([type, projection]) => `_type == '${type}' => ${projection}`)
     .join(',\n    ')
-  return `modules[]{\n    _type,\n    ${conditions}\n  }`
+  return `modules[disabled != true]{\n    _type,\n    ${conditions}\n  }`
 }
 
 // ---------------------------------------------------------------------------
