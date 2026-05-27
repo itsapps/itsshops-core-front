@@ -19,6 +19,11 @@ export function makeCtx(
     resolveSeo:            (raw) => resolveSeo(raw, locale, defaultLocale),
     resolveCarousel:       (raw) => resolveCarousel(raw, locale, defaultLocale),
     resolvePortableText:   (raw) => resolvePortableText(raw, locale, defaultLocale),
+    resolveActions:        (raw) => (raw ?? []).map((a: any) => ({
+      title:       resolveString(a.internalLinkTitle, locale, defaultLocale),
+      internal:    a.internal ?? null,
+      displayType: a.internalLinkDisplayType ?? null,
+    })),
     resolveLocaleValue:    (arr) => resolveLocaleValue(arr, locale, defaultLocale),
     translate:             (key, params) => translate(key, params, locale),
   }

@@ -147,6 +147,19 @@ export const carousel = `{
 
 export const carouselField = (fieldName = 'carousel') => `"${fieldName}": ${fieldName} ${carousel}`
 
+/** Projects an actionGroup field (array of internalLink objects with optional title/displayType) */
+export const actionsField = (
+  fieldName = 'actions',
+  options?: { includeTitle?: boolean; includeDisplayType?: boolean },
+) => {
+  const fields = [
+    ...(options?.includeTitle ? [i18nStringField('internalLinkTitle')] : []),
+    `"internal": internalLinkReference->{ _id, _type }`,
+    ...(options?.includeDisplayType ? ['internalLinkDisplayType'] : []),
+  ]
+  return `"${fieldName}": ${fieldName}[]{ ${fields.join(', ')} }`
+}
+
 // ---------------------------------------------------------------------------
 // Reference arrays
 // ---------------------------------------------------------------------------
