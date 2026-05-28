@@ -1,7 +1,7 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
 <article class="static-page user-recover">
-  <h1>{{ 'staticPages.userRecover.title' | trans }}</h1>
-  <p>{{ 'staticPages.userRecover.info' | trans }}</p>
+  {% block page_header %}<h1>{{ 'staticPages.userRecover.title' | trans }}</h1>{% endblock %}
+  {% block page_info %}<p>{{ 'staticPages.userRecover.info' | trans }}</p>{% endblock %}
 
   <div data-user-recover
     data-api="/api/user/recover"

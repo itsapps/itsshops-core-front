@@ -1,4 +1,6 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
 <article class="static-page user-confirm-success">
-  <h1>{{ 'staticPages.userConfirmSuccess.title' | trans }}</h1>
+  {% block page_header %}<h1>{{ 'staticPages.userConfirmSuccess.title' | trans }}</h1>{% endblock %}
+  {% block page_info %}<p>{{ 'staticPages.userConfirmSuccess.info' | trans }}</p>{% endblock %}
+  {% block page_content %}{% endblock %}
 </article>
