@@ -17,28 +17,30 @@
     data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
   >
     <form class="user-form" novalidate>
-      <div class="user-form__field">
-        <label for="register-email">{{ 'forms.fields.email.label' | trans }}</label>
-        <input type="email" id="register-email" name="email" required autocomplete="email">
-        <span class="user-form__field-error" data-field-error="email"></span>
-      </div>
+      <div class="user-form__basics">
+        <div class="user-form__field">
+          <label for="register-email">{{ 'forms.fields.email.label' | trans }}</label>
+          <input type="email" id="register-email" name="email" required autocomplete="email">
+          <span class="user-form__field-error" data-field-error="email"></span>
+        </div>
 
-      <div class="user-form__field" data-register-field="prename" hidden>
-        <label for="register-prename">{{ 'forms.fields.prename.label' | trans }}</label>
-        <input type="text" id="register-prename" name="prename" autocomplete="given-name">
-        <span class="user-form__field-error" data-field-error="prename"></span>
-      </div>
+        <div class="user-form__field" data-register-field="prename" hidden>
+          <label for="register-prename">{{ 'forms.fields.prename.label' | trans }}</label>
+          <input type="text" id="register-prename" name="prename" autocomplete="given-name">
+          <span class="user-form__field-error" data-field-error="prename"></span>
+        </div>
 
-      <div class="user-form__field" data-register-field="lastname" hidden>
-        <label for="register-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
-        <input type="text" id="register-lastname" name="lastname" autocomplete="family-name">
-        <span class="user-form__field-error" data-field-error="lastname"></span>
-      </div>
+        <div class="user-form__field" data-register-field="lastname" hidden>
+          <label for="register-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
+          <input type="text" id="register-lastname" name="lastname" autocomplete="family-name">
+          <span class="user-form__field-error" data-field-error="lastname"></span>
+        </div>
 
-      <div class="user-form__field" data-register-field="phone" hidden>
-        <label for="register-phone">{{ 'forms.fields.phone.label' | trans }}</label>
-        <input type="tel" id="register-phone" name="phone" autocomplete="tel">
-        <span class="user-form__field-error" data-field-error="phone"></span>
+        <div class="user-form__field" data-register-field="phone" hidden>
+          <label for="register-phone">{{ 'forms.fields.phone.label' | trans }}</label>
+          <input type="tel" id="register-phone" name="phone" autocomplete="tel">
+          <span class="user-form__field-error" data-field-error="phone"></span>
+        </div>
       </div>
 
       <div class="user-form__address" data-register-field="address" hidden>
@@ -84,16 +86,20 @@
         </div>
       </div>
 
-      <div class="user-form__field">
-        <label for="register-password">{{ 'forms.fields.password.label' | trans }}</label>
-        <input type="password" id="register-password" name="password" required autocomplete="new-password">
-        <span class="user-form__field-error" data-field-error="password"></span>
+      <div>
+        <div class="user-form__field">
+          <label for="register-password">{{ 'forms.fields.password.label' | trans }}</label>
+          <input type="password" id="register-password" name="password" required autocomplete="new-password">
+          <span class="user-form__field-error" data-field-error="password"></span>
+        </div>
       </div>
 
-      <label class="user-form__checkbox" data-register-field="newsletter" hidden>
-        <input type="checkbox" name="newsletter">
-        {{ 'forms.fields.registerForNewsletter.label' | trans }}
-      </label>
+      <div class="user-form__newsletter">
+        <label class="user-form__checkbox" data-register-field="newsletter" hidden>
+          <input type="checkbox" name="newsletter">
+          {{ 'forms.fields.registerForNewsletter.label' | trans }}
+        </label>
+      </div>
 
       {%- if coreConfig.captchaSiteKey %}
       <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}"></div>
@@ -101,10 +107,12 @@
 
       <div class="user-form__error" role="alert" hidden data-form-error></div>
 
-      <button type="submit" class="btn">
-        <span data-submit-text>{{ 'forms.userRegistration.submit.text' | trans }}</span>
-        <span data-submit-loading hidden>{{ 'forms.userRegistration.submit.loadingText' | trans }}</span>
-      </button>
+      <div class="user-form__submit">
+        <button type="submit" class="btn">
+          <span data-submit-text>{{ 'forms.userRegistration.submit.text' | trans }}</span>
+          <span data-submit-loading hidden>{{ 'forms.userRegistration.submit.loadingText' | trans }}</span>
+        </button>
+      </div>
     </form>
 
     {% block page_login %}
