@@ -255,14 +255,14 @@ export default {
       description: "User login",
     },
     userRegistration: {
-      title: "Register",
+      title: "Registration",
       description: "User registration",
       info: "After registering, we will send you an email with a link to activate your account.",
     },
     userRegistrationSuccess: {
       title: "Thank you!",
       description: "Thanks for registering",
-      info: "You will receive your login details by email shortly. In the meantime, you can order online from us — the ordering process does not require a login!"
+      info: "You will receive an email shortly to activate your account.",
     },
     userConfirm: {
       title: "Confirm account",

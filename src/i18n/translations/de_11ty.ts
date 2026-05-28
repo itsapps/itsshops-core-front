@@ -255,14 +255,14 @@ export default {
       description: "Benutzer anmelden",
     },
     userRegistration: {
-      title: "Registrieren",
+      title: "Registrierung",
       description: "Benutzer registrieren",
       info: "Nach dem Registrieren senden wir Dir per E-Mail einen Link zu, mit dem du deinen Account aktivieren kannst.",
     },
     userRegistrationSuccess: {
       title: "Danke!",
       description: "Danke für's registrieren",
-      info: "Du bekommst in Kürze deine Anmeldedaten per E-Mail. In der Zwischenzeit kannst du bei uns online bestellen - der Bestellprozess braucht keinen Login!"
+      info: "Du bekommst in Kürze eine E-Mail, um deinen Account zu aktivieren.",
     },
     userConfirm: {
       title: "Benutzerkonto bestätigen",

@@ -1,5 +1,1 @@
-{%- set _locale = page.lang or coreConfig.defaultLocale -%}
-<article class="static-page user-registration-success">
-  <h1>{{ 'staticPages.userRegistrationSuccess.title' | trans }}</h1>
-  <p>{{ 'staticPages.userRegistrationSuccess.info' | trans }}</p>
-</article>
+{% extends "core/components/user/user-registration-success.njk" %}
