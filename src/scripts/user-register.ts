@@ -1,5 +1,12 @@
 import type { RegisterInput, RegisterResult } from '../shared/user-api'
+import { validateEmail, validatePassword } from '../shared/validation'
 import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
+
+const REQUIRED_INPUTS_FOR_FIELD: Record<string, string[]> = {
+  prename: ['prename'],
+  lastname: ['lastname'],
+  address: ['line1', 'zip', 'city', 'country'],
+}
 
 export function initUserRegister(): void {
   const root = document.querySelector<HTMLElement>('[data-user-register]')
@@ -10,10 +17,14 @@ export function initUserRegister(): void {
   const form = root.querySelector<HTMLFormElement>('form')
   if (!form) return
 
-  // Show registration fields configured via coreConfig.features.users.registrationFields
   const fields = (root.dataset.fields ?? '').split(',').filter(Boolean)
   for (const field of fields) {
-    root.querySelector<HTMLElement>(`[data-register-field="${field}"]`)?.removeAttribute('hidden')
+    const wrapper = root.querySelector<HTMLElement>(`[data-register-field="${field}"]`)
+    if (!wrapper) continue
+    wrapper.removeAttribute('hidden')
+    for (const inputName of REQUIRED_INPUTS_FOR_FIELD[field] ?? []) {
+      wrapper.querySelector<HTMLElement>(`[name="${inputName}"]`)?.setAttribute('required', '')
+    }
   }
 
   const submitBtn = form.querySelector<HTMLButtonElement>('[type="submit"]')
@@ -42,13 +53,48 @@ export function initUserRegister(): void {
     if (submitLoading) submitLoading.hidden = !loading
   }
 
+  function validateForm(data: FormData): boolean {
+    let firstError: string | null = null
+
+    function fail(field: string, msg: string): void {
+      setFieldError(field, msg)
+      if (!firstError) firstError = field
+    }
+
+    const email = (data.get('email') as string) ?? ''
+    if (!validateEmail(email)) fail('email', root!.dataset.tErrorEmail ?? 'Invalid email')
+
+    const password = (data.get('password') as string) ?? ''
+    if (!validatePassword(password)) fail('password', root!.dataset.tErrorPassword ?? 'Invalid password')
+
+    if (fields.includes('prename') && !((data.get('prename') as string) ?? '').trim())
+      fail('prename', root!.dataset.tErrorPrename ?? 'Required')
+
+    if (fields.includes('lastname') && !((data.get('lastname') as string) ?? '').trim())
+      fail('lastname', root!.dataset.tErrorLastname ?? 'Required')
+
+    if (fields.includes('address')) {
+      if (!((data.get('line1') as string) ?? '').trim())
+        fail('line1', root!.dataset.tErrorLine1 ?? 'Required')
+      if (!((data.get('zip') as string) ?? '').trim())
+        fail('zip', root!.dataset.tErrorZip ?? 'Required')
+      if (!((data.get('city') as string) ?? '').trim())
+        fail('city', root!.dataset.tErrorCity ?? 'Required')
+      if (!((data.get('country') as string) ?? '').trim())
+        fail('country', root!.dataset.tErrorCountry ?? 'Required')
+    }
+
+    if (firstError) {
+      form!.querySelector<HTMLElement>(`[name="${firstError}"]`)?.focus()
+    }
+
+    return firstError === null
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
     clearErrors()
 
-    // Captcha gate: when the widget is on the page, require a solved token
-    // before sending. The user gets a clear inline message instead of a
-    // server-side 400.
     const captchaPresent = hasCaptcha(root)
     const captchaToken = captchaPresent ? getCaptchaToken() : ''
     if (captchaPresent && !captchaToken) {
@@ -59,9 +105,11 @@ export function initUserRegister(): void {
       return
     }
 
+    const data = new FormData(form)
+    if (!validateForm(data)) return
+
     setLoading(true)
 
-    const data = new FormData(form)
     const body: RegisterInput = {
       email: (data.get('email') as string) ?? '',
       password: (data.get('password') as string) ?? '',
@@ -99,7 +147,6 @@ export function initUserRegister(): void {
         formError.textContent = json.error.message
         formError.hidden = false
       }
-      // Reset captcha on any non-success response so the user can retry.
       if (captchaPresent) resetCaptcha()
     } catch {
       if (formError) {
