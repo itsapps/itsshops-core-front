@@ -64,6 +64,10 @@
       "types": "./dist/wc-api.d.ts",
       "import": "./dist/wc-api.js"
     },
+    "./functions/supabase-keep-alive": {
+      "types": "./dist/supabase-keep-alive.d.ts",
+      "import": "./dist/supabase-keep-alive.js"
+    },
     "./scripts": {
       "import": "./dist/scripts/index.ts"
     },
@@ -132,6 +136,7 @@
     "postcss-nesting": "^13.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "resend": "^6.12.4",
     "standardwebhooks": "^1.0.0",
     "stripe": "^21.0.1",
     "tailwindcss": "^3.4.17",

@@ -12,7 +12,7 @@ import * as React from 'react'
 import type { ComponentType } from 'react'
 import { render } from '@react-email/render'
 
-import { sendMail } from '../services/mailgun'
+import { sendMail } from '../services/email'
 import { fetchEmailSettings } from '../services/sanity'
 import { SimpleMailTemplate } from '../templates/simpleMailTemplate'
 import type { EmailContext, EmailShopSettings, SimpleEmailProps } from '../templates/types'

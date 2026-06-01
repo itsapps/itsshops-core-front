@@ -57,10 +57,16 @@ export type EnvVars = {
   DEVELOPER_EMAIL:          string | undefined
   SUPPORT_EMAIL:            string | undefined
 
+  // Email — provider selection
+  EMAIL_PROVIDER: string | undefined  // 'mailgun' | 'resend' (default: 'mailgun')
+
   // Email — Mailgun
   MAILGUN_API_KEY:          string | undefined
   MAILGUN_DOMAIN:           string | undefined
   MAILGUN_USE_EU_REGION_URL: string | undefined  // 'true' | 'false'
+
+  // Email — Resend
+  RESEND_API_KEY: string | undefined
 
   // Vinofact
   VINOFACT_API_URL:      string | undefined
@@ -80,6 +86,7 @@ export type EnvVars = {
   SUPABASE_URL:                string | undefined
   SUPABASE_SECRET_KEY:         string | undefined  // server-side only
   SUPABASE_EMAIL_HOOKS_SECRET: string | undefined  // server-side only
+  SUPABASE_KEEP_ALIVE_URL:     string | undefined  // public storage URL to ping; keeps free tier active
 
   // Netlify functions
   SERVER_FUNCTIONS_ALLOWED_ORIGINS: string | undefined

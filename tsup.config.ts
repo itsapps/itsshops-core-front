@@ -21,6 +21,7 @@ export default defineConfig({
     'user-reset': 'src/netlify/functions/user-reset.ts',
     'auth-webhooks': 'src/netlify/functions/auth-webhooks.ts',
     'wc-api': 'src/netlify/functions/wc-api.ts',
+    'supabase-keep-alive': 'src/netlify/functions/supabase-keep-alive.ts',
     'test-utils': 'src/test-utils/index.ts',
   },
   format: ['esm'],

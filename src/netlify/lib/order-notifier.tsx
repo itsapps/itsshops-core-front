@@ -12,7 +12,7 @@
 import type { ComponentType } from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 
-import { sendMail } from '../services/mailgun'
+import { sendMail } from '../services/email'
 import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
 import { renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/index'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/invoicePdf'
