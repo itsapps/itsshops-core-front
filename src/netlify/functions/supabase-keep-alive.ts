@@ -27,6 +27,6 @@ export function createKeepAliveHandler() {
     } catch (err) {
       log.error('Supabase keep-alive ping failed', { url, error: err instanceof Error ? err.message : String(err) })
     }
-    return { statusCode: 200 }
+    return new Response(null, { status: 200 })
   }
 }
