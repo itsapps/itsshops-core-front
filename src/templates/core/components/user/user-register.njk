@@ -99,11 +99,14 @@
         </div>
       </div>
 
-      <div class="user-form__newsletter">
-        <label class="user-form__checkbox" data-register-field="newsletter" hidden>
+      <div class="user-form__newsletter" data-register-field="newsletter" hidden>
+        <label class="user-form__checkbox">
           <input type="checkbox" name="newsletter">
           {{ 'forms.fields.registerForNewsletter.label' | trans }}
         </label>
+        {% block newsletter_privacy_notice %}
+        <p class="user-form__newsletter-notice">{{ 'forms.fields.registerForNewsletter.privacyNotice' | trans({url: cms[_locale].privacyUrl}) | safe }}</p>
+        {% endblock %}
       </div>
 
       {%- if coreConfig.captchaSiteKey %}

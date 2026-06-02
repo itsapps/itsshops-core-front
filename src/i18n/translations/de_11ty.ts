@@ -367,6 +367,7 @@ export default {
       },
       registerForNewsletter: {
         label: "Newsletter abonnieren",
+        privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu.',
       },
       captcha: {
         errorMessage: "Bitte löse das Captcha, um fortzufahren.",

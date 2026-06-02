@@ -367,6 +367,7 @@ export default {
       },
       registerForNewsletter: {
         label: "Subscribe to newsletter",
+        privacyNotice: 'By subscribing you agree to our <a href="{{url}}">privacy policy</a>.',
       },
       captcha: {
         errorMessage: "Please solve the captcha to continue.",
