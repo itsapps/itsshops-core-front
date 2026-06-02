@@ -86,7 +86,7 @@ export function buildProductQuery(extensions?: Config['extensions'], documentId?
 }
 
 export function buildVariantQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'productVariant'${idFilter(documentId)}]{
+  return `*[_type == 'productVariant' && status != 'archived'${idFilter(documentId)}]{
   _id,
   _type,
   _updatedAt,
