@@ -89,7 +89,6 @@ function mergeSeоFallback(variantSeo: any, productSeo: any): any {
     metaDescription:  variantSeo.metaDescription?.length  ? variantSeo.metaDescription  : productSeo.metaDescription,
     shareTitle:       variantSeo.shareTitle?.length       ? variantSeo.shareTitle       : productSeo.shareTitle,
     shareDescription: variantSeo.shareDescription?.length ? variantSeo.shareDescription : productSeo.shareDescription,
-    keywords:         variantSeo.keywords?.length         ? variantSeo.keywords         : productSeo.keywords,
     shareImage:       variantSeo.shareImage               ?? productSeo.shareImage,
   }
 }

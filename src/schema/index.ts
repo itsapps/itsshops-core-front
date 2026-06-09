@@ -144,7 +144,6 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
     ...(image                          && { image }),
     ...(brand                          && { brand }),
     ...(categories.length > 0          && { category: categories.length === 1 ? categories[0] : categories }),
-    ...(variant.seo?.keywords          && { keywords: variant.seo.keywords }),
     ...(additionalProperty.length > 0  && { additionalProperty }),
     offers,
   }) + schemaScript(buildBreadcrumb(breadcrumbItems))

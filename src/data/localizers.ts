@@ -112,21 +112,19 @@ export function resolveSeo(
     metaDescription?: LocalizedStringArray
     shareTitle?: LocalizedStringArray
     shareDescription?: LocalizedStringArray
-    keywords?: LocalizedStringArray
     shareImage?: any
   } | null | undefined,
   locale: Locale,
   defaultLocale: Locale
 ): ResolvedSeo {
   if (!raw) {
-    return { metaTitle: '', metaDescription: '', shareTitle: '', shareDescription: '', shareImage: null, keywords: '' }
+    return { metaTitle: '', metaDescription: '', shareTitle: '', shareDescription: '', shareImage: null }
   }
   return {
     metaTitle:        resolveString(raw.metaTitle, locale, defaultLocale),
     metaDescription:  resolveString(raw.metaDescription, locale, defaultLocale),
     shareTitle:       resolveString(raw.shareTitle, locale, defaultLocale),
     shareDescription: resolveString(raw.shareDescription, locale, defaultLocale),
-    keywords:         resolveString(raw.keywords, locale, defaultLocale),
     shareImage:       resolveLocaleAltImage(raw.shareImage, locale, defaultLocale),
   }
 }

@@ -20,7 +20,6 @@
 <title>{{ _fullTitle }}</title>
 <meta name="format-detection" content="telephone=no" />
 {%- if _desc %}<meta name="description" content="{{ _desc }}" />{% endif %}
-{%- if _seo.keywords %}<meta name="keywords" content="{{ _seo.keywords | stegaClean }}" />{% endif %}
 <meta name="robots" content="{{ 'noindex,nofollow' if _noIndex else 'index,follow' }}" />
 
 {# Canonical + hreflang #}

@@ -67,7 +67,6 @@ export type ResolvedSeo = {
   shareTitle: string
   shareDescription: string
   shareImage: ResolvedImage | null
-  keywords: string
 }
 
 export type ResolvedCategory = {
