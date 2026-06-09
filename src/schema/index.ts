@@ -138,7 +138,6 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
     '@type':    'Product',
     name:       variant.title,
     url:        pageUrl,
-    inLanguage: locale,
     ...(variant.sku                    && { sku: variant.sku }),
     ...(desc                           && { description: desc }),
     ...(image                          && { image }),
