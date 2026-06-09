@@ -188,7 +188,6 @@ function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): st
     '@type':       'ItemList',
     name:          category.title,
     url:           pageUrl,
-    inLanguage:    locale,
     ...(desc    && { description: desc }),
     numberOfItems: itemListElement.length,
     itemListElement,
