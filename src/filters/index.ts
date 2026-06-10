@@ -131,8 +131,8 @@ function formatDate(
 
 /**
  * Format a date or date range in a locale-aware way.
- * With combine: true (default), a same-month range is collapsed: "15.–17. März 2026" / "March 15–17, 2026"
- * With combine: false, from and to are formatted fully: "15. März 2026 – 17. März 2026"
+ * With combine: true (default), a same-month range is collapsed: "15.-17. März 2026" / "March 15-17, 2026"
+ * With combine: false, from and to are formatted fully: "15. März 2026 - 17. März 2026"
  * Usage: {{ event.from | formatDateRange(event.to) }}
  *        {{ event.from | formatDateRange(event.to, { combine: false }) }}
  */
@@ -148,7 +148,7 @@ function formatDateRange(
   if (!to || to === from) return fmt.format(f)
   const t = new Date(to + 'T00:00:00')
   if (combine) return fmt.formatRange(f, t)
-  return `${fmt.format(f)} – ${fmt.format(t)}`
+  return `${fmt.format(f)} - ${fmt.format(t)}`
 }
 
 /** Take the first n items from an array. Usage: {% for x in arr | limit(5) %} */

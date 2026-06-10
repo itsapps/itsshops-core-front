@@ -82,7 +82,7 @@ export default {
     invoiceNumber: "Invoice number",
     invoiceDate: "Invoice date",
     trackingNumber: "Tracking number",
-    vatText: "VAT exempt – small business under § 6 Abs. 1 Z 27 UStG",
+    vatText: "VAT exempt - small business under § 6 Abs. 1 Z 27 UStG",
     stockLevels: {
       subject: "Stock levels {{date}}",
       headline: "Stock levels on {{date}}",

@@ -307,7 +307,7 @@ function mapOrder(order: SanityOrder, tz: string) {
 
       return {
         id: stableId(`${order.orderNumber}:${item._key}`),
-        name: item.subtitle ? `${item.title} – ${item.subtitle}` : item.title,
+        name: item.subtitle ? `${item.title} - ${item.subtitle}` : item.title,
         product_id: stableId(item.productId),
         variation_id: stableId(item.variantId),
         quantity: item.quantity,

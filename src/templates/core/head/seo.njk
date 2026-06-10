@@ -10,9 +10,9 @@
 {%- set _shareDesc  = (_seo.shareDescription | stegaClean) if _seo.shareDescription else _desc -%}
 {%- set _noIndex   = (not coreConfig.doIndexPages) or noindex -%}
 
-{# Title: "Page – Site" unless they're identical or page title is absent #}
+{# Title: "Page - Site" unless they're identical or page title is absent #}
 {%- if _rawTitle and _siteTitle and _rawTitle != _siteTitle -%}
-  {%- set _fullTitle = _rawTitle + ' – ' + _siteTitle -%}
+  {%- set _fullTitle = _rawTitle + ' - ' + _siteTitle -%}
 {%- else -%}
   {%- set _fullTitle = _rawTitle or _siteTitle -%}
 {%- endif -%}
