@@ -6,7 +6,7 @@ import type { CoreConfig } from '../types'
 
 export type PageDoc = ResolvedVariant | ResolvedCategory | ResolvedPage | ResolvedPost
 
-type ImageUrlFn = (image: any, width?: number) => string
+type ImageUrlFn = (image: any, width?: number, height?: number) => string
 
 interface SchemaContext {
   locale: string
@@ -55,7 +55,8 @@ function buildOrganizationFull(settings: ResolvedSettings, baseUrl: string): obj
 
 function buildBreadcrumb(items: Array<{ name: string; url: string }>): object {
   return {
-    '@type': 'BreadcrumbList',
+    '@context': 'https://schema.org',
+    '@type':    'BreadcrumbList',
     itemListElement: items.map((item, i) => ({
       '@type':    'ListItem',
       position:   i + 1,
@@ -82,7 +83,7 @@ function buildOffer(variant: ResolvedVariant, url: string, seller: object | unde
 // ─── Per-type schema builders ─────────────────────────────────────────────────
 
 function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): string {
-  const { locale, settings, config, imageUrl } = ctx
+  const { settings, config, imageUrl } = ctx
   const baseUrl = config.baseUrl!
   const pageUrl = baseUrl + variant.url
 
@@ -92,8 +93,9 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
     || settings?.siteShortDescription
     || ''
 
-  const image = variant.image
-    ? imageUrl(variant.image, 1200)
+  const _variantImg = variant.seo?.shareImage || variant.image
+  const image = _variantImg
+    ? imageUrl(_variantImg, 1200, 630)
     : variant.wine?.bottleImage?.url ?? undefined
 
   const brand = variant.manufacturers?.[0]?.name
@@ -149,7 +151,7 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
 }
 
 function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): string {
-  const { locale, settings, config, imageUrl, products } = ctx
+  const { settings, config, imageUrl, products } = ctx
   const baseUrl = config.baseUrl!
   const pageUrl = baseUrl + category.url
 
@@ -166,7 +168,7 @@ function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): st
     '@type': 'Product',
     name:    p.title,
     url:     baseUrl + p.url,
-    ...(p.image && { image: imageUrl(p.image, 800) }),
+    ...((p.seo?.shareImage || p.image) && { image: imageUrl(p.seo?.shareImage || p.image, 800) }),
     offers: {
       '@type':         'Offer',
       url:             baseUrl + p.url,
@@ -204,7 +206,8 @@ function buildBlogPostingSchema(post: ResolvedPost, ctx: SchemaContext): string 
     || settings?.siteShortDescription
     || ''
 
-  const image    = (post.image as any) ? imageUrl(post.image as any, 1200) : undefined
+  const _postImg = post.seo?.shareImage || (post.image as any)
+  const image    = _postImg ? imageUrl(_postImg, 1200, 630) : undefined
   const isPartOf = { '@type': 'WebSite', '@id': baseUrl }
   const author   = settings?.company?.name ? orgRef(baseUrl) : undefined
   const publisher = settings?.company?.name ? orgRef(baseUrl) : undefined
@@ -213,7 +216,6 @@ function buildBlogPostingSchema(post: ResolvedPost, ctx: SchemaContext): string 
     '@context':  'https://schema.org',
     '@type':     'BlogPosting',
     headline:    post.title,
-    name:        post.title,
     url:         pageUrl,
     inLanguage:  locale,
     ...(desc                  && { description: desc }),
@@ -235,7 +237,8 @@ function buildWebPageSchema(page: ResolvedPage, ctx: SchemaContext): string {
     || settings?.siteShortDescription
     || ''
 
-  const image    = (page.image as any) ? imageUrl(page.image as any, 1200) : undefined
+  const _pageImg = page.seo?.shareImage || (page.image as any)
+  const image    = _pageImg ? imageUrl(_pageImg, 1200, 630) : undefined
   const isPartOf = { '@type': 'WebSite', '@id': baseUrl }
 
   return schemaScript({

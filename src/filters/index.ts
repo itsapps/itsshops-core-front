@@ -319,7 +319,7 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter('pageSchema', function (pageDoc: any, settings: any) {
     const locale = this.page?.lang || config.defaultLocale
     const products = (this as any).ctx?.cms?.[locale]?.products ?? []
-    return buildPageDocSchema(pageDoc, locale, settings, config, (img, w) => imageUrl(ctx.imageBuilder, img, w), products)
+    return buildPageDocSchema(pageDoc, locale, settings, config, (img, w, h) => imageUrl(ctx.imageBuilder, img, w, h), products)
   })
   eleventyConfig.addFilter('webSiteSchema', function (settings: any) {
     const locale = this.page?.lang || config.defaultLocale
