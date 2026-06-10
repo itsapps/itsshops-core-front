@@ -146,6 +146,7 @@ export function imageUrl(
   height?: number,
   format?: 'webp' | 'jpg',
   fit?: PictureSize['fit'],
+  bg?: string,
 ): string {
   if (!image) return ''
   let b = builder.image(image)
@@ -153,6 +154,7 @@ export function imageUrl(
   if (width)  b = b.width(width)
   if (height) b = b.height(height)
   if (fit)    b = b.fit(fit)
+  if (bg)     b = b.bg(bg)
   if (format) b = b.format(format as any)
   return b.url()
 }
