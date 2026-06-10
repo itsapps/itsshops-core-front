@@ -47,9 +47,12 @@
 {%- if _shareDesc %}<meta property="og:description" content="{{ _shareDesc }}" />{% endif %}
 {%- if coreConfig.baseUrl %}<meta property="og:url" content="{{ coreConfig.baseUrl }}{{ page.url }}" />{% endif %}
 {%- if _shareImg %}
-  <meta property="og:image" content="{{ _shareImg | imageUrl(1200, 630) }}" />
+  {%- set _isLandscape = _shareImg.asset.dimensions.aspectRatio > 1 -%}
+  {%- set _ogImgUrl = _shareImg | imageUrl(1200, 630) if _isLandscape else _shareImg | imageUrl(1200) -%}
+  {%- set _ogImgHeight = 630 if _isLandscape else null -%}
+  <meta property="og:image" content="{{ _ogImgUrl }}" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  {%- if _ogImgHeight %}<meta property="og:image:height" content="{{ _ogImgHeight }}" />{% endif %}
   <meta property="og:image:alt" content="{{ _shareTitle }}" />
 {%- endif %}
 
@@ -57,4 +60,4 @@
 <meta name="twitter:card" content="{{ 'summary_large_image' if _shareImg else 'summary' }}" />
 <meta name="twitter:title" content="{{ _shareTitle }}" />
 {%- if _shareDesc %}<meta name="twitter:description" content="{{ _shareDesc }}" />{% endif %}
-{%- if _shareImg %}<meta name="twitter:image" content="{{ _shareImg | imageUrl(1200, 630) }}" />{% endif %}
+{%- if _shareImg %}<meta name="twitter:image" content="{{ _ogImgUrl }}" />{% endif %}

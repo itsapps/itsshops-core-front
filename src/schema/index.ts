@@ -95,7 +95,7 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
 
   const _variantImg = variant.seo?.shareImage || variant.image
   const image = _variantImg
-    ? imageUrl(_variantImg, 1200, 630)
+    ? imageUrl(_variantImg, 1200)
     : variant.wine?.bottleImage?.url ?? undefined
 
   const brand = variant.manufacturers?.[0]?.name
@@ -207,7 +207,7 @@ function buildBlogPostingSchema(post: ResolvedPost, ctx: SchemaContext): string 
     || ''
 
   const _postImg = post.seo?.shareImage || (post.image as any)
-  const image    = _postImg ? imageUrl(_postImg, 1200, 630) : undefined
+  const image    = _postImg ? imageUrl(_postImg, 1200) : undefined
   const isPartOf = { '@type': 'WebSite', '@id': baseUrl }
   const author   = settings?.company?.name ? orgRef(baseUrl) : undefined
   const publisher = settings?.company?.name ? orgRef(baseUrl) : undefined
@@ -238,7 +238,7 @@ function buildWebPageSchema(page: ResolvedPage, ctx: SchemaContext): string {
     || ''
 
   const _pageImg = page.seo?.shareImage || (page.image as any)
-  const image    = _pageImg ? imageUrl(_pageImg, 1200, 630) : undefined
+  const image    = _pageImg ? imageUrl(_pageImg, 1200) : undefined
   const isPartOf = { '@type': 'WebSite', '@id': baseUrl }
 
   return schemaScript({
