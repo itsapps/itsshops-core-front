@@ -58,6 +58,7 @@ export type ResolvedCarousel = {
   autoplayDelay: number
   loop: boolean
   fade: boolean
+  preload: boolean
   slides: ResolvedImage[]
 }
 

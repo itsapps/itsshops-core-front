@@ -100,6 +100,7 @@ export function resolveCarousel(raw: any, locale: Locale, defaultLocale: Locale)
     autoplayDelay: raw.autoplayDelay ?? 5,
     loop:          raw.loop          ?? false,
     fade:          raw.fade          ?? false,
+    preload:       raw.preload       ?? false,
     slides: (raw.slides ?? [])
       .map((s: any) => resolveLocaleAltImage(s, locale, defaultLocale))
       .filter((s: ResolvedImage | null): s is ResolvedImage => s !== null),

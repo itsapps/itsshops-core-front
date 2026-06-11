@@ -57,6 +57,7 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     autoplayDelay,
     loop,
     fade,
+    preload,
     "slides": slides[]${proj.i18nAltImage}
   }`,
   youtube: `{ _type, url, showControls, autoload, autopause, start }`,
