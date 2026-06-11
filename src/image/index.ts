@@ -8,8 +8,8 @@ import Image from '@11ty/eleventy-img'
 const STATIC_URL_PATH = '/assets/images/'
 const STATIC_OUTPUT_DIR = './dist/assets/images/'
 
-function normalizeFormats(formats: string[]) {
-  return formats.map(f => f === 'jpg' ? 'jpeg' : f)
+function normalizeFormat(format: string) {
+  return format === 'jpg' ? 'jpeg' : format
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,8 +19,8 @@ export type PictureSize = {
   sizes: [number, number | null][]
   /** CSS sizes attribute value, e.g. "(min-width: 40em) 50vw, 100vw" */
   widths: string
-  /** Defaults to ['webp', 'jpg'] */
-  formats?: ('webp' | 'jpg' | 'png')[]
+  /** Defaults to 'webp' */
+  format?: 'webp' | 'jpg' | 'png'
   /** Default quality, can be overridden per image (shortcut) */
   quality?: number | (number | null)[]
   /** Sanity fit mode. 'max' fits within w×h without cropping. Default is Sanity's default ('crop' when both w+h are set). */
@@ -63,7 +63,7 @@ function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: numbe
 // ─── Sanity image ─────────────────────────────────────────────────────────────
 
 function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size: PictureSize, quality?: number | (number | null)[]): string {
-  const fmt = (size.formats ?? ['webp'])[0]
+  const fmt = size.format ?? 'webp'
   const q = quality ?? size.quality
   return size.sizes.map(([w, hSpec], i) => {
     const h = resolveHeight(hSpec, w, image) ?? null
@@ -91,7 +91,7 @@ export function image(
 ): string {
   if (!image) return ''
 
-  const fmt = (size.formats ?? ['webp'])[0]
+  const fmt = size.format ?? 'webp'
   const alt = stegaClean(options.alt ?? image.alt ?? '').replace(/"/g, '&quot;')
   const { loading = 'lazy', fetchpriority, class: imgClass = '', quality } = options
 
@@ -129,7 +129,7 @@ export function imageSrcsetData(
   size: PictureSize,
 ): { src: string; srcset: string; sizes: string; width: number; height: number | undefined } | null {
   if (!image || !size.sizes.length) return null
-  const fmt = (size.formats ?? ['webp'])[0]
+  const fmt = size.format ?? 'webp'
   const lastIndex = size.sizes.length - 1
   const [fw, fhSpec] = size.sizes[lastIndex]
   const fh = resolveHeight(fhSpec, fw, image)
@@ -181,7 +181,7 @@ export function staticImage(
 ): string {
   if (!src) return ''
 
-  const formats = normalizeFormats(size.formats ?? ['webp']) as any[]
+  const formats = [normalizeFormat(size.format ?? 'webp')] as any[]
   const widths = size.sizes.map(([w]) => w)
   const metadata = Image.statsSync(src, { widths, formats, urlPath: STATIC_URL_PATH, outputDir: STATIC_OUTPUT_DIR })
 
@@ -190,7 +190,7 @@ export function staticImage(
 
 export function staticPreload(src: string, size: PictureSize): string {
   if (!src) return ''
-  const formats = normalizeFormats(size.formats ?? ['webp']) as any[]
+  const formats = [normalizeFormat(size.format ?? 'webp')] as any[]
   const widths = size.sizes.map(([w]) => w)
   const metadata = Image.statsSync(src, { widths, formats, urlPath: STATIC_URL_PATH, outputDir: STATIC_OUTPUT_DIR })
   const primaryFormat = (Object.values(metadata) as any[][])[0]
@@ -202,7 +202,7 @@ export function staticPreload(src: string, size: PictureSize): string {
 export async function preGenerateStaticImages(staticDir: string, imageSizes: Record<string, PictureSize>) {
   if (!fs.existsSync(staticDir)) return
   const allWidths = [...new Set(Object.values(imageSizes).flatMap(s => s.sizes.map(([w]) => w)))]
-  const allFormats = [...new Set(Object.values(imageSizes).flatMap(s => normalizeFormats(s.formats ?? ['webp'])))] as any[]
+  const allFormats = [...new Set(Object.values(imageSizes).map(s => normalizeFormat(s.format ?? 'webp')))] as any[]
   for (const file of collectImageFiles(staticDir)) {
     await Image(file, {
       widths: allWidths,
