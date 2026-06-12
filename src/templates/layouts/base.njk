@@ -4,14 +4,13 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    {% include "overridable/head/seo.njk" %}
+    {% include "core/head/seo.njk" %}
     {%- if not coreConfig.preview.enabled -%}{% include "core/head/schemas.njk" %}{%- endif -%}
     {% include "core/head/preloads.njk" %}
     {% include "core/head/css.njk" %}
     {% include "core/head/favicons.njk" %}
     {%- include "core/head/js-inline.njk" -%}
-    {% include "overridable/head/extras.njk" %}
+    {% getBundle "html", "head" %}
   </head>
 
   <body>

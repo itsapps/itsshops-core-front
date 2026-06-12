@@ -1,13 +1,13 @@
 {%- set _locale   = page.lang or coreConfig.defaultLocale -%}
 {%- set _settings = cms[_locale].settings -%}
-{%- if coreConfig.manifest.colorScheme == 'light dark' -%}
+{%- if coreConfig.manifest.colorScheme == 'light dark' %}
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="{{ coreConfig.manifest.themeBgColor }}" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="{{ coreConfig.manifest.themeColor }}" />
 <meta name="color-scheme" content="light dark" />
-{%- elif coreConfig.manifest.colorScheme == 'dark' -%}
+{%- elif coreConfig.manifest.colorScheme == 'dark' %}
 <meta name="theme-color" content="{{ coreConfig.manifest.themeColor }}" />
 <meta name="color-scheme" content="dark" />
-{%- else -%}
+{%- else %}
 <meta name="theme-color" content="{{ coreConfig.manifest.themeBgColor }}" />
 <meta name="color-scheme" content="light" />
 {%- endif %}

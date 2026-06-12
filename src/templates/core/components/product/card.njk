@@ -4,7 +4,7 @@
   <a href="{{ product.url }}" class="product-card__link">
     {% block product_card_image %}
     <figure class="product-card__image">
-      {%- set _img = product.image or product.productImage -%}
+      {%- set _img = product.image -%}
       {%- if _img %}
         {% image _img, imageSizes.card %}
       {%- else %}

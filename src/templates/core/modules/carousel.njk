@@ -1,0 +1,41 @@
+{%- set _carouselImageSize = carouselImageSize or imageSizes.carousel -%}
+{% if (_isFirstModule or module.preload) and module.slides.length %}
+  {%- html "preloads" -%}
+  {% preload module.slides[0], _carouselImageSize %}
+  {%- endhtml -%}
+{% endif %}
+{% block carousel_top_extra %}{% endblock %}
+<div
+  class="carousel carousel--standalone"
+  data-carousel
+  data-autoplay="{{ module.autoplay }}"
+  data-loop="{{ module.loop }}"
+  data-fade="{{ module.fade }}"
+  data-contain-scroll="false"
+  {% if module.autoplay %} data-delay="{{ module.autoplayDelay or 5 }}"{% endif %}
+  aria-roledescription="carousel"
+  aria-label="{{ 'gallery.carousel' | trans }}"
+  data-t-pause="{{ 'gallery.pause' | trans }}"
+  data-t-play="{{ 'gallery.play' | trans }}"
+>
+  <div class="carousel-viewport">
+    <div class="carousel-container">
+      {% for slide in module.slides %}
+        <figure class="carousel-slide" role="group" aria-roledescription="slide" aria-label="{{ 'gallery.slide' | trans }} {{ loop.index }} / {{ module.slides.length }}">
+          {% if loop.first and (_isFirstModule or module.preload) %}
+            {% image slide, _carouselImageSize, { loading: "eager", fetchpriority: "high" } %}
+          {% else %}
+            {% image slide, _carouselImageSize %}
+          {% endif %}
+        </figure>
+      {% endfor %}
+    </div>
+  </div>
+  {%- if module.autoplay -%}
+  <button type="button" class="carousel__pause" data-carousel-pause aria-label="{{ 'gallery.pause' | trans }}">
+    <svg class="carousel__pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="20" height="20"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+    <svg class="carousel__play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="20" height="20" hidden><polygon points="5,3 19,12 5,21"/></svg>
+  </button>
+  {%- endif -%}
+</div>
+{% block carousel_bottom_extra %}{% endblock %}

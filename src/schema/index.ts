@@ -43,8 +43,7 @@ function buildOrganizationFull(settings: ResolvedSettings, baseUrl: string): obj
   } : undefined
 
   return {
-    '@type': 'Organization',
-    '@id':   `${baseUrl}#organization`,
+    ...orgRef(baseUrl),
     name:    company.name,
     url:     baseUrl,
     ...(addr             && { address:   addr }),
@@ -279,7 +278,7 @@ export function buildWebSiteSchema(
     ? schemaScript({ '@context': 'https://schema.org', ...buildOrganizationFull(settings, baseUrl) })
     : ''
 
-  return website + organization
+  return website + '\n' + organization
 }
 
 export function buildPageDocSchema(
