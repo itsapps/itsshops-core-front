@@ -76,7 +76,11 @@
       "import": "./dist/test-utils.js"
     },
     "./core.css": "./dist/core.css",
-    "./reset.css": "./dist/reset.css"
+    "./reset.css": "./dist/reset.css",
+    "./checkout.css": "./dist/checkout.css",
+    "./product-filter-price.css": "./dist/product-filter-price.css",
+    "./search.css": "./dist/search.css",
+    "./age-gate.css": "./dist/age-gate.css"
   },
   "files": [
     "bin/",

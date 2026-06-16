@@ -1,10 +1,11 @@
 {%- set _carouselImageSize = carouselImageSize or imageSizes.carousel -%}
-{% if (_isFirstModule or module.preload) and module.slides.length %}
+{%- set _preloadFirstSlide = _isFirstModule or module.preload -%}
+{% if _preloadFirstSlide and module.slides.length %}
   {%- html "preloads" -%}
   {% preload module.slides[0], _carouselImageSize %}
   {%- endhtml -%}
 {% endif %}
-{% block carousel_top_extra %}{% endblock %}
+{% block before_carousel %}{% endblock %}
 <div
   class="carousel carousel--standalone"
   data-carousel
@@ -22,7 +23,7 @@
     <div class="carousel-container">
       {% for slide in module.slides %}
         <figure class="carousel-slide" role="group" aria-roledescription="slide" aria-label="{{ 'gallery.slide' | trans }} {{ loop.index }} / {{ module.slides.length }}">
-          {% if loop.first and (_isFirstModule or module.preload) %}
+          {% if loop.first and _preloadFirstSlide %}
             {% image slide, _carouselImageSize, { loading: "eager", fetchpriority: "high" } %}
           {% else %}
             {% image slide, _carouselImageSize %}
@@ -38,4 +39,4 @@
   </button>
   {%- endif -%}
 </div>
-{% block carousel_bottom_extra %}{% endblock %}
+{% block after_carousel %}{% endblock %}

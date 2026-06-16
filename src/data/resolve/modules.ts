@@ -10,8 +10,13 @@ export function resolveModules(
   return (modules ?? []).map(m => {
     let resolved: any
     switch (stegaClean(m._type)) {
-      case 'productGrid':
-      case 'categoryGrid':
+      case 'carousel':
+        resolved = {
+          ...m,
+          slides: (m.slides ?? []).map((s: any) => ctx.resolveLocaleAltImage(s)).filter(Boolean),
+        }
+        break
+      case 'categoryList':
         resolved = { ...m, title: ctx.resolveString(m.title) }
         break
       case 'productList':
@@ -21,11 +26,8 @@ export function resolveModules(
           filters: resolveFilterSpecs(m.filters, ctx),
         }
         break
-      case 'carousel':
-        resolved = {
-          ...m,
-          slides: (m.slides ?? []).map((s: any) => ctx.resolveLocaleAltImage(s)).filter(Boolean),
-        }
+      case 'productVariantList':
+        resolved = { ...m, title: ctx.resolveString(m.title) }
         break
       case 'youtube':
         resolved = { ...m, url: stegaClean(m.url) }

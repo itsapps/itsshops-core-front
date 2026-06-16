@@ -31,12 +31,16 @@ export function buildModulesProjection(docType: string, extensions?: Config['ext
 // ---------------------------------------------------------------------------
 
 export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
-  productGrid: `{
+  carousel: `{
     _type,
-    ${proj.i18nStringField('title')},
-    ${proj.refsField('products')}
+    autoplay,
+    autoplayDelay,
+    loop,
+    fade,
+    preload,
+    "slides": slides[]${proj.i18nAltImage}
   }`,
-  categoryGrid: `{
+  categoryList: `{
     _type,
     ${proj.i18nStringField('title')},
     ${proj.refsField('categories')}
@@ -51,14 +55,10 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
       _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
     }
   }`,
-  carousel: `{
+  productVariantList: `{
     _type,
-    autoplay,
-    autoplayDelay,
-    loop,
-    fade,
-    preload,
-    "slides": slides[]${proj.i18nAltImage}
+    ${proj.i18nStringField('title')},
+    ${proj.refsField('products')}
   }`,
   youtube: `{ _type, url, showControls, autoload, autopause, start }`,
 }

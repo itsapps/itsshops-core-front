@@ -1,8 +1,7 @@
 import { slugify } from "../data/slugify"
 import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
-import type { Locale, CoreContext, TranslatorParams } from "../types";
-import { resolveString } from "../data/localizers";
+import type { CoreContext, TranslatorParams } from "../types";
 import { imageUrl, imageSizeUrl, image, imageSrcsetData } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
@@ -54,14 +53,6 @@ export function formatVolumeMl(ml: number, unit: string, locale = 'de'): string 
 
 export function formatNumber(num: number, locale = 'de'): string {
   return `${new Intl.NumberFormat(locale).format(num || 0)}`
-}
-
-/**
- * Resolve an InternationalizedArray to a plain string in templates.
- * Usage: {{ module.heading | localize(product.locale, defaultLocale) }}
- */
-function localize(arr: any, locale: string, fallback?: string): string {
-  return resolveString(arr, locale as Locale, (fallback ?? locale) as Locale)
 }
 
 /**
@@ -239,7 +230,6 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("formatVolume", function (ml: number) {
     return formatVolumeMl(ml, config.units.volume, this.page?.lang || config.defaultLocale)
   });
-  eleventyConfig.addFilter("localize", localize);
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("filterGroupsForProducts", filterGroupsForProducts as any);
   eleventyConfig.addFilter("hasModule", (modules: any[], type: string) =>

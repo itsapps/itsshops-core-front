@@ -17,7 +17,7 @@
           data-filter-attrs="{{ product.filterAttributes | dump }}"
           data-filter-price="{{ product.price }}"
         >
-          {% include "overridable/product/card.njk" %}
+          {% block productListCard %}{% include "overridable/product/card.njk" %}{% endblock %}
         </div>
       {% endfor %}
     </div>

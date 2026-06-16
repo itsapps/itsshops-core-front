@@ -15,7 +15,11 @@
   {%- if not _moduleContent -%}
     {{- ("No template found for module type: " + module._type) | log -}}
   {%- endif -%}
+  {% block before_module %}{% endblock %}
   <div class="module module--{{ module._type }}">
+    {% block module_content %}
     {{- _moduleContent | safe -}}
+    {% endblock %}
   </div>
+  {% block after_module %}{% endblock %}
 {% endfor %}

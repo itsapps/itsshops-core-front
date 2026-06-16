@@ -22,11 +22,11 @@
       {{ content | safe }}
     </main>
 
-    {%- include "overridable/footer.njk" -%}
+    {% include "overridable/footer.njk" %}
     {%- if coreConfig.features.shop.checkout -%}{%- include "overridable/cart.njk" -%}{%- endif -%}
     {%- if coreConfig.ageGate.enabled and not coreConfig.preview.enabled -%}{%- include "overridable/age-gate.njk" -%}{%- endif -%}
 
-    {%- getBundle "html", "externalJS" -%}
+    {% getBundle "html", "externalJS" %}
     <script src="/assets/scripts/index.js" type="module"></script>
 
     {% if coreConfig.preview.enabled %}
