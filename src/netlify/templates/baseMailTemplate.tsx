@@ -18,10 +18,10 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
   padding: '20px',
   maxWidth: '660px',
-  backgroundColor: '#ECECE5',
+  backgroundColor: 'white',
   border: '1px solid #ECECE5',
-  borderRadius: '4px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  borderRadius: '12px',
+  boxShadow: '0 2px 5px 0 rgb(50 50 93 / 10%), 0 1px 1px 0 rgb(0 0 0 / 7%);',
 }
 
 const bodyStyle: React.CSSProperties = {
