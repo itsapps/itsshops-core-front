@@ -18,10 +18,14 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
   padding: '20px',
   maxWidth: '660px',
+  backgroundColor: '#ECECE5',
+  border: '1px solid #ECECE5',
+  borderRadius: '4px',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
 }
 
 const bodyStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
+  backgroundColor: '#ECECE5',
   color: '#000000',
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
