@@ -30,10 +30,10 @@
     </form>
 
     <div class="user-form__links">
-      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/">
+      <a href="{{ cms[_locale].registerUrl }}">
         {{ 'staticPages.userRegistration.title' | trans }}
       </a>
-      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/">
+      <a href="{{ cms[_locale].recoverUrl }}">
         {{ 'staticPages.userRecover.title' | trans }}
       </a>
     </div>

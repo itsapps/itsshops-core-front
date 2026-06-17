@@ -10,7 +10,5 @@ export default {
     userReset:                "reset-password",
     userResetSuccess:         "reset-password/success",
     userOrders:               "account/orders",
-    orderThankYou:            "checkout/thank-you",
-    checkout:                 "checkout",
   },
 };

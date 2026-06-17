@@ -10,7 +10,5 @@ export default {
     userReset:                "passwort-aendern",
     userResetSuccess:         "passwort-aendern/erledigt",
     userOrders:               "konto/bestellungen",
-    orderThankYou:            "warenkorb/danke",
-    checkout:                 "warenkorb",
   },
 };

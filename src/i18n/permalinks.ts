@@ -9,10 +9,6 @@ const defaults: Record<Locale, Required<PermalinkTranslations>> = {
     blog:        'blog',
     checkout:    'warenkorb',
     orderThanks: 'danke',
-    account:     'konto',
-    register:    'registrierung',
-    recover:     'passwort-vergessen',
-    login:       'anmelden',
   },
   en: {
     product:     'products',
@@ -20,10 +16,6 @@ const defaults: Record<Locale, Required<PermalinkTranslations>> = {
     blog:        'blog',
     checkout:    'checkout',
     orderThanks: 'thank-you',
-    account:     'account',
-    register:    'register',
-    recover:     'recover-password',
-    login:       'login',
   },
 }
 

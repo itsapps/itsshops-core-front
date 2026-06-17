@@ -124,7 +124,7 @@
     </form>
 
     {% block page_login %}
-      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userLogin }}/">
+      <a href="{{ cms[_locale].loginUrl }}">
         {{ 'staticPages.userLogin.title' | trans }}
       </a>
     {% endblock %}

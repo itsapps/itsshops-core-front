@@ -13,10 +13,6 @@ export type PermalinkTranslations = {
   blog?:        string
   checkout?:    string
   orderThanks?: string
-  account?:     string
-  register?:    string
-  recover?:     string
-  login?:       string
 }
 
 /** Fixed (non-configurable) auth page path segments, keyed by locale. */

@@ -5,8 +5,8 @@
   <div data-user-confirm
     data-api="/api/user/confirm"
     data-locale="{{ _locale }}"
-    data-recover-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/"
-    data-register-url="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/"
+    data-recover-url="{{ cms[_locale].recoverUrl }}"
+    data-register-url="{{ cms[_locale].registerUrl }}"
   >
     <button type="button" class="btn" data-user-confirm-submit>
       <span data-submit-text>{{ 'forms.userConfirm.submit.text' | trans }}</span>
@@ -15,7 +15,7 @@
 
     <div data-confirm-error class="user-form__error" role="alert" hidden>
       <p data-confirm-error-message></p>
-      <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRecover }}/" class="btn">
+      <a href="{{ cms[_locale].recoverUrl }}" class="btn">
         {{ 'staticPages.userRecover.title' | trans }}
       </a>
     </div>

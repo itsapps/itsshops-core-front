@@ -2,7 +2,7 @@
 <article class="static-page user-reset-success">
   {% block page_header %}<h1>{{ 'staticPages.userResetSuccess.title' | trans }}</h1>{% endblock %}
   {% block page_info %}<p>{{ 'staticPages.userResetSuccess.info' | trans }}</p>{% endblock %}
-  <a href="/{{ _locale }}/{{ coreConfig.userPaths[_locale].userLogin }}/" class="btn">
+  <a href="{{ cms[_locale].loginUrl }}" class="btn">
     {{ 'staticPages.userLogin.title' | trans }}
   </a>
 </article>

@@ -5,7 +5,7 @@ pagination:
   size: 1
   alias: _locale
   addAllPagesToCollections: false
-permalink: "/{{ _locale }}/{{ coreConfig.userPaths[_locale].userRegistration }}/"
+permalink: "{{ cms[_locale].registerUrl }}"
 eleventyExcludeFromCollections: true
 noindex: true
 pageKey: registerUrl

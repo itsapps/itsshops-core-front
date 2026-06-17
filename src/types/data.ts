@@ -293,6 +293,18 @@ export type CmsLocaleData = {
   recoverUrl: string
   /** URL of the account page for the current locale. */
   accountUrl: string
+  /** URL of the email confirmation page for the current locale. */
+  confirmUrl: string
+  /** URL of the email confirmation success page for the current locale. */
+  confirmSuccessUrl: string
+  /** URL of the registration success page for the current locale. */
+  registrationSuccessUrl: string
+  /** URL of the password reset page for the current locale. */
+  resetUrl: string
+  /** URL of the password reset success page for the current locale. */
+  resetSuccessUrl: string
+  /** URL of the password recovery success page for the current locale. */
+  recoverSuccessUrl: string
   /** Search index entries for the current locale. Empty array when search is not configured. */
   searchIndex: SearchEntry[]
   /** Fields passed to MiniSearch for full-text indexing. */

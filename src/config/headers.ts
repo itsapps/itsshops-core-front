@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import type { CoreConfig, CoreContext, ResolvedCspDirectives } from '../types'
+import type { CmsData, CmsLocaleData } from '../types/data'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const coreInlineDir = path.join(__dirname, 'templates/scripts/inline')
@@ -20,9 +21,37 @@ function hashDir(dir: string): string[] {
     })
 }
 
-function getInlineScriptHashes(): string[] {
+const CONDITIONAL_CORE_SCRIPTS = new Set(['theme.js', 'age-gate.js'])
+
+function hashFile(dir: string, filename: string): string | null {
+  const filePath = path.join(dir, filename)
+  if (!fs.existsSync(filePath)) return null
+  const content = fs.readFileSync(filePath, 'utf8')
+  return `'sha256-${createHash('sha256').update(content, 'utf8').digest('base64')}'`
+}
+
+function getInlineScriptHashes(config: CoreConfig): string[] {
   const customerInlineDir = path.join(process.cwd(), 'src/assets/scripts/inline')
-  return [...hashDir(coreInlineDir), ...hashDir(customerInlineDir)]
+  const hashes: string[] = []
+
+  if (config.manifest.colorScheme !== 'light') {
+    const h = hashFile(customerInlineDir, 'theme.js') ?? hashFile(coreInlineDir, 'theme.js')
+    if (h) hashes.push(h)
+  }
+  if (config.ageGate.enabled && !config.preview.enabled) {
+    const h = hashFile(customerInlineDir, 'age-gate.js') ?? hashFile(coreInlineDir, 'age-gate.js')
+    if (h) hashes.push(h)
+  }
+
+  // Any extra customer inline scripts not managed by core conditions
+  if (fs.existsSync(customerInlineDir)) {
+    for (const file of fs.readdirSync(customerInlineDir).filter(f => f.endsWith('.js') && !CONDITIONAL_CORE_SCRIPTS.has(f))) {
+      const h = hashFile(customerInlineDir, file)
+      if (h) hashes.push(h)
+    }
+  }
+
+  return hashes
 }
 
 // ─── CSP / headers building ───────────────────────────────────────────────────
@@ -71,12 +100,9 @@ function mergeExtra(base: CspSources, extra: ResolvedCspDirectives): CspSources 
   }
 }
 
-function buildNetlifyHeaders(
-  cms: Record<string, any>,
-  config: CoreConfig,
-  inlineScriptHashes: string[],
-): string {
-  const gtmId = cms[config.defaultLocale]?.settings?.gtmId
+function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
+  const gtmId = (cms[config.defaultLocale] as CmsLocaleData | undefined)?.settings?.gtmId
+  const inlineScriptHashes = getInlineScriptHashes(config)
 
   const base: CspSources = {
     scriptSrc:  ["'self'", ...inlineScriptHashes,                      ...(gtmId ? ['https://www.googletagmanager.com'] : [])],
@@ -116,8 +142,8 @@ function buildNetlifyHeaders(
     })
     const usersCsp = buildCsp(usersSrc)
     for (const locale of config.locales) {
-      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].register}/*`, usersCsp))
-      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].recover}/*`, usersCsp))
+      routes.push(buildRoute(`/${locale}/${config.userPaths[locale].userRegistration}/*`, usersCsp))
+      routes.push(buildRoute(`/${locale}/${config.userPaths[locale].userRecover}/*`, usersCsp))
     }
   }
 
@@ -133,6 +159,5 @@ function buildNetlifyHeaders(
 export const setupHeaders = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
   if (config.preview.enabled) return
-  eleventyConfig.addGlobalData('inlineScriptHashes', getInlineScriptHashes)
-  eleventyConfig.addShortcode('buildNetlifyHeaders', buildNetlifyHeaders)
+  eleventyConfig.addShortcode('buildNetlifyHeaders', (cms: CmsData) => buildNetlifyHeaders(cms, config))
 }
