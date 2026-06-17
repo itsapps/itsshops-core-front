@@ -88,7 +88,7 @@ export type ResolvedCategory = {
 
 export type ResolvedManufacturer = {
   _id: string
-  name: string
+  title: string
 }
 
 export type ResolvedOption = {
@@ -279,8 +279,20 @@ export type CmsLocaleData = {
   shopUrl: string
   /** URL of the privacy page for the current locale. */
   privacyUrl: string
+  /** URL of the terms page for the current locale. */
+  termsUrl: string
   /** URL of the checkout page for the current locale. */
   checkoutUrl: string
+  /** URL of the order confirmation page for the current locale. */
+  orderThanksUrl: string
+  /** URL of the login page for the current locale. */
+  loginUrl: string
+  /** URL of the register page for the current locale. */
+  registerUrl: string
+  /** URL of the password recovery page for the current locale. */
+  recoverUrl: string
+  /** URL of the account page for the current locale. */
+  accountUrl: string
   /** Search index entries for the current locale. Empty array when search is not configured. */
   searchIndex: SearchEntry[]
   /** Fields passed to MiniSearch for full-text indexing. */

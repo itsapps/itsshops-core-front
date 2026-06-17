@@ -7,6 +7,13 @@
  *   - Field helper (includes field name): camelCase + Field  e.g. `i18nStringField('title')`
  */
 
+
+
+// ---------------------------------------------------------------------------
+// Localized fields
+// ---------------------------------------------------------------------------
+export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language, value }`
+
 // ---------------------------------------------------------------------------
 // Asset
 // ---------------------------------------------------------------------------
@@ -28,7 +35,7 @@ export const cropHotspotImage = `{ _type, ${imageAssetField}, crop, hotspot }`
  */
 export const i18nImage = `{
   "image": image[]{ language, value { _type, ${imageAssetField}, crop, hotspot } },
-  "alt": alt[]{ language, value }
+  ${i18nStringField('alt')}
 }`
 
 export const i18nImageField = (fieldName: string) => `${fieldName} ${i18nImage}`
@@ -37,7 +44,8 @@ export const i18nImageField = (fieldName: string) => `${fieldName} ${i18nImage}`
  * localeAltImage — Sanity image with hotspot + i18nString alt.
  * Used in carousels and wherever a single image has per-locale alt text.
  */
-export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, "alt": alt[]{ language, value } }`
+// export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, "alt": alt[]{ language, value } }`
+export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, ${i18nStringField('alt')} }`
 
 export const i18nAltImageField = (fieldName: string) => `${fieldName} ${i18nAltImage}`
 
@@ -45,15 +53,6 @@ export const i18nAltImageField = (fieldName: string) => `${fieldName} ${i18nAltI
 export const baseImage = `{ ${imageAssetField}, crop, hotspot, alt }`
 
 export const baseImageField = (fieldName: string) => `${fieldName} ${baseImage}`
-
-// ---------------------------------------------------------------------------
-// Localized fields
-// ---------------------------------------------------------------------------
-
-export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language, value }`
-
-export const i18nObjectField = (fieldName: string, subquery: string) =>
-  `${fieldName}[]{ language, value { ${subquery} } }`
 
 // ---------------------------------------------------------------------------
 // Portable text
@@ -141,7 +140,7 @@ export const carousel = `{
   autoplayDelay,
   loop,
   fade,
-  "slides": slides[] ${i18nAltImage}
+  slides[] ${i18nAltImage}
 }`
 
 export const carouselField = (fieldName = 'carousel') => `"${fieldName}": ${fieldName} ${carousel}`
@@ -172,8 +171,7 @@ export const refsField = (fieldName: string) => `"${fieldName}": ${fieldName}[].
 
 export const category = `{
   _id,
-  ${i18nStringField('title')},
-  "slug": slug.current
+  ${i18nStringField('title')}
 }`
 
 export const manufacturer = `{

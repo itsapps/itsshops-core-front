@@ -199,6 +199,7 @@ export async function buildCmsData(
       homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
       shopUrl:     urlMap[shopSettings?.shopPageId ?? '']    ?? '#',
       privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
+      termsUrl:    urlMap[shopSettings?.termsPageId ?? '']       ?? '#',
       checkoutUrl:    features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/`    : '#',
       orderThanksUrl: features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/${permalinks[locale].orderThanks}/` : '#',
       loginUrl:       features.users          ? `/${locale}/${permalinks[locale].login}/`        : '#',

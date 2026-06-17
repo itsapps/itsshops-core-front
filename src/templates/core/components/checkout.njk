@@ -237,10 +237,10 @@
                 {{ 'checkout.confirmations.age' | trans }}
               </p>
             {%- endif %}
-            {%- set _termsPageId = cms[_locale].shopSettings.termsPageId -%}
-            {%- if _termsPageId %}
+            {%- set _termsUrl = cms[_locale].termsUrl -%}
+            {%- if _termsUrl %}
               <p class="checkout__confirmation">
-                {{ 'checkout.confirmations.terms' | trans({ url: _termsPageId | pageUrl }) | safe }}
+                {{ 'checkout.confirmations.terms' | trans({ url: _termsUrl }) | safe }}
               </p>
             {%- endif %}
           {% endblock %}

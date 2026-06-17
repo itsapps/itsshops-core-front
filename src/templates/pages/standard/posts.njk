@@ -1,0 +1,9 @@
+---
+layout: base.njk
+pagination:
+  data: cms.posts
+  size: 1
+  alias: pageDoc
+permalink: "{{ pageDoc.url }}"
+---
+{%- include "overridable/post/container.njk" -%}

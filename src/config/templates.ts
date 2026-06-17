@@ -215,9 +215,9 @@ function shouldIgnoreTemplate({
   if (dir === 'standard') {
     if (file.startsWith('user-') && !features.users.enabled) return true
     if (file.startsWith('blog-') && !features.blog) return true
+    if (file === 'posts.njk' && !features.blog) return true
     if (file === 'products.njk' && !features.shop.enabled) return true
     if (file === 'categories.njk' && !features.shop.category) return true
-    if (file === 'manufacturers.njk' && !features.shop.manufacturer) return true
     if ((file === 'checkout.njk' || (file === 'order-thanks.njk')) && !features.shop.checkout) return true
   }
   if (dir === 'maintenance') return true
