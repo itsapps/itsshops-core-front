@@ -17,7 +17,9 @@ import {
   sendOrderNotification,
   type SendOrderNotificationOptions,
 } from '../lib/order-notifier'
-import type { MailType } from '../types/orderTransitions'
+import { ORDER_SUMMARY_MAIL_TYPES, SIMPLE_MAIL_TYPES, type MailType } from '../types/orderTransitions'
+
+const VALID_MAIL_TYPES = new Set<string>([...ORDER_SUMMARY_MAIL_TYPES, ...SIMPLE_MAIL_TYPES])
 import { ErrorCode } from '../types/errors'
 import { log } from '../utils/logger'
 import { badRequest, errorResponse, methodNotAllowed, success } from '../utils/response'
@@ -63,6 +65,9 @@ export function createNotifyHandler(options: NotifyHandlerOptions = {}) {
     }
     if (!body.mailType || typeof body.mailType !== 'string') {
       return withCors(badRequest('mailType is required'), request)
+    }
+    if (!VALID_MAIL_TYPES.has(body.mailType)) {
+      return withCors(badRequest(`Invalid mailType: ${body.mailType}`), request)
     }
 
     try {
