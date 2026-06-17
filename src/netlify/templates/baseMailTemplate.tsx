@@ -18,7 +18,7 @@ const containerStyle: React.CSSProperties = {
   margin: '0 auto',
   padding: '20px',
   maxWidth: '660px',
-  backgroundColor: 'white',
+  backgroundColor: '#fefefe',
   border: '1px solid #ECECE5',
   borderRadius: '12px',
   boxShadow: '0 2px 5px 0 rgb(50 50 93 / 10%), 0 1px 1px 0 rgb(0 0 0 / 7%);',
@@ -26,7 +26,7 @@ const containerStyle: React.CSSProperties = {
 
 const bodyStyle: React.CSSProperties = {
   backgroundColor: '#ECECE5',
-  color: '#000000',
+  color: '#111111',
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
 }
