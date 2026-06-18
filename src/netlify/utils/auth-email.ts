@@ -9,13 +9,13 @@
 import type { ComponentType } from 'react'
 import { supabase } from '../services/supabase'
 import { sendAuthNotification, type AuthUserPaths } from '../lib/auth-notifier'
-import type { SimpleEmailProps } from '../templates/types'
+import type { SimpleEmailProps } from '../templates/email/types'
 import { log } from './logger'
 
 export type DirectAuthEmailConfig = {
   /** Per-locale userPaths used to build the email callback URL. */
   userPaths: AuthUserPaths
-  /** Replaces SimpleMailTemplate for all auth emails. */
+  /** Replaces SimpleEmail for all auth emails. */
   template?: ComponentType<SimpleEmailProps>
   /** Public base URL of the shop (defaults to process.env.PUBLIC_URL ?? URL). */
   baseUrl?: string

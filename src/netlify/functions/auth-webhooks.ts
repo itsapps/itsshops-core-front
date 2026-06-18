@@ -34,7 +34,7 @@ import {
   type AuthUserPaths,
   type SupabaseAuthEmailAction,
 } from '../lib/auth-notifier'
-import type { SimpleEmailProps } from '../templates/types'
+import type { SimpleEmailProps } from '../templates/email/types'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
 import { log } from '../utils/logger'
 
@@ -52,7 +52,7 @@ type SupabaseEmailEvent = {
 }
 
 export type AuthWebhookHandlerOptions = ServerConfig & {
-  /** Replaces SimpleMailTemplate for all auth emails. */
+  /** Replaces SimpleEmail for all auth emails. */
   template?: ComponentType<SimpleEmailProps>
   /** Per-locale URL paths used to build the email callback URL. */
   userPaths: AuthUserPaths

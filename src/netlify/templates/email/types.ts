@@ -5,8 +5,8 @@
  * an `EmailShopSettings` from a fresh query and hands it (plus the loaded order)
  * to whichever template the mailType resolves to.
  */
-import type { OrderDocument } from '../types/checkout'
-import type { MailType } from '../types/orderTransitions'
+import type { OrderDocument } from '../../types/checkout'
+import type { MailType } from '../../types/orderTransitions'
 
 export type EmailAddress = {
   line1: string

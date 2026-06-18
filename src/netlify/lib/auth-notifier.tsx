@@ -14,8 +14,8 @@ import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
 import { fetchEmailSettings } from '../services/sanity'
-import { SimpleMailTemplate } from '../templates/simpleMailTemplate'
-import type { EmailContext, EmailShopSettings, SimpleEmailProps } from '../templates/types'
+import { SimpleEmail } from '../templates/email/SimpleEmail'
+import type { EmailContext, EmailShopSettings, SimpleEmailProps } from '../templates/email/types'
 import { ErrorCode } from '../types/errors'
 import { formatPrice as fmtPrice, serverT } from '../utils/i18n'
 import {
@@ -44,7 +44,7 @@ export type SendAuthNotificationInput = {
 }
 
 export type SendAuthNotificationOptions = {
-  /** Replaces SimpleMailTemplate for all auth emails. */
+  /** Replaces SimpleEmail for all auth emails. */
   template?: ComponentType<SimpleEmailProps>
   /** Public base URL of the shop (defaults to process.env.URL). */
   baseUrl?: string
@@ -143,7 +143,7 @@ export async function sendAuthNotification(
   const text     = ctx.t(`emails.${authMailType}.text`)
   const urlTitle = ctx.t(`emails.${authMailType}.urlTitle`)
 
-  const Component = options.template ?? SimpleMailTemplate
+  const Component = options.template ?? SimpleEmail
   const html = await render(
     <Component
       ctx={ctx}

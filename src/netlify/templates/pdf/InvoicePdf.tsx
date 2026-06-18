@@ -15,8 +15,8 @@ import {
   Text,
   View,
 } from '@react-pdf/renderer'
-import type { OrderDocument } from '../types/checkout'
-import type { EmailContext } from './types'
+import type { OrderDocument } from '../../types/checkout'
+import type { EmailContext } from '../email/types'
 
 const styles = StyleSheet.create({
   page: {

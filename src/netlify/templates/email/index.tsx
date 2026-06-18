@@ -17,16 +17,16 @@ import * as React from 'react'
 import { render } from '@react-email/render'
 import type { ComponentType } from 'react'
 
-import { OrderMailTemplate } from './orderMailTemplate'
-import { SimpleMailTemplate } from './simpleMailTemplate'
+import { OrderEmail } from './OrderEmail'
+import { SimpleEmail } from './SimpleEmail'
 import type { EmailContext, OrderEmailProps, SimpleEmailProps } from './types'
-import type { MailType } from '../types/orderTransitions'
-import { ORDER_SUMMARY_MAIL_TYPES } from '../types/orderTransitions'
-import type { OrderDocument } from '../types/checkout'
+import type { MailType } from '../../types/orderTransitions'
+import { ORDER_SUMMARY_MAIL_TYPES } from '../../types/orderTransitions'
+import type { OrderDocument } from '../../types/checkout'
 
-export { BaseMailTemplate } from './baseMailTemplate'
-export { OrderMailTemplate } from './orderMailTemplate'
-export { SimpleMailTemplate } from './simpleMailTemplate'
+export { EmailLayout } from './EmailLayout'
+export { OrderEmail } from './OrderEmail'
+export { SimpleEmail } from './SimpleEmail'
 export type {
   EmailAddress,
   EmailBankAccount,
@@ -52,8 +52,8 @@ export type EmailTemplateOverrides = Partial<{
 /**
  * Render the matching email template for a given mailType.
  *
- * - Order-summary mailTypes render `OrderMailTemplate` (or its override).
- * - Refund mailTypes render `SimpleMailTemplate` (or its override) using the
+ * - Order-summary mailTypes render `OrderEmail` (or its override).
+ * - Refund mailTypes render `SimpleEmail` (or its override) using the
  *   localized `emails.<mailType>.text` as the body and `emails.headline` as
  *   the heading.
  *
@@ -69,12 +69,12 @@ export async function renderMailFor(
 
   if (isOrderSummary) {
     const Component =
-      (overrides?.[mailType] as ComponentType<OrderEmailProps> | undefined) ?? OrderMailTemplate
+      (overrides?.[mailType] as ComponentType<OrderEmailProps> | undefined) ?? OrderEmail
     return render(<Component ctx={ctx} order={order} mailType={mailType} />)
   }
 
   const Component =
-    (overrides?.[mailType] as ComponentType<SimpleEmailProps> | undefined) ?? SimpleMailTemplate
+    (overrides?.[mailType] as ComponentType<SimpleEmailProps> | undefined) ?? SimpleEmail
   const headline = ctx.t('emails.headline', { customerName: order.customer.billingAddress.name })
   const text = ctx.t(`emails.${mailType}.text`)
   return render(<Component ctx={ctx} headline={headline} text={text} />)
