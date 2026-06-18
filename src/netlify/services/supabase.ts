@@ -1,5 +1,5 @@
 import type { Context } from '@netlify/functions'
-import { createClient, type User } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 
 export type ExposedUser = {
   id: string
@@ -7,14 +7,29 @@ export type ExposedUser = {
   lastSignIn: string | undefined
 }
 
-function initClient() {
+let client: SupabaseClient | null = null
+
+function getClient(): SupabaseClient {
+  if (client) return client
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SECRET_KEY
   if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY must be set')
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  return client
 }
 
-export const supabase = initClient()
+/**
+ * Lazily-initialized Supabase client. Construction is deferred to first use via
+ * a proxy so importing this module — e.g. transitively through the test-utils
+ * barrel — doesn't throw in projects that don't configure Supabase.
+ */
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const c = getClient()
+    const value = Reflect.get(c, prop, c)
+    return typeof value === 'function' ? value.bind(c) : value
+  },
+}) as SupabaseClient
 
 export function exposedUserData(user: User): ExposedUser {
   return {

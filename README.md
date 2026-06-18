@@ -269,3 +269,22 @@ Customer templates live in `src/_includes/` and shadow core templates by path:
 | `custom/` | Project-specific templates with no core equivalent |
 
 Core templates under `core/` and page templates cannot be overridden — attempting to do so throws a build error.
+
+
+## tests
+
+### run order mail tests:
+
+see tinhof project for the file
+
+```
+npx vitest run tests/integration/order-notify.test.ts -t "sends orderConfirmation"
+```
+
+### run user registration tests:
+
+see schuster project for the file
+
+```
+npx vitest run tests/integration/user-register.test.ts -t "send"
+```

@@ -49,7 +49,7 @@ export function EmailLayout({
       </Head>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
-          {header}
+          {/* {header} */}
           {children}
           {footer}
         </Container>
