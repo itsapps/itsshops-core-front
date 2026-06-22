@@ -35,6 +35,12 @@ export type SendOrderNotificationOptions = {
   attachInvoice?: boolean
   /** BCC the sender (shop admin) on the outgoing mail. */
   bccSender?: boolean
+  /**
+   * Include a right-of-withdrawal ("Widerruf") notice + link to the withdrawal
+   * page in the order-confirmation email. Opt-in: only enable once the withdrawal
+   * page and `/api/order/withdraw` function are wired in the consumer project.
+   */
+  withdrawalNotice?: boolean
 }
 
 export type SendOrderNotificationResult = {
@@ -76,11 +82,22 @@ export async function sendOrderNotification(
 
   const settings = buildEmailShopSettings(settingsRaw, options.baseUrl ?? process.env.URL ?? '')
 
+  // Withdrawal page URL for the opt-in confirmation notice. The slug lives in the
+  // shared `urlPaths` translations, resolved via serverT.
+  let withdrawUrl: string | undefined
+  if (options.withdrawalNotice && settings.baseUrl) {
+    const slug = serverT(locale, 'urlPaths.orderWithdraw')
+    if (slug && slug !== 'urlPaths.orderWithdraw') {
+      withdrawUrl = `${settings.baseUrl}/${locale}/${slug}/`
+    }
+  }
+
   const ctx: EmailContext = {
     locale,
     t: (key, params) => serverT(locale, key, params),
     formatPrice: (cents) => fmtPrice(cents, locale),
     settings,
+    ...(withdrawUrl && { withdrawUrl }),
   }
 
   const html = await renderMailFor(mailType, ctx, order, options.templates)

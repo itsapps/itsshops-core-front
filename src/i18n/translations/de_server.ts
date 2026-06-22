@@ -108,6 +108,9 @@ export default {
       orderDate: "Bestelldatum",
       customerNumber: "Kundennummer",
       trackShipment: "Sendung verfolgen",
+      withdrawalTitle: "Widerrufsrecht",
+      withdrawalText: "Du kannst diese Bestellung innerhalb von 14 Tagen ohne Angabe von Gründen widerrufen.",
+      withdrawalLink: "Widerruf erklären",
     },
     orderConfirmation: {
       subject: "Bestellbestätigung 🍷",

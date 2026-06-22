@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Column, Row, Section } from '@react-email/components'
+import { Column, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
 import { EmailText, EmailHeading, EmailHr } from './components'
 import type { OrderEmailProps } from './types'
@@ -200,6 +200,24 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
           </Row>
         )}
       </Section>
+
+      {/* Right-of-withdrawal notice (opt-in, confirmation email only) */}
+      {ctx.withdrawUrl && mailType === 'orderConfirmation' && (
+        <Section style={{ marginTop: '32px' }}>
+          <EmailHr />
+          <EmailText bold style={{ marginTop: '16px' }}>
+            {t('emails.order.withdrawalTitle')}
+          </EmailText>
+          <EmailText muted style={{ marginTop: '4px' }}>
+            {t('emails.order.withdrawalText')}
+          </EmailText>
+          <EmailText style={{ marginTop: '8px' }}>
+            <Link href={ctx.withdrawUrl} style={{ color: colors.text, textDecoration: 'underline' }}>
+              {t('emails.order.withdrawalLink')}
+            </Link>
+          </EmailText>
+        </Section>
+      )}
 
     </EmailLayout>
   )

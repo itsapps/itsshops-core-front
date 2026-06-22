@@ -108,6 +108,9 @@ export default {
       orderDate: "Order date",
       customerNumber: "Customer number",
       trackShipment: "Sendung verfolgen",
+      withdrawalTitle: "Right of withdrawal",
+      withdrawalText: "You may withdraw from this order within 14 days without giving any reason.",
+      withdrawalLink: "Declare withdrawal",
     },
     orderConfirmation: {
       subject: "Order confirmation 🍷",

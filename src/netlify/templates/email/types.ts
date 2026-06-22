@@ -75,6 +75,8 @@ export type EmailContext = {
   t: EmailTranslator
   formatPrice: EmailFormatPrice
   settings: EmailShopSettings
+  /** Absolute URL of the withdrawal page. Set only when the shop opts in; drives the order-confirmation withdrawal notice. */
+  withdrawUrl?: string
 }
 
 export type OrderEmailProps = {
