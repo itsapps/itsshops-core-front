@@ -321,6 +321,9 @@ export default {
     },
   },
   forms: {
+    errors: {
+      service: "Ein technischer Fehler ist aufgetreten. Bitte versuche es später erneut.",
+    },
     fields: {
       email: {
         label: "Email",

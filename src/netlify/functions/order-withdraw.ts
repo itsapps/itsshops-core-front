@@ -42,7 +42,12 @@ export function createOrderWithdrawHandler(config: OrderWithdrawConfig = {}) {
 
     const { orderNumber, email, reason, captchaToken } = body as WithdrawInput
 
-    if (!orderNumber || !email) return badRequest('orderNumber and email are required')
+    if (!orderNumber || !email) {
+      return validationError(ErrorCode.INVALID_INPUT, t('api.errors.validation.message'), undefined, {
+        ...(!orderNumber && { orderNumber: t('api.errors.validation.orderNumber') }),
+        ...(!email && { email: t('api.errors.validation.email') }),
+      })
+    }
 
     if (!validateEmail(email)) {
       return validationError(ErrorCode.INVALID_INPUT, t('api.errors.validation.message'), undefined, {
