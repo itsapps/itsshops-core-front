@@ -253,6 +253,9 @@ itsshops eleventy --mode=maintenance   # maintenance mode build
 itsshops eleventy                      # production build
 itsshops netlify                       # netlify dev (functions)
 itsshops clean                         # remove dist/, built CSS/JS includes
+itsshops sanity delete order,orderMeta # delete documents in dataset
+itsshops sanity count order,orderMeta  # count documents in dataset
+itsshops sanity query <some_query>     # query dataset, e.g. 'itsshops sanity query "count(*[_type == 'order'])"'
 ```
 
 **`--dev`** enables debug features: verbose Nunjucks undefined warnings, `throwOnUndefined`, and live-reloading of core dist templates when developing core itself via `npm link`.
