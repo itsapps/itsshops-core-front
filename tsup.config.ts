@@ -13,6 +13,8 @@ export default defineConfig({
     'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
     'payment-refund': 'src/netlify/functions/payment-refund.ts',
     'order-notify': 'src/netlify/functions/order-notify.ts',
+    'order-withdraw': 'src/netlify/functions/order-withdraw.ts',
+    'order-withdraw-notify': 'src/netlify/functions/order-withdraw-notify.ts',
     'user-register': 'src/netlify/functions/user-register.ts',
     'user-login': 'src/netlify/functions/user-login.ts',
     'user-logout': 'src/netlify/functions/user-logout.ts',

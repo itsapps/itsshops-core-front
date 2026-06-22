@@ -309,6 +309,16 @@ export default {
       title: "Kasse",
       description: "Bestellung bezahlen",
     },
+    orderWithdraw: {
+      title: "Widerruf",
+      description: "Bestellung widerrufen",
+      info: "Du kannst Deine Bestellung innerhalb von 14 Tagen widerrufen. Bitte gib Deine Bestellnummer und die bei der Bestellung verwendete E-Mail-Adresse an.",
+    },
+    orderWithdrawSuccess: {
+      title: "Widerruf erhalten",
+      description: "Dein Widerruf ist bei uns eingegangen",
+      info: "Wir haben Deinen Widerruf erhalten und Dir eine Bestätigung per E-Mail geschickt.",
+    },
   },
   forms: {
     fields: {
@@ -365,6 +375,13 @@ export default {
         label: "Telefon",
         errorMessage: "Telefonnummer darf nicht leer sein",
       },
+      orderNumber: {
+        label: "Bestellnummer",
+        errorMessage: "Bitte gib Deine Bestellnummer ein.",
+      },
+      reason: {
+        label: "Grund / betroffene Artikel (optional)",
+      },
       registerForNewsletter: {
         label: "Newsletter abonnieren",
         privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu.',
@@ -389,6 +406,12 @@ export default {
       submit: {
         text: "Passwort neu vergeben",
         loadingText: "Laden ...",
+      }
+    },
+    orderWithdraw: {
+      submit: {
+        text: "Widerruf absenden",
+        loadingText: "Wird gesendet ...",
       }
     },
     userReset: {

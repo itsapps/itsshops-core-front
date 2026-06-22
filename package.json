@@ -32,6 +32,14 @@
       "types": "./dist/order-notify.d.ts",
       "import": "./dist/order-notify.js"
     },
+    "./functions/order-withdraw": {
+      "types": "./dist/order-withdraw.d.ts",
+      "import": "./dist/order-withdraw.js"
+    },
+    "./functions/order-withdraw-notify": {
+      "types": "./dist/order-withdraw-notify.d.ts",
+      "import": "./dist/order-withdraw-notify.js"
+    },
     "./functions/user-confirm": {
       "types": "./dist/user-confirm.d.ts",
       "import": "./dist/user-confirm.js"

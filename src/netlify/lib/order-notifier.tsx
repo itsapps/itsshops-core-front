@@ -16,7 +16,8 @@ import { sendMail } from '../services/email'
 import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
 import { renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
-import type { EmailContext, EmailShopSettings } from '../templates/email/types'
+import type { EmailContext } from '../templates/email/types'
+import { buildEmailShopSettings } from './email-settings'
 import type { MailType } from '../types/orderTransitions'
 import { ErrorCode } from '../types/errors'
 import { formatPrice as fmtPrice, serverT } from '../utils/i18n'
@@ -73,36 +74,7 @@ export async function sendOrderNotification(
     )
   }
 
-  const settings: EmailShopSettings = {
-    shopName: settingsRaw.shopName,
-    senderName: settingsRaw.senderName,
-    senderEmail: settingsRaw.senderEmail,
-    baseUrl: options.baseUrl ?? process.env.URL ?? '',
-    logoUrl: null,
-    logoWidth: null,
-    logoHeight: null,
-    billingAddress: settingsRaw.billingAddress
-      ? {
-          line1: settingsRaw.billingAddress.line1 ?? '',
-          line2: settingsRaw.billingAddress.line2 ?? null,
-          zip: settingsRaw.billingAddress.zip ?? '',
-          city: settingsRaw.billingAddress.city ?? '',
-          country: settingsRaw.billingAddress.country ?? '',
-        }
-      : null,
-    bankAccount:
-      settingsRaw.bankAccount?.name &&
-      settingsRaw.bankAccount.iban &&
-      settingsRaw.bankAccount.bic
-        ? {
-            name: settingsRaw.bankAccount.name,
-            iban: settingsRaw.bankAccount.iban,
-            bic: settingsRaw.bankAccount.bic,
-          }
-        : null,
-    orderNumberPrefix: settingsRaw.orderNumberPrefix,
-    invoiceNumberPrefix: settingsRaw.invoiceNumberPrefix,
-  }
+  const settings = buildEmailShopSettings(settingsRaw, options.baseUrl ?? process.env.URL ?? '')
 
   const ctx: EmailContext = {
     locale,

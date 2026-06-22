@@ -10,5 +10,7 @@ export default {
     userReset:                "reset-password",
     userResetSuccess:         "reset-password/success",
     userOrders:               "account/orders",
+    orderWithdraw:            "withdrawal",
+    orderWithdrawSuccess:     "withdrawal/success",
   },
 };

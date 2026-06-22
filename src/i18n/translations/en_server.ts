@@ -6,6 +6,7 @@ export default {
         password: "Password not valid",
         message: "Validation error",
         empty: "Input must not be empty",
+        orderNumber: "Order number not valid",
         countryShippingNotSupported: "Shipping to this country is not supported",
         shippingRateCountryMismatch: "Shipping and delivery country do not match",
         shippingRateMustBeProvided: "Shipping rate must be provided",
@@ -32,6 +33,10 @@ export default {
       },
       orderNotFound: "Order not found",
       refundFailed: "Refund failed",
+      order: {
+        notFound: "We couldn't find an order with that number and email address.",
+        withdrawFailed: "Your withdrawal could not be processed. Please try again later.",
+      },
       coupon: {
         COUPON_NOT_FOUND: "Coupon code not found",
         COUPON_DISABLED: "This coupon is no longer active",
@@ -169,6 +174,29 @@ export default {
       headline: "Hi there!",
       text: "Please follow the link to set a new password for your customer account.",
       urlTitle: "Set a new password",
+    },
+    orderWithdrawalCustomer: {
+      subject: "Withdrawal received – order {{orderNumber}}",
+      preview: "We have received your withdrawal.",
+      headline: "Hello {{name}}!",
+      intro: "we confirm receipt of your withdrawal for order {{orderNumber}} on {{date}}.",
+      returnInstructions: "Please return the goods within 14 days to: {{address}}.",
+      returnCost: {
+        customer: "You bear the direct cost of returning the goods.",
+        merchant: "We cover the cost of returning the goods.",
+      },
+      refundTerms: "We will refund all payments received, including the standard delivery costs, within 14 days of receiving the goods back or proof of return, using the original payment method. We may withhold the refund until then.",
+      diminishedValue: "You are only liable for any diminished value of the goods resulting from handling beyond what is necessary to establish their nature, characteristics and functioning.",
+      notDispatched: "As your order has not been dispatched yet, we will cancel it and refund all payments received within 14 days using the original payment method. You don't need to return anything.",
+    },
+    orderWithdrawalShop: {
+      subject: "New withdrawal – order {{orderNumber}}",
+      preview: "A withdrawal has been declared.",
+      headline: "New withdrawal",
+      intro: "A withdrawal has been declared for order {{orderNumber}}.",
+      customer: "Customer",
+      declaredAt: "Declared on",
+      reason: "Reason / note",
     }
   },
   orders: {

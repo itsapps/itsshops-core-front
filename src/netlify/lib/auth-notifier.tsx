@@ -15,7 +15,8 @@ import { render } from '@react-email/render'
 import { sendMail } from '../services/email'
 import { fetchEmailSettings } from '../services/sanity'
 import { SimpleEmail } from '../templates/email/SimpleEmail'
-import type { EmailContext, EmailShopSettings, SimpleEmailProps } from '../templates/email/types'
+import type { EmailContext, SimpleEmailProps } from '../templates/email/types'
+import { buildEmailShopSettings } from './email-settings'
 import { ErrorCode } from '../types/errors'
 import { formatPrice as fmtPrice, serverT } from '../utils/i18n'
 import {
@@ -100,36 +101,7 @@ export async function sendAuthNotification(
     )
   }
 
-  const settings: EmailShopSettings = {
-    shopName: settingsRaw.shopName,
-    senderName: settingsRaw.senderName,
-    senderEmail: settingsRaw.senderEmail,
-    baseUrl,
-    logoUrl: null,
-    logoWidth: null,
-    logoHeight: null,
-    billingAddress: settingsRaw.billingAddress
-      ? {
-          line1: settingsRaw.billingAddress.line1 ?? '',
-          line2: settingsRaw.billingAddress.line2 ?? null,
-          zip: settingsRaw.billingAddress.zip ?? '',
-          city: settingsRaw.billingAddress.city ?? '',
-          country: settingsRaw.billingAddress.country ?? '',
-        }
-      : null,
-    bankAccount:
-      settingsRaw.bankAccount?.name &&
-      settingsRaw.bankAccount.iban &&
-      settingsRaw.bankAccount.bic
-        ? {
-            name: settingsRaw.bankAccount.name,
-            iban: settingsRaw.bankAccount.iban,
-            bic: settingsRaw.bankAccount.bic,
-          }
-        : null,
-    orderNumberPrefix: settingsRaw.orderNumberPrefix,
-    invoiceNumberPrefix: settingsRaw.invoiceNumberPrefix,
-  }
+  const settings = buildEmailShopSettings(settingsRaw, baseUrl)
 
   const ctx: EmailContext = {
     locale,

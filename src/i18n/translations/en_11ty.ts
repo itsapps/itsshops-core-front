@@ -309,6 +309,16 @@ export default {
       title: "Checkout",
       description: "Pay for order",
     },
+    orderWithdraw: {
+      title: "Withdrawal",
+      description: "Withdraw from your order",
+      info: "You may withdraw from your order within 14 days. Please enter your order number and the email address used for the order.",
+    },
+    orderWithdrawSuccess: {
+      title: "Withdrawal received",
+      description: "We have received your withdrawal",
+      info: "We have received your withdrawal and sent you a confirmation by email.",
+    },
   },
   forms: {
     fields: {
@@ -365,6 +375,13 @@ export default {
         label: "Phone",
         errorMessage: "Phone number must not be empty",
       },
+      orderNumber: {
+        label: "Order number",
+        errorMessage: "Please enter your order number.",
+      },
+      reason: {
+        label: "Reason / affected items (optional)",
+      },
       registerForNewsletter: {
         label: "Subscribe to newsletter",
         privacyNotice: 'By subscribing you agree to our <a href="{{url}}">privacy policy</a>.',
@@ -389,6 +406,12 @@ export default {
       submit: {
         text: "Reset password",
         loadingText: "Loading ...",
+      }
+    },
+    orderWithdraw: {
+      submit: {
+        text: "Submit withdrawal",
+        loadingText: "Sending ...",
       }
     },
     userReset: {

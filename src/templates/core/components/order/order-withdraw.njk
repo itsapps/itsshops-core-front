@@ -1,0 +1,45 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="static-page order-withdraw">
+  {% block page_header %}<h1>{{ 'staticPages.orderWithdraw.title' | trans }}</h1>{% endblock %}
+  {% block page_info %}<p>{{ 'staticPages.orderWithdraw.info' | trans }}</p>{% endblock %}
+
+  <div data-order-withdraw
+    data-api="/api/order/withdraw"
+    data-locale="{{ _locale }}"
+    data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
+  >
+    <form class="user-form" novalidate>
+      <div class="user-form__field">
+        <label for="withdraw-order-number">{{ 'forms.fields.orderNumber.label' | trans }}</label>
+        <input type="text" id="withdraw-order-number" name="orderNumber" required autocomplete="off">
+        <span class="user-form__field-error" data-field-error="orderNumber"></span>
+      </div>
+
+      <div class="user-form__field">
+        <label for="withdraw-email">{{ 'forms.fields.email.label' | trans }}</label>
+        <input type="email" id="withdraw-email" name="email" required autocomplete="email">
+        <span class="user-form__field-error" data-field-error="email"></span>
+      </div>
+
+      <div class="user-form__field">
+        <label for="withdraw-reason">{{ 'forms.fields.reason.label' | trans }}</label>
+        <textarea id="withdraw-reason" name="reason" rows="3"></textarea>
+      </div>
+
+      {%- if coreConfig.captchaSiteKey %}
+      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}"></div>
+      {%- endif %}
+
+      <div class="user-form__error" role="alert" hidden data-form-error></div>
+
+      <button type="submit" class="btn">
+        <span data-submit-text>{{ 'forms.orderWithdraw.submit.text' | trans }}</span>
+        <span data-submit-loading hidden>{{ 'forms.orderWithdraw.submit.loadingText' | trans }}</span>
+      </button>
+    </form>
+  </div>
+</article>
+
+{%- if coreConfig.captchaSiteKey %}
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+{%- endif %}

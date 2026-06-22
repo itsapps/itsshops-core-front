@@ -10,5 +10,7 @@ export default {
     userReset:                "passwort-aendern",
     userResetSuccess:         "passwort-aendern/erledigt",
     userOrders:               "konto/bestellungen",
+    orderWithdraw:            "widerruf",
+    orderWithdrawSuccess:     "widerruf/erledigt",
   },
 };

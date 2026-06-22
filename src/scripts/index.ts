@@ -58,6 +58,10 @@ if (document.querySelector('[data-user-reset]')) {
   import('./user-reset').then(m => m.initUserReset())
 }
 
+if (document.querySelector('[data-order-withdraw]')) {
+  import('./order-withdraw').then(m => m.initOrderWithdraw())
+}
+
 if (document.querySelector('[data-search]')) {
   import('./search').then(m => m.init())
 }

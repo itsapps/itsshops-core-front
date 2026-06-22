@@ -27,4 +27,6 @@ export type UserPaths = {
   userReset:               string
   userResetSuccess:        string
   userOrders:              string
+  orderWithdraw:           string
+  orderWithdrawSuccess:    string
 }

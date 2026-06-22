@@ -305,6 +305,10 @@ export type CmsLocaleData = {
   resetSuccessUrl: string
   /** URL of the password recovery success page for the current locale. */
   recoverSuccessUrl: string
+  /** URL of the right-of-withdrawal ("Widerruf") page for the current locale. */
+  orderWithdrawUrl: string
+  /** URL of the withdrawal success page for the current locale. */
+  orderWithdrawSuccessUrl: string
   /** Search index entries for the current locale. Empty array when search is not configured. */
   searchIndex: SearchEntry[]
   /** Fields passed to MiniSearch for full-text indexing. */

@@ -212,6 +212,8 @@ export async function buildCmsData(
       resetUrl:               features.users ? `/${locale}/${context.config.userPaths[locale].userReset}/` : '#',
       resetSuccessUrl:        features.users ? `/${locale}/${context.config.userPaths[locale].userResetSuccess}/` : '#',
       accountUrl:             features.users ? `/${locale}/${context.config.userPaths[locale].userOrders}/` : '#',
+      orderWithdrawUrl:        features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/` : '#',
+      orderWithdrawSuccessUrl: features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
       searchIndex: extensions.search
         ? buildSearchIndex(products, extensions.search, locale, {
             imageUrl: (img, width) => buildImageUrl(imageBuilder, img, width),

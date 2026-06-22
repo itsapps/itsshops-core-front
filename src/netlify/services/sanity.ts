@@ -179,6 +179,94 @@ export async function fetchOrderById(
   return doc ?? null
 }
 
+export type OrderWithdrawalLookup = {
+  _id: string
+  orderNumber: string
+  createdAt: string
+  /** Order fulfillment status — drives whether the confirmation asks for a return. */
+  status: string
+  customer: {
+    contactEmail: string
+    locale: string
+    name: string
+  }
+}
+
+/** Look up an order by its human order number (for the withdrawal endpoint). */
+export async function fetchOrderByNumber(
+  orderNumber: string,
+): Promise<OrderWithdrawalLookup | null> {
+  const doc = await sanityClient.fetch<OrderWithdrawalLookup | null>(
+    `*[_type == "order" && orderNumber == $orderNumber][0]{
+      _id,
+      orderNumber,
+      status,
+      "createdAt": _createdAt,
+      "customer": {
+        "contactEmail": customer.contactEmail,
+        "locale": customer.locale,
+        "name": customer.billingAddress.name
+      }
+    }`,
+    { orderNumber },
+  )
+  return doc ?? null
+}
+
+/** Returns the id of an existing open (received|processing) withdrawal for the order, if any. */
+export async function findOpenWithdrawal(orderId: string): Promise<string | null> {
+  return sanityClient.fetch<string | null>(
+    `*[_type == "orderWithdrawal" && orderRef._ref == $orderId && status in ["received", "processing"]][0]._id`,
+    { orderId },
+  )
+}
+
+/** Create a withdrawal declaration record. `declaredAt`/`status` are set server-side. */
+export async function createOrderWithdrawal(input: {
+  orderId: string
+  reason?: string
+}): Promise<{ _id: string }> {
+  return sanityClient.create({
+    _type: 'orderWithdrawal',
+    orderRef: { _type: 'reference', _ref: input.orderId },
+    declaredAt: new Date().toISOString(),
+    status: 'received',
+    ...(input.reason && { reason: input.reason }),
+  })
+}
+
+/** Load a withdrawal record + its order, for the admin resend endpoint. */
+export async function fetchWithdrawalForNotify(withdrawalId: string): Promise<{
+  order: OrderWithdrawalLookup
+  reason?: string
+  declaredAt: string
+} | null> {
+  const doc = await sanityClient.fetch<{
+    reason: string | null
+    declaredAt: string
+    order: OrderWithdrawalLookup | null
+  } | null>(
+    `*[_type == "orderWithdrawal" && _id == $id][0]{
+      reason,
+      declaredAt,
+      "order": orderRef->{
+        _id,
+        orderNumber,
+        status,
+        "createdAt": _createdAt,
+        "customer": {
+          "contactEmail": customer.contactEmail,
+          "locale": customer.locale,
+          "name": customer.billingAddress.name
+        }
+      }
+    }`,
+    { id: withdrawalId },
+  )
+  if (!doc?.order) return null
+  return { order: doc.order, reason: doc.reason ?? undefined, declaredAt: doc.declaredAt }
+}
+
 export type EmailSettingsQueryResult = {
   shopName: string | null
   senderName: string | null
@@ -197,6 +285,15 @@ export type EmailSettingsQueryResult = {
   } | null
   orderNumberPrefix: string | null
   invoiceNumberPrefix: string | null
+  returnAddress: {
+    line1: string | null
+    line2: string | null
+    zip: string | null
+    city: string | null
+    country: string | null
+  } | null
+  returnShippingBorneBy: 'customer' | 'merchant' | null
+  returnPolicyNote: string | null
 }
 
 /**
@@ -225,7 +322,16 @@ export async function fetchEmailSettings(
           zip,
           country
         },
-        bankAccount{ name, bic, iban }
+        bankAccount{ name, bic, iban },
+        returnAddress{
+          line1,
+          line2,
+          "city": coalesce(city[language == $locale][0].value, city[language == "de"][0].value),
+          zip,
+          country
+        },
+        returnShippingBorneBy,
+        "returnPolicyNote": coalesce(returnPolicyNote[language == $locale][0].value, returnPolicyNote[language == "de"][0].value)
       },
       "site": *[_type == "settings"][0]{
         "shopName": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "de"][0].value)
@@ -237,7 +343,10 @@ export async function fetchEmailSettings(
       "billingAddress": shop.billingAddress,
       "bankAccount": shop.bankAccount,
       "orderNumberPrefix": shop.orderNumberPrefix,
-      "invoiceNumberPrefix": shop.invoiceNumberPrefix
+      "invoiceNumberPrefix": shop.invoiceNumberPrefix,
+      "returnAddress": shop.returnAddress,
+      "returnShippingBorneBy": shop.returnShippingBorneBy,
+      "returnPolicyNote": shop.returnPolicyNote
     }`,
     { locale },
   )

@@ -1,0 +1,13 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].orderWithdrawUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+pageKey: orderWithdrawUrl
+---
+{%- include "overridable/order-withdraw.njk" -%}

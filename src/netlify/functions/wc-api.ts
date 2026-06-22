@@ -41,6 +41,8 @@ type SanityOrder = {
   status: string
   paymentStatus: string
   paymentIntentId: string
+  /** True when an open (received|processing) withdrawal references this order. */
+  hasOpenWithdrawal: boolean
   customer: {
     contactEmail: string
     locale: string
@@ -224,6 +226,17 @@ function mapOrder(order: SanityOrder, tz: string) {
   const id = orderNumberToId(order.orderNumber)
   const t = order.totals
   const f = order.fulfillment
+
+  // An open withdrawal on a still-undispatched order is reported as `cancelled`
+  // so the fulfillment ERP (which polls pending/processing/on-hold) drops it from
+  // its ship queue. The internal order status is left untouched — the merchant
+  // still decides the actual cancel/refund. Reverts to the normal mapped status
+  // once the withdrawal is closed (refunded/rejected) or the order has shipped.
+  const isPreDispatch = order.status === 'created' || order.status === 'processing'
+  const reportedStatus =
+    order.hasOpenWithdrawal && isPreDispatch
+      ? 'cancelled'
+      : (STATUS_TO_WC[order.status] ?? order.status)
   const shippingTax = f?.taxSnapshot?.vat ?? 0
   const shippingNet = f ? f.shippingCost - shippingTax : 0
 
@@ -270,7 +283,7 @@ function mapOrder(order: SanityOrder, tz: string) {
   return {
     id,
     number: order.orderNumber,
-    status: STATUS_TO_WC[order.status] ?? order.status,
+    status: reportedStatus,
     currency: t.currency ?? 'EUR',
     prices_include_tax: true,
     date_created: formatDate(order._createdAt, tz),
@@ -352,6 +365,7 @@ function mapOrder(order: SanityOrder, tz: string) {
 const ORDER_PROJECTION = `{
   _id, _createdAt,
   orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId,
+  "hasOpenWithdrawal": count(*[_type == "orderWithdrawal" && orderRef._ref == ^._id && status in ["received", "processing"]]) > 0,
   customer { contactEmail, locale, billingAddress, shippingAddress },
   totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },
   orderItems[] { _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight },

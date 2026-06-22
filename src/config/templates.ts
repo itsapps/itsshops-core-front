@@ -219,6 +219,7 @@ function shouldIgnoreTemplate({
     if (file === 'products.njk' && !features.shop.enabled) return true
     if (file === 'categories.njk' && !features.shop.category) return true
     if ((file === 'checkout.njk' || (file === 'order-thanks.njk')) && !features.shop.checkout) return true
+    if (file.startsWith('order-withdraw') && !features.shop.enabled) return true
   }
   if (dir === 'maintenance') return true
   if (dir === 'preview') return true

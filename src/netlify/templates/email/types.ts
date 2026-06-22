@@ -48,6 +48,12 @@ export type EmailShopSettings = {
   /** Order/invoice prefixes (mainly used by the PDF invoice). */
   orderNumberPrefix: string | null
   invoiceNumberPrefix: string | null
+  /** Where withdrawn goods are returned. Falls back to billingAddress when absent. */
+  returnAddress?: EmailAddress | null
+  /** Who bears return postage (drives the withdrawal email wording). Defaults to 'customer'. */
+  returnShippingBorneBy?: 'customer' | 'merchant'
+  /** Optional extra return instructions shown in the withdrawal confirmation email. */
+  returnPolicyNote?: string | null
 }
 
 /**

@@ -6,6 +6,7 @@ export default {
         password: "Ungültiges Passwort",
         message: "Validierungsfehler",
         empty: "Eingabe darf nicht leer sein",
+        orderNumber: "Ungültige Bestellnummer",
         countryShippingNotSupported: "In das gewünschte Land kann nicht geliefert werden",
         shippingRateCountryMismatch: "Versand und Lieferland stimmen nicht zusammen",
         shippingRateMustBeProvided: "Versandart muss angegeben werden",
@@ -32,6 +33,10 @@ export default {
       },
       orderNotFound: "Bestellung nicht gefunden",
       refundFailed: "Rückerstattung fehlgeschlagen",
+      order: {
+        notFound: "Wir konnten keine Bestellung mit dieser Bestellnummer und E-Mail Adresse finden.",
+        withdrawFailed: "Der Widerruf konnte nicht verarbeitet werden. Bitte versuche es später erneut.",
+      },
       coupon: {
         COUPON_NOT_FOUND: "Rabattcode nicht gefunden",
         COUPON_DISABLED: "Dieser Rabattcode ist nicht mehr aktiv",
@@ -169,6 +174,29 @@ export default {
       headline: "Hi!",
       text: "Bitte folge dem Link, um ein neues Passwort für Dein Kundenkonto zu setzen.",
       urlTitle: "Neues Passwort setzen",
+    },
+    orderWithdrawalCustomer: {
+      subject: "Widerruf erhalten – Bestellung {{orderNumber}}",
+      preview: "Wir haben Deinen Widerruf erhalten.",
+      headline: "Hallo {{name}}!",
+      intro: "wir bestätigen den Erhalt Deines Widerrufs zur Bestellung {{orderNumber}} am {{date}}.",
+      returnInstructions: "Bitte sende die Ware innerhalb von 14 Tagen zurück an: {{address}}.",
+      returnCost: {
+        customer: "Die unmittelbaren Kosten der Rücksendung trägst Du.",
+        merchant: "Die Kosten der Rücksendung übernehmen wir.",
+      },
+      refundTerms: "Wir erstatten alle erhaltenen Zahlungen einschließlich der Standard-Lieferkosten innerhalb von 14 Tagen ab Eingang der Ware oder eines Rücksendenachweises über das ursprünglich verwendete Zahlungsmittel. Bis dahin können wir die Rückzahlung zurückbehalten.",
+      diminishedValue: "Für einen etwaigen Wertverlust der Ware haftest Du nur, wenn dieser auf einen nicht notwendigen Umgang zur Prüfung der Beschaffenheit und Funktionsweise zurückzuführen ist.",
+      notDispatched: "Da Deine Bestellung noch nicht versendet wurde, stornieren wir sie und erstatten alle erhaltenen Zahlungen innerhalb von 14 Tagen über das ursprünglich verwendete Zahlungsmittel. Du musst nichts zurücksenden.",
+    },
+    orderWithdrawalShop: {
+      subject: "Neuer Widerruf – Bestellung {{orderNumber}}",
+      preview: "Ein Widerruf wurde erklärt.",
+      headline: "Neuer Widerruf",
+      intro: "Zu Bestellung {{orderNumber}} wurde ein Widerruf erklärt.",
+      customer: "Kunde",
+      declaredAt: "Erklärt am",
+      reason: "Grund / Hinweis",
     }
   },
   orders: {
