@@ -227,16 +227,24 @@ function mapOrder(order: SanityOrder, tz: string) {
   const t = order.totals
   const f = order.fulfillment
 
-  // An open withdrawal on a still-undispatched order is reported as `cancelled`
-  // so the fulfillment ERP (which polls pending/processing/on-hold) drops it from
-  // its ship queue. The internal order status is left untouched — the merchant
-  // still decides the actual cancel/refund. Reverts to the normal mapped status
-  // once the withdrawal is closed (refunded/rejected) or the order has shipped.
+  // Reported WC status, in precedence order. The internal fulfillment status is
+  // left untouched in Sanity — this only changes what the ERP sees:
+  //   1. Fully refunded → `refunded`. A refund sets paymentStatus only (fulfillment
+  //      status stays e.g. `created`), so without this a refunded-but-unshipped
+  //      order would keep reporting `processing` and get shipped anyway.
+  //   2. Open withdrawal on a still-undispatched order → `cancelled`, so the ERP
+  //      (which polls pending/processing/on-hold) drops it from its ship queue.
+  //   3. Otherwise → the normal fulfillment-status mapping.
+  // Partial refunds are intentionally not overridden — such orders may still ship.
   const isPreDispatch = order.status === 'created' || order.status === 'processing'
-  const reportedStatus =
-    order.hasOpenWithdrawal && isPreDispatch
-      ? 'cancelled'
-      : (STATUS_TO_WC[order.status] ?? order.status)
+  let reportedStatus: string
+  if (order.paymentStatus === 'refunded') {
+    reportedStatus = 'refunded'
+  } else if (order.hasOpenWithdrawal && isPreDispatch) {
+    reportedStatus = 'cancelled'
+  } else {
+    reportedStatus = STATUS_TO_WC[order.status] ?? order.status
+  }
   const shippingTax = f?.taxSnapshot?.vat ?? 0
   const shippingNet = f ? f.shippingCost - shippingTax : 0
 

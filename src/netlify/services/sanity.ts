@@ -439,26 +439,37 @@ export async function updateOrderPaymentStatus(
   paymentIntentId: string,
   status: 'refunded' | 'partiallyRefunded',
 ): Promise<void> {
-  const orderId = await sanityClient.fetch<string | null>(
-    `*[_type == "order" && paymentIntentId == $pid][0]._id`,
+  const order = await sanityClient.fetch<{ _id: string; status: string } | null>(
+    `*[_type == "order" && paymentIntentId == $pid][0]{ _id, status }`,
     { pid: paymentIntentId },
   )
-  if (!orderId) {
+  if (!order?._id) {
     log.warn('Order not found for refund update', { paymentIntentId })
     return
   }
 
-  const historyEntry: Omit<OrderStatusHistoryEntry, '_key'> = {
-    _type: 'orderStatusHistory',
-    type: 'payment',
-    status,
-    timestamp: new Date().toISOString(),
-    source: 'stripe',
+  const timestamp = new Date().toISOString()
+  const historyEntries: OrderStatusHistoryEntry[] = [
+    { _type: 'orderStatusHistory', _key: crypto.randomUUID(), type: 'payment', status, timestamp, source: 'stripe' },
+  ]
+  const set: Record<string, string> = { paymentStatus: status }
+
+  // Full refund of a still-undispatched order also cancels fulfillment, so the
+  // order doesn't stay stuck reading as `created`/`processing`. Mirrors the
+  // Studio refund action — keeps every refund source (action / dashboard /
+  // webhook reconciliation) consistent. Idempotent: a re-run sees `canceled`
+  // and does nothing more.
+  if (status === 'refunded' && (order.status === 'created' || order.status === 'processing')) {
+    set.status = 'canceled'
+    historyEntries.push({
+      _type: 'orderStatusHistory',
+      _key: crypto.randomUUID(),
+      type: 'fulfillment',
+      status: 'canceled',
+      timestamp,
+      source: 'stripe',
+    })
   }
 
-  await sanityClient
-    .patch(orderId)
-    .set({ paymentStatus: status })
-    .append('statusHistory', [{ ...historyEntry, _key: crypto.randomUUID() }])
-    .commit()
+  await sanityClient.patch(order._id).set(set).append('statusHistory', historyEntries).commit()
 }
