@@ -110,7 +110,7 @@
       </div>
 
       {%- if coreConfig.captchaSiteKey %}
-      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}"></div>
+      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
       {%- endif %}
 
       <div class="user-form__error" role="alert" hidden data-form-error></div>
