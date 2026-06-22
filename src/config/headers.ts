@@ -130,21 +130,35 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
     }
   }
 
-  if (config.features.users.enabled) {
-    const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
-    const usersSrc = mergeExtra(merged, {
+  // Routes that render an hCaptcha widget need the hcaptcha origins whitelisted.
+  // The widget is shown whenever `captchaSiteKey` is set (see the form templates),
+  // so the CSP must cover every captcha-bearing page: auth (register/recover) and
+  // the right-of-withdrawal page.
+  const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
+  const captchaCsp = buildCsp(
+    mergeExtra(merged, {
       'script-src':  captcha,
       'connect-src': captcha,
       'img-src':     [],
       'media-src':   [],
       'style-src':   captcha,
       'frame-src':   captcha,
-    })
-    const usersCsp = buildCsp(usersSrc)
+    }),
+  )
+  const captchaRoutes: string[] = []
+  if (config.features.users.enabled) {
     for (const locale of config.locales) {
-      routes.push(buildRoute(`/${locale}/${config.userPaths[locale].userRegistration}/*`, usersCsp))
-      routes.push(buildRoute(`/${locale}/${config.userPaths[locale].userRecover}/*`, usersCsp))
+      captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRegistration}/*`)
+      captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRecover}/*`)
     }
+  }
+  if (config.features.shop.enabled && config.captchaSiteKey) {
+    for (const locale of config.locales) {
+      captchaRoutes.push(`/${locale}/${config.userPaths[locale].orderWithdraw}/*`)
+    }
+  }
+  for (const route of captchaRoutes) {
+    routes.push(buildRoute(route, captchaCsp))
   }
 
   for (const route of config.headers.routes) {
