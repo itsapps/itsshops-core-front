@@ -514,6 +514,29 @@ async function handleUpdateOrder(
     return wcError('woocommerce_rest_order_invalid_id', `Order ${orderId} not found`, 404)
   }
 
+  // Defensive write-side guard: never let the ERP mark an order shipped when it
+  // must not be fulfilled — fully refunded, an open withdrawal, or already
+  // cancelled. The read side already drops such orders from the ERP's poll, but
+  // a poll→ship race could still PUT `completed`; refusing it here prevents both
+  // the bad status change and a shipping email to a withdrawn/refunded customer.
+  if (
+    internalStatus === 'shipped' &&
+    (order.paymentStatus === 'refunded' || order.hasOpenWithdrawal || order.status === 'canceled')
+  ) {
+    log.warn('Update order: refused ship transition on non-fulfillable order', {
+      orderId,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      hasOpenWithdrawal: order.hasOpenWithdrawal,
+    })
+    return wcError(
+      'woocommerce_rest_order_not_fulfillable',
+      `Order ${orderId} cannot be marked shipped (refunded, withdrawn, or cancelled)`,
+      409,
+    )
+  }
+
   const historyEntry = {
     _type: 'orderStatusHistory',
     _key: crypto.randomUUID(),
