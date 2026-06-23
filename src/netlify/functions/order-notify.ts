@@ -29,6 +29,8 @@ export type NotifyRequestBody = {
   orderId: string
   mailType: MailType
   attachInvoice?: boolean
+  /** Refunded amount in cents — interpolated into the refund emails. */
+  refundAmount?: number
 }
 
 export type NotifyResponseBody = {
@@ -74,6 +76,7 @@ export function createNotifyHandler(options: NotifyHandlerOptions = {}) {
       const result = await sendOrderNotification(body.orderId, body.mailType, {
         ...options,
         attachInvoice: body.attachInvoice,
+        ...(typeof body.refundAmount === 'number' && { refundAmount: body.refundAmount }),
       })
 
       log.debug('Order notification sent', {

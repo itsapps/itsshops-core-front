@@ -150,12 +150,12 @@ export default {
     orderRefunded: {
       subject: "Zahlung zurückerstattet 💶",
       preview: "Wir haben Deine Zahlung zurückerstattet.",
-      text: "Wir haben Deine Zahlung in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
+      text: "Wir haben Dir {{amount}} in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
       subject: "Zahlung teilweise zurückerstattet 💶",
       preview: "Wir haben einen Teil Deiner Zahlung zurückerstattet.",
-      text: "Wir haben einen Teil Deiner Zahlung zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag auf Deinem Konto sichtbar ist. Bei Fragen zur Rückerstattung kannst Du Dich gerne bei uns melden.",
+      text: "Wir haben Dir einen Teilbetrag von {{amount}} zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag auf Deinem Konto sichtbar ist. Bei Fragen zur Rückerstattung kannst Du Dich gerne bei uns melden.",
     },
     userConfirmation: {
       subject: "Kundenregistrierung 👤",
@@ -185,8 +185,8 @@ export default {
       intro: "wir bestätigen den Erhalt Deines Widerrufs zur Bestellung {{orderNumber}} am {{date}}.",
       returnInstructions: "Bitte sende die Ware innerhalb von 14 Tagen zurück an: {{address}}.",
       returnCost: {
-        customer: "Die unmittelbaren Kosten der Rücksendung trägst Du.",
-        merchant: "Die Kosten der Rücksendung übernehmen wir.",
+        customer: "Bitte beachte, dass die unmittelbaren Kosten der Rücksendung von Dir zu tragen sind.",
+        merchant: "Die Kosten der Rücksendung übernehmen wir gerne für Dich.",
       },
       refundTerms: "Wir erstatten alle erhaltenen Zahlungen einschließlich der Standard-Lieferkosten innerhalb von 14 Tagen ab Eingang der Ware oder eines Rücksendenachweises über das ursprünglich verwendete Zahlungsmittel. Bis dahin können wir die Rückzahlung zurückbehalten.",
       diminishedValue: "Für einen etwaigen Wertverlust der Ware haftest Du nur, wenn dieser auf einen nicht notwendigen Umgang zur Prüfung der Beschaffenheit und Funktionsweise zurückzuführen ist.",

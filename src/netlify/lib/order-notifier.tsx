@@ -41,6 +41,8 @@ export type SendOrderNotificationOptions = {
    * page and `/api/order/withdraw` function are wired in the consumer project.
    */
   withdrawalNotice?: boolean
+  /** Refunded amount in cents — interpolated into the refund emails. */
+  refundAmount?: number
 }
 
 export type SendOrderNotificationResult = {
@@ -100,7 +102,7 @@ export async function sendOrderNotification(
     ...(withdrawUrl && { withdrawUrl }),
   }
 
-  const html = await renderMailFor(mailType, ctx, order, options.templates)
+  const html = await renderMailFor(mailType, ctx, order, options.templates, options.refundAmount)
   const subject = subjectFor(ctx, mailType)
   const text = ctx.t(`emails.${mailType}.text`)
 

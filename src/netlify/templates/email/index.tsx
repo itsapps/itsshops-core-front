@@ -64,6 +64,8 @@ export async function renderMailFor(
   ctx: EmailContext,
   order: OrderDocument,
   overrides?: EmailTemplateOverrides,
+  /** Refunded amount in cents — interpolated as `{{amount}}` into the refund emails. */
+  refundAmount?: number,
 ): Promise<string> {
   const isOrderSummary = (ORDER_SUMMARY_MAIL_TYPES as readonly MailType[]).includes(mailType)
 
@@ -76,7 +78,11 @@ export async function renderMailFor(
   const Component =
     (overrides?.[mailType] as ComponentType<SimpleEmailProps> | undefined) ?? SimpleEmail
   const headline = ctx.t('emails.headline', { customerName: order.customer.billingAddress.name })
-  const text = ctx.t(`emails.${mailType}.text`)
+  // The simple mail types are the refund notifications, whose text references the
+  // refunded amount. Use the explicit refund amount when provided, else fall back
+  // to the order total (correct for a full refund).
+  const amount = ctx.formatPrice(refundAmount ?? order.totals.grandTotal)
+  const text = ctx.t(`emails.${mailType}.text`, { amount })
   return render(<Component ctx={ctx} headline={headline} text={text} />)
 }
 

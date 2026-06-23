@@ -150,12 +150,12 @@ export default {
     orderRefunded: {
       subject: "Payment refunded 💶",
       preview: "We've refunded your payment.",
-      text: "We've refunded your payment in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
+      text: "We've refunded {{amount}} to you in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
     },
     orderRefundedPartially: {
       subject: "Payment partially refunded 💶",
       preview: "We've refunded part of your payment.",
-      text: "We've refunded part of your payment. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions about the refund, just get in touch.",
+      text: "We've refunded {{amount}} of your payment. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions about the refund, just get in touch.",
     },
     userConfirmation: {
       subject: "Customer registration 👤",
@@ -185,8 +185,8 @@ export default {
       intro: "we confirm receipt of your withdrawal for order {{orderNumber}} on {{date}}.",
       returnInstructions: "Please return the goods within 14 days to: {{address}}.",
       returnCost: {
-        customer: "You bear the direct cost of returning the goods.",
-        merchant: "We cover the cost of returning the goods.",
+        customer: "Please note that the direct cost of returning the goods is to be covered by you.",
+        merchant: "We're happy to cover the cost of returning the goods.",
       },
       refundTerms: "We will refund all payments received, including the standard delivery costs, within 14 days of receiving the goods back or proof of return, using the original payment method. We may withhold the refund until then.",
       diminishedValue: "You are only liable for any diminished value of the goods resulting from handling beyond what is necessary to establish their nature, characteristics and functioning.",
