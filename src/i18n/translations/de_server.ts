@@ -139,23 +139,23 @@ export default {
     },
     orderReturned: {
       subject: "Retoure angekommen 🏠",
-      preview: "Deine Retoursendung ist bei uns angekommen!",
-      text: "Vielen Dank für den Aufwand!",
+      preview: "Deine Rücksendung ist bei uns eingegangen.",
+      text: "Deine Rücksendung ist bei uns eingegangen – vielen Dank! Wir prüfen die Ware und kümmern uns um die weitere Abwicklung.\nSofern eine Rückerstattung ansteht, erhältst Du diese in Kürze über das ursprünglich verwendete Zahlungsmittel.",
     },
     orderCanceled: {
-      subject: "Bestellung storniert 🛑",
-      preview: "Deine Bestellung wurde storniert!",
-      text: "Vielen Dank, daß Du uns geholfen hast!",
+      subject: "Bestellung storniert",
+      preview: "Deine Bestellung wurde storniert.",
+      text: "Deine Bestellung wurde storniert. Falls Du bereits bezahlt hast, erstatten wir Dir den Betrag in voller Höhe über das ursprünglich verwendete Zahlungsmittel zurück.\nSolltest Du Fragen haben, melde Dich gerne jederzeit bei uns.",
     },
     orderRefunded: {
-      subject: "Zahlung zurückerstattet 🛑",
-      preview: "Deine Zahlung wurde zurückerstattet!",
-      text: "Die Zahlung wurde zurückerstattet!",
+      subject: "Zahlung zurückerstattet 💶",
+      preview: "Wir haben Deine Zahlung zurückerstattet.",
+      text: "Wir haben Deine Zahlung in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
-      subject: "Zahlung teilweise zurückerstattet 🛑",
-      preview: "Deine Zahlung wurde teilweise zurückerstattet!",
-      text: "Die Zahlung wurde teilweise zurückerstattet!",
+      subject: "Zahlung teilweise zurückerstattet 💶",
+      preview: "Wir haben einen Teil Deiner Zahlung zurückerstattet.",
+      text: "Wir haben einen Teil Deiner Zahlung zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag auf Deinem Konto sichtbar ist. Bei Fragen zur Rückerstattung kannst Du Dich gerne bei uns melden.",
     },
     userConfirmation: {
       subject: "Kundenregistrierung 👤",
@@ -200,16 +200,6 @@ export default {
       customer: "Kunde",
       declaredAt: "Erklärt am",
       reason: "Grund / Hinweis",
-    }
-  },
-  orders: {
-    statusTexts: {
-      created: 'Erstellt',
-      processing: 'In Bearbeitung',
-      shipped: 'Versendet',
-      delivered: 'Angekommen',
-      canceled: 'Storniert',
-      returned: 'Zurückgeliefert',
     }
   },
 };

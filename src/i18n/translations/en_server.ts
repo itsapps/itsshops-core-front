@@ -138,24 +138,24 @@ export default {
       text: "Thank you for your order, we hope you enjoy your new products!",
     },
     orderReturned: {
-      subject: "Return arrived 🏠",
-      preview: "Your return has arrived!",
-      text: "Thank you for your help!",
+      subject: "Return received 🏠",
+      preview: "We've received your return.",
+      text: "We've received your return — thank you! We'll check the goods and take care of the rest.\nIf a refund is due, you'll receive it shortly via your original payment method.",
     },
     orderCanceled: {
-      subject: "Order canceled 🛑",
-      preview: "Your order has been canceled!",
-      text: "Thank you for your help!",
+      subject: "Order cancelled",
+      preview: "Your order has been cancelled.",
+      text: "Your order has been cancelled. If you've already paid, we'll refund the full amount to your original payment method.\nIf you have any questions, feel free to get in touch.",
     },
     orderRefunded: {
-      subject: "Payment refunded 🛑",
-      preview: "Your payment has been refunded!",
-      text: "The payment has been refunded!",
+      subject: "Payment refunded 💶",
+      preview: "We've refunded your payment.",
+      text: "We've refunded your payment in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
     },
     orderRefundedPartially: {
-      subject: "Payment partially refunded 🛑",
-      preview: "Your payment has been partially refunded!",
-      text: "The payment has been partially refunded!",
+      subject: "Payment partially refunded 💶",
+      preview: "We've refunded part of your payment.",
+      text: "We've refunded part of your payment. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions about the refund, just get in touch.",
     },
     userConfirmation: {
       subject: "Customer registration 👤",
@@ -200,16 +200,6 @@ export default {
       customer: "Customer",
       declaredAt: "Declared on",
       reason: "Reason / note",
-    }
-  },
-  orders: {
-    statusTexts: {
-      created: 'Created',
-      processing: 'Processing',
-      shipped: 'Shipped',
-      delivered: 'Delivered',
-      canceled: 'Canceled',
-      returned: 'Returned',
     }
   },
 };
