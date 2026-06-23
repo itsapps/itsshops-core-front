@@ -192,6 +192,7 @@ export default {
   checkout: {
     confirmations: {
       terms: 'Ich habe die <a href="{{url}}">AGB</a> gelesen und stimme ihnen zu.',
+      withdrawalPolicy: 'Ich habe die <a href="{{url}}">Widerrufsbelehrung</a> zur Kenntnis genommen.',
       age: "Ich bestätige, dass ich mindestens 18 Jahre alt bin.",
     },
     sections: {

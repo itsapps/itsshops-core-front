@@ -163,6 +163,7 @@ export type ResolvedShopSettings = {
   _id: string
   shopPageId: string | null
   termsPageId: string | null
+  withdrawalPolicyPageId: string | null
   defaultCountry: { _id: string; countryCode: string } | null
   freeShippingCalculation: 'beforeDiscount' | 'afterDiscount'
   stockThreshold: number | null
@@ -281,6 +282,8 @@ export type CmsLocaleData = {
   privacyUrl: string
   /** URL of the terms page for the current locale. */
   termsUrl: string
+  /** URL of the withdrawal-policy (Widerrufsbelehrung) page for the current locale. */
+  withdrawalPolicyUrl: string
   /** URL of the checkout page for the current locale. */
   checkoutUrl: string
   /** URL of the order confirmation page for the current locale. */

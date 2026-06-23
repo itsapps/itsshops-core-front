@@ -48,6 +48,7 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
     _id:                     raw._id,
     shopPageId:              raw.shopPage?._ref ?? null,
     termsPageId:              raw.termsPage?._ref ?? null,
+    withdrawalPolicyPageId:  raw.withdrawalPolicyPage?._ref ?? null,
     defaultCountry:          raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,

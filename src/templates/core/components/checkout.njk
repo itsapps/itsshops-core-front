@@ -238,9 +238,15 @@
               </p>
             {%- endif %}
             {%- set _termsUrl = cms[_locale].termsUrl -%}
-            {%- if _termsUrl %}
+            {%- if _termsUrl and _termsUrl != '#' %}
               <p class="checkout__confirmation">
                 {{ 'checkout.confirmations.terms' | trans({ url: _termsUrl }) | safe }}
+              </p>
+            {%- endif %}
+            {%- set _withdrawalPolicyUrl = cms[_locale].withdrawalPolicyUrl -%}
+            {%- if _withdrawalPolicyUrl and _withdrawalPolicyUrl != '#' %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.withdrawalPolicy' | trans({ url: _withdrawalPolicyUrl }) | safe }}
               </p>
             {%- endif %}
           {% endblock %}

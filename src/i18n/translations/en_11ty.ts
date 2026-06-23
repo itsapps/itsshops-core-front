@@ -192,6 +192,7 @@ export default {
   checkout: {
     confirmations: {
       terms: 'I have read the <a href="{{url}}">Terms & Conditions</a> and agree to them.',
+      withdrawalPolicy: 'I have read the <a href="{{url}}">withdrawal policy</a>.',
       age: "I confirm that I am at least 18 years old.",
     },
     sections: {

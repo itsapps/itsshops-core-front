@@ -200,6 +200,7 @@ export async function buildCmsData(
       shopUrl:     urlMap[shopSettings?.shopPageId ?? '']    ?? '#',
       privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
       termsUrl:    urlMap[shopSettings?.termsPageId ?? '']       ?? '#',
+      withdrawalPolicyUrl: urlMap[shopSettings?.withdrawalPolicyPageId ?? ''] ?? '#',
       checkoutUrl:    features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/`    : '#',
       orderThanksUrl: features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/${permalinks[locale].orderThanks}/` : '#',
       loginUrl:               features.users ? `/${locale}/${context.config.userPaths[locale].userLogin}/` : '#',

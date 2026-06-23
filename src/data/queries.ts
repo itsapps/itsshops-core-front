@@ -203,6 +203,7 @@ export function buildShopSettingsQuery(): string {
   _id,
   "shopPage": shopPage{ _ref },
   "termsPage": termsPage{ _ref },
+  "withdrawalPolicyPage": withdrawalPolicyPage{ _ref },
   "defaultCountry": defaultCountry->{ _id, countryCode },
   freeShippingCalculation,
   stockThreshold,
