@@ -1,9 +1,7 @@
 import type { SanityClient } from '@sanity/client'
-import { slugify as coreSlugify } from './slugify'
-import { stegaClean } from '@sanity/client/stega'
 import { imageUrl as buildImageUrl, imageSrcsetData } from '../image'
 import type { CoreContext } from '../types'
-import type { CmsData, CmsLocaleData, ResolvedPage, ResolvedPost, Sitemap, SitemapEntry } from '../types/data'
+import type { CmsData, CmsLocaleData, Sitemap, SitemapEntry } from '../types/data'
 import { buildPermalinkTranslations } from '../i18n/permalinks'
 import {
   buildProductQuery,
@@ -17,8 +15,9 @@ import {
 } from './queries'
 import { fetchVinofactWines } from './vinofact'
 import { makeCtx } from './resolve/context'
-import { resolveModules } from './resolve/modules'
 import { resolveCategories } from './resolve/categories'
+import { resolvePages } from './resolve/pages'
+import { resolvePosts } from './resolve/posts'
 import { resolveVariants } from './resolve/variants'
 import { resolveMenus } from './resolve/menus'
 import { resolveSettings, resolveShopSettings } from './resolve/settings'
@@ -140,37 +139,10 @@ export async function buildCmsData(
       console.warn(`[itsshops] No home page configured in settings for locale "${locale}". Set a home page in Sanity settings to generate /${locale}/.`)
     }
 
-    const pages: ResolvedPage[] = rawPages.map((p: any) => {
-      const title = ctx.resolveString(p.title)
-      const slug  = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
-      const url   = p._id === homePageId ? `/${locale}/` : `/${locale}/${slug}/`
-      return {
-        ...p,
-        title,
-        slug,
-        url,
-        locale,
-        modules: resolveModules(p.modules, ctx, resolve.module),
-        seo:     ctx.resolveSeo(p.seo),
-        ...(resolve.page ? resolve.page(p, ctx) : {}),
-      }
-    })
+    const pages = resolvePages(rawPages, ctx, homePageId, resolve.module, resolve.page)
 
-    const posts: ResolvedPost[] = features.blog
-      ? rawPosts.map((p: any) => {
-          const slug = stegaClean(p.slug || p._id)
-          return {
-            ...p,
-            title:       ctx.resolveString(p.title),
-            slug,
-            url:         `/${locale}/${permalinks[locale].blog}/${slug}/`,
-            locale,
-            publishedAt: p.publishedAt ?? null,
-            modules:     resolveModules(p.modules, ctx, resolve.module),
-            seo:         ctx.resolveSeo(p.seo),
-            ...(resolve.post ? resolve.post(p, ctx) : {}),
-          }
-        })
+    const posts = features.blog
+      ? resolvePosts(rawPosts, ctx, permalinks, resolve.module, resolve.post)
       : []
 
     const menus = resolveMenus(rawMenus, ctx, resolve.menuItem)

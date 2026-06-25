@@ -47,6 +47,7 @@ export type ResolvedImage = {
   asset: {
     _ref: string
     dimensions?: { width: number; height: number; aspectRatio: number }
+    palette: any
   }
   alt: string
   hotspot?: SanityImageHotspot

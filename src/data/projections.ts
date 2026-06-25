@@ -18,7 +18,7 @@ export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language,
 // Asset
 // ---------------------------------------------------------------------------
 
-export const asset = `_id, url, "dimensions": metadata.dimensions { width, height, aspectRatio }`
+export const asset = `_id, url, "dimensions": metadata.dimensions { width, height, aspectRatio }, "palette": metadata.palette`
 
 export const imageAssetField = `asset->{ ${asset} }`
 

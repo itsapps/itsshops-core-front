@@ -41,12 +41,3 @@ export function buildUserPaths(): Record<Locale, UserPaths> {
     return acc
   }, {} as Record<Locale, UserPaths>)
 }
-
-export function getPermalink(
-  locale: Locale,
-  segment: keyof PermalinkTranslations,
-  slug: string,
-  translations: Record<Locale, Required<PermalinkTranslations>>
-): string {
-  return `/${locale}/${translations[locale][segment]}/${slug}/`
-}
