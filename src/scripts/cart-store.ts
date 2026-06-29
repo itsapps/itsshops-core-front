@@ -15,12 +15,6 @@ function dispatch(): void {
   document.dispatchEvent(new CustomEvent('cart:updated', { detail: getCart() }))
 }
 
-function dispatchCoupon(): void {
-  document.dispatchEvent(
-    new CustomEvent('cart:coupon-changed', { detail: getAppliedCouponCode() }),
-  )
-}
-
 export function getCart(): CartItem[] {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
@@ -86,13 +80,11 @@ export function setAppliedCouponCode(code: string): void {
   }
   if (localStorage.getItem(COUPON_STORAGE_KEY) === trimmed) return
   localStorage.setItem(COUPON_STORAGE_KEY, trimmed)
-  dispatchCoupon()
 }
 
 export function clearAppliedCouponCode(): void {
   if (localStorage.getItem(COUPON_STORAGE_KEY) == null) return
   localStorage.removeItem(COUPON_STORAGE_KEY)
-  dispatchCoupon()
 }
 
 /**
