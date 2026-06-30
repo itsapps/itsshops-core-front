@@ -14,10 +14,13 @@ export function normalizeEmail(email: string): string {
 /**
  * Prepare a (double opt-in) standalone subscription.
  *
- * - new / previously unsubscribed / still pending → ensure a `pending` record
- *   with a fresh token and signal the caller to send the confirmation email.
- * - already confirmed → no-op; the caller still returns a generic success so
- *   the endpoint never reveals whether an address is already subscribed.
+ * - existing pending / previously unsubscribed → re-arm to `pending` and reuse
+ *   the **existing token**, so a repeat (or a double-submit) re-sends the *same*
+ *   confirmation link instead of regenerating it and invalidating the link the
+ *   first email already carried.
+ * - new → create a `pending` record with a fresh token.
+ * - already confirmed → no-op; the caller still returns a generic success so the
+ *   endpoint never reveals whether an address is already subscribed.
  *
  * Returns the token to embed in the confirmation link when `send` is true.
  */
@@ -32,20 +35,23 @@ export async function prepareSubscription(
     return { send: false, token: existing.token }
   }
 
-  const token = crypto.randomUUID()
-
   if (existing) {
-    await patchSubscriber(existing._id, { status: 'pending', token, locale })
-  } else {
-    await createSubscriber({
-      _type: 'newsletterSubscriber',
-      email,
-      locale,
-      status: 'pending',
-      source: 'standalone',
-      token,
-    })
+    // Keep the existing token; only write when something actually changed.
+    if (existing.status !== 'pending' || existing.locale !== locale) {
+      await patchSubscriber(existing._id, { status: 'pending', locale })
+    }
+    return { send: true, token: existing.token }
   }
+
+  const token = crypto.randomUUID()
+  await createSubscriber({
+    _type: 'newsletterSubscriber',
+    email,
+    locale,
+    status: 'pending',
+    source: 'standalone',
+    token,
+  })
 
   return { send: true, token }
 }

@@ -55,8 +55,11 @@ export function initNewsletterForm(root: HTMLElement): void {
     }
   }
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     showFieldError(null)
     if (formError) formError.hidden = true
 
@@ -75,6 +78,7 @@ export function initNewsletterForm(root: HTMLElement): void {
       return
     }
 
+    isSubmitting = true
     setLoading(true)
 
     const body: NewsletterSubscribeInput = {
@@ -103,6 +107,7 @@ export function initNewsletterForm(root: HTMLElement): void {
       showFormError(root.dataset.tErrorService ?? 'Service unavailable')
       if (captchaPresent) resetCaptcha(root)
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })
