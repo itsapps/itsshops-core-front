@@ -1,0 +1,20 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="static-page newsletter-confirm">
+  {% block page_header %}<h1>{{ 'staticPages.newsletterConfirm.title' | trans }}</h1>{% endblock %}
+  {% block page_info %}<p>{{ 'staticPages.newsletterConfirm.info' | trans }}</p>{% endblock %}
+
+  <div data-newsletter-confirm
+    data-api="/api/newsletter/confirm"
+    data-locale="{{ _locale }}"
+    data-t-error-service="{{ 'forms.errors.service' | trans }}"
+  >
+    <button type="button" class="btn" data-newsletter-submit>
+      <span data-submit-text>{{ 'forms.newsletterConfirm.submit.text' | trans }}</span>
+      <span data-submit-loading hidden>{{ 'forms.newsletterConfirm.submit.loadingText' | trans }}</span>
+    </button>
+
+    <div data-newsletter-error class="user-form__error" role="alert" hidden>
+      <p data-newsletter-error-message></p>
+    </div>
+  </div>
+</article>

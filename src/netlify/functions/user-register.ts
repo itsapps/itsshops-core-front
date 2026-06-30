@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import { log } from '../utils/logger'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
 import { ErrorCode } from '../types/errors'
-import { verifyCaptcha } from '../utils/captcha'
+import { enforceCaptcha } from '../utils/captcha'
 import { validateEmail, validatePassword, isEmptyOrNull } from '../../shared/validation'
 import { serverT } from '../utils/i18n'
 import { sendDirectSignupEmail, sendDirectRecoveryEmail, type DirectAuthEmailConfig } from '../utils/auth-email'
@@ -14,8 +14,6 @@ export { buildUserPaths } from '../../i18n/permalinks'
 export type UserRegisterConfig = {
   /** Fields beyond email+password that are required. 'newsletter' shows the checkbox but is never strictly required. */
   registrationFields?: UserRegistrationField[]
-  /** Set to false to skip captcha (dev/test). Defaults to true. */
-  captcha?: boolean
   /**
    * When set, the function generates the confirmation link via
    * `admin.generateLink` and sends the email itself via Mailgun. This
@@ -29,7 +27,7 @@ export type UserRegisterConfig = {
 }
 
 export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
-  const { registrationFields = [], captcha: captchaEnabled = true, email: emailConfig } = config
+  const { registrationFields = [], email: emailConfig } = config
 
   const requiresPrename = registrationFields.includes('prename')
   const requiresLastname = registrationFields.includes('lastname')
@@ -82,13 +80,8 @@ export function createUserRegisterHandler(config: UserRegisterConfig = {}) {
       })
     }
 
-    if (captchaEnabled) {
-      if (!captchaToken) return badRequest('captchaToken is required')
-      const captchaValid = await verifyCaptcha(captchaToken)
-      if (!captchaValid) {
-        return errorResponse(ErrorCode.AUTH_CAPTCHA_FAILED, t('api.errors.auth.captchaFailed'), undefined, 401)
-      }
-    }
+    const captchaError = await enforceCaptcha(captchaToken, t)
+    if (captchaError) return captchaError
 
     const emailObfuscated = email.slice(0, 4) + '…'
 

@@ -114,7 +114,26 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
   }
 
   const merged = mergeExtra(base, config.headers.extra)
-  const routes: string[] = [buildRoute('/*', buildCsp(merged))]
+
+  // hCaptcha origins. Whitelisted per-route for auth/withdrawal pages below, but
+  // the newsletter signup form is typically placed site-wide (e.g. the footer)
+  // and renders the widget whenever captchaSiteKey is set. So when newsletter +
+  // captcha are both active, hCaptcha must be allowed on the base /* CSP that
+  // covers every page — otherwise the footer widget is blocked everywhere.
+  const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
+  const withCaptcha = (sources: CspSources): CspSources =>
+    mergeExtra(sources, {
+      'script-src':  captcha,
+      'connect-src': captcha,
+      'img-src':     [],
+      'media-src':   [],
+      'style-src':   captcha,
+      'frame-src':   captcha,
+    })
+
+  const newsletterCaptchaSiteWide = config.features.newsletter && !!config.captchaSiteKey
+  const rootSources = newsletterCaptchaSiteWide ? withCaptcha(merged) : merged
+  const routes: string[] = [buildRoute('/*', buildCsp(rootSources))]
 
   if (config.features.shop.checkout) {
     const checkoutSrc = mergeExtra(merged, {
@@ -133,18 +152,9 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
   // Routes that render an hCaptcha widget need the hcaptcha origins whitelisted.
   // The widget is shown whenever `captchaSiteKey` is set (see the form templates),
   // so the CSP must cover every captcha-bearing page: auth (register/recover) and
-  // the right-of-withdrawal page.
-  const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
-  const captchaCsp = buildCsp(
-    mergeExtra(merged, {
-      'script-src':  captcha,
-      'connect-src': captcha,
-      'img-src':     [],
-      'media-src':   [],
-      'style-src':   captcha,
-      'frame-src':   captcha,
-    }),
-  )
+  // the right-of-withdrawal page. (The site-wide newsletter form is already
+  // covered by the base /* CSP above.)
+  const captchaCsp = buildCsp(withCaptcha(merged))
   const captchaRoutes: string[] = []
   if (config.features.users.enabled) {
     for (const locale of config.locales) {

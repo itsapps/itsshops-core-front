@@ -13,8 +13,8 @@ import type { SimpleEmailProps } from '../templates/email/types'
 import { log } from './logger'
 
 export type DirectAuthEmailConfig = {
-  /** Per-locale userPaths used to build the email callback URL. */
-  userPaths: AuthUserPaths
+  /** Per-locale userPaths used to build the email callback URL. Defaults to the core segments. */
+  userPaths?: AuthUserPaths
   /** Replaces SimpleEmail for all auth emails. */
   template?: ComponentType<SimpleEmailProps>
   /** Public base URL of the shop (defaults to process.env.PUBLIC_URL ?? URL). */

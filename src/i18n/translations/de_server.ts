@@ -37,6 +37,9 @@ export default {
         notFound: "Wir konnten keine Bestellung mit dieser Bestellnummer und E-Mail Adresse finden.",
         withdrawFailed: "Der Widerruf konnte nicht verarbeitet werden. Bitte versuche es später erneut.",
       },
+      newsletter: {
+        invalidToken: "Dieser Newsletter-Link ist ungültig oder abgelaufen.",
+      },
       coupon: {
         COUPON_NOT_FOUND: "Rabattcode nicht gefunden",
         COUPON_DISABLED: "Dieser Rabattcode ist nicht mehr aktiv",
@@ -156,6 +159,14 @@ export default {
       subject: "Zahlung teilweise zurückerstattet 💶",
       preview: "Wir haben einen Teil Deiner Zahlung zurückerstattet.",
       text: "Wir haben Dir einen Teilbetrag von {{amount}} zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag auf Deinem Konto sichtbar ist. Bei Fragen zur Rückerstattung kannst Du Dich gerne bei uns melden.",
+    },
+    newsletterConfirmation: {
+      subject: "Bitte bestätige Deine Newsletter-Anmeldung 📩",
+      preview: "Nur noch ein Klick bis zum Newsletter",
+      headline: "Fast geschafft!",
+      text: "Bitte bestätige mit einem Klick, dass Du unseren Newsletter erhalten möchtest. Wenn Du Dich nicht angemeldet hast, kannst Du diese E-Mail einfach ignorieren.",
+      urlTitle: "Newsletter-Anmeldung bestätigen",
+      unsubscribe: "Vom Newsletter abmelden",
     },
     userConfirmation: {
       subject: "Kundenregistrierung 👤",

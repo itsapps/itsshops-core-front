@@ -50,6 +50,8 @@ export type SendMailParams = {
   text: string
   html?: string
   attachment?: EmailAttachment
+  /** Extra SMTP headers, e.g. `List-Unsubscribe`. */
+  headers?: Record<string, string>
 }
 
 export async function sendMail(params: SendMailParams): Promise<MessagesSendResult> {
@@ -62,6 +64,10 @@ export async function sendMail(params: SendMailParams): Promise<MessagesSendResu
     text: params.text,
     ...(params.html && { html: params.html }),
     ...(params.attachment && { attachment: params.attachment }),
+    // Mailgun sets custom headers via `h:`-prefixed keys.
+    ...Object.fromEntries(
+      Object.entries(params.headers ?? {}).map(([k, v]) => [`h:${k}`, v]),
+    ),
   }
   return client.messages.create(domain, data)
 }

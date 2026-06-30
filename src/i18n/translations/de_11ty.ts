@@ -293,6 +293,26 @@ export default {
       description: "Passwort erfolgreich geändert",
       info: "Dein Passwort wurde erfolgreich geändert.",
     },
+    newsletterConfirm: {
+      title: "Newsletter bestätigen",
+      description: "Newsletter-Anmeldung bestätigen",
+      info: "Bitte bestätige mit einem Klick, dass Du unseren Newsletter erhalten möchtest.",
+    },
+    newsletterConfirmSuccess: {
+      title: "Anmeldung bestätigt!",
+      description: "Newsletter-Anmeldung bestätigt",
+      info: "Vielen Dank! Du erhältst ab sofort unseren Newsletter.",
+    },
+    newsletterUnsubscribe: {
+      title: "Newsletter abbestellen",
+      description: "Vom Newsletter abmelden",
+      info: "Schade, dass Du gehst. Klicke unten, um Dich von unserem Newsletter abzumelden.",
+    },
+    newsletterUnsubscribeSuccess: {
+      title: "Abgemeldet",
+      description: "Erfolgreich vom Newsletter abgemeldet",
+      info: "Du wurdest von unserem Newsletter abgemeldet und erhältst keine weiteren E-Mails.",
+    },
     userOrders: {
       title: "Bestellungen",
       description: "Deine Bestellungen",
@@ -435,6 +455,27 @@ export default {
       submit: {
         text: "Account bestätigen",
         loadingText: "Account wird bestätigt ...",
+      }
+    },
+    newsletter: {
+      intro: "Bleib auf dem Laufenden und abonniere unseren Newsletter.",
+      privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu. Du kannst dich jederzeit wieder abmelden.',
+      successNotice: "Fast geschafft! Bitte bestätige Deine Anmeldung über den Link, den wir Dir gerade per E-Mail geschickt haben.",
+      submit: {
+        text: "Anmelden",
+        loadingText: "Wird gesendet ...",
+      }
+    },
+    newsletterConfirm: {
+      submit: {
+        text: "Anmeldung bestätigen",
+        loadingText: "Wird bestätigt ...",
+      }
+    },
+    newsletterUnsubscribe: {
+      submit: {
+        text: "Abmeldung bestätigen",
+        loadingText: "Wird abgemeldet ...",
       }
     },
     userOrders: {

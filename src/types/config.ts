@@ -141,6 +141,7 @@ export type Features = {
     enabled: boolean
     registrationFields: UserRegistrationField[]
   }
+  newsletter: boolean
 }
 
 /** Customer-facing input — omitting shop = shop disabled, omitting sub-flags = default off */
@@ -158,6 +159,7 @@ export type ItsshopsFeatures = {
   users?: boolean | {
     registrationFields?: UserRegistrationField[]
   }
+  newsletter?: boolean
 }
 
 // ─── Sanity ───────────────────────────────────────────────────────────────────

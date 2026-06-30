@@ -93,4 +93,6 @@ export type SimpleEmailProps = {
   text: string
   /** Optional call-to-action button rendered below the body. Used by auth emails (confirm, reset, invite). */
   cta?: { url: string; label: string }
+  /** Optional small muted link below the CTA (e.g. a newsletter unsubscribe link). */
+  footerLink?: { url: string; label: string }
 }

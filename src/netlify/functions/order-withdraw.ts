@@ -2,7 +2,7 @@ import type { Context } from '@netlify/functions'
 import { log } from '../utils/logger'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
 import { ErrorCode } from '../types/errors'
-import { verifyCaptcha } from '../utils/captcha'
+import { enforceCaptcha } from '../utils/captcha'
 import { validateEmail } from '../../shared/validation'
 import { serverT } from '../utils/i18n'
 import { fetchOrderByNumber, findOpenWithdrawal, createOrderWithdrawal } from '../services/sanity'
@@ -10,8 +10,6 @@ import { sendWithdrawalNotifications } from '../lib/order-withdraw-notifier'
 import type { WithdrawInput, WithdrawResult } from '../../shared/order-api'
 
 export type OrderWithdrawConfig = {
-  /** Set to false to skip captcha (dev/test). Defaults to true. */
-  captcha?: boolean
   /** Recipient of the shop-facing declaration mail. Defaults to the sender address. */
   notifyEmail?: string
   /** Public base URL of the shop (defaults to process.env.URL). */
@@ -25,7 +23,7 @@ export type OrderWithdrawConfig = {
  * — no automatic cancel/refund.
  */
 export function createOrderWithdrawHandler(config: OrderWithdrawConfig = {}) {
-  const { captcha: captchaEnabled = true, notifyEmail, baseUrl } = config
+  const { notifyEmail, baseUrl } = config
 
   return async (request: Request, _context: Context): Promise<Response> => {
     if (request.method !== 'POST') return methodNotAllowed()
@@ -55,13 +53,8 @@ export function createOrderWithdrawHandler(config: OrderWithdrawConfig = {}) {
       })
     }
 
-    if (captchaEnabled) {
-      if (!captchaToken) return badRequest('captchaToken is required')
-      const captchaValid = await verifyCaptcha(captchaToken)
-      if (!captchaValid) {
-        return errorResponse(ErrorCode.AUTH_CAPTCHA_FAILED, t('api.errors.auth.captchaFailed'), undefined, 401)
-      }
-    }
+    const captchaError = await enforceCaptcha(captchaToken, t)
+    if (captchaError) return captchaError
 
     const order = await fetchOrderByNumber(orderNumber.trim())
     const emailMatches =

@@ -54,8 +54,8 @@ type SupabaseEmailEvent = {
 export type AuthWebhookHandlerOptions = ServerConfig & {
   /** Replaces SimpleEmail for all auth emails. */
   template?: ComponentType<SimpleEmailProps>
-  /** Per-locale URL paths used to build the email callback URL. */
-  userPaths: AuthUserPaths
+  /** Per-locale URL paths used to build the email callback URL. Defaults to the core segments. */
+  userPaths?: AuthUserPaths
   /**
    * Public base URL of the shop. Defaults to `process.env.PUBLIC_URL`,
    * falling back to `process.env.URL`. Use PUBLIC_URL during local dev

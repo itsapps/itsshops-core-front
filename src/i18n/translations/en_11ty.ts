@@ -293,6 +293,26 @@ export default {
       description: "Password successfully changed",
       info: "Your password has been successfully changed.",
     },
+    newsletterConfirm: {
+      title: "Confirm newsletter",
+      description: "Confirm newsletter subscription",
+      info: "Please confirm with one click that you'd like to receive our newsletter.",
+    },
+    newsletterConfirmSuccess: {
+      title: "Subscription confirmed!",
+      description: "Newsletter subscription confirmed",
+      info: "Thank you! You'll receive our newsletter from now on.",
+    },
+    newsletterUnsubscribe: {
+      title: "Unsubscribe from newsletter",
+      description: "Unsubscribe from the newsletter",
+      info: "Sorry to see you go. Click below to unsubscribe from our newsletter.",
+    },
+    newsletterUnsubscribeSuccess: {
+      title: "Unsubscribed",
+      description: "Successfully unsubscribed from the newsletter",
+      info: "You've been unsubscribed from our newsletter and won't receive any further emails.",
+    },
     userOrders: {
       title: "Orders",
       description: "Your orders",
@@ -435,6 +455,27 @@ export default {
       submit: {
         text: "Confirm account",
         loadingText: "Confirming account ...",
+      }
+    },
+    newsletter: {
+      intro: "Stay in the loop and subscribe to our newsletter.",
+      privacyNotice: 'By subscribing you agree to our <a href="{{url}}">privacy policy</a>. You can unsubscribe at any time.',
+      successNotice: "Almost done! Please confirm your subscription via the link we just sent to your email.",
+      submit: {
+        text: "Subscribe",
+        loadingText: "Sending ...",
+      }
+    },
+    newsletterConfirm: {
+      submit: {
+        text: "Confirm subscription",
+        loadingText: "Confirming ...",
+      }
+    },
+    newsletterUnsubscribe: {
+      submit: {
+        text: "Confirm unsubscribe",
+        loadingText: "Unsubscribing ...",
       }
     },
     userOrders: {

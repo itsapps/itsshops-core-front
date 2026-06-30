@@ -2,6 +2,7 @@ import type { Context } from '@netlify/functions'
 import type { User } from '@supabase/supabase-js'
 import { supabase, getAccessToken, getRefreshToken, setSessionCookies, deleteSessionCookies } from '../services/supabase'
 import { upsertCustomer } from '../services/sanity'
+import { syncRegistrationOptIn } from './newsletter-helper'
 import { log } from './logger'
 import { ErrorCode } from '../types/errors'
 import { unauthorized } from './response'
@@ -76,7 +77,6 @@ export async function storeCustomer(
       email,
       locale,
       status: options.status ?? 'active',
-      receiveNewsletter: meta.newsletter ?? false,
       address: {
         ...meta.prename && { prename: meta.prename },
         ...meta.lastname && { lastname: meta.lastname },
@@ -98,6 +98,13 @@ export async function storeCustomer(
         ...meta.state && { state: meta.state },
       },
     })
+
+    // Mirror the opt-in into the newsletter subscriber list (single source of
+    // truth for sending). Only when newsletter was actually part of registration
+    // — `undefined` means the shop doesn't collect it, so leave subscribers alone.
+    if (typeof meta.newsletter === 'boolean') {
+      await syncRegistrationOptIn(email, locale, supabaseId, meta.newsletter)
+    }
   } catch (err) {
     log.error('storeCustomer failed', { supabaseId, error: (err as Error).message })
   }

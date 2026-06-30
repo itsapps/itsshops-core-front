@@ -185,6 +185,10 @@ export async function buildCmsData(
       resetUrl:               features.users ? `/${locale}/${context.config.userPaths[locale].userReset}/` : '#',
       resetSuccessUrl:        features.users ? `/${locale}/${context.config.userPaths[locale].userResetSuccess}/` : '#',
       accountUrl:             features.users ? `/${locale}/${context.config.userPaths[locale].userOrders}/` : '#',
+      newsletterConfirmUrl:            features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterConfirm}/` : '#',
+      newsletterConfirmSuccessUrl:     features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterConfirmSuccess}/` : '#',
+      newsletterUnsubscribeUrl:        features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribe}/` : '#',
+      newsletterUnsubscribeSuccessUrl: features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribeSuccess}/` : '#',
       orderWithdrawUrl:        features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/` : '#',
       orderWithdrawSuccessUrl: features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
       searchIndex: extensions.search

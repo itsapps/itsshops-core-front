@@ -215,5 +215,6 @@ function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<ty
           ? (input.users.registrationFields ?? [])
           : [],
     },
+    newsletter: input?.newsletter ?? false,
   }
 }

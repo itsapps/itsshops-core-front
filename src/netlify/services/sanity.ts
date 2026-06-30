@@ -311,8 +311,6 @@ export async function fetchEmailSettings(
   return sanityClient.fetch<EmailSettingsQueryResult | null>(
     `{
       "shop": *[_type == "shopSettings"][0]{
-        senderName,
-        senderEmail,
         orderNumberPrefix,
         invoiceNumberPrefix,
         billingAddress{
@@ -334,12 +332,16 @@ export async function fetchEmailSettings(
         "returnPolicyNote": coalesce(returnPolicyNote[language == $locale][0].value, returnPolicyNote[language == "de"][0].value)
       },
       "site": *[_type == "settings"][0]{
+        senderName,
+        senderEmail,
         "shopName": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "de"][0].value)
       }
     }{
       "shopName": site.shopName,
-      "senderName": shop.senderName,
-      "senderEmail": shop.senderEmail,
+      // Email sender lives on the general settings doc (Settings → Notifications),
+      // so it works on non-shop sites too.
+      "senderName": site.senderName,
+      "senderEmail": site.senderEmail,
       "billingAddress": shop.billingAddress,
       "bankAccount": shop.bankAccount,
       "orderNumberPrefix": shop.orderNumberPrefix,
@@ -367,7 +369,6 @@ export type CustomerDocument = {
   supabaseId: string
   status: 'registered' | 'invited' | 'active'
   customerNumber: string
-  receiveNewsletter: boolean
   /**
    * Customer address. Note that `city` is stored as an i18nString array
    * (matches core-back's `address` schema), while the other fields are plain
@@ -406,7 +407,7 @@ export async function upsertCustomer(
   if (existing) {
     await sanityClient
       .patch(existing._id)
-      .set({ receiveNewsletter: doc.receiveNewsletter, status: doc.status })
+      .set({ status: doc.status })
       .setIfMissing({
         email: doc.email,
         locale: doc.locale,
@@ -425,6 +426,51 @@ export async function upsertCustomer(
     const customerNumber = await getLatestCustomerNumber()
     await createCustomer({ _type: 'customer', supabaseId, customerNumber, ...doc })
   }
+}
+
+// ── Newsletter subscribers ──────────────────────────────────────────────────
+
+export type NewsletterSubscriberStatus = 'pending' | 'confirmed' | 'unsubscribed'
+
+export type NewsletterSubscriberDocument = {
+  _type: 'newsletterSubscriber'
+  email: string
+  locale: string
+  status: NewsletterSubscriberStatus
+  source: 'standalone' | 'registration'
+  token: string
+  supabaseId?: string
+  confirmedAt?: string
+  createdAt: string
+}
+
+type StoredSubscriber = NewsletterSubscriberDocument & { _id: string }
+
+export async function getSubscriberByEmail(email: string): Promise<StoredSubscriber | null> {
+  const doc = await sanityClient.fetch<StoredSubscriber | null>(
+    `*[_type == "newsletterSubscriber" && email == $email][0]`,
+    { email },
+  )
+  return doc ?? null
+}
+
+export async function getSubscriberByToken(token: string): Promise<StoredSubscriber | null> {
+  const doc = await sanityClient.fetch<StoredSubscriber | null>(
+    `*[_type == "newsletterSubscriber" && token == $token][0]`,
+    { token } as Record<string, string>,
+  )
+  return doc ?? null
+}
+
+export async function createSubscriber(doc: NewsletterSubscriberDocument): Promise<{ _id: string }> {
+  return sanityClient.create(doc)
+}
+
+export async function patchSubscriber(
+  id: string,
+  set: Partial<Omit<NewsletterSubscriberDocument, '_type'>>,
+): Promise<void> {
+  await sanityClient.patch(id).set(set).commit()
 }
 
 export async function getLatestCustomerNumber(): Promise<string> {

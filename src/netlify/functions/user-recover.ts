@@ -3,7 +3,7 @@ import { supabase, deleteSessionCookies } from '../services/supabase'
 import { log } from '../utils/logger'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
 import { ErrorCode } from '../types/errors'
-import { verifyCaptcha } from '../utils/captcha'
+import { enforceCaptcha } from '../utils/captcha'
 import { validateEmail } from '../../shared/validation'
 import { serverT } from '../utils/i18n'
 import { sendDirectRecoveryEmail, type DirectAuthEmailConfig } from '../utils/auth-email'
@@ -12,8 +12,6 @@ import type { RecoverInput, RecoverResult } from '../../shared/user-api'
 export { buildUserPaths } from '../../i18n/permalinks'
 
 export type UserRecoverConfig = {
-  /** Set to false to skip captcha (dev/test). Defaults to true. */
-  captcha?: boolean
   /**
    * When set, the function generates the recovery link via
    * `admin.generateLink` and sends the email itself via Mailgun. Bypasses
@@ -26,7 +24,7 @@ export type UserRecoverConfig = {
 }
 
 export function createUserRecoverHandler(config: UserRecoverConfig = {}) {
-  const { captcha: captchaEnabled = true, email: emailConfig } = config
+  const { email: emailConfig } = config
 
   return async (request: Request, context: Context): Promise<Response> => {
     if (request.method !== 'POST') return methodNotAllowed()
@@ -51,13 +49,8 @@ export function createUserRecoverHandler(config: UserRecoverConfig = {}) {
       })
     }
 
-    if (captchaEnabled) {
-      if (!captchaToken) return badRequest('captchaToken is required')
-      const captchaValid = await verifyCaptcha(captchaToken)
-      if (!captchaValid) {
-        return errorResponse(ErrorCode.AUTH_CAPTCHA_FAILED, t('api.errors.auth.captchaFailed'), undefined, 401)
-      }
-    }
+    const captchaError = await enforceCaptcha(captchaToken, t)
+    if (captchaError) return captchaError
 
     deleteSessionCookies(context)
 

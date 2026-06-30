@@ -41,3 +41,18 @@ export function buildUserPaths(): Record<Locale, UserPaths> {
     return acc
   }, {} as Record<Locale, UserPaths>)
 }
+
+/** Per-locale segments for the newsletter confirm/unsubscribe landing pages. */
+export function buildNewsletterPaths(): Record<
+  Locale,
+  { newsletterConfirm: string; newsletterUnsubscribe: string }
+> {
+  return (Object.keys(sharedTranslations) as Locale[]).reduce((acc, locale) => {
+    const paths = sharedTranslations[locale].urlPaths
+    acc[locale] = {
+      newsletterConfirm: paths.newsletterConfirm,
+      newsletterUnsubscribe: paths.newsletterUnsubscribe,
+    }
+    return acc
+  }, {} as Record<Locale, { newsletterConfirm: string; newsletterUnsubscribe: string }>)
+}

@@ -1,6 +1,9 @@
 // Currently uses hCaptcha. To swap providers, change the verify URL and
 // (if needed) the request body shape. The CAPTCHA_* env var names stay
 // provider-agnostic so customer .env files don't have to churn.
+import { badRequest, errorResponse } from './response'
+import { ErrorCode } from '../types/errors'
+
 const VERIFY_URL = 'https://api.hcaptcha.com/siteverify'
 
 /**
@@ -22,4 +25,26 @@ export async function verifyCaptcha(token: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * Enforce captcha on a public action (registration, password recovery,
+ * newsletter signup, right-of-withdrawal). Captcha is mandatory for these — but
+ * only verifiable where it's actually configured, so enforcement is gated on
+ * `CAPTCHA_SECRET_KEY`. In dev/test (no secret) this is a no-op, mirroring
+ * `verifyCaptcha`'s dev bypass.
+ *
+ * Returns an error `Response` to short-circuit on a missing/invalid token, or
+ * `null` to proceed.
+ */
+export async function enforceCaptcha(
+  token: string | undefined,
+  t: (key: string) => string,
+): Promise<Response | null> {
+  if (!process.env.CAPTCHA_SECRET_KEY) return null
+  if (!token) return badRequest('captchaToken is required')
+  if (!(await verifyCaptcha(token))) {
+    return errorResponse(ErrorCode.AUTH_CAPTCHA_FAILED, t('api.errors.auth.captchaFailed'), undefined, 401)
+  }
+  return null
 }

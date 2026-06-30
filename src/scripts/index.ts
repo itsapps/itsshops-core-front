@@ -58,6 +58,18 @@ if (document.querySelector('[data-user-reset]')) {
   import('./user-reset').then(m => m.initUserReset())
 }
 
+if (document.querySelector('[data-newsletter-subscribe]')) {
+  import('./newsletter-subscribe').then(m => m.initNewsletterSubscribe())
+}
+
+if (document.querySelector('[data-newsletter-confirm]')) {
+  import('./newsletter-action').then(m => m.initNewsletterConfirm())
+}
+
+if (document.querySelector('[data-newsletter-unsubscribe]')) {
+  import('./newsletter-action').then(m => m.initNewsletterUnsubscribe())
+}
+
 if (document.querySelector('[data-order-withdraw]')) {
   import('./order-withdraw').then(m => m.initOrderWithdraw())
 }

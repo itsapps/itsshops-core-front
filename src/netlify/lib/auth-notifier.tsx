@@ -17,6 +17,7 @@ import { fetchEmailSettings } from '../services/sanity'
 import { SimpleEmail } from '../templates/email/SimpleEmail'
 import type { EmailContext, SimpleEmailProps } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
+import { buildUserPaths } from '../../i18n/permalinks'
 import { ErrorCode } from '../types/errors'
 import { formatPrice as fmtPrice, serverT } from '../utils/i18n'
 import {
@@ -49,8 +50,8 @@ export type SendAuthNotificationOptions = {
   template?: ComponentType<SimpleEmailProps>
   /** Public base URL of the shop (defaults to process.env.URL). */
   baseUrl?: string
-  /** Per-locale userPaths (need at least userConfirm + userReset for each locale). */
-  userPaths: AuthUserPaths
+  /** Per-locale userPaths (need at least userConfirm + userReset for each locale). Defaults to the core segments. */
+  userPaths?: AuthUserPaths
 }
 
 export type SendAuthNotificationResult = {
@@ -89,7 +90,7 @@ export async function sendAuthNotification(
     locale,
     emailActionType,
     tokenHash,
-    options.userPaths,
+    options.userPaths ?? buildUserPaths(),
     defaultLocale,
   )
 

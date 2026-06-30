@@ -309,6 +309,14 @@ export type CmsLocaleData = {
   resetSuccessUrl: string
   /** URL of the password recovery success page for the current locale. */
   recoverSuccessUrl: string
+  /** URL of the newsletter confirmation (double opt-in) page for the current locale. */
+  newsletterConfirmUrl: string
+  /** URL of the newsletter confirmation success page for the current locale. */
+  newsletterConfirmSuccessUrl: string
+  /** URL of the newsletter unsubscribe page for the current locale. */
+  newsletterUnsubscribeUrl: string
+  /** URL of the newsletter unsubscribe success page for the current locale. */
+  newsletterUnsubscribeSuccessUrl: string
   /** URL of the right-of-withdrawal ("Widerruf") page for the current locale. */
   orderWithdrawUrl: string
   /** URL of the withdrawal success page for the current locale. */

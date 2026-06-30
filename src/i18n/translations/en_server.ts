@@ -37,6 +37,9 @@ export default {
         notFound: "We couldn't find an order with that number and email address.",
         withdrawFailed: "Your withdrawal could not be processed. Please try again later.",
       },
+      newsletter: {
+        invalidToken: "This newsletter link is invalid or has expired.",
+      },
       coupon: {
         COUPON_NOT_FOUND: "Coupon code not found",
         COUPON_DISABLED: "This coupon is no longer active",
@@ -156,6 +159,14 @@ export default {
       subject: "Payment partially refunded 💶",
       preview: "We've refunded part of your payment.",
       text: "We've refunded {{amount}} of your payment. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions about the refund, just get in touch.",
+    },
+    newsletterConfirmation: {
+      subject: "Please confirm your newsletter subscription 📩",
+      preview: "Just one click to confirm",
+      headline: "Almost there!",
+      text: "Please confirm with one click that you'd like to receive our newsletter. If you didn't sign up, simply ignore this email.",
+      urlTitle: "Confirm newsletter subscription",
+      unsubscribe: "Unsubscribe from the newsletter",
     },
     userConfirmation: {
       subject: "Customer registration 👤",

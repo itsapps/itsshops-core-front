@@ -27,6 +27,10 @@ export type UserPaths = {
   userReset:               string
   userResetSuccess:        string
   userOrders:              string
+  newsletterConfirm:            string
+  newsletterConfirmSuccess:     string
+  newsletterUnsubscribe:        string
+  newsletterUnsubscribeSuccess: string
   orderWithdraw:           string
   orderWithdrawSuccess:    string
 }

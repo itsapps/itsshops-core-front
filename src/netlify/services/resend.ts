@@ -22,6 +22,7 @@ export async function sendMail(params: SendMailParams): Promise<{ id?: string }>
     subject: params.subject,
     text: params.text,
     html: params.html,
+    headers: params.headers,
     attachments: params.attachment
       ? [{ filename: params.attachment.filename, content: params.attachment.data, contentType: params.attachment.contentType }]
       : undefined,

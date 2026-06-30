@@ -21,12 +21,13 @@ function buildRequest(body: unknown, locale: string): Request {
  * Integration tests for the order-withdraw function, including a live test that
  * records an `orderWithdrawal` document and sends the confirmation + shop emails.
  *
- * Captcha is forced off. Set `SKIP_AUTH_EMAILS=true` to record without sending.
- * Re-runs hit the per-order dedupe and return 200 without a second record/mail.
+ * Captcha auto-skips when `CAPTCHA_SECRET_KEY` is unset (the test env). Set
+ * `SKIP_AUTH_EMAILS=true` to record without sending. Re-runs hit the per-order
+ * dedupe and return 200 without a second record/mail.
  */
 export function orderWithdrawTests(config: TestConfig) {
   const { getOrder, locale = 'de', ...handlerConfig } = config
-  const handler = createOrderWithdrawHandler({ ...handlerConfig, captcha: false })
+  const handler = createOrderWithdrawHandler({ ...handlerConfig })
   const dummyContext = {} as any
 
   describe('order-withdraw: validation', () => {

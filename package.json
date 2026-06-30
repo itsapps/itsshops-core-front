@@ -68,6 +68,18 @@
       "types": "./dist/auth-webhooks.d.ts",
       "import": "./dist/auth-webhooks.js"
     },
+    "./functions/newsletter-subscribe": {
+      "types": "./dist/newsletter-subscribe.d.ts",
+      "import": "./dist/newsletter-subscribe.js"
+    },
+    "./functions/newsletter-confirm": {
+      "types": "./dist/newsletter-confirm.d.ts",
+      "import": "./dist/newsletter-confirm.js"
+    },
+    "./functions/newsletter-unsubscribe": {
+      "types": "./dist/newsletter-unsubscribe.d.ts",
+      "import": "./dist/newsletter-unsubscribe.js"
+    },
     "./functions/wc-api": {
       "types": "./dist/wc-api.d.ts",
       "import": "./dist/wc-api.js"

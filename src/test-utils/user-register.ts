@@ -28,12 +28,13 @@ function buildRequest(body: unknown, locale: string): Request {
  * `admin.generateLink` + Mailgun) to `recipient`.
  *
  * Requires the same env as production (Supabase service role, Mailgun, Sanity).
- * Captcha is forced off — a real token can't be produced in a test. Set
- * `SKIP_AUTH_EMAILS=true` to exercise the flow without actually sending.
+ * Captcha auto-skips when `CAPTCHA_SECRET_KEY` is unset (the test env) — a real
+ * token can't be produced in a test. Set `SKIP_AUTH_EMAILS=true` to exercise the
+ * flow without actually sending.
  */
 export function userRegisterTests(config: TestConfig) {
   const { recipient, password = 'Test-Password-1234!', locale = 'de', ...handlerConfig } = config
-  const handler = createUserRegisterHandler({ ...handlerConfig, captcha: false })
+  const handler = createUserRegisterHandler({ ...handlerConfig })
   const dummyContext = {} as any
 
   // A complete profile so the request satisfies any required registrationFields
