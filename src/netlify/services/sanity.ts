@@ -441,7 +441,6 @@ export type NewsletterSubscriberDocument = {
   token: string
   supabaseId?: string
   confirmedAt?: string
-  createdAt: string
 }
 
 type StoredSubscriber = NewsletterSubscriberDocument & { _id: string }

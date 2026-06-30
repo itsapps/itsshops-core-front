@@ -44,7 +44,6 @@ export async function prepareSubscription(
       status: 'pending',
       source: 'standalone',
       token,
-      createdAt: new Date().toISOString(),
     })
   }
 
@@ -123,7 +122,6 @@ export async function syncRegistrationOptIn(
         token: crypto.randomUUID(),
         supabaseId,
         confirmedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
       })
     }
   } catch (error) {
