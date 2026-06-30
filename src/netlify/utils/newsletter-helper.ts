@@ -81,11 +81,13 @@ export async function unsubscribeByToken(token: string): Promise<boolean> {
  * as `confirmed` without a second double-opt-in step. Failures are logged, not
  * thrown: the auth flow must not break on a newsletter write.
  *
- * Additive only: an unticked box (`optIn = false`) is a no-op — it never
- * unsubscribes an existing subscriber. Someone may have explicitly subscribed
- * standalone before registering, and an unrelated registration form (or a
- * password reset, which also runs this) must not silently revoke that consent.
- * Unsubscribing happens only via the explicit unsubscribe link.
+ * Two independent concerns:
+ *  - **Account link** (`supabaseId`): a factual association, written whenever an
+ *    existing subscriber's email matches the account — regardless of `optIn`.
+ *  - **Subscription status**: additive only. `optIn = true` subscribes/confirms;
+ *    an unticked box (`optIn = false`) never subscribes *or* unsubscribes, so a
+ *    standalone subscription (or one made before registering) is preserved.
+ *    Unsubscribing happens only via the explicit unsubscribe link.
  */
 export async function syncRegistrationOptIn(
   rawEmail: string,
@@ -93,22 +95,25 @@ export async function syncRegistrationOptIn(
   supabaseId: string,
   optIn: boolean,
 ): Promise<void> {
-  if (!optIn) return
-
   try {
     const email = normalizeEmail(rawEmail)
     const existing = await getSubscriberByEmail(email)
 
     if (existing) {
-      const set: Partial<{ status: NewsletterSubscriberStatus; supabaseId: string; confirmedAt: string }> = {
-        supabaseId,
-      }
-      if (existing.status !== 'confirmed') {
+      const set: Partial<{ status: NewsletterSubscriberStatus; supabaseId: string; confirmedAt: string }> = {}
+      // Link the account regardless of opt-in (factual association).
+      if (existing.supabaseId !== supabaseId) set.supabaseId = supabaseId
+      // Opt-in confirms; an unticked box never changes the status.
+      if (optIn && existing.status !== 'confirmed') {
         set.status = 'confirmed'
         set.confirmedAt = new Date().toISOString()
       }
-      await patchSubscriber(existing._id, set)
-    } else {
+      if (Object.keys(set).length > 0) await patchSubscriber(existing._id, set)
+      return
+    }
+
+    // No existing subscriber: only create one when they actually opted in.
+    if (optIn) {
       await createSubscriber({
         _type: 'newsletterSubscriber',
         email,
