@@ -1,0 +1,25 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{#
+  Newsletter signup behind a footer trigger that opens the form in a native
+  <dialog> modal. Include anywhere (e.g. the footer):
+    {% include "overridable/newsletter-dialog.njk" %}
+  The form is reused from newsletter-form.njk; the dialog inits it lazily on
+  first open. Requires the `newsletter` feature.
+#}
+<div class="newsletter-dialog" data-newsletter-dialog>
+  <button type="button" class="newsletter-dialog__trigger" data-newsletter-open aria-haspopup="dialog">
+    {{ 'forms.newsletter.trigger' | trans }}
+  </button>
+
+  {# Non-modal dialog (keeps it out of the top layer so the hCaptcha challenge
+     overlay can render above it), so the backdrop is our own element. #}
+  <div class="newsletter-dialog__backdrop" data-newsletter-backdrop data-newsletter-close hidden></div>
+
+  <dialog class="newsletter-dialog__dialog" aria-modal="true" aria-label="{{ 'forms.newsletter.trigger' | trans }}">
+    <div class="newsletter-dialog__inner">
+      <button type="button" class="newsletter-dialog__close" data-newsletter-close
+        aria-label="{{ 'forms.newsletter.close' | trans }}">&times;</button>
+      {% include "core/components/newsletter/newsletter-form.njk" %}
+    </div>
+  </dialog>
+</div>

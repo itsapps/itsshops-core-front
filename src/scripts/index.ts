@@ -58,6 +58,10 @@ if (document.querySelector('[data-user-reset]')) {
   import('./user-reset').then(m => m.initUserReset())
 }
 
+if (document.querySelector('[data-newsletter-dialog]')) {
+  import('./newsletter-dialog').then(m => m.initNewsletterDialog())
+}
+
 if (document.querySelector('[data-newsletter-subscribe]')) {
   import('./newsletter-subscribe').then(m => m.initNewsletterSubscribe())
 }

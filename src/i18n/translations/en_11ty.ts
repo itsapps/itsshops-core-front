@@ -458,6 +458,8 @@ export default {
       }
     },
     newsletter: {
+      trigger: "Subscribe to newsletter",
+      close: "Close",
       intro: "Stay in the loop and subscribe to our newsletter.",
       privacyNotice: 'By subscribing you agree to our <a href="{{url}}">privacy policy</a>. You can unsubscribe at any time.',
       successNotice: "Almost done! Please confirm your subscription via the link we just sent to your email.",

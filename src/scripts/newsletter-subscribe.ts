@@ -7,13 +7,21 @@ import { hasCaptcha, ensureHcaptchaScript, getCaptchaToken, resetCaptcha } from 
  * to `/api/newsletter/subscribe`, then swaps the form for a generic
  * "check your inbox" notice. The endpoint never reveals whether the address
  * was already subscribed, so the UI is identical in every case.
+ *
+ * Auto-inits embedded forms. Forms inside a `[data-newsletter-dialog]` are
+ * skipped here — the dialog inits them lazily on first open (see
+ * `newsletter-dialog.ts`), so hCaptcha only loads when the form is opened.
  */
 export function initNewsletterSubscribe(): void {
   const roots = document.querySelectorAll<HTMLElement>('[data-newsletter-subscribe]')
-  roots.forEach(initOne)
+  roots.forEach((root) => {
+    if (root.closest('[data-newsletter-dialog]')) return
+    initNewsletterForm(root)
+  })
 }
 
-function initOne(root: HTMLElement): void {
+/** Initialise a single newsletter form root (also used by the dialog on open). */
+export function initNewsletterForm(root: HTMLElement): void {
   const api = root.dataset.api ?? '/api/newsletter/subscribe'
   const locale = root.dataset.locale ?? document.documentElement.lang ?? 'de'
   const form = root.querySelector<HTMLFormElement>('form')
