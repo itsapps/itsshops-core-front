@@ -1,6 +1,6 @@
 import type { RegisterInput, RegisterResult } from '../shared/user-api'
 import { validateEmail, validatePassword } from '../shared/validation'
-import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
+import { hasCaptcha, ensureHcaptchaScript, getCaptchaToken, resetCaptcha } from './captcha'
 
 const REQUIRED_INPUTS_FOR_FIELD: Record<string, string[]> = {
   prename: ['prename'],
@@ -16,6 +16,8 @@ export function initUserRegister(): void {
   const locale = root.dataset.locale ?? document.documentElement.lang ?? 'de'
   const form = root.querySelector<HTMLFormElement>('form')
   if (!form) return
+
+  if (hasCaptcha(root)) ensureHcaptchaScript()
 
   const fields = (root.dataset.fields ?? '').split(',').filter(Boolean)
   for (const field of fields) {
@@ -96,7 +98,7 @@ export function initUserRegister(): void {
     clearErrors()
 
     const captchaPresent = hasCaptcha(root)
-    const captchaToken = captchaPresent ? getCaptchaToken() : ''
+    const captchaToken = captchaPresent ? getCaptchaToken(root) : ''
     if (captchaPresent && !captchaToken) {
       if (formError) {
         formError.textContent = root.dataset.tErrorCaptcha ?? 'Please solve the captcha.'
@@ -147,13 +149,13 @@ export function initUserRegister(): void {
         formError.textContent = json.error.message
         formError.hidden = false
       }
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } catch {
       if (formError) {
         formError.textContent = root.dataset.tErrorService ?? 'Service unavailable'
         formError.hidden = false
       }
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } finally {
       setLoading(false)
     }

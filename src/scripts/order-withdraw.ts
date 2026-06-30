@@ -1,5 +1,5 @@
 import type { WithdrawInput } from '../shared/order-api'
-import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
+import { hasCaptcha, ensureHcaptchaScript, getCaptchaToken, resetCaptcha } from './captcha'
 
 export function initOrderWithdraw(): void {
   const root = document.querySelector<HTMLElement>('[data-order-withdraw]')
@@ -9,6 +9,8 @@ export function initOrderWithdraw(): void {
   const locale = root.dataset.locale ?? document.documentElement.lang ?? 'de'
   const form = root.querySelector<HTMLFormElement>('form')
   if (!form) return
+
+  if (hasCaptcha(root)) ensureHcaptchaScript()
 
   const submitBtn = form.querySelector<HTMLButtonElement>('[type="submit"]')
   const submitText = form.querySelector<HTMLElement>('[data-submit-text]')
@@ -35,7 +37,7 @@ export function initOrderWithdraw(): void {
     setFieldError('email', null)
 
     const captchaPresent = hasCaptcha(root)
-    const captchaToken = captchaPresent ? getCaptchaToken() : ''
+    const captchaToken = captchaPresent ? getCaptchaToken(root) : ''
     if (captchaPresent && !captchaToken) {
       if (formError) {
         formError.textContent = root.dataset.tErrorCaptcha ?? 'Please solve the captcha.'
@@ -76,13 +78,13 @@ export function initOrderWithdraw(): void {
         formError.textContent = json.error.message
         formError.hidden = false
       }
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } catch {
       if (formError) {
         formError.textContent = root.dataset.tErrorService ?? 'Service unavailable'
         formError.hidden = false
       }
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } finally {
       setLoading(false)
     }

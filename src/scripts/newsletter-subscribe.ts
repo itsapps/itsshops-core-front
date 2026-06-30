@@ -1,6 +1,6 @@
 import type { NewsletterSubscribeInput } from '../shared/newsletter-api'
 import { validateEmail } from '../shared/validation'
-import { hasCaptcha, getCaptchaToken, resetCaptcha } from './captcha'
+import { hasCaptcha, ensureHcaptchaScript, getCaptchaToken, resetCaptcha } from './captcha'
 
 /**
  * Standalone newsletter signup form. Progressive enhancement: posts the email
@@ -18,6 +18,8 @@ function initOne(root: HTMLElement): void {
   const locale = root.dataset.locale ?? document.documentElement.lang ?? 'de'
   const form = root.querySelector<HTMLFormElement>('form')
   if (!form) return
+
+  if (hasCaptcha(root)) ensureHcaptchaScript()
 
   const submitBtn = form.querySelector<HTMLButtonElement>('[type="submit"]')
   const submitText = form.querySelector<HTMLElement>('[data-submit-text]')
@@ -59,7 +61,7 @@ function initOne(root: HTMLElement): void {
     }
 
     const captchaPresent = hasCaptcha(root)
-    const captchaToken = captchaPresent ? getCaptchaToken() : ''
+    const captchaToken = captchaPresent ? getCaptchaToken(root) : ''
     if (captchaPresent && !captchaToken) {
       showFormError(root.dataset.tErrorCaptcha ?? 'Please solve the captcha.')
       return
@@ -88,10 +90,10 @@ function initOne(root: HTMLElement): void {
       }
 
       showFormError(json.error?.message ?? root.dataset.tErrorService ?? 'Service unavailable')
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } catch {
       showFormError(root.dataset.tErrorService ?? 'Service unavailable')
-      if (captchaPresent) resetCaptcha()
+      if (captchaPresent) resetCaptcha(root)
     } finally {
       setLoading(false)
     }
