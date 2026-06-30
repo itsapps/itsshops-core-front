@@ -43,10 +43,14 @@ export function initUserReset(): void {
 
   deleteLocalUser()
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     setFieldError('password', null)
     if (formError) formError.hidden = true
+    isSubmitting = true
     setLoading(true)
 
     const body: ResetInput = {
@@ -80,6 +84,7 @@ export function initUserReset(): void {
         formError.hidden = false
       }
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })

@@ -30,8 +30,11 @@ export function initOrderWithdraw(): void {
     if (submitLoading) submitLoading.hidden = !loading
   }
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     if (formError) formError.hidden = true
     setFieldError('orderNumber', null)
     setFieldError('email', null)
@@ -46,6 +49,7 @@ export function initOrderWithdraw(): void {
       return
     }
 
+    isSubmitting = true
     setLoading(true)
 
     const data = new FormData(form)
@@ -86,6 +90,7 @@ export function initOrderWithdraw(): void {
       }
       if (captchaPresent) resetCaptcha(root)
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })

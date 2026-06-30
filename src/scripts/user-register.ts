@@ -93,8 +93,11 @@ export function initUserRegister(): void {
     return firstError === null
   }
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     clearErrors()
 
     const captchaPresent = hasCaptcha(root)
@@ -110,6 +113,7 @@ export function initUserRegister(): void {
     const data = new FormData(form)
     if (!validateForm(data)) return
 
+    isSubmitting = true
     setLoading(true)
 
     const body: RegisterInput = {
@@ -157,6 +161,7 @@ export function initUserRegister(): void {
       }
       if (captchaPresent) resetCaptcha(root)
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })

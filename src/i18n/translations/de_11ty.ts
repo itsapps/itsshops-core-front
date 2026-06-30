@@ -462,7 +462,7 @@ export default {
       close: "Schließen",
       intro: "Bleib auf dem Laufenden und abonniere unseren Newsletter.",
       privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu. Du kannst dich jederzeit wieder abmelden.',
-      successNotice: "Fast geschafft! Bitte bestätige Deine Anmeldung über den Link, den wir Dir gerade per E-Mail geschickt haben.",
+      successNotice: "Fast geschafft! Falls Du noch nicht angemeldet bist, erhältst Du in Kürze eine E-Mail mit einem Bestätigungslink.",
       submit: {
         text: "Anmelden",
         loadingText: "Wird gesendet ...",

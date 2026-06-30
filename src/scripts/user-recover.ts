@@ -30,8 +30,11 @@ export function initUserRecover(): void {
     if (submitLoading) submitLoading.hidden = !loading
   }
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     if (formError) formError.hidden = true
     setFieldError('email', null)
 
@@ -45,6 +48,7 @@ export function initUserRecover(): void {
       return
     }
 
+    isSubmitting = true
     setLoading(true)
 
     const body: RecoverInput = {
@@ -79,6 +83,7 @@ export function initUserRecover(): void {
       }
       if (captchaPresent) resetCaptcha(root)
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })

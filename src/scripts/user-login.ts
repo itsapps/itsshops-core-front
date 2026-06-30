@@ -36,9 +36,13 @@ export function initUserLogin(): void {
     if (submitLoading) submitLoading.hidden = !loading
   }
 
+  let isSubmitting = false
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     clearErrors()
+    isSubmitting = true
     setLoading(true)
 
     const data = new FormData(form)
@@ -76,6 +80,7 @@ export function initUserLogin(): void {
         formError.hidden = false
       }
     } finally {
+      isSubmitting = false
       setLoading(false)
     }
   })
