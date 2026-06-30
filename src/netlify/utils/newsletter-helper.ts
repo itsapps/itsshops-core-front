@@ -80,6 +80,12 @@ export async function unsubscribeByToken(token: string): Promise<boolean> {
  * `storeCustomer` after the account email is already confirmed, so opt-ins land
  * as `confirmed` without a second double-opt-in step. Failures are logged, not
  * thrown: the auth flow must not break on a newsletter write.
+ *
+ * Additive only: an unticked box (`optIn = false`) is a no-op — it never
+ * unsubscribes an existing subscriber. Someone may have explicitly subscribed
+ * standalone before registering, and an unrelated registration form (or a
+ * password reset, which also runs this) must not silently revoke that consent.
+ * Unsubscribing happens only via the explicit unsubscribe link.
  */
 export async function syncRegistrationOptIn(
   rawEmail: string,
@@ -87,39 +93,33 @@ export async function syncRegistrationOptIn(
   supabaseId: string,
   optIn: boolean,
 ): Promise<void> {
+  if (!optIn) return
+
   try {
     const email = normalizeEmail(rawEmail)
     const existing = await getSubscriberByEmail(email)
 
-    if (optIn) {
-      if (existing) {
-        const set: Partial<{ status: NewsletterSubscriberStatus; supabaseId: string; confirmedAt: string }> = {
-          supabaseId,
-        }
-        if (existing.status !== 'confirmed') {
-          set.status = 'confirmed'
-          set.confirmedAt = new Date().toISOString()
-        }
-        await patchSubscriber(existing._id, set)
-      } else {
-        await createSubscriber({
-          _type: 'newsletterSubscriber',
-          email,
-          locale,
-          status: 'confirmed',
-          source: 'registration',
-          token: crypto.randomUUID(),
-          supabaseId,
-          confirmedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        })
+    if (existing) {
+      const set: Partial<{ status: NewsletterSubscriberStatus; supabaseId: string; confirmedAt: string }> = {
+        supabaseId,
       }
-      return
-    }
-
-    // Opted out: unsubscribe an existing record (don't create one).
-    if (existing && existing.status !== 'unsubscribed') {
-      await patchSubscriber(existing._id, { status: 'unsubscribed' })
+      if (existing.status !== 'confirmed') {
+        set.status = 'confirmed'
+        set.confirmedAt = new Date().toISOString()
+      }
+      await patchSubscriber(existing._id, set)
+    } else {
+      await createSubscriber({
+        _type: 'newsletterSubscriber',
+        email,
+        locale,
+        status: 'confirmed',
+        source: 'registration',
+        token: crypto.randomUUID(),
+        supabaseId,
+        confirmedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      })
     }
   } catch (error) {
     log.error('syncRegistrationOptIn failed', {
