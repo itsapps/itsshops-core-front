@@ -24,10 +24,12 @@
 
       <div class="user-form__error" role="alert" hidden data-form-error></div>
 
-      <button type="submit" class="btn">
-        <span data-submit-text>{{ 'forms.userLogin.submit.text' | trans }}</span>
-        <span data-submit-loading hidden>{{ 'forms.userLogin.submit.loadingText' | trans }}</span>
-      </button>
+      <div class="user-form__submit">
+        <button type="submit" class="btn">
+          <span data-submit-text>{{ 'forms.userLogin.submit.text' | trans }}</span>
+          <span data-submit-loading hidden>{{ 'forms.userLogin.submit.loadingText' | trans }}</span>
+        </button>
+      </div>
     </form>
 
     <div class="user-form__links">
