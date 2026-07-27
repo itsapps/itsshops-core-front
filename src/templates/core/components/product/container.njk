@@ -23,7 +23,7 @@
     {{ productSiblings(product) }}
 
     <div class="product__purchase">
-      {{ productPrice(product) }}
+      {{ productPrice(product, perLiter=true) }}
 
       {% block product_cart_control %}
       {%- if coreConfig.features.shop.checkout -%}

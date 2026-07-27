@@ -21,7 +21,7 @@
       {%- endif %}
       {% endblock %}
       {% block product_card_price %}
-        {{ productPrice(product, class="product-card__price") }}
+        {{ productPrice(product, class="product-card__price", perLiter=true) }}
       {% endblock %}
     </div>
   </a>
