@@ -1,3 +1,4 @@
+import { slugify as coreSlugify } from '../slugify'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
 import type { ResolvedPost } from '../../types/data'
@@ -11,10 +12,12 @@ export function resolvePosts(
   resolveHook?: ResolveHooks['post'],
 ): ResolvedPost[] {
   return raw.map(p => {
-    const slug = stegaClean(p.slug || p._id)
+    // const slug = stegaClean(p.slug || p._id)
+    const title = ctx.resolveString(p.title)
+    const slug = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
     return {
       ...p,
-      title:       ctx.resolveString(p.title),
+      title,
       slug,
       url:         `/${ctx.locale}/${permalinks[ctx.locale].blog}/${slug}/`,
       locale:      ctx.locale,

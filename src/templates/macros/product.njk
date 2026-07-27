@@ -10,11 +10,15 @@
 
 {# ─── Price ───────────────────────────────────────────────────────────────────
  # Renders price + optional compare-at (strikethrough) price.
+ # When perLiter is enabled, appends the base price per liter in brackets for
+ # wine variants (e.g. "16,00 € (21,33 €/l)") — legally required in AT/DE for
+ # goods sold by volume. Computed from price (cents) and wine.volume (ml).
  #
  # @param product   ResolvedVariant
  # @param class     optional CSS class on the wrapper (default: "product-price")
+ # @param perLiter  append the per-liter base price for wine variants (default: false)
  #}
-{% macro productPrice(product, class="product__price") %}
+{% macro productPrice(product, class="product__price", perLiter=false) %}
 <div class="{{ class }}">
   {%- if product.compareAtPrice %}
     <s class="{{ class }}-compare">
@@ -22,6 +26,9 @@
     </s>
   {%- endif %}
   <span class="{{ class }}-amount">{{ product.price | formatPrice(product.locale) }}</span>
+  {%- if perLiter and product.kind == "wine" and product.wine and product.wine.volume and product.price %}
+    <span class="{{ class }}-per-liter">({{ (product.price / product.wine.volume * 1000) | round | formatPrice(product.locale) }}/l)</span>
+  {%- endif %}
 </div>
 {% endmacro %}
 

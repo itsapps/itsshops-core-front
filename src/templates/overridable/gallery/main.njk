@@ -1,22 +1,30 @@
 {#
   Expects:
-    _galleryImages    — array of resolved images (optional)
-    _galleryImage     — single resolved image fallback (optional)
-    _galleryImageSize — imageSizes preset for slides
+    _galleryImages     — array of resolved images (optional)
+    _galleryImage      — single resolved image fallback (optional)
+    _galleryImageSize  — imageSizes preset for slides
+    _gallerySlideHref  — optional URL; when set each slide becomes a link
+                         (embla suppresses the click after a drag, so tap navigates / drag swipes)
+    _gallerySlideLabel — optional accessible label for the slide links
 #}
+{%- macro slide(img, eager, size, href, label) -%}
+  <div class="embla__slide">
+    {%- if href -%}
+      <a class="embla__slide__link" href="{{ href }}" tabindex="-1"{% if label %} aria-label="{{ label }}"{% endif %}>
+    {%- endif -%}
+    {% image img, size, { loading: ('eager' if eager else 'lazy'), fetchpriority: ('high' if eager else 'auto') } %}
+    {%- if href -%}</a>{%- endif -%}
+  </div>
+{%- endmacro -%}
 <div class="embla">
   <div class="embla__viewport">
     <div class="embla__container">
       {%- if _galleryImages and _galleryImages.length -%}
         {%- for img in _galleryImages -%}
-          <div class="embla__slide">
-            {% image img, _galleryImageSize, { loading: ('eager' if loop.first else 'lazy'), fetchpriority: ('high' if loop.first else 'auto') } %}
-          </div>
+          {{ slide(img, loop.first, _galleryImageSize, _gallerySlideHref, _gallerySlideLabel) }}
         {%- endfor -%}
       {%- elif _galleryImage -%}
-        <div class="embla__slide">
-          {% image _galleryImage, _galleryImageSize, { loading: "eager", fetchpriority: "high" } %}
-        </div>
+        {{ slide(_galleryImage, true, _galleryImageSize, _gallerySlideHref, _gallerySlideLabel) }}
       {%- else -%}
         <div class="embla__slide">
           {% include "overridable/product/placeholder.njk" %}

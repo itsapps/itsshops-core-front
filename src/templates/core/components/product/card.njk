@@ -1,6 +1,7 @@
 {% from "macros/product.njk" import productPrice, productStatus, qtyControl, addToCartButton %}
 
 <article class="product-card">
+  {% block product_card_inner %}
   <a href="{{ product.url }}" class="product-card__link">
     {% block product_card_image %}
     <figure class="product-card__image">
@@ -24,6 +25,7 @@
       {% endblock %}
     </div>
   </a>
+  {% endblock %}
   {% block product_card_cart_control %}
   {%- if coreConfig.features.shop.checkout -%}
     <div class="product-card__actions" data-product-actions>

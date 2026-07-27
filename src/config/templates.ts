@@ -1,20 +1,15 @@
-import * as fs from 'fs';
-import * as path from 'path';
-// import Nunjucks from 'nunjucks';
+import * as fs from 'fs'
+import * as path from 'path'
 import { fileURLToPath } from "url"
-import { type CoreContext } from '../types';
-// import {
-//   EleventyRenderPlugin,
-//   EleventyI18nPlugin,
-// } from '@11ty/eleventy';
+import { type CoreContext } from '../types'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-const templatesRoot = path.join(__dirname, 'templates');
-const layoutsDir    = path.join(templatesRoot, 'layouts');
-const coreDir       = path.join(templatesRoot, 'core');
-const corePagesRoot = path.join(templatesRoot, 'pages');
+const templatesRoot = path.join(__dirname, 'templates')
+const layoutsDir    = path.join(templatesRoot, 'layouts')
+const coreDir       = path.join(templatesRoot, 'core')
+const corePagesRoot = path.join(templatesRoot, 'pages')
 
 export const setupTemplates = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
