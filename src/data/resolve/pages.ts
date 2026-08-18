@@ -13,7 +13,7 @@ export function resolvePages(
 ): ResolvedPage[] {
   return raw.map(p => {
     const title = ctx.resolveString(p.title)
-    const slug = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
+    const slug = stegaClean(ctx.resolveString(p.slug)) || coreSlugify(stegaClean(title)) || p._id
     const url = p._id === homePageId ? `/${ctx.locale}/` : `/${ctx.locale}/${slug}/`
     return {
       ...p,

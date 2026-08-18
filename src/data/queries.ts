@@ -134,7 +134,7 @@ export function buildPageQuery(extensions?: Config['extensions'], documentId?: s
   _type,
   _updatedAt,
   ${proj.i18nStringField('title')},
-  "slug": slug.current,
+  "slug": ${proj.i18nSlugField('slug')},
   ${buildModulesProjection('page', extensions)},
   seo ${proj.seo}${extraFields('page', extensions)}
 }`
@@ -146,7 +146,7 @@ export function buildPostQuery(extensions?: Config['extensions'], documentId?: s
   _type,
   _updatedAt,
   ${proj.i18nStringField('title')},
-  "slug": slug.current,
+  "slug": ${proj.i18nSlugField('slug')},
   publishedAt,
   ${buildModulesProjection('post', extensions)},
   seo ${proj.seo}${extraFields('post', extensions)}

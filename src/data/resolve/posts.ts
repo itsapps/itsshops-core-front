@@ -12,9 +12,8 @@ export function resolvePosts(
   resolveHook?: ResolveHooks['post'],
 ): ResolvedPost[] {
   return raw.map(p => {
-    // const slug = stegaClean(p.slug || p._id)
     const title = ctx.resolveString(p.title)
-    const slug = stegaClean(p.slug || coreSlugify(stegaClean(title)) || p._id)
+    const slug = stegaClean(ctx.resolveString(p.slug)) || coreSlugify(stegaClean(title)) || p._id
     return {
       ...p,
       title,

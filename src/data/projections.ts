@@ -14,6 +14,13 @@
 // ---------------------------------------------------------------------------
 export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language, value }`
 
+/**
+ * i18nSlugField — localized slug stored as an internationalized array of slug values.
+ * Flattens each entry's `value.current` to a plain string so it resolves like an
+ * i18nString: `[{ language, value: '<slug>' }]`.
+ */
+export const i18nSlugField = (fieldName: string) => `${fieldName}[]{ language, "value": value.current }`
+
 // ---------------------------------------------------------------------------
 // Asset
 // ---------------------------------------------------------------------------
