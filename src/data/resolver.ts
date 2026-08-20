@@ -44,22 +44,24 @@ export async function buildCmsData(
       stega: { enabled: true, studioUrl: config.sanity.studioUrl },
     } : {})
 
-  // In preview mode, add _id filter only for the target document type
-  const pid = (type: string) =>
-    isPreview && config.preview.documentType === type ? config.preview.documentId : undefined
-
   // ─── Fetch raw data ────────────────────────────────────────────────────────
+  //
+  // Even in preview we fetch ALL documents (no per-doc _id filter): the preview
+  // build only renders the single previewed doc (non-preview templates are skipped,
+  // and preview/*.njk selects it by preview.documentId), but cross-document
+  // references — menu titles/urls, internal links, the locale switcher — resolve
+  // via docMap/urlMap, which must be complete or they fall back to "#"/empty.
 
   const [
     rawProducts, rawVariants, rawCategories,
     rawPages, rawPosts, rawMenus, rawSettings, rawShopSettings,
   ] = await Promise.all([
-    features.shop.enabled ? fetchQuery(buildProductQuery(extensions, pid('product')))        : Promise.resolve([]),
-    features.shop.enabled ? fetchQuery(buildVariantQuery(extensions, pid('productVariant'))) : Promise.resolve([]),
+    features.shop.enabled ? fetchQuery(buildProductQuery(extensions))  : Promise.resolve([]),
+    features.shop.enabled ? fetchQuery(buildVariantQuery(extensions))  : Promise.resolve([]),
     features.shop.enabled && features.shop.category
-      ? fetchQuery(buildCategoryQuery(extensions, pid('category'))) : Promise.resolve([]),
-    fetchQuery(buildPageQuery(extensions, pid('page'))),
-    features.blog ? fetchQuery(buildPostQuery(extensions, pid('post'))) : Promise.resolve([]),
+      ? fetchQuery(buildCategoryQuery(extensions)) : Promise.resolve([]),
+    fetchQuery(buildPageQuery(extensions)),
+    features.blog ? fetchQuery(buildPostQuery(extensions)) : Promise.resolve([]),
     fetchQuery(buildMenuQuery(extensions, config.menu.maxDepth)),
     fetchQuery(buildSettingsQuery(extensions.fields)),
     features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),

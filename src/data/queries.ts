@@ -67,12 +67,8 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
 // Document queries
 // ---------------------------------------------------------------------------
 
-export function idFilter(id: string | undefined): string {
-  return id ? ` && _id == "${id}"` : ''
-}
-
-export function buildProductQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'product'${idFilter(documentId)}]{
+export function buildProductQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'product']{
   _id,
   kind,
   ${proj.i18nStringField('title')},
@@ -86,8 +82,8 @@ export function buildProductQuery(extensions?: Config['extensions'], documentId?
 }`
 }
 
-export function buildVariantQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'productVariant' && status != 'archived'${idFilter(documentId)}]{
+export function buildVariantQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'productVariant' && status != 'archived']{
   _id,
   _type,
   _updatedAt,
@@ -110,8 +106,8 @@ export function buildVariantQuery(extensions?: Config['extensions'], documentId?
 }`
 }
 
-export function buildCategoryQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'category'${idFilter(documentId)}]{
+export function buildCategoryQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'category']{
   _id,
   _type,
   _updatedAt,
@@ -128,8 +124,8 @@ export function buildCategoryQuery(extensions?: Config['extensions'], documentId
 }`
 }
 
-export function buildPageQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'page'${idFilter(documentId)}]{
+export function buildPageQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'page']{
   _id,
   _type,
   _updatedAt,
@@ -140,8 +136,8 @@ export function buildPageQuery(extensions?: Config['extensions'], documentId?: s
 }`
 }
 
-export function buildPostQuery(extensions?: Config['extensions'], documentId?: string): string {
-  return `*[_type == 'post'${idFilter(documentId)}]{
+export function buildPostQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'post']{
   _id,
   _type,
   _updatedAt,
