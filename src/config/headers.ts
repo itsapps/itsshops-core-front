@@ -78,15 +78,49 @@ function buildCsp(s: CspSources): string {
   ].join('; ')
 }
 
-const SECURITY_HEADERS = [
-  'X-Content-Type-Options: nosniff',
-  'Referrer-Policy: strict-origin-when-cross-origin',
-  'Permissions-Policy: autoplay=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), payment=*',
-  'Strict-Transport-Security: max-age=63072000; includeSubDomains; preload',
+const DISABLED_FEATURES = [
+  'autoplay=()',
+  'camera=()',
+  'gyroscope=()',
+  'magnetometer=()',
+  'microphone=()',
 ]
 
-function buildRoute(routePath: string, csp: string): string {
-  return [routePath, `  Content-Security-Policy: ${csp}`, ...SECURITY_HEADERS.map(h => `  ${h}`)].join('\n')
+/**
+ * The `payment` directive governs the Payment Request API, which is what Apple
+ * Pay and Google Pay ride on. Stripe invokes it from its own iframe, so a shop
+ * has to allow it — but only for us and Stripe, never `*`, which would let any
+ * embedded third party raise a payment sheet.
+ *
+ * Granted site-wide rather than on the checkout route alone: the cart overlay
+ * ships on every page of a shop, so an express payment button added there
+ * later would otherwise fail silently, and only on real devices.
+ *
+ * Sites without checkout get it switched off entirely.
+ */
+function permissionsPolicy(config: CoreConfig): string {
+  // Mirrors the Stripe frame-src allowlist below. The wildcard is included
+  // because Stripe reserves js.stripe.com subdomains to move assets to without
+  // notice — and a wildcard origin does not match the bare origin, so both are
+  // needed. Getting this wrong fails silently and only on real devices, since
+  // it is Apple Pay and Google Pay that use the Payment Request API.
+  const payment = config.features.shop.checkout
+    ? 'payment=(self "https://js.stripe.com" "https://*.js.stripe.com")'
+    : 'payment=()'
+  return `Permissions-Policy: ${[...DISABLED_FEATURES, payment].join(', ')}`
+}
+
+function securityHeaders(config: CoreConfig): string[] {
+  return [
+    'X-Content-Type-Options: nosniff',
+    'Referrer-Policy: strict-origin-when-cross-origin',
+    permissionsPolicy(config),
+    'Strict-Transport-Security: max-age=63072000; includeSubDomains; preload',
+  ]
+}
+
+function buildRoute(routePath: string, csp: string, security: string[]): string {
+  return [routePath, `  Content-Security-Policy: ${csp}`, ...security.map(h => `  ${h}`)].join('\n')
 }
 
 function mergeExtra(base: CspSources, extra: ResolvedCspDirectives): CspSources {
@@ -114,6 +148,7 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
   }
 
   const merged = mergeExtra(base, config.headers.extra)
+  const security = securityHeaders(config)
 
   // hCaptcha origins. Whitelisted per-route for auth/withdrawal pages below, but
   // the newsletter signup form is typically placed site-wide (e.g. the footer)
@@ -133,7 +168,7 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
 
   const newsletterCaptchaSiteWide = config.features.newsletter && !!config.captchaSiteKey
   const rootSources = newsletterCaptchaSiteWide ? withCaptcha(merged) : merged
-  const routes: string[] = [buildRoute('/*', buildCsp(rootSources))]
+  const routes: string[] = [buildRoute('/*', buildCsp(rootSources), security)]
 
   if (config.features.shop.checkout) {
     const checkoutSrc = mergeExtra(merged, {
@@ -145,7 +180,7 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
       'frame-src':   ['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'],
     })
     for (const locale of config.locales) {
-      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].checkout}/*`, buildCsp(checkoutSrc)))
+      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].checkout}/*`, buildCsp(checkoutSrc), security))
     }
   }
 
@@ -168,11 +203,11 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
     }
   }
   for (const route of captchaRoutes) {
-    routes.push(buildRoute(route, captchaCsp))
+    routes.push(buildRoute(route, captchaCsp, security))
   }
 
   for (const route of config.headers.routes) {
-    routes.push(buildRoute(route.path, buildCsp(mergeExtra(merged, route.extra))))
+    routes.push(buildRoute(route.path, buildCsp(mergeExtra(merged, route.extra)), security))
   }
 
   return routes.join('\n\n')

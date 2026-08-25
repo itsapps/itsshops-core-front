@@ -89,7 +89,10 @@ export type ResolvedCategory = {
 
 export type ResolvedManufacturer = {
   _id: string
-  title: string
+  /** Named `name`, not `title`, all the way down: the Sanity field, the GROQ
+   *  projection, the resolver and the product macro all use it. Only this type
+   *  said `title`, which is what the compiler was complaining about. */
+  name: string
 }
 
 export type ResolvedOption = {
