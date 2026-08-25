@@ -18,7 +18,15 @@
     {# {% include "core/partials/dev-nav.njk" %} #}
     {%- include "overridable/header.njk" -%}
 
-    <main id="main">
+    {#
+      tabindex="-1" makes <main> programmatically focusable without putting it
+      in the tab order, so the skip link above actually delivers focus here.
+      Without it, browsers only relocate the tab starting point — Firefox and
+      Chrome do that reliably, Safari historically did not, and a screen reader
+      gets no announcement that the skip happened. Paired with
+      `main:focus { outline: none }` in global-styles.css.
+    #}
+    <main id="main" tabindex="-1">
       {{ content | safe }}
     </main>
 
