@@ -1,4 +1,4 @@
-import { slugify as coreSlugify } from '../slugify'
+import { slugify as coreSlugify, slugifyPath } from '../slugify'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
 import type { ResolvedPost } from '../../types/data'
@@ -13,7 +13,7 @@ export function resolvePosts(
 ): ResolvedPost[] {
   return raw.map(p => {
     const title = ctx.resolveString(p.title)
-    const slug = stegaClean(ctx.resolveString(p.slug)) || coreSlugify(stegaClean(title)) || p._id
+    const slug = slugifyPath(stegaClean(ctx.resolveString(p.slug))) || coreSlugify(stegaClean(title)) || p._id
     return {
       ...p,
       title,
