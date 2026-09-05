@@ -12,7 +12,10 @@ function blockContent(children: string | undefined): string {
 
 function renderBlock(tag: string, children: string, cls?: string): string {
   const content = blockContent(children)
-  const attrs = cls ? ` class="${cls}"` : ''
+  // Empty blocks (allowEmptyBlocks) are visual spacers only — hide them from
+  // assistive tech so screen readers don't announce "empty block" for each one.
+  const attrsParts = [cls ? `class="${cls}"` : '', content ? '' : 'aria-hidden="true"'].filter(Boolean)
+  const attrs = attrsParts.length ? ` ${attrsParts.join(' ')}` : ''
   return `<${tag}${attrs}>${content}</${tag}>`
 }
 
