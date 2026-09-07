@@ -110,7 +110,7 @@ export async function buildCmsData(
 
   // ─── Per-locale resolution ────────────────────────────────────────────────
 
-  const cms: CmsData = { products: [], categories: [], pages: [], posts: [], sitemaps: [] }
+  const cms: CmsData = { products: [], categories: [], pages: [], posts: [], sitemaps: [], llms: '' }
 
   const localesToProcess = isPreview && config.preview.locale
     ? [config.preview.locale]
@@ -220,10 +220,52 @@ export async function buildCmsData(
   }
 
   cms.sitemaps = buildSitemaps(cms, config)
+  cms.llms = buildLlmsTxt(cms, config)
 
   extensions.onCmsBuilt?.(cms)
 
   return cms
+}
+
+/**
+ * Build the /llms.txt content (llmstxt.org convention): an H1 site name, a
+ * blockquote summary, and curated link sections for the default locale. Follows
+ * doIndexPages — a non-indexable site emits only the header/summary.
+ */
+function buildLlmsTxt(cms: CmsData, config: CoreContext['config']): string {
+  const { defaultLocale, locales, baseUrl, features, doIndexPages } = config
+  const data = cms[defaultLocale] as CmsLocaleData | undefined
+  const s = data?.settings
+  const abs = (url: string) => `${baseUrl}${url}`
+
+  const lines: string[] = [`# ${s?.siteTitle ?? ''}`.trimEnd()]
+  if (s?.siteShortDescription) lines.push('', `> ${s.siteShortDescription}`)
+  lines.push('', `Available languages: ${locales.join(', ')}.`)
+
+  if (doIndexPages && data) {
+    const pageLinks = (data.pages ?? [])
+      .filter(p => p.url !== data.homeUrl)
+      .map(p => `- [${p.title}](${abs(p.url)})`)
+    lines.push('', '## Pages', '', `- [Home](${abs(data.homeUrl)})`, ...pageLinks)
+
+    const hasShopUrl = !!data.shopUrl && data.shopUrl !== '#'
+    if (features.shop.enabled && (data.categories?.length || hasShopUrl)) {
+      const shopLines = hasShopUrl ? [`- [Shop](${abs(data.shopUrl)})`] : []
+      for (const c of data.categories ?? []) shopLines.push(`- [${c.title}](${abs(c.url)})`)
+      lines.push('', '## Shop', '', ...shopLines)
+    }
+
+    const otherLocaleLinks = locales
+      .filter(l => l !== defaultLocale)
+      .map(l => {
+        const ld = cms[l] as CmsLocaleData | undefined
+        return ld?.homeUrl ? `- [${l.toUpperCase()} version](${abs(ld.homeUrl)})` : null
+      })
+      .filter((x): x is string => x !== null)
+    if (otherLocaleLinks.length) lines.push('', '## Optional', '', ...otherLocaleLinks)
+  }
+
+  return lines.join('\n') + '\n'
 }
 
 function buildSitemaps(cms: CmsData, config: CoreContext['config']): Sitemap[] {

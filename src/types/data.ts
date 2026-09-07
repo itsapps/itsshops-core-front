@@ -353,5 +353,6 @@ export type CmsData = {
   pages:      (ResolvedPage     & { locale: string })[]
   posts:      (ResolvedPost     & { locale: string })[]
   sitemaps:   Sitemap[]
+  llms:    string
   [locale: string]: CmsLocaleData | unknown
 }
