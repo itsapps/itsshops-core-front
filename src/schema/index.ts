@@ -1,6 +1,7 @@
 import { stegaClean } from '@sanity/client/stega'
 import type { ResolvedVariant, ResolvedCategory, ResolvedPage, ResolvedPost, ResolvedSettings } from '../types/data'
 import type { CoreConfig } from '../types'
+import { vinofactImageUrl } from '../image'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,7 +96,9 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
   const _variantImg = variant.seo?.shareImage || variant.image
   const image = _variantImg
     ? imageUrl(_variantImg, 1200)
-    : variant.wine?.bottleImage?.url ?? undefined
+    : variant.wine?.bottleImage?.url
+      ? vinofactImageUrl(variant.wine.bottleImage.url, 1200, 1200)
+      : undefined
 
   const brand = variant.manufacturers?.[0]?.name
     ? { '@type': 'Brand', name: variant.manufacturers[0].name }

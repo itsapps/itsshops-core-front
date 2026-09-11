@@ -141,7 +141,7 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
   const base: CspSources = {
     scriptSrc:  ["'self'", ...inlineScriptHashes,                      ...(gtmId ? ['https://www.googletagmanager.com'] : [])],
     connectSrc: ["'self'",                                              ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com'] : [])],
-    imgSrc:     ["'self'", 'data:', 'https://cdn.sanity.io',           ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com'] : [])],
+    imgSrc:     ["'self'", 'data:', 'https://cdn.sanity.io',           ...(config.features.shop.vinofact.enabled ? ['https://i.vinofact.com'] : []), ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com'] : [])],
     mediaSrc:   ["'self'", 'https://cdn.sanity.io'],
     styleSrc:   ["'self'", "'unsafe-inline'"],
     frameSrc:   ["'self'"],

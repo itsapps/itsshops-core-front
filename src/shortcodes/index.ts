@@ -1,6 +1,6 @@
 import * as path from 'node:path'
 import type { CoreContext } from "../types";
-import { image, preload, staticImage, staticPreload, preGenerateStaticImages, type PictureSize, type PictureOptions } from "../image";
+import { image, preload, staticImage, staticPreload, preGenerateStaticImages, vinofactImage, type PictureSize, type PictureOptions } from "../image";
 
 export const createShortcodes = (ctx: CoreContext) => {
   const { eleventyConfig, imageBuilder, config, imageSizes } = ctx
@@ -28,4 +28,7 @@ export const createShortcodes = (ctx: CoreContext) => {
   eleventyConfig.addShortcode("staticPreload", (filename: string, size: PictureSize) =>
     staticPreload(path.join(staticDir, filename), size)
   )
+  eleventyConfig.addShortcode("vinofactImage", ((image: any, size: PictureSize, options?: PictureOptions) =>
+    vinofactImage(image, size, options)
+  ) as any)
 }

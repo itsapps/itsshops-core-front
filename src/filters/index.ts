@@ -2,7 +2,7 @@ import { slugify } from "../data/slugify"
 import { escapeHTML } from "@portabletext/to-html"
 import { stegaClean } from "@sanity/client/stega"
 import type { CoreContext, TranslatorParams } from "../types";
-import { imageUrl, imageSizeUrl, image, imageSrcsetData } from "../image"
+import { imageUrl, imageSizeUrl, image, imageSrcsetData, vinofactImageUrl, vinofactSrcset } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
@@ -246,6 +246,12 @@ export const createFilters = (ctx: CoreContext) => {
   );
   eleventyConfig.addFilter("imageSrcsetData", ((image: any, size: any) =>
     imageSrcsetData(ctx.imageBuilder, image, size)
+  ) as any);
+  eleventyConfig.addFilter("vinofactImageUrl", (url: string, width: number, height: number) =>
+    vinofactImageUrl(url, width, height)
+  );
+  eleventyConfig.addFilter("vinofactSrcset", ((image: any, size: any) =>
+    vinofactSrcset(image, size)
   ) as any);
   eleventyConfig.addFilter("stegaClean", stegaClean);
   eleventyConfig.addFilter("focalPoint", ((image: any) => {

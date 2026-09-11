@@ -29,6 +29,9 @@ export type VinofactClassification = {
 
 export type VinofactCertificate = {
   name: string | null
+  url: string | null
+  description: string | null
+  image: VinofactImage | null
 }
 
 export type VinofactAward = {
@@ -49,6 +52,10 @@ export type VinofactTerroir = {
 export type VinofactImage = {
   url: string
   alt: string
+  /** Original image dimensions — present only if the Vinofact API exposes them.
+   *  Used to derive aspect-ratio-aware heights for null-height PictureSize entries. */
+  width?: number | null
+  height?: number | null
 }
 
 /** Fields that can be requested via VinofactConfig.fields (excludes always-fetched base fields). */

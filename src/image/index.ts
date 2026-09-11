@@ -159,6 +159,96 @@ export function imageUrl(
   return b.url()
 }
 
+/**
+ * Fill the `{{width}}`/`{{height}}` placeholders in a Vinofact resize URL.
+ * The Vinofact API returns image URLs like
+ * `https://i.vinofact.com/resize/{{width}}x{{height}}/wine_imgs/x.jpeg`,
+ * leaving the dimensions to the consumer so each site downloads the size it needs.
+ * Call once per size to build a srcset. Returns '' for a missing url.
+ */
+export function vinofactImageUrl(url: string | null | undefined, width: number, height: number): string {
+  if (!url) return ''
+  return url
+    .replace(/\{\{\s*width\s*\}\}/g, String(Math.round(width)))
+    .replace(/\{\{\s*height\s*\}\}/g, String(Math.round(height)))
+}
+
+/** Minimal shape of a resolved Vinofact image. width/height are optional — the API
+ *  may not expose them yet; when present they drive aspect-ratio-aware heights. */
+export type VinofactImageData = {
+  url?: string | null
+  alt?: string | null
+  width?: number | null
+  height?: number | null
+}
+
+/**
+ * Resolve each PictureSize entry to a concrete [width, height] for Vinofact.
+ * The resize proxy needs both dimensions (no auto mode), so a `null` height is
+ * filled from the image's aspect ratio when width/height are known, otherwise it
+ * falls back to a square. Explicit heights in the preset always win.
+ */
+function vinofactSizes(size: PictureSize, image: VinofactImageData): [number, number][] {
+  const ratio = image.width && image.height ? image.width / image.height : null
+  return size.sizes.map(([w, h]) => [w, h ?? (ratio ? Math.round(w / ratio) : w)])
+}
+
+/**
+ * Build responsive-image data for a Vinofact image, mirroring imageSrcsetData.
+ * Takes the resolved image object + a PictureSize preset (same presets as the
+ * Sanity `image` shortcode). `src` falls back to the largest candidate.
+ *
+ * Usage (template):
+ *   {% set b = wine.bottleImage | vinofactSrcset(imageSizes.bottle) %}
+ *   <img src="{{ b.src }}" srcset="{{ b.srcset }}" sizes="{{ b.sizes }}" width="{{ b.width }}" height="{{ b.height }}">
+ */
+export function vinofactSrcset(
+  image: VinofactImageData | null | undefined,
+  size: PictureSize,
+): { src: string; srcset: string; sizes: string; width: number; height: number } | null {
+  const url = image?.url
+  if (!url || !size.sizes.length) return null
+  const pairs = vinofactSizes(size, image)
+  const srcset = pairs.map(([w, h]) => `${vinofactImageUrl(url, w, h)} ${Math.round(w)}w`).join(', ')
+  const [lw, lh] = pairs.reduce((max, s) => (s[0] > max[0] ? s : max), pairs[0])
+  return { src: vinofactImageUrl(url, lw, lh), srcset, sizes: size.widths, width: Math.round(lw), height: Math.round(lh) }
+}
+
+/**
+ * Render a complete responsive `<img>` for a Vinofact image — the Vinofact
+ * counterpart to the `image()` Sanity shortcode. Same call shape: the resolved
+ * image object, a PictureSize preset, and the usual options. `alt` defaults to
+ * the image's own alt.
+ *
+ * Usage (template):
+ *   {% vinofactImage cert.image, imageSizes.certLogo, { class: "cert-logo" } %}
+ */
+export function vinofactImage(
+  image: VinofactImageData | null | undefined,
+  size: PictureSize,
+  options: PictureOptions = {},
+): string {
+  const data = vinofactSrcset(image, size)
+  if (!data) return ''
+
+  const { loading = 'lazy', fetchpriority, class: imgClass = '', alt } = options
+  const altClean = stegaClean(alt ?? image?.alt ?? '').replace(/"/g, '&quot;')
+
+  const attrs = [
+    `src="${data.src}"`,
+    `srcset="${data.srcset}"`,
+    data.sizes && `sizes="${data.sizes}"`,
+    `width="${data.width}"`,
+    `height="${data.height}"`,
+    `alt="${altClean}"`,
+    `loading="${loading}"`,
+    fetchpriority && `fetchpriority="${fetchpriority}"`,
+    imgClass && `class="${imgClass}"`,
+  ].filter(Boolean).join(' ')
+
+  return `<img ${attrs}>`
+}
+
 /** Single URL from a PictureSize preset — uses the largest [w, h] entry for retina sharpness */
 export function imageSizeUrl(
   builder: ImageUrlBuilder,
