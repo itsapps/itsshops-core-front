@@ -217,6 +217,7 @@ export function resolveVariants(
           url:    variantUrlMap.get(s._id) ?? '',
           status: s.status ?? 'active',
           kind:   sKind,
+          price:   s.price ?? null,
           volume:  s.wine?.volume ?? null,
           vintage: s.wine?.vintage ?? null,
         }
