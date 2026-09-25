@@ -100,7 +100,7 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory{ _ref },
   wine,
-  "options": options[]->{ _id, "name": ${proj.i18nStringField('title')}, "group": group->{ _id, "title": ${proj.i18nStringField('title')} } },
+  "options": options[]->{ _id, sortOrder, "name": ${proj.i18nStringField('title')}, "group": group->{ _id, sortOrder, displayMode, "title": ${proj.i18nStringField('title')} } },
   "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
   "productId": product._ref${extraFields('variant', extensions)}
 }`

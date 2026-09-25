@@ -231,6 +231,121 @@ export function resolveVariants(
     
     const title = ctx.resolveString(variant.title) || ctx.resolveString(product.title)
 
+    // Variant axes: the dimensions a product varies along — option groups for
+    // physical/digital, vintage/volume for wine. Each value's nearest-fallback
+    // target variant is precomputed so the frontend only renders links / a
+    // <select> — no client-side matrix. Only dimensions that actually vary are
+    // emitted. `combo` maps an axis key to the variant's value on that axis.
+    const comboOf = (v: any): Map<string, string | number> => {
+      const combo = new Map<string, string | number>()
+      for (const o of (v.options ?? [])) {
+        if (o.group?._id && o._id != null) combo.set(o.group._id, o._id)
+      }
+      if (v.wine?.vintage != null) combo.set('vintage', v.wine.vintage)
+      if (v.wine?.volume != null) combo.set('volume', v.wine.volume)
+      return combo
+    }
+    const productVariants = (siblingsMap.get(product._id) ?? [variant]).map((v: any) => ({
+      combo:  comboOf(v),
+      url:    variantUrlMap.get(v._id) ?? '',
+      status: stegaClean(v.status ?? 'active'),
+    }))
+    const currentCombo = comboOf(variant)
+
+    // Best existing variant when choosing `value` on `axisKey`: keep as many of
+    // the current variant's other-axis values as possible (nearest-fallback),
+    // preferring an active variant on ties.
+    const pickTarget = (axisKey: string, value: string | number) => {
+      let best: { url: string; status: string } | null = null
+      let bestScore = -1
+      for (const v of productVariants) {
+        if (v.combo.get(axisKey) !== value) continue
+        let score = 0
+        for (const [k, val] of currentCombo) {
+          if (k !== axisKey && v.combo.get(k) === val) score++
+        }
+        const better = score > bestScore || (score === bestScore && v.status === 'active' && best?.status !== 'active')
+        if (better) { best = { url: v.url, status: v.status }; bestScore = score }
+      }
+      return best
+    }
+    const axisOptions = (axisKey: string, values: { value: string | number; label: string }[]) =>
+      values.map(({ value, label }) => {
+        const target = pickTarget(axisKey, value)
+        return {
+          value,
+          label,
+          url:      target?.url ?? '',
+          selected: currentCombo.get(axisKey) === value,
+          status:   (target?.status ?? 'active') as ResolvedVariant['status'],
+        }
+      })
+
+    const variantAxes: ResolvedVariant['variantAxes'] = []
+    if (kind === 'wine') {
+      const distinct = (key: string) =>
+        [...new Set(productVariants.map(v => v.combo.get(key)).filter(v => v != null))] as number[]
+      const vintages = distinct('vintage').sort((a, b) => b - a) // newest first
+      const volumes  = distinct('volume').sort((a, b) => a - b)  // smallest first
+      if (vintages.length > 1) {
+        variantAxes.push({
+          key: 'vintage', title: null, displayMode: null, format: null,
+          options: axisOptions('vintage', vintages.map(v => ({ value: v, label: String(v) }))),
+        })
+      }
+      if (volumes.length > 1) {
+        variantAxes.push({
+          key: 'volume', title: null, displayMode: null, format: 'volume',
+          options: axisOptions('volume', volumes.map(v => ({ value: v, label: String(v) }))),
+        })
+      }
+    } else {
+      // option groups (physical/digital)
+      const groupAcc = new Map<string, {
+        _id: string
+        title: string
+        sortOrder: number
+        displayMode: 'dropdown' | 'list' | null
+        values: Map<string, { _id: string; name: string; sortOrder: number }>
+      }>()
+      for (const v of (siblingsMap.get(product._id) ?? [variant])) {
+        for (const o of (v.options ?? [])) {
+          const g = o.group
+          if (!g?._id) continue
+          let entry = groupAcc.get(g._id)
+          if (!entry) {
+            entry = {
+              _id:         g._id,
+              title:       ctx.resolveString(g.title),
+              sortOrder:   g.sortOrder ?? 0,
+              displayMode: g.displayMode ?? null,
+              values:      new Map(),
+            }
+            groupAcc.set(g._id, entry)
+          }
+          if (!entry.values.has(o._id)) {
+            entry.values.set(o._id, { _id: o._id, name: ctx.resolveString(o.name), sortOrder: o.sortOrder ?? 0 })
+          }
+        }
+      }
+      for (const g of [...groupAcc.values()].sort((a, b) => a.sortOrder - b.sortOrder)) {
+        // only emit an axis that actually varies (more than one value)
+        if (g.values.size < 2) continue
+        variantAxes.push({
+          key:         g._id,
+          title:       g.title,
+          displayMode: g.displayMode,
+          format:      null,
+          options: axisOptions(
+            g._id,
+            [...g.values.values()]
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map(val => ({ value: val._id, label: val.name })),
+          ),
+        })
+      }
+    }
+
     const resolved: ResolvedVariant = {
       _id:            variant._id,
       _type:          'productVariant',
@@ -261,10 +376,20 @@ export function resolveVariants(
       taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
       stock: variant.stock ?? null,
       wine,
-      options: (variant.options ?? []).map((o: any) => ({
-        _id:  o._id,
-        name: ctx.resolveString(o.name),
-      })),
+      options: (variant.options ?? [])
+        // guard against an option with an unset/dangling group ref (group is
+        // only validation-required, so legacy/imported data may lack it)
+        .filter((o: any) => o.group?._id)
+        .map((o: any) => ({
+          _id:       o._id,
+          name:      ctx.resolveString(o.name),
+          sortOrder: o.sortOrder ?? 0,
+          group: {
+            _id:   o.group._id,
+            title: ctx.resolveString(o.group.title),
+          },
+        })),
+      variantAxes,
       bundleItems: (variant.bundleItems ?? []).flatMap((b: any) => {
         const rawV = rawVariantMap.get(b.variantId)
         if (!rawV) return []

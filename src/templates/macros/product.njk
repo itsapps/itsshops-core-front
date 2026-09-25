@@ -2,9 +2,9 @@
  #
  # Usage:
  #   {% from "macros/product.njk" import productPrice, productStatus,
- #      productSiblings, productWineDetails, productBundleItems,
- #      productOptions, productCategories, productManufacturers,
- #      qtyControl, addToCartButton %}
+ #      productSiblings, productVariantSelector, productWineDetails,
+ #      productBundleItems, productOptions, productCategories,
+ #      productManufacturers, qtyControl, addToCartButton %}
  #
  #}
 
@@ -87,6 +87,95 @@
       <li class="{{ class }}__item">{{ option.name }}</li>
     {%- endfor %}
   </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Variant selector ─────────────────────────────────────────────────────────
+ # One selector for switching between a product's variants — dispatches on
+ # product.kind internally, so templates never branch on the type.
+ #
+ # Two knobs, resolved per kind from `config` (merged over built-in defaults):
+ #   mode:    "axes"     → one control per varying dimension (option groups, or
+ #                         wine vintage/volume), with nearest-fallback
+ #            "combined" → one control listing whole variants (siblings)
+ #   control: "dropdown" | "list" | "cms" (cms = use each option group's own
+ #            displayMode; only meaningful for option axes)
+ #
+ # Built-in defaults: wine → axes/dropdown, physical|digital → axes/cms,
+ # everything else with siblings → combined/dropdown. Bundles render nothing.
+ #
+ # `config` is a per-kind map, e.g.
+ #   { wine: { mode: "combined", control: "dropdown" },
+ #     options: { mode: "axes", control: "cms" },
+ #     default: { mode: "combined", control: "dropdown" } }
+ # ("options" is an alias covering both physical and digital.)
+ #
+ # Every value's URL is precomputed (resolver), so switching is plain navigation;
+ # dropdowns reuse [data-variant-select]. Non-active targets render greyed with
+ # their status label.
+ #
+ # @param product   ResolvedVariant
+ # @param config    optional per-kind config map
+ # @param class     optional CSS base class (default: "product__variants")
+ #}
+{% macro productVariantSelector(product, config={}, class="product__variants") %}
+{%- set _isOptionKind = product.kind == 'physical' or product.kind == 'digital' -%}
+{%- set _cfg = config[product.kind] or (config.options if _isOptionKind else null) or config.default or {} -%}
+{%- set _mode = _cfg.mode or ('axes' if (product.kind == 'wine' or _isOptionKind) else 'combined') -%}
+{%- set _control = _cfg.control or ('cms' if _isOptionKind else 'dropdown') -%}
+{%- set _showLabels = _cfg.showLabels if _cfg.showLabels is defined else true -%}
+{# axes requested but nothing varies → fall back to the flat sibling list #}
+{%- if _mode == 'axes' and not product.variantAxes.length -%}{%- set _mode = 'combined' -%}{%- endif -%}
+
+{%- if _mode == 'axes' and product.variantAxes.length -%}
+  <div class="{{ class }}">
+    {%- for axis in product.variantAxes -%}
+      {%- set _ctl = (axis.displayMode or 'dropdown') if _control == 'cms' else _control -%}
+      {%- set _labelId = class + '-label-' + axis.key -%}
+      {%- set _title = axis.title or (('product.wine.' + axis.key) | trans({ lng: product.locale })) -%}
+      <div class="{{ class }}__axis {{ class }}__axis--{{ _ctl }}" role="group" aria-labelledby="{{ _labelId }}">
+        {%- if _showLabels %}<span class="{{ class }}__label" id="{{ _labelId }}">{{ _title }}</span>{% endif %}
+        {%- if _ctl == 'list' %}
+          <div class="{{ class }}__list">
+            {%- for opt in axis.options %}
+              {%- set _label = (opt.value | formatVolume) if axis.format == 'volume' else opt.label -%}
+              <a
+                class="{{ class }}__option{% if opt.selected %} {{ class }}__option--selected{% endif %}{% if opt.status != 'active' %} {{ class }}__option--unavailable{% endif %}"
+                href="{{ opt.url }}"
+                {%- if opt.selected %} aria-current="page"{% endif %}
+              >{{ _label }}{% if opt.status != 'active' %} <span class="{{ class }}__note">({{ ('product.states.' + opt.status) | trans({ lng: product.locale }) }})</span>{% endif %}</a>
+            {%- endfor %}
+          </div>
+        {%- else %}
+          <select class="{{ class }}__select" aria-labelledby="{{ _labelId }}" data-variant-select>
+            {%- for opt in axis.options %}
+              {%- set _label = (opt.value | formatVolume) if axis.format == 'volume' else opt.label -%}
+              <option value="{{ opt.url }}"{% if opt.selected %} selected{% endif %}>{{ _label }}{% if opt.status != 'active' %} — {{ ('product.states.' + opt.status) | trans({ lng: product.locale }) }}{% endif %}</option>
+            {%- endfor %}
+          </select>
+        {%- endif %}
+      </div>
+    {%- endfor %}
+  </div>
+{%- elif _mode == 'combined' and product.siblings.length -%}
+  <div class="{{ class }} {{ class }}--combined">
+    {%- if _control == 'list' %}
+      <div class="{{ class }}__list">
+        <a class="{{ class }}__option {{ class }}__option--selected" href="{{ product.url }}" aria-current="page">{{ product.label }}</a>
+        {%- for s in product.siblings %}
+          <a class="{{ class }}__option{% if s.status != 'active' %} {{ class }}__option--unavailable{% endif %}" href="{{ s.url }}">{{ s.label }}{% if s.status != 'active' %} <span class="{{ class }}__note">({{ ('product.states.' + s.status) | trans({ lng: product.locale }) }})</span>{% endif %}</a>
+        {%- endfor %}
+      </div>
+    {%- else %}
+      <select class="{{ class }}__select" data-variant-select aria-label="{{ 'product.ariaVariants' | trans({ lng: product.locale }) }}">
+        <option value="{{ product.url }}" selected>{{ product.label }}</option>
+        {%- for s in product.siblings %}
+          <option value="{{ s.url }}">{{ s.label }}{% if s.status != 'active' %} — {{ ('product.states.' + s.status) | trans({ lng: product.locale }) }}{% endif %}</option>
+        {%- endfor %}
+      </select>
+    {%- endif %}
+  </div>
 {%- endif %}
 {% endmacro %}
 

@@ -26,6 +26,10 @@ if (document.querySelector('[data-gallery]')) {
   import('./gallery').then(m => m.initGallery())
 }
 
+if (document.querySelector('[data-variant-select]')) {
+  import('./variant-select').then(m => m.initVariantSelect())
+}
+
 if (document.getElementById('cart-sidebar')) {
   import('./cart-ui').then(m => m.initCart())
 }

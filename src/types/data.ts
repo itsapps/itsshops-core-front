@@ -98,6 +98,38 @@ export type ResolvedManufacturer = {
 export type ResolvedOption = {
   _id: string
   name: string
+  /** Editor-defined order within its group. */
+  sortOrder: number
+  /** Lightweight back-ref to the owning group; the full group axis lives in ResolvedVariantAxis. */
+  group: { _id: string; title: string }
+}
+
+/**
+ * A dimension a product varies along: an option group (physical/digital) or
+ * vintage / volume (wine). Only axes that actually vary are emitted. Each value
+ * carries its nearest-fallback target variant, precomputed in the resolver.
+ */
+export type ResolvedVariantAxis = {
+  /** 'vintage' | 'volume' for wine, or the option group's _id for physical/digital. */
+  key: string
+  /** Group title for options; null for wine axes (the frontend labels those by key via i18n). */
+  title: string | null
+  /** CMS display hint for option groups (dropdown | list); null for wine / legacy groups. */
+  displayMode: 'dropdown' | 'list' | null
+  /** Value formatting hint for the frontend ('volume' → apply formatVolume). */
+  format: 'volume' | null
+  options: {
+    /** Raw axis value: option _id (options), or the vintage / volume number (wine). */
+    value: string | number
+    /** Display label (option name, or the raw vintage/volume as text — volume is reformatted via `format`). */
+    label: string
+    /** Nearest-fallback target variant URL when this value is chosen from the current variant. */
+    url: string
+    /** True if this is the current variant's value on this axis. */
+    selected: boolean
+    /** Status of the target variant — anything other than 'active' should render greyed with its label. */
+    status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
+  }[]
 }
 
 export type ResolvedBundleItem = {
@@ -111,7 +143,7 @@ export type ResolvedBundleItem = {
     kind: string
     volume: number | null
     vintage: string | null
-    options: ResolvedOption[]
+    options: { _id: string; name: string }[]
   }
 }
 
@@ -228,6 +260,8 @@ export type ResolvedVariant = {
   stock: number | null
   wine: ResolvedWine | null
   options: ResolvedOption[]
+  /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
+  variantAxes: ResolvedVariantAxis[]
   bundleItems: ResolvedBundleItem[]
   product: { _id: string; title: string }
   siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string; price: number | null; volume: number | null; vintage: string | null }>
