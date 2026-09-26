@@ -33,6 +33,11 @@ export function buildFilterAttributes(
         .map(c => c.name ? slugify(stegaClean(c.name)) : '')
         .filter(Boolean)
     }
+    if (w.qualityGrades?.length) {
+      attrs.qualityGrades = (w.qualityGrades as Array<{ name: string | null }>)
+        .map(c => c.name ? slugify(stegaClean(c.name)) : '')
+        .filter(Boolean)
+    }
     if (wine.volume) attrs.volume = [stegaClean(String(wine.volume))]
   }
 
@@ -85,6 +90,12 @@ export function accumulateFilterGroups(
       const label = ctx.translate('filters.classification')
       for (const cl of w.classifications as Array<{ name: string | null }>) {
         if (cl.name) addToAcc(acc, 'classification', label, slugify(stegaClean(cl.name)), stegaClean(cl.name))
+      }
+    }
+    if (w.qualityGrades?.length) {
+      const label = ctx.translate('filters.qualityGrades')
+      for (const cl of w.qualityGrades as Array<{ name: string | null }>) {
+        if (cl.name) addToAcc(acc, 'qualityGrade', label, slugify(stegaClean(cl.name)), stegaClean(cl.name))
       }
     }
     if (wine.volume) {

@@ -86,7 +86,7 @@ vinofact: {
 
 `fields` controls which additional fields are requested. Base fields (`id`, `slug`, `title`) are always fetched.
 
-Available fields: `color`, `type`, `description`, `year`, `alcohol`, `tartaricAcid`, `freeSulfur`, `phValue`, `histamine`, `varietals`, `classifications`, `normClassifications`, `awards`, `terroir`.
+Available fields: `color`, `type`, `description`, `year`, `alcohol`, `tartaricAcid`, `freeSulfur`, `phValue`, `histamine`, `varietals`, `classifications`, `qualityGrades`, `awards`, `terroir`.
 
 ---
 

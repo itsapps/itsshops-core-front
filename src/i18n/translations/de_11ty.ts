@@ -91,6 +91,7 @@ export default {
       histamine:       "Histamin",
       varietals:       "Rebsorte",
       classifications: "Klassifikation",
+      qualityGrades:   "Qualitätsstufe",
       certificates:    "Zertifikate",
       terroir:         "Gebiet",
       soils:           "Boden",

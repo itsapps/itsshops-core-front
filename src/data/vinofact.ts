@@ -32,7 +32,7 @@ function fieldSelections(L: string): Record<VinofactField, string> {
     histamine:           'histamine',
     varietals:           `varietals { id varietalId name ${L} amount trainingSystem ${L} }`,
     classifications:     `classifications { id classificationId name ${L} }`,
-    normClassifications: `normClassifications { id classificationId name ${L} }`,
+    qualityGrades:       `qualityGrades { id qualityGradeId name ${L} }`,
     certificates:        `certificates { name ${L} url description ${L} image { url alt } }`,
     awards:              `awards { name ${L} value ${L} }`,
     bottleImage:         'bottleImage { url alt }',

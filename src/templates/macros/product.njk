@@ -430,6 +430,13 @@
         <dd class="{{ class }}__value">{{ wine.classifications | map('name') | join(', ') }}</dd>
       </div>
     {%- endif %}
+    
+    {%- if wine.qualityGrades and wine.qualityGrades.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.qualityGrades' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.qualityGrades | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
 
     {%- if wine.terroir and wine.terroir.name %}
       <div class="{{ class }}__row">

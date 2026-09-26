@@ -91,6 +91,7 @@ export default {
       histamine:       "Histamine",
       varietals:       "Grape variety",
       classifications: "Classification",
+      qualityGrades:   "Quality grade",
       certificates:    "Certificates",
       terroir:         "Region",
       soils:           "Soil",
