@@ -5,11 +5,20 @@
 #}
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
 {%- set _groups = [] -%}
-{%- for group in filterGroups -%}
-  {%- if not activeFilterKeys or activeFilterKeys.length == 0 or group.key in activeFilterKeys -%}
+{%- if activeFilterKeys and activeFilterKeys.length -%}
+  {#- follow the editor-configured order (activeFilterKeys), not the accumulator order -#}
+  {%- for key in activeFilterKeys -%}
+    {%- for group in filterGroups -%}
+      {%- if group.key == key -%}
+        {%- set _groups = (_groups.push(group), _groups) -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+{%- else -%}
+  {%- for group in filterGroups -%}
     {%- set _groups = (_groups.push(group), _groups) -%}
-  {%- endif -%}
-{%- endfor -%}
+  {%- endfor -%}
+{%- endif -%}
 
 {%- set _showPrice = activeFilterKeys and 'price' in activeFilterKeys -%}
 {%- if _showPrice -%}

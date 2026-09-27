@@ -115,6 +115,7 @@ export default {
     color: "Farbe",
     flavor: "Geschmack",
     classification: "Klassifikation",
+    qualityGrade: "Qualitätsstufe",
     volume: "Flaschengröße",
     price: "Preis",
     priceMin: "Mindestpreis",

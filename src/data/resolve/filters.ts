@@ -34,7 +34,7 @@ export function buildFilterAttributes(
         .filter(Boolean)
     }
     if (w.qualityGrades?.length) {
-      attrs.qualityGrades = (w.qualityGrades as Array<{ name: string | null }>)
+      attrs.qualityGrade = (w.qualityGrades as Array<{ name: string | null }>)
         .map(c => c.name ? slugify(stegaClean(c.name)) : '')
         .filter(Boolean)
     }
@@ -93,7 +93,7 @@ export function accumulateFilterGroups(
       }
     }
     if (w.qualityGrades?.length) {
-      const label = ctx.translate('filters.qualityGrades')
+      const label = ctx.translate('filters.qualityGrade')
       for (const cl of w.qualityGrades as Array<{ name: string | null }>) {
         if (cl.name) addToAcc(acc, 'qualityGrade', label, slugify(stegaClean(cl.name)), stegaClean(cl.name))
       }
