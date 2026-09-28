@@ -132,6 +132,11 @@ export default {
     slide: "Slide",
     pause: "Pause autoplay",
     play: "Resume autoplay",
+    view: "View gallery",
+    close: "Close",
+    previous: "Previous image",
+    next: "Next image",
+    download: "Download",
   },
   categories: {
     title: "Shop-Categories",

@@ -85,3 +85,13 @@ if (document.querySelector('[data-order-withdraw]')) {
 if (document.querySelector('[data-search]')) {
   import('./search').then(m => m.init())
 }
+
+// Lightbox gallery — load the viewer (incl. Embla) only when a gallery is opened.
+if (document.querySelector('[data-gallery-open]')) {
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement)?.closest?.<HTMLElement>('[data-gallery-open]')
+    if (!trigger) return
+    e.preventDefault()
+    import('./lightbox').then(m => m.open(trigger))
+  })
+}

@@ -132,6 +132,11 @@ export default {
     slide: "Bild",
     pause: "Automatisches Abspielen pausieren",
     play: "Automatisches Abspielen fortsetzen",
+    view: "Galerie ansehen",
+    close: "Schließen",
+    previous: "Vorheriges Bild",
+    next: "Nächstes Bild",
+    download: "Download",
   },
   categories: {
     title: "Shop-Kategorien",

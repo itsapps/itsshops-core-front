@@ -46,6 +46,7 @@ export default defineConfig({
     copySync('src/assets/css/product-filter-price.css','dist/product-filter-price.css', { overwrite: true });
     copySync('src/assets/css/search.css','dist/search.css', { overwrite: true });
     copySync('src/assets/css/age-gate.css','dist/age-gate.css', { overwrite: true });
+    copySync('src/assets/css/lightbox.css','dist/lightbox.css', { overwrite: true });
 
     // Pre-build core inline scripts into dist/templates so {% include %} works
     // even when customers have no src/assets/scripts/inline/ of their own.
