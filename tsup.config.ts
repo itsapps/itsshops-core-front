@@ -43,6 +43,7 @@ export default defineConfig({
     copySync('src/assets/css/core.css', 'dist/core.css',  { overwrite: true });
     copySync('src/assets/css/reset.css','dist/reset.css', { overwrite: true });
     copySync('src/assets/css/checkout.css','dist/checkout.css', { overwrite: true });
+    copySync('src/assets/css/form.css','dist/form.css', { overwrite: true });
     copySync('src/assets/css/product-filter-price.css','dist/product-filter-price.css', { overwrite: true });
     copySync('src/assets/css/search.css','dist/search.css', { overwrite: true });
     copySync('src/assets/css/age-gate.css','dist/age-gate.css', { overwrite: true });

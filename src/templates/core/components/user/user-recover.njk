@@ -10,18 +10,18 @@
     data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
     data-t-error-service="{{ 'forms.errors.service' | trans }}"
   >
-    <form class="user-form" novalidate>
-      <div class="user-form__field">
+    <form class="form" novalidate>
+      <div class="form-field">
         <label for="recover-email">{{ 'forms.fields.email.label' | trans }}</label>
         <input type="email" id="recover-email" name="email" required autocomplete="email">
-        <span class="user-form__field-error" data-field-error="email"></span>
+        <span class="form-field__error" data-field-error="email"></span>
       </div>
 
       {%- if coreConfig.captchaSiteKey %}
-      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
+      <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
       {%- endif %}
 
-      <div class="user-form__error" role="alert" hidden data-form-error></div>
+      <div class="form__error" role="alert" hidden data-form-error></div>
 
       <button type="submit" class="btn">
         <span data-submit-text>{{ 'forms.userRecover.submit.text' | trans }}</span>

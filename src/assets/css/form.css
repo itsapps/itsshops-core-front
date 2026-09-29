@@ -1,0 +1,141 @@
+/* ── Shared form system ───────────────────────────────────────────────────────
+   Token-driven field chrome used by every core form (account, newsletter,
+   checkout, order-withdrawal). Every form is `.form` — that's the house default;
+   account and order-withdrawal forms use it bare. A modifier is added only for a
+   form that genuinely deviates (.form--newsletter, .form--checkout) for LAYOUT
+   and token scoping. Customers set their default tokens on `.form` and override
+   the --form-* / --field-* custom properties per modifier — no re-declaring selectors.
+
+   Markup contract (emitted by the core templates):
+     .form                      the <form> wrapper
+       .form-field              label + control + error, stacked
+         > label
+         > input | textarea | select
+         > .form-field__error   inline field error
+       .form-field__checkbox    inline checkbox row
+       .form__error             form-level alert
+
+   JS contract preserved: scripts key off data-* attributes and toggle
+   .is-invalid on the control — both are honoured below, no class is read by JS. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-gap, var(--space-s));
+  max-inline-size: var(--form-max-width, 40rem);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--field-gap, var(--space-3xs));
+}
+
+.form-field > label {
+  font-family: var(--field-label-font, inherit);
+  font-weight: var(--field-label-weight, 600);
+  font-size: var(--field-label-size, inherit);
+  text-transform: var(--field-label-transform, none);
+  letter-spacing: var(--field-label-spacing, normal);
+  color: var(--field-label-color, inherit);
+}
+
+.form-field :is(input, textarea, select) {
+  inline-size: 100%;
+  font: inherit;
+  /* family is a token so every form input matches regardless of DOM context
+     (default: inherit — i.e. unchanged unless a customer pins it once on .form) */
+  font-family: var(--field-font-family, inherit);
+  color: var(--color-text);
+  background: var(--field-bg, transparent);
+  /* border-width is a shorthand token: set it to e.g. `0 0 1px` for a
+     bottom-border-only look without touching any selector */
+  border-width: var(--field-border-width, 1px);
+  border-style: var(--field-border-style, solid);
+  border-color: var(--field-border-color, color-mix(in srgb, var(--color-text) 30%, transparent));
+  border-radius: var(--field-radius, 0);
+  padding: var(--field-padding, var(--space-2xs) var(--space-xs));
+  transition: border-color var(--transition-base, 0.15s);
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.form-field :is(input, textarea, select):focus {
+  outline: none;
+  border-color: var(--field-focus-color, var(--color-text));
+}
+
+/* validation error state — the checkout JS toggles .is-invalid on the control;
+   defining it here gives every form the same error affordance for free */
+.form-field :is(input, textarea, select).is-invalid {
+  border-color: var(--color-error);
+}
+
+.form-field__error {
+  color: var(--color-error);
+  font-size: var(--field-error-size, var(--size-g-small));
+}
+
+/* inline checkbox row (register newsletter opt-in, checkout billing toggle) */
+.form-field__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-weight: normal;
+}
+
+.form-field__checkbox input[type="checkbox"] {
+  inline-size: auto;
+}
+
+/* form-level error alert */
+.form__error {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* ── Form layout hooks (generic, non-chrome) ──────────────────────────────── */
+
+/* side-by-side fields (e.g. first/last name, zip/city) */
+.form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--form-row-gap, var(--space-2xs));
+}
+
+/* logical grouping of fields */
+.form__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-gap, var(--space-s));
+}
+
+/* submit button row */
+.form__actions {
+  display: flex;
+  gap: var(--space-2xs);
+}
+
+/* inline links row (login ↔ register ↔ recover) */
+.form__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+}
+
+.form__captcha {
+  margin-block: var(--space-2xs);
+}
+
+/* small helper note under a field/checkbox */
+.form__note {
+  font-size: var(--size-g-small, 0.875rem);
+  line-height: 1.4;
+}
+
+/* single source for submit-button alignment inside a form */
+.form .btn {
+  align-self: var(--form-submit-align, start);
+}

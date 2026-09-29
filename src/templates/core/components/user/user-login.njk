@@ -9,22 +9,22 @@
     data-t-error-password="{{ 'forms.fields.password.errorMessage' | trans }}"
     data-t-error-service="{{ 'forms.errors.service' | trans }}"
   >
-    <form class="user-form" novalidate>
-      <div class="user-form__field">
+    <form class="form" novalidate>
+      <div class="form-field">
         <label for="login-email">{{ 'forms.fields.email.label' | trans }}</label>
         <input type="email" id="login-email" name="email" required autocomplete="email">
-        <span class="user-form__field-error" data-field-error="email"></span>
+        <span class="form-field__error" data-field-error="email"></span>
       </div>
 
-      <div class="user-form__field">
+      <div class="form-field">
         <label for="login-password">{{ 'forms.fields.password.label' | trans }}</label>
         <input type="password" id="login-password" name="password" required autocomplete="current-password">
-        <span class="user-form__field-error" data-field-error="password"></span>
+        <span class="form-field__error" data-field-error="password"></span>
       </div>
 
-      <div class="user-form__error" role="alert" hidden data-form-error></div>
+      <div class="form__error" role="alert" hidden data-form-error></div>
 
-      <div class="user-form__submit">
+      <div class="form__actions">
         <button type="submit" class="btn">
           <span data-submit-text>{{ 'forms.userLogin.submit.text' | trans }}</span>
           <span data-submit-loading hidden>{{ 'forms.userLogin.submit.loadingText' | trans }}</span>
@@ -32,7 +32,7 @@
       </div>
     </form>
 
-    <div class="user-form__links">
+    <div class="form__links">
       <a href="{{ cms[_locale].registerUrl }}">
         {{ 'staticPages.userRegistration.title' | trans }}
       </a>

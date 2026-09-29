@@ -8,16 +8,16 @@
     data-t-error-password="{{ 'forms.fields.password.errorMessage' | trans }}"
     data-t-error-service="{{ 'forms.errors.service' | trans }}"
   >
-    <form class="user-form" novalidate>
-      <div class="user-form__field">
+    <form class="form" novalidate>
+      <div class="form-field">
         <label for="reset-password">{{ 'forms.fields.password.label' | trans }}</label>
         <input type="password" id="reset-password" name="password" required autocomplete="new-password">
-        <span class="user-form__field-error" data-field-error="password"></span>
+        <span class="form-field__error" data-field-error="password"></span>
       </div>
 
-      <div class="user-form__error" role="alert" hidden data-form-error></div>
+      <div class="form__error" role="alert" hidden data-form-error></div>
 
-      <div class="user-form__submit">
+      <div class="form__actions">
         <button type="submit" class="btn" disabled data-reset-submit>
           <span data-submit-text>{{ 'forms.userReset.submit.text' | trans }}</span>
           <span data-submit-loading hidden>{{ 'forms.userReset.submit.loadingText' | trans }}</span>

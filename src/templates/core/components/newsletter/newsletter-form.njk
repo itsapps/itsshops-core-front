@@ -4,7 +4,7 @@
     {% include "overridable/newsletter-form.njk" %}
   Requires the `newsletter` feature to be enabled.
 #}
-<div class="newsletter-form" data-newsletter-subscribe
+<div class="newsletter-signup" data-newsletter-subscribe
   data-api="/api/newsletter/subscribe"
   data-locale="{{ _locale }}"
   data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
@@ -12,27 +12,27 @@
   data-t-error-service="{{ 'forms.errors.service' | trans }}"
 >
   {% block newsletter_intro %}
-  <p class="newsletter-form__intro">{{ 'forms.newsletter.intro' | trans }}</p>
+  <p class="newsletter-signup__intro">{{ 'forms.newsletter.intro' | trans }}</p>
   {% endblock %}
 
-  <form class="newsletter-form__form" novalidate>
-    <div class="newsletter-form__field user-form__field">
+  <form class="form form--newsletter" novalidate>
+    <div class="form-field">
       <label for="newsletter-email">{{ 'forms.fields.email.label' | trans }}</label>
       <input type="email" id="newsletter-email" name="email" required autocomplete="email">
-      <span class="user-form__field-error" data-field-error="email"></span>
+      <span class="form-field__error" data-field-error="email"></span>
     </div>
 
     {%- if coreConfig.captchaSiteKey %}
-    <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
+    <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
     {%- endif %}
 
-    <div class="user-form__error" role="alert" hidden data-form-error></div>
+    <div class="form__error" role="alert" hidden data-form-error></div>
 
     {% block newsletter_privacy_notice %}
-    <p class="newsletter-form__notice">{{ 'forms.newsletter.privacyNotice' | trans({url: cms[_locale].privacyUrl}) | safe }}</p>
+    <p class="newsletter-signup__notice">{{ 'forms.newsletter.privacyNotice' | trans({url: cms[_locale].privacyUrl}) | safe }}</p>
     {% endblock %}
 
-    <div class="newsletter-form__submit user-form__submit">
+    <div class="form__actions">
       <button type="submit" class="btn">
         <span data-submit-text>{{ 'forms.newsletter.submit.text' | trans }}</span>
         <span data-submit-loading hidden>{{ 'forms.newsletter.submit.loadingText' | trans }}</span>
@@ -40,7 +40,7 @@
     </div>
   </form>
 
-  <p class="newsletter-form__success" role="status" hidden data-newsletter-success>
+  <p class="newsletter-signup__success" role="status" hidden data-newsletter-success>
     {{ 'forms.newsletter.successNotice' | trans }}
   </p>
 </div>

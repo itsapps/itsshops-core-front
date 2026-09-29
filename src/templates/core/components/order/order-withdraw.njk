@@ -9,29 +9,29 @@
     data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
     data-t-error-service="{{ 'forms.errors.service' | trans }}"
   >
-    <form class="user-form" novalidate>
-      <div class="user-form__field">
+    <form class="form" novalidate>
+      <div class="form-field">
         <label for="withdraw-order-number">{{ 'forms.fields.orderNumber.label' | trans }}</label>
         <input type="text" id="withdraw-order-number" name="orderNumber" required autocomplete="off">
-        <span class="user-form__field-error" data-field-error="orderNumber"></span>
+        <span class="form-field__error" data-field-error="orderNumber"></span>
       </div>
 
-      <div class="user-form__field">
+      <div class="form-field">
         <label for="withdraw-email">{{ 'forms.fields.email.label' | trans }}</label>
         <input type="email" id="withdraw-email" name="email" required autocomplete="email">
-        <span class="user-form__field-error" data-field-error="email"></span>
+        <span class="form-field__error" data-field-error="email"></span>
       </div>
 
-      <div class="user-form__field">
+      <div class="form-field">
         <label for="withdraw-reason">{{ 'forms.fields.reason.label' | trans }}</label>
         <textarea id="withdraw-reason" name="reason" rows="3"></textarea>
       </div>
 
       {%- if coreConfig.captchaSiteKey %}
-      <div class="user-form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
+      <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
       {%- endif %}
 
-      <div class="user-form__error" role="alert" hidden data-form-error></div>
+      <div class="form__error" role="alert" hidden data-form-error></div>
 
       <button type="submit" class="btn">
         <span data-submit-text>{{ 'forms.orderWithdraw.submit.text' | trans }}</span>
