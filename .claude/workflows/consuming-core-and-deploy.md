@@ -76,34 +76,40 @@ hash-edit loop.
 
 Branch-based:
 
-1. Work on **`main`**.
-2. When done, merge `main` → the **`staging`** or **`production`** branch.
-3. Push that branch to the customer remote; Netlify rebuilds (`npm run build`, publish `dist/`).
-   Deploy done.
+1. Work on **`main`**; push it to `origin` as your **own** GitHub user (routine — `main` is not a
+   Netlify deploy branch, so it triggers no build).
+2. To deploy: merge `main` → the **`staging`** or **`production`** branch.
+3. Push that branch to the **`user`** remote (the customer account, via its PAT). Netlify — tied to
+   that same customer account — sees the matching pusher and rebuilds (`npm run build`, publish
+   `dist/`). Deploy done.
 
 Each customer's branch names / Netlify site live in its own CLAUDE.md.
 
-### Deploy identity (why the per-repo git config matters)
+### Deploy identity (two push identities, split by branch)
 
 To avoid paying for extra Netlify team seats, **each customer gets its own GitHub + Netlify account
-created under the customer's own email** (e.g. `shop@jurtschitsch.com`). Netlify's free auto-rebuild
-fires only when the GitHub pusher's identity matches the Netlify account owner — so a deploy push
-must be attributed to that customer account.
+under the customer's own email** (e.g. `shop@jurtschitsch.com`). Netlify's free auto-rebuild fires
+only when the **GitHub pusher's identity matches the Netlify account owner**. So pushes are split by
+branch:
 
-Setup per customer:
-- The developer's personal GitHub user is added as a **collaborator** on the customer's GitHub repo
-  (so they can push).
-- The customer's GitHub account is wired as a git **remote** authenticated with that account's
-  **Personal Access Token (PAT)**, and the repo's **local** `.git/config` sets the commit identity to
-  the customer. Observed in `jurtschitsch/webshop-backend`:
-  - `user.name = Admin`, `user.email = shop@jurtschitsch.com`
-  - remote `origin` → the dev's repo (`main`, `develop`, …); remote **`user`** → the customer account,
-    holding `production` / `staging`. (Remote names can differ per customer — check `git remote -v`.)
-- Deploying = merge `main` → `staging`/`production`, then push that branch to the **customer remote**.
-  Netlify sees the customer identity and rebuilds.
+- **`main`** (and feature work) → pushed via `origin` as the **developer's own GitHub user** (the dev
+  is a collaborator on the customer's repo). `main` is not a Netlify deploy branch → no build.
+- **`staging` / `production`** → pushed via the **`user`** remote, authenticated with the **customer
+  account's Personal Access Token (PAT)**. The pusher then matches the Netlify account → the build
+  triggers.
+
+This is about **push authentication**, *not* commit authorship — a separate thing. (The repo's local
+`.git/config` happens to set `user.name`/`user.email` to the customer, e.g. `Admin` /
+`shop@jurtschitsch.com`, so commits read as the customer; but Netlify keys on the pusher, not the
+author.)
+
+Observed in the Jurtschitsch repos (both remotes point at the **same** GitHub repo):
+- `origin` → `https://github.com/Jurtschitsch/…` — pushes as your own user; used for `main`.
+- **`user`** → `https://<PAT>@github.com/Jurtschitsch/…` — pushes as the customer; used for
+  `staging`/`production`. (Remote names can differ per customer — check `git remote -v`.)
 
 **Secrets / gotchas:**
-- The PAT lives **only** in `.git/config` (not tracked by git). Never put it in a tracked file,
-  commit it, or paste it anywhere — and don't `cat .git/config` into shared output.
-- `.git/config` is per-clone and local: a fresh clone or a new machine **loses this identity + PAT**,
-  so it must be reconfigured there or Netlify won't trigger the rebuild.
+- The PAT lives **only** in the `user` remote URL in `.git/config` (not tracked by git). Never put it
+  in a tracked file, commit it, or `cat .git/config` into shared output.
+- `.git/config` is per-clone: a fresh clone / new machine loses the `user` remote + PAT, so it must be
+  reconfigured there or `staging`/`production` pushes won't trigger a Netlify build.
