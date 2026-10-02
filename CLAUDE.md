@@ -1,176 +1,120 @@
-# CLAUDE.md
+# CLAUDE.md — itsshops-core-front
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Entry point for any Claude session in this repo. Read this fully first, then load the
+`.claude/` file that matches what you're working on. `.claude/` content is loaded on demand —
+this file stays the always-loaded router.
+
+| Working on… | Read next |
+|---|---|
+| Plugin wiring, config resolution, env vars, feature flags, build modes | `.claude/architecture/plugin-and-config.md` |
+| Configuring the plugin — full `Config` field reference + env-var map | `.claude/architecture/configuration.md` |
+| Translations (UI strings + URL segments) and how to override them / add a locale | `.claude/architecture/i18n.md` |
+| Extending for custom schemas/fields/modules — `config.extensions`, resolve hooks, portable text, search | `.claude/architecture/extending.md` |
+| GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
+| Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS | `.claude/architecture/templates-and-assets.md` |
+| Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
+| CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
+| Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts) | `.claude/architecture/commerce-and-netlify.md` |
+| Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
+| How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |
+| Why a non-obvious choice was made | `.claude/decisions/` |
+
+Keep these docs current: run `/update-docs` after any change that moves a path, adds a subsystem,
+or establishes a rule. See `~/.claude/commands/update-docs.md`.
+
+---
+
+## What this is
+
+`@itsapps/itsshops-core-front` (package v1.4.1) — a shared npm **library + Eleventy plugin** consumed
+by customer Eleventy shop frontends. It provides the full frontend: data layer (Sanity → resolved
+`cms` global), templates, CSS/Tailwind, client-side JS, and a Netlify-function commerce/users backend.
+
+Consumers register it in `eleventy.config.mts`:
+
+```ts
+import { shopCoreFrontendPlugin } from '@itsapps/itsshops-core-front'
+eleventyConfig.addPlugin(shopCoreFrontendPlugin, config)   // config: type Config
+```
 
 ## Commands
 
 ```bash
-npm run build   # build to dist/ (also runs on pre-commit)
-npm run dev     # build in watch mode
+npm run build   # tsup → dist/
+npm run dev     # tsup --watch + watch-templates.mjs (consumers npm link this)
+npm run test    # vitest (netlify commerce logic has real unit tests)
 ```
 
-No test suite. Consumer projects use `npm link` — run `npm run dev` (tsup watch) and changes are picked up directly.
+No dev server here — develop against a consumer project that has `npm link`ed this package.
+**Do not use yalc** to push/publish.
 
-## Architecture
+## Entry point (`src/index.ts`)
 
-`@itsapps/itsshops-core-front` — shared npm library consumed by customer Eleventy-based shop frontends.
+`shopCoreFrontendPlugin(eleventyConfig, config)`:
+1. `resolveConfig(config)` → `CoreConfig` (merges config + env, resolves features/permalinks/CSP)
+2. creates Sanity client + image builder, sets up translation, builds a `CoreContext`
+3. wires setup modules: ignores, plugins, css, filters, shortcodes, assets, js, headers, templates
+4. registers global data: `cms` (lazy, cached unless `serve.refetchData`), `coreConfig`, `imageSizes`, `pageDoc`
 
-### Entry point
+`cms` is produced by `buildCmsData()` (async) — see data-layer doc.
 
-`src/index.ts` exports `shopCoreFrontendPlugin` — an Eleventy plugin customers register in `eleventy.config.mts`:
+## Config (`src/types/config.ts`) & resolution (`src/config/config.ts`)
 
-```ts
-import { shopCoreFrontendPlugin } from '@itsapps/itsshops-core-front'
-eleventyConfig.addPlugin(shopCoreFrontendPlugin, config)
-```
+Customer passes a `Config`; `resolveConfig()` merges it with env vars into `CoreConfig`. Most values
+fall back to env, a few (`SANITY_PROJECT_ID`, `SANITY_DATASET`) hard-fail if missing. Feature flags
+live under `config.features` (`shop{checkout,manufacturer,stock,category,coupons,vinofact,...}`,
+`blog`, `users`, `newsletter`). `buildMode` is `preview` | `maintenance` | `normal`. Full field list
+and env mapping: `.claude/architecture/plugin-and-config.md`.
 
-The plugin wires up: templates, filters, CSS, Sanity client, and the `cms` global data object.
+## `cms` global data shape
 
-### Config (`src/types/index.ts`)
+Templates read `cms[locale]` (per-locale `CmsLocaleData`) and `cms.products/categories/pages/posts`
+(flat, locale-stamped, for pagination). All localized fields are pre-resolved to plain strings — no
+locale filters in templates. `CmsLocaleData` carries `products`, `categories`, `filterGroups`,
+`pages`, `posts`, `menus`, `settings`, `shopSettings`, `urlMap`, `docMap`, `searchIndex`, a large set
+of well-known page URLs (`shopUrl`, `checkoutUrl`, `loginUrl`, …), plus any extension query results.
+Canonical type: `src/types/data.ts`.
 
-```ts
-type Config = {
-  sanity: SanityClientConfig       // Sanity credentials
-  locales: Locale[]                // ['de', 'en']
-  defaultLocale: Locale
-  features?: {
-    shop?: boolean
-    blog?: boolean
-    users?: boolean
-  }
-  permalinks?: Partial<Record<Locale, PermalinkTranslations>>  // override URL segments
-  extensions?: {
-    queries?:  Record<string, string>              // custom document GROQ → cms[locale].key
-    fields?:   Record<string, string>              // extra fields on core types (variant, menuItem, ...)
-    modules?:  Record<string, Record<string, string>> // custom module projections per doc type (page, post, category, ...)
-  }
-  tailwind?: { cssPath?: string }
-  preview?: { enabled?: boolean }
-}
-```
-
-### Data flow
+## Source layout
 
 ```
-Config
-  → buildPermalinkTranslations()    src/i18n/permalinks.ts
-  → createSanityClient()            src/core/clients/sanity.ts
-  → buildCmsData()                  src/data/resolver.ts
-      ├── buildProductQuery()       src/data/queries.ts  (dynamic GROQ with extension injection)
-      ├── buildVariantQuery()
-      ├── buildCategoryQuery()
-      ├── buildPageQuery()
-      ├── buildPostQuery()
-      ├── buildMenuQuery()
-      └── buildSettingsQuery()
-      → resolveString/Image/Seo()   src/data/locale.ts   (locale resolution)
-      → generateVariantSlug()       src/data/resolver.ts (kind-aware slug: wine/physical/digital/bundle)
-      → deduplicateSlug()
-  → cms global data: { de: CmsLocaleData, en: CmsLocaleData }
+src/
+├── index.ts             # plugin entry + public re-exports
+├── config/              # resolveConfig, feature resolution, setup modules, tailwind/
+├── data/                # queries, projections, resolve/ (per-type resolvers), slug, portableText, vinofact, search
+├── i18n/                # permalinks + translations (de/en, 11ty/server/shared)
+├── image/ · gallery/    # responsive image URLs/srcset + lightbox render
+├── filters/ · shortcodes/ · schema/ · shared/   # Eleventy filters, shortcodes, schema.org, shared validation/API clients
+├── scripts/             # client-side JS (cart, checkout, user auth, newsletter, filters, search); scripts/inline/ = head-inlined
+├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
+├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
+├── types/               # Config, data shapes, netlify, vinofact, generated sanity.types
+└── bin/                 # itsshops CLI
 ```
 
-### CMS global data shape
-
-Templates access `cms[locale].products`, `cms[locale].categories` etc. All localized fields are pre-resolved plain strings — no locale filters needed in templates.
-
-```ts
-CmsLocaleData = {
-  products:   ResolvedVariant[]    // one per variant, with product fallbacks applied
-  categories: ResolvedCategory[]
-  pages:      ResolvedPage[]
-  posts:      ResolvedPost[]
-  menus:      ResolvedMenu[]
-  settings:   ResolvedSettings | null
-  // + any extension query results (cms[locale].events, cms[locale].pinwall, ...)
-}
-```
-
-### Variant slug generation (`src/data/resolver.ts`)
-
-- **wine**: `slugify(title + volume + vintage?)`
-- **physical/digital**: `slugify(title + option names)`
-- **bundle**: `slugify(title)`
-- Collision-safe: tracked per locale via a `Set`, appends `-2`, `-3` etc.
-
-### Extension injection (`src/data/queries.ts`)
-
-Three extension points injected into GROQ queries at build time:
-- `extensions.fields.variant` → appended to variant projection
-- `extensions.fields.menuItem` → appended to menuItem projection (both levels)
-- `extensions.modules.page` → conditional projections in `page.modules[]`
-- `extensions.queries.events` → runs as separate query, merged into `cms[locale].events`
-
-### Template system (`src/config/templates.ts`)
-
-Core templates in `src/templates/` registered as virtual Eleventy templates. Customer overrides by placing files at matching paths in their project. `misc/` templates are protected (throws on conflict).
-
-Template structure:
-- `layouts/` — base Nunjucks layouts
-- `pages/` — page templates (organized by feature)
-- `components/` — reusable components
-- `core/components/` — non-overridable core components
-- `misc/` — utility templates (Netlify redirects etc.)
-
-### Permalink translations (`src/i18n/permalinks.ts`)
-
-Core defaults (de/en). Customers override per-locale segments via `config.permalinks`.
-
-| Segment | de | en |
-|---------|----|----|
-| product | produkte | products |
-| category | kategorien | categories |
-| blog | blog | blog |
-| page | seiten | pages |
-
-### Sanity types
-
-Core-front does not carry a copy of the generated Sanity schema types. The resolved shapes it actually consumes (`ResolvedVariant`, `ResolvedCategory`, etc.) live in `src/types/data.ts`. Customer projects generate their own full `sanity.types.ts` via `sanity typegen`.
-
-### Build outputs (tsup)
+## Build outputs (tsup)
 
 | Entry | Output | Purpose |
-|-------|--------|---------|
-| `src/index.ts` | `dist/index.js` | Main plugin + all types |
+|---|---|---|
+| `src/index.ts` | `dist/index.js` | Main plugin + all public exports/types |
 | `src/core/index.ts` | `dist/core.js` | Sanity client only |
 | `src/bin/itsshops.ts` | `dist/itsshops.js` | CLI binary |
-| `tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
+| `src/config/tailwind/tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
 | `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function |
 
-`src/templates/` and `src/assets/` copied to `dist/` post-build.
+`src/templates/` and `src/assets/` are copied to `dist/` post-build.
 
-### CLI (`itsshops` binary)
+## Ecosystem (canonical map — customer repos link here)
 
-```bash
-itsshops eleventy --serve    # dev server
-itsshops eleventy --watch    # watch mode
-itsshops eleventy --debug    # with Eleventy debug namespaces
-itsshops netlify             # netlify dev
-itsshops clean               # clean dist/, src/_includes/css, src/_includes/scripts
-```
+| Repo | Path | Role |
+|---|---|---|
+| core-front | `/Users/kampfgnu/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
+| core-back | `/Users/kampfgnu/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
+| Jurtschitsch | `/Users/kampfgnu/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine) |
+| Tinhof | `/Users/kampfgnu/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | customer (wine) |
+| itsapps | `/Users/kampfgnu/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | customer (webpage) |
+| grass-art | `/Users/kampfgnu/Documents/programming/web/grass-art/{webshop-backend,webshop-frontend}` | customer |
+| others | `/Users/kampfgnu/Documents/programming/web/{fem_innenarchitektur,yogamax,rosi_schuster,…}` | customers (varying feature sets) |
 
-Uses `tsx` + `--import tsx` to run Eleventy with TypeScript. Always targets `eleventy.config.mts` in the consumer project.
-
----
-
-## Ecosystem
-
-### Core backend (`itsshops-core-back`)
-`/Users/kampfgnu/Documents/programming/jamstack/itsshops-core-back`
-
-Sanity Studio plugin. Customer projects call `createItsshopsWorkspaces(config)`. Schemas for: product, productVariant, category, page, post, blog, menu, settings, manufacturer, variantOption etc.
-
-Feature flags (backend superset): `shop`, `shop.manufacturer`, `shop.stock`, `shop.category`, `shop.vinofact`, `shop.productKind.wine/physical/digital/bundle/options`, `blog`, `users`
-
-### Customer backends
-- Jurtschitsch: `/Users/kampfgnu/Documents/programming/web/jurtschitsch/webshop-backend`
-- Tinhof: `/Users/kampfgnu/Documents/programming/web/tinhof/webshop-backend`
-
-Extend core via `ItsshopsConfig`: `documents[]`, `objects[]`, `schemaExtensions`, `structure[]`, `i18n`.
-
-### Customer frontend
-- Jurtschitsch: `/Users/kampfgnu/Documents/programming/web/jurtschitsch/webshop-frontend`
-
-Registers plugin in `eleventy.config.mts`, configures via `itsshops.config.mts` (type `Config`).
-
-### Reference implementation
-`/Users/kampfgnu/Documents/programming/jamstack/itsapps_ffmh_frontend` — standalone predecessor. Does not use this package. Gold standard for full feature set: checkout (Stripe), users (Supabase), search, i18n, Netlify functions, PDF, email.
+Customers consume core via `npm link`. A customer frontend registers the plugin in
+`eleventy.config.mts` and configures it via `itsshops.config.mts` (type `Config`).
