@@ -16,10 +16,21 @@ Core-front has no standalone dev server — develop against a consumer frontend.
 `npm run test` (vitest). Meaningful coverage exists only in `src/netlify/__tests__/` (commerce math).
 Run it after any change under `src/netlify/lib/`.
 
-## Release
+## Git workflow (developing core)
 
-1. `npm run build` (also runs on `prepare`/`prepublishOnly`).
-2. Bump version in `package.json` (currently 1.4.x).
-3. Publish to the npm registry, then `npm update`/re-link in each customer that should pick it up.
+Develop on `main` (create feature branches for larger work), always with **your own GitHub user**.
+Core is a library consumed as a git dependency and is **never deployed to Netlify**, so the
+customer-identity / PAT mechanism does not apply here — that's only for customer repos'
+`staging`/`production` pushes (see `consuming-core-and-deploy.md`).
 
-Commit/push/publish only when the user asks.
+## Releasing a change to customers
+
+There is **no npm registry** — customers consume core as a public GitHub git dependency. "Releasing"
+is just:
+1. `npm run build` (also runs on `prepare`/`prepublishOnly`) and `npm run test`.
+2. Commit + push to GitHub (`main`, your own user).
+3. Customers pick it up per `consuming-core-and-deploy.md`: bump the pinned commit in their
+   `package-lock.json` (dev/test), or pin a git **tag** (go-live). A `package.json` version bump
+   (currently 1.4.x) is for cutting that tag.
+
+Commit/push only when the user asks.
