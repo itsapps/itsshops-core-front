@@ -92,29 +92,30 @@ const DISABLED_FEATURES = [
  * has to allow it — but only for us and Stripe, never `*`, which would let any
  * embedded third party raise a payment sheet.
  *
- * Granted site-wide rather than on the checkout route alone: the cart overlay
- * ships on every page of a shop, so an express payment button added there
- * later would otherwise fail silently, and only on real devices.
+ * Granted ONLY on the checkout route (least privilege) — that's the only place
+ * Stripe express pay is mounted (see components/checkout.njk + checkout.ts). The
+ * `payment` directive fails silently and only on real devices, so IF an express
+ * button is ever added elsewhere (e.g. the cart overlay), widen the grant to
+ * that route too — and test on a real device.
  *
- * Sites without checkout get it switched off entirely.
+ * Everywhere else (and sites without checkout) get `payment=()`.
  */
-function permissionsPolicy(config: CoreConfig): string {
-  // Mirrors the Stripe frame-src allowlist below. The wildcard is included
-  // because Stripe reserves js.stripe.com subdomains to move assets to without
-  // notice — and a wildcard origin does not match the bare origin, so both are
-  // needed. Getting this wrong fails silently and only on real devices, since
-  // it is Apple Pay and Google Pay that use the Payment Request API.
-  const payment = config.features.shop.checkout
+function permissionsPolicy(allowPayment: boolean): string {
+  // The Stripe allowlist mirrors the checkout-route frame-src below. The wildcard
+  // is included because Stripe reserves js.stripe.com subdomains to move assets to
+  // without notice — and a wildcard origin does not match the bare origin, so both
+  // are needed.
+  const payment = allowPayment
     ? 'payment=(self "https://js.stripe.com" "https://*.js.stripe.com")'
     : 'payment=()'
   return `Permissions-Policy: ${[...DISABLED_FEATURES, payment].join(', ')}`
 }
 
-function securityHeaders(config: CoreConfig): string[] {
+function securityHeaders(allowPayment: boolean): string[] {
   return [
     'X-Content-Type-Options: nosniff',
     'Referrer-Policy: strict-origin-when-cross-origin',
-    permissionsPolicy(config),
+    permissionsPolicy(allowPayment),
     'Strict-Transport-Security: max-age=63072000; includeSubDomains; preload',
   ]
 }
@@ -148,7 +149,8 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
   }
 
   const merged = mergeExtra(base, config.headers.extra)
-  const security = securityHeaders(config)
+  const security = securityHeaders(false)          // payment disabled — base, captcha, custom routes
+  const securityCheckout = securityHeaders(true)   // payment granted — checkout route only
 
   // hCaptcha origins. Whitelisted per-route for auth/withdrawal pages below, but
   // the newsletter signup form is typically placed site-wide (e.g. the footer)
@@ -180,7 +182,7 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
       'frame-src':   ['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'],
     })
     for (const locale of config.locales) {
-      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].checkout}/*`, buildCsp(checkoutSrc), security))
+      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].checkout}/*`, buildCsp(checkoutSrc), securityCheckout))
     }
   }
 
