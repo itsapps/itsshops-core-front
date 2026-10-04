@@ -50,6 +50,28 @@ No dev server here — develop against a consumer project that has `npm link`ed 
 `npm run build` ran (or while `npm run dev` is watching) — then restart the consumer's dev server.
 **Do not use yalc** to push/publish.
 
+## Accessibility (non-negotiable)
+
+Accessibility is a core quality requirement, not a nice-to-have. Every template, component, and
+client script — in core **and** in customer overrides — must stay accessible; **a change that
+regresses accessibility is a bug.** Aim for WCAG 2.2 AA. When adding or changing UI:
+
+- **Semantic HTML first** (`<button>`, `<nav>`, `<dialog>`, headings in order, labelled form
+  fields); ARIA only where native semantics don't suffice.
+- **Keyboard:** everything operable without a mouse, visible focus (`:focus-visible`), logical tab
+  order. Overlays/menus/dialogs trap focus by inerting the rest of the page
+  (`lockInertOutside()` in `src/scripts/inert-lock.ts`), close on Escape, and restore focus.
+- **State & names:** keep `aria-expanded`/`aria-controls`/`aria-current`/`aria-busy` in sync from
+  JS; icon-only controls get an `aria-label` (translated via i18n, never hardcoded); decorative
+  icons/images `aria-hidden` / `alt=""`, meaningful images get real `alt`.
+- **Announcements:** dynamic results (cart, filters, search, form errors) go through `aria-live`
+  regions; visually hidden text uses `sr-only`.
+- **Motion & contrast:** respect `prefers-reduced-motion`; design-token colours must keep AA
+  contrast.
+
+Follow the existing patterns (header/menu, cart, filters, newsletter dialog, lightbox, carousel)
+rather than inventing new ones, and check a11y when reviewing any UI diff.
+
 ## Entry point (`src/index.ts`)
 
 `shopCoreFrontendPlugin(eleventyConfig, config)`:
