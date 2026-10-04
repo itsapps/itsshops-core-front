@@ -10,7 +10,8 @@ export function resolveCategories(
   permalinks: Record<Locale, Required<PermalinkTranslations>>,
   resolveHook?: ResolveHooks['category'],
 ): ResolvedCategory[] {
-  return raw.map(c => {
+  // Listed by sortOrder (0 first, missing = 0), then title.
+  const categories = raw.map(c => {
     const slug = coreSlugify(stegaClean(ctx.resolveString(c.title) || c._id))
     return {
       _id: c._id,
@@ -28,4 +29,5 @@ export function resolveCategories(
       ...(resolveHook ? resolveHook(c, ctx) : {}),
     }
   })
+  return categories.sort((a, b) => a.sortOrder - b.sortOrder || (a.title ?? '').localeCompare(b.title ?? ''))
 }

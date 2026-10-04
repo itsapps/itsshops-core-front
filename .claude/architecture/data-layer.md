@@ -31,7 +31,8 @@ use (meta/SEO, JSON-LD, comparisons, slugs/URLs). See
 ### The per-locale loop
 
 For each locale: build a `ResolveContext` via `makeCtx` (below), then run the per-type resolvers from
-`src/data/resolve/` in order — `resolveCategories` → `resolveVariants` (needs productMap, categoryMap,
+`src/data/resolve/` in order — `resolveCategories` (returns them sorted by `sortOrder` asc, missing =
+0, then title — so `cms[locale].categories` is already in display order) → `resolveVariants` (needs productMap, categoryMap,
 siblingsMap, vinofactMap, resolve hooks, a filter accumulator) → `resolvePages` → `resolvePosts` →
 `resolveMenus` → `resolveSettings`/`resolveShopSettings`. `buildFilterGroups(filterAcc)` turns the
 accumulated variant attributes into `filterGroups`. Finally assemble `CmsLocaleData` (next sections).
