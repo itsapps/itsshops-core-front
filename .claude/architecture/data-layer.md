@@ -24,6 +24,9 @@ and a `studioUrl` is set. Even in preview it fetches **all** documents (not just
 because cross-document references — menu titles/URLs, internal links, the locale switcher — resolve
 through `docMap`/`urlMap` and would otherwise fall back to `#`. Only `config.preview.locale` is
 processed, and only the previewed doc is actually rendered (the `pages/preview/` templates select it).
+Stega embeds invisible metadata in resolved strings → strip it with `stegaClean` for any non-display
+use (meta/SEO, JSON-LD, comparisons, slugs/URLs). See
+[filters-and-shortcodes.md](filters-and-shortcodes.md) → "`stegaClean` — when and where to strip".
 
 ### The per-locale loop
 

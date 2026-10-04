@@ -83,3 +83,31 @@ from the package root (`src/image/`) for use in JS/extensions — see
 
 Some exported helpers double as plain functions: `formatVolumeMl(ml, unit, locale)` and
 `formatNumber(num, locale)` (`src/filters/index.ts`), re-exported from `src/index.ts`.
+
+## `stegaClean` — when and where to strip stega
+
+In **preview** builds, `buildCmsData` fetches with `stega: { enabled: true }` (see data-layer.md),
+so every resolved string carries **invisible stega metadata** that powers Sanity's click-to-edit
+overlays. That's harmless when the string is rendered as **visible body text** — but it **corrupts
+the value in any non-display use**. Outside preview there's no stega, so `stegaClean` is a safe no-op
+there — apply it wherever the rule below says, regardless of mode.
+
+**Rule: pass a resolved string through `stegaClean` whenever it is used as anything other than
+visible text.** In templates `{{ value | stegaClean }}`; in JS/extensions
+`import { stegaClean } from '@itsapps/itsshops-core-front'`.
+
+Strip it for:
+- **`<head>` / meta / SEO** — `<title>`, meta description, OG/share tags (`core/head/seo.njk` strips
+  every value), favicon/webmanifest `content=` and JSON (`site-webmanifest.njk`, `favicons.njk`).
+- **JSON-LD / schema.org** — every string (`src/schema/index.ts` strips inside the `JSON.stringify`
+  replacer).
+- **Comparisons / switches** — e.g. `stegaClean(m._type)` before matching a module type
+  (`data/resolve/modules.ts`); an un-cleaned string won't equal the literal.
+- **Slugs & URLs** — before `slugify`/path building and on `href`/`url` values
+  (`data/resolve/posts.ts`, `modules.ts`, portable-text internal links).
+- **Emptiness / length checks, numeric parsing, keys, `data-*` attributes, API payloads** — anything
+  comparing, measuring, or transmitting the value.
+
+Do **not** strip it for plain visible output (`{{ title }}`) — leaving stega in is what enables
+click-to-edit in the Studio preview. (`stegaClean` comes from `@sanity/client/stega`, re-exported
+from the package root and registered as the `stegaClean` filter.)
