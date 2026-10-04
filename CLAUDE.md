@@ -46,6 +46,8 @@ npm run test    # vitest (netlify commerce logic has real unit tests)
 ```
 
 No dev server here — develop against a consumer project that has `npm link`ed this package.
+**Rebuild after every core change:** the link serves `dist/`, so a consumer only sees a change once
+`npm run build` ran (or while `npm run dev` is watching) — then restart the consumer's dev server.
 **Do not use yalc** to push/publish.
 
 ## Entry point (`src/index.ts`)

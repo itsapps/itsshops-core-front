@@ -35,7 +35,9 @@ npm run watch   # core-back:  pkg-utils watch
 npm link @itsapps/itsshops-core-front   # or -core-back in a backend
 ```
 
-Core changes then show up live. See the core repos' own CLAUDE.md for their dev commands and the
+The link serves core's built `dist/`, so core changes show up only while that watcher runs —
+otherwise run `npm run build` in the core repo, then restart the customer dev server (Eleventy /
+`sanity dev`). See the core repos' own CLAUDE.md for their dev commands and the
 backend's `sanity.cli.ts` dedupe gotcha.
 
 ## Updating core — two deliberate modes
@@ -106,10 +108,11 @@ author.)
 Observed in the Jurtschitsch repos (both remotes point at the **same** GitHub repo):
 - `origin` → `https://github.com/Jurtschitsch/…` — pushes as your own user; used for `main`.
 - **`user`** → `https://<PAT>@github.com/Jurtschitsch/…` — pushes as the customer; used for
-  `staging`/`production`. (Remote names can differ per customer — check `git remote -v`.)
+  `staging`/`production`. (Remote names can differ per customer — check with `git remote`, names only.)
 
 **Secrets / gotchas:**
 - The PAT lives **only** in the `user` remote URL in `.git/config` (not tracked by git). Never put it
-  in a tracked file, commit it, or `cat .git/config` into shared output.
+  in a tracked file, commit it, or print it: no `cat .git/config` and no `git remote -v` (it prints
+  the PAT URL). Use `git remote` / `git remote get-url origin` instead.
 - `.git/config` is per-clone: a fresh clone / new machine loses the `user` remote + PAT, so it must be
   reconfigured there or `staging`/`production` pushes won't trigger a Netlify build.
