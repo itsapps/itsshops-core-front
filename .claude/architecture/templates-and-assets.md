@@ -139,6 +139,21 @@ The browser modules in `src/scripts/`, grouped by feature:
   `lightbox.ts`
 - **misc**: `age-gate.ts`, `captcha.ts`, `order-thanks.ts`, `order-withdraw.ts`, `inert-lock.ts`
 
+**Product filter panel** (`product-filter.ts`): `[data-toggle-products-filter]` toggles `is-open` on
+`[data-filter-panel]` and syncs `aria-expanded` — by default a plain inline disclosure (tinhof,
+grass-art). Adding `data-filter-panel-modal` opts the panel into a **modal dialog** for layouts where
+it's a full-screen overlay (jurtschitsch, small screens only): while open it gets `role="dialog"`
+`aria-modal`, `aria-labelledby` from `data-filter-panel-labelledby`, the rest of the page is inerted
+(`lockInertOutside([panel], { deep: true })`), `html.has-filter-panel-open` locks scroll (`core.css`),
+Escape / any `[data-filter-panel-close]` closes it and focus returns to the toggle. It closes itself
+(without moving focus) on resize once the toggle is no longer rendered — so a customer that shows the
+panel as an inline sidebar on desktop must **hide the toggle** at that breakpoint. Modal is opt-in so
+the inline-disclosure customers are unaffected. Opening/closing animation is customer CSS.
+
+`inert-lock.ts` — `lockInertOutside(keep)` inerts only `<body>`'s other children (fine for overlays
+mounted at the top level: menu, cart). Pass `{ deep: true }` when the kept element lives deep inside
+the page (e.g. inside `<main>`) so the siblings of each ancestor are inerted too.
+
 The deferred entry `src/scripts/index.ts` runs eagerly on every page and **lazy-loads** feature
 modules on demand, guarded by DOM markers (e.g. `if (document.querySelector('[data-checkout]'))
 import('./checkout')…`). A new feature module must be wired in here (with its `data-*` guard) to ship.

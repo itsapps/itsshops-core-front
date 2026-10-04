@@ -123,6 +123,7 @@ export default {
     category: "Kategorie",
     label: "Filtern",
     reset: "Filter zurücksetzen",
+    close: "Filter schließen",
     showResults: "Ergebnisse anzeigen",
     results: "{count} Produkte",
   },

@@ -19,7 +19,18 @@
  *   input[data-filter-price-max] — max price input (whole currency units)
  *   [data-filter-reset]        — reset button
  *   [data-filter-count]        — sr-only live region for result count
+ *   [data-toggle-products-filter] — button that opens/closes [data-filter-panel]
+ *   [data-filter-panel]        — panel toggled via `is-open`. Add [data-filter-panel-modal] to make
+ *                                the open panel a modal dialog (role=dialog, rest of page inert,
+ *                                Escape closes, focus moves in and back to the toggle). It closes
+ *                                itself when the toggle is hidden (e.g. resized to a desktop layout
+ *                                where the panel is an inline sidebar). Name the dialog with
+ *                                [data-filter-panel-labelledby="<heading id>"] (applied as
+ *                                aria-labelledby only while the dialog is open).
+ *   [data-filter-panel-close]  — closes the panel (close icon, "show results" button)
  */
+
+import { lockInertOutside } from './inert-lock'
 
 type FilterState = {
   attrs: Map<string, Set<string>>
@@ -211,6 +222,78 @@ function syncViewButton(view: string): void {
   })
 }
 
+function initFilterPanel(): void {
+  const found = document.querySelector<HTMLElement>('[data-filter-panel]')
+  if (!found) return
+  const panel: HTMLElement = found
+  const isModal = panel.hasAttribute('data-filter-panel-modal')
+  let lock: { release: () => void } | null = null
+  let trigger: HTMLElement | null = null
+
+  const isOpen = () => panel.classList.contains('is-open')
+
+  function syncToggles(open: boolean): void {
+    document.querySelectorAll<HTMLElement>('[data-toggle-products-filter]').forEach(btn => {
+      btn.setAttribute('aria-expanded', String(open))
+    })
+  }
+
+  function open(opener: HTMLElement | null): void {
+    trigger = opener
+    panel.classList.add('is-open')
+    syncToggles(true)
+    if (!isModal) return
+    panel.setAttribute('role', 'dialog')
+    panel.setAttribute('aria-modal', 'true')
+    const labelledBy = panel.dataset.filterPanelLabelledby
+    if (labelledBy) panel.setAttribute('aria-labelledby', labelledBy)
+    lock = lockInertOutside([panel], { deep: true })
+    document.documentElement.classList.add('has-filter-panel-open')
+    const firstFocusable = panel.querySelector<HTMLElement>(
+      'button:not([disabled]):not([hidden]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+    ;(firstFocusable ?? panel).focus()
+  }
+
+  function close(restoreFocus = true): void {
+    panel.classList.remove('is-open')
+    syncToggles(false)
+    if (!isModal) return
+    panel.removeAttribute('role')
+    panel.removeAttribute('aria-modal')
+    if (panel.dataset.filterPanelLabelledby) panel.removeAttribute('aria-labelledby')
+    lock?.release()
+    lock = null
+    document.documentElement.classList.remove('has-filter-panel-open')
+    if (restoreFocus) trigger?.focus()
+    trigger = null
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element
+    const toggle = target.closest<HTMLElement>('[data-toggle-products-filter]')
+    if (toggle) {
+      isOpen() ? close() : open(toggle)
+      return
+    }
+    if (target.closest('[data-filter-panel-close]') && isOpen()) close()
+  })
+
+  if (!isModal) return
+
+  if (!panel.hasAttribute('tabindex')) panel.setAttribute('tabindex', '-1')
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) close()
+  })
+
+  // The modal only exists while its toggle is visible (small screens); if the layout switches to
+  // the inline sidebar, drop the modal state without stealing focus.
+  window.addEventListener('resize', () => {
+    if (isOpen() && trigger && trigger.getClientRects().length === 0) close(false)
+  })
+}
+
 export function initProductFilter(): void {
   if (!document.querySelector('[data-product-list]')) return
 
@@ -264,18 +347,11 @@ export function initProductFilter(): void {
     updatePriceFilter()
   })
 
-  // Reset + view/filter panel toggles
+  initFilterPanel()
+
+  // Reset + view toggle
   document.addEventListener('click', (e) => {
     const target = e.target as Element
-
-    if (target.closest('[data-toggle-products-filter]')) {
-      const panel = document.querySelector('[data-filter-panel]')
-      panel?.classList.toggle('is-open')
-      const isOpen = panel?.classList.contains('is-open') ?? false
-      const btn = target.closest<HTMLElement>('[data-toggle-products-filter]')
-      btn?.setAttribute('aria-expanded', String(isOpen))
-      return
-    }
 
     if (target.closest('[data-toggle-products-view]') && productList) {
       const next = productList.dataset.view === 'grid' ? 'list' : 'grid'

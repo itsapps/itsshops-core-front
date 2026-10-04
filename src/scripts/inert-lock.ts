@@ -1,6 +1,13 @@
 type InertLock = { release: () => void }
+type InertLockOptions = {
+  /**
+   * Also inert the siblings of every ancestor of the kept elements, not just other children of
+   * <body>. Needed when a kept element lives deep inside the page (e.g. a panel inside <main>).
+   */
+  deep?: boolean
+}
 
-export function lockInertOutside(keep: HTMLElement[]): InertLock {
+export function lockInertOutside(keep: HTMLElement[], options: InertLockOptions = {}): InertLock {
   const keepAncestors = new Set<HTMLElement>()
   for (const el of keep) {
     let n: HTMLElement | null = el
@@ -11,13 +18,19 @@ export function lockInertOutside(keep: HTMLElement[]): InertLock {
   }
 
   const inerted: HTMLElement[] = []
-  for (const child of Array.from(document.body.children)) {
-    if (!(child instanceof HTMLElement)) continue
-    if (keepAncestors.has(child)) continue
-    if (child.hasAttribute('inert')) continue
-    child.setAttribute('inert', '')
-    inerted.push(child)
+  const inertChildrenOf = (parent: Element) => {
+    for (const child of Array.from(parent.children)) {
+      if (!(child instanceof HTMLElement)) continue
+      if (keepAncestors.has(child)) {
+        if (options.deep && !keep.includes(child)) inertChildrenOf(child)
+        continue
+      }
+      if (child.hasAttribute('inert')) continue
+      child.setAttribute('inert', '')
+      inerted.push(child)
+    }
   }
+  inertChildrenOf(document.body)
 
   return {
     release: () => {

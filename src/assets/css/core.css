@@ -66,3 +66,12 @@
   background: currentColor;
   mask: var(--icon-close, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>")) center / contain no-repeat;
 }
+
+
+/* ─── Product filter panel (modal mode) ──────────────────────────────────────
+ * product-filter.ts sets this while a [data-filter-panel-modal] panel is open,
+ * so the page behind the overlay doesn't scroll.
+ */
+html.has-filter-panel-open {
+  overflow: hidden;
+}

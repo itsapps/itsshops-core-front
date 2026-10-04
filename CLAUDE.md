@@ -60,7 +60,8 @@ regresses accessibility is a bug.** Aim for WCAG 2.2 AA. When adding or changing
   fields); ARIA only where native semantics don't suffice.
 - **Keyboard:** everything operable without a mouse, visible focus (`:focus-visible`), logical tab
   order. Overlays/menus/dialogs trap focus by inerting the rest of the page
-  (`lockInertOutside()` in `src/scripts/inert-lock.ts`), close on Escape, and restore focus.
+  (`lockInertOutside()` in `src/scripts/inert-lock.ts`; `{ deep: true }` when the overlay lives
+  inside `<main>`), close on Escape, and restore focus.
 - **State & names:** keep `aria-expanded`/`aria-controls`/`aria-current`/`aria-busy` in sync from
   JS; icon-only controls get an `aria-label` (translated via i18n, never hardcoded); decorative
   icons/images `aria-hidden` / `alt=""`, meaningful images get real `alt`.
