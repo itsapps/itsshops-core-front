@@ -61,8 +61,14 @@ in preview). Compilation:
 not by rewriting CSS. The token → CSS-custom-property system also powers the shared form system and
 CSS-mask cart icons.
 
-Customer CSS entry: `src/assets/css/global/global.css` (or `config.css.cssPath`); the pipeline also
-pulls `src/_includes/css/global.css`. `config.css.minify`/`inline` control output.
+Customer CSS entry: `src/assets/css/global/global.css` (or `config.css.cssPath`).
+`config.css.minify`/`inline` control output.
+
+**`src/_includes/css/global.css` is a generated build artifact — never edit it** (customers gitignore
+it). After compiling the entry, `css.ts` *writes* the result there so `core/head/css.njk` can
+`{% include "css/global.css" %}` it (inline `<style>` or the hoisted `css` bundle). It's overwritten
+on every build; edit the entry and its imports (`src/assets/css/global/**`) instead. When grepping a
+customer repo for CSS, exclude it — it's a compiled copy of everything.
 
 ### Importable core CSS files
 
