@@ -46,6 +46,14 @@ program
       console.log(`ℹ️  No .env file found. Skipping flag.`);
     }
 
+    // One-off builds start from an empty dist: Eleventy never deletes stale output, and
+    // Netlify's build cache restores the previous dist — so removed pages (archived variants,
+    // renamed slugs) would otherwise keep getting deployed.
+    if (!options.serve && !options.watch) {
+      fs.rmSync(path.join(root, 'dist'), { recursive: true, force: true });
+      console.log(`🧹 Cleaned dist/`);
+    }
+
     // 3. Add 11ty specific flags
     if (options.serve) nodeArgs.push('--serve');
     if (options.watch) nodeArgs.push('--watch');
