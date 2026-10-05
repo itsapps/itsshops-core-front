@@ -123,9 +123,14 @@ withdrawal page, it **appends** a system item to the last footer menu. The withd
 be reachable (legal requirement), and this works for customer footer overrides too. Rationale:
 [../decisions/withdrawal-link-as-menu-system-link.md](../decisions/withdrawal-link-as-menu-system-link.md).
 
-To add a system page: add it to `systemPages` in core-back's `menuItem.ts` (with its feature), add
-its URL to `systemUrls` in `resolver.ts`, and make sure a `staticPages.<name>.title` translation
-exists. Tests: `src/data/__tests__/menus.test.ts`.
+**Rich text:** live system pages are also added to `urlMap` under `system:<name>`
+(`addSystemUrls`/`systemUrlKey`), so `'system:orderWithdraw' | pageUrl` works. The `internalLink`
+mark projection carries `systemPage` (from `internalLinkSystemPage`). The core `internalLink`
+serializer links to it as a same-tab link, or renders plain text when the feature is off.
+
+To add a system page: add it to `systemPages` in core-back's `src/schemas/systemPages.ts` (with its
+feature), add its URL to `systemUrls` in `resolver.ts`, and make sure a `staticPages.<name>.title`
+translation exists. Tests: `src/data/__tests__/{menus,portableText}.test.ts`.
 
 ## Filter groups (`src/data/resolve/filters.ts`)
 

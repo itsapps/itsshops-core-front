@@ -2,6 +2,7 @@ import { toHTML, escapeHTML, mergeComponents } from '@portabletext/to-html'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import { stegaClean } from '@sanity/client/stega'
 import type { Locale } from '../types'
+import { systemUrlKey } from './resolve/menus'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,11 @@ const coreComponents = (urlMap: Record<string, string>): Partial<PortableTextHtm
   hardBreak: () => '<br>',
   marks: {
     internalLink: ({ children, value }) => {
+      // System page (fixed route, e.g. the withdrawal form): plain text when its feature is off
+      if (value?.systemPage) {
+        const url = urlMap[systemUrlKey(stegaClean(value.systemPage))]
+        return url ? `<a href="${escapeHTML(url)}">${children}</a>` : `${children}`
+      }
       const id  = value?.reference?._id ?? ''
       const url = urlMap[id] ?? `/${stegaClean(value?.reference?.slug ?? '')}`
       return `<a href="${escapeHTML(url)}">${children}</a>`

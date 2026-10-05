@@ -10,6 +10,16 @@ export type SystemPageUrls = Record<string, string>
 
 const isLive = (url: string | undefined): url is string => !!url && url !== '#'
 
+/** `urlMap` key of a system page, e.g. `system:orderWithdraw` (rich-text links, `pageUrl` filter). */
+export const systemUrlKey = (systemPage: string) => `system:${systemPage}`
+
+/** Adds the live system pages to `urlMap` under `systemUrlKey(name)`. */
+export function addSystemUrls(urlMap: Record<string, string>, systemUrls: SystemPageUrls): void {
+  for (const [systemPage, url] of Object.entries(systemUrls)) {
+    if (isLive(url)) urlMap[systemUrlKey(systemPage)] = url
+  }
+}
+
 const systemTitle = (systemPage: string, ctx: ResolveContext) =>
   ctx.translate(`staticPages.${systemPage}.title`)
 

@@ -71,6 +71,7 @@ export const baseImageField = (fieldName: string) => `${fieldName} ${baseImage}`
  */
 const internalLinkMark = `_type == "internalLink" => {
     "reference": internalLinkReference->{ _id, _type, "slug": slug.current },
+    "systemPage": internalLinkSystemPage,
     "displayType": internalLinkDisplayType
   }`
 

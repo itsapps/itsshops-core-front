@@ -19,7 +19,7 @@ import { resolveCategories } from './resolve/categories'
 import { resolvePages } from './resolve/pages'
 import { resolvePosts } from './resolve/posts'
 import { resolveVariants } from './resolve/variants'
-import { resolveMenus, ensureSystemPageLink } from './resolve/menus'
+import { resolveMenus, ensureSystemPageLink, addSystemUrls } from './resolve/menus'
 import { resolveSettings, resolveShopSettings } from './resolve/settings'
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
 import { buildSearchIndex, resolveSearchFields } from './search'
@@ -162,6 +162,7 @@ export async function buildCmsData(
     for (const c of categories) { urlMap[c._id] = c.url; docMap[c._id] = c }
     for (const v of products)   { urlMap[v._id] = v.url; docMap[v._id] = v }
     for (const p of posts)      { urlMap[p._id] = p.url; docMap[p._id] = p }
+    addSystemUrls(urlMap, systemUrls)
 
     const settings     = rawSettings     ? resolveSettings(rawSettings, ctx, extensions)     : null
     const shopSettings = rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)               : null
