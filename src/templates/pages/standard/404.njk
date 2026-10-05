@@ -8,6 +8,7 @@ pagination:
 permalink: "/{{ _locale }}/404/"
 noindex: true
 eleventyExcludeFromCollections: true
+titleKey: staticPages.errorPage.title
 ---
 {%- set _homeUrl = cms[_locale].homeUrl -%}
 {%- include "overridable/404.njk" -%}

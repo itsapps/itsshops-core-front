@@ -45,6 +45,12 @@ no `rel`, `{{ item.url | linkActiveState | safe }}` for `aria-current`. An overr
 branch silently omits the link, including the guaranteed Widerruf footer link. Don't hardcode that
 link in footers; core adds it.
 
+**System pages have no `pageDoc`** (withdrawal, login, checkout, 404, newsletter/user flows in
+`pages/standard/`). Each sets `titleKey: staticPages.<name>.title` in its front matter (the same
+key as its `<h1>`); `core/head/seo.njk` falls back to `titleKey | trans` for `<title>`, and
+header overrides should do the same wherever they show `pageDoc.title`. A new system page must
+set `titleKey` too, or it gets only the site name as its title.
+
 `npm run dev` runs `scripts/watch-templates.mjs` alongside tsup so template edits propagate to
 linked consumers without a full rebuild.
 
