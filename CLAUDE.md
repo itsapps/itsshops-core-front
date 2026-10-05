@@ -129,6 +129,17 @@ src/
 
 `src/templates/` and `src/assets/` are copied to `dist/` post-build.
 
+## Features that span frontend and backend
+
+If a feature needs new or changed CMS data, it spans both stacks: the **schema/studio** side in
+core-back (or the customer backend's schema extensions), and the **projection/rendering** side here
+in the data layer (or the customer frontend's `src/_config/extensions.mts`). Before touching the
+backend side, read core-back's `CLAUDE.md` and the customer backend's `CLAUDE.md` (paths in the
+ecosystem table below) — they aren't loaded in a frontend session. Same reuse order: core first,
+customer extension only for customer-specific data. After a core-back change, run its
+`npm run build` (or `npm run watch`) and restart the customer's `sanity dev`. Data-layer side:
+`.claude/architecture/data-layer.md` + `extending.md`.
+
 ## Ecosystem (canonical map — customer repos link here)
 
 | Repo | Path | Role |
