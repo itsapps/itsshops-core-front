@@ -32,7 +32,7 @@ export default {
     ariaClose: "Warenkorb schließen",
     empty: "Dein Warenkorb ist leer.",
     subtotal: "Zwischensumme",
-    subtotalNote: "Inkl. MwSt. Versandkosten und Gesamtbetrag werden an der Kasse berechnet.",
+    subtotalNote: "Inkl. MwSt., zzgl. Versandkosten – diese werden an der Kasse berechnet.",
     removeProduct: "Löschen",
     ariaRemoveProduct: "Aus dem Warenkorb löschen",
     counter: {

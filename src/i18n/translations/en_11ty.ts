@@ -32,7 +32,7 @@ export default {
     ariaClose: "Close shopping cart",
     empty: "Your cart is empty.",
     subtotal: "Subtotal",
-    subtotalNote: "Incl. VAT. Shipping and total are calculated at checkout.",
+    subtotalNote: "Incl. VAT, plus shipping – calculated at checkout.",
     removeProduct: "Remove",
     ariaRemoveProduct: "Remove from cart",
     counter: {
