@@ -54,6 +54,10 @@
                             <li class="site-nav__subitem">
                               <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
                             </li>
+                          {%- elif child.linkType == 'system' and child.url -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" {{ child.url | linkActiveState | safe }}>{{ child.title }}</a>
+                            </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">
                               <a href="{{ child.url }}" class="site-nav__sublink" rel="noopener noreferrer">{{ child.title }}</a>
@@ -64,6 +68,10 @@
                     {%- endif -%}
                   </li>
 
+                {%- elif item.linkType == 'system' and item.url -%}
+                  <li class="site-nav__item">
+                    <a href="{{ item.url }}" class="site-nav__link" {{ item.url | linkActiveState | safe }}>{{ item.title }}</a>
+                  </li>
                 {%- elif item.linkType == 'external' -%}
                   <li class="site-nav__item">
                     <a href="{{ item.url }}" class="site-nav__link" rel="noopener noreferrer">{{ item.title }}</a>
@@ -83,6 +91,10 @@
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
                               <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'system' and child.url -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" {{ child.url | linkActiveState | safe }}>{{ child.title }}</a>
                             </li>
                           {%- elif child.linkType == 'external' -%}
                             <li class="site-nav__subitem">

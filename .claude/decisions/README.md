@@ -16,3 +16,5 @@ alternative was rejected, a constraint discovered the hard way.
   Apple/Google Pay `payment` policy scoped to the checkout route (least privilege).
 - [preview-fetches-all-documents.md](preview-fetches-all-documents.md) — preview fetches every doc
   (for cross-ref resolution) but renders only the previewed one.
+- [withdrawal-link-as-menu-system-link.md](withdrawal-link-as-menu-system-link.md) — Widerruf link is
+  a `system` menu link + guaranteed footer fallback, not a page module (fixed route, CSP, legal).

@@ -158,6 +158,7 @@ function buildMenuItemProjection(depth: number, extraFields: string): string {
     ${proj.i18nStringField('title')},
     linkType,
     "url": ${proj.i18nStringField('url')},
+    systemPage,
     "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${extraFields}${children}
   }`
 }

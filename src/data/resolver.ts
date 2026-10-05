@@ -19,7 +19,7 @@ import { resolveCategories } from './resolve/categories'
 import { resolvePages } from './resolve/pages'
 import { resolvePosts } from './resolve/posts'
 import { resolveVariants } from './resolve/variants'
-import { resolveMenus } from './resolve/menus'
+import { resolveMenus, ensureSystemPageLink } from './resolve/menus'
 import { resolveSettings, resolveShopSettings } from './resolve/settings'
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
 import { buildSearchIndex, resolveSearchFields } from './search'
@@ -147,7 +147,14 @@ export async function buildCmsData(
       ? resolvePosts(rawPosts, ctx, permalinks, resolve.module, resolve.post)
       : []
 
-    const menus = resolveMenus(rawMenus, ctx, resolve.menuItem)
+    const orderWithdrawUrl = features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/` : '#'
+    const systemUrls = { orderWithdraw: orderWithdrawUrl }
+
+    const menus = resolveMenus(rawMenus, ctx, resolve.menuItem, systemUrls)
+    ensureSystemPageLink(menus, 'orderWithdraw', {
+      main:   (rawSettings?.mainMenus   ?? []).map((m: any) => m._ref),
+      footer: (rawSettings?.footerMenus ?? []).map((m: any) => m._ref),
+    }, ctx, systemUrls)
 
     const urlMap: Record<string, string> = {}
     const docMap: Record<string, any> = {}
@@ -191,7 +198,7 @@ export async function buildCmsData(
       newsletterConfirmSuccessUrl:     features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterConfirmSuccess}/` : '#',
       newsletterUnsubscribeUrl:        features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribe}/` : '#',
       newsletterUnsubscribeSuccessUrl: features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribeSuccess}/` : '#',
-      orderWithdrawUrl:        features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/` : '#',
+      orderWithdrawUrl,
       orderWithdrawSuccessUrl: features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
       searchIndex: extensions.search
         ? buildSearchIndex(products, extensions.search, locale, {

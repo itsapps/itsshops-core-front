@@ -38,6 +38,13 @@ Rule of thumb: `core/`, `misc/`, and `layouts/` are internal/protected (see abov
 and the top-level `pages/` / `macros/` are the customer surface. `pages/` is split by `buildMode`
 (`standard` / `preview` / `maintenance`).
 
+**Menu-rendering overrides** (customer `header.njk`/`footer.njk`/menu partials) branch on
+`item.linkType` and must handle all four types. `system` (fixed core routes such as the withdrawal
+form, see data-layer.md → "Menus & system links") renders like an internal link: `href="{{ item.url }}"`,
+no `rel`, `{{ item.url | linkActiveState | safe }}` for `aria-current`. An override without that
+branch silently omits the link, including the guaranteed Widerruf footer link. Don't hardcode that
+link in footers; core adds it.
+
 `npm run dev` runs `scripts/watch-templates.mjs` alongside tsup so template edits propagate to
 linked consumers without a full rebuild.
 

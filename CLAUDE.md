@@ -42,7 +42,7 @@ eleventyConfig.addPlugin(shopCoreFrontendPlugin, config)   // config: type Confi
 ```bash
 npm run build   # tsup → dist/
 npm run dev     # tsup --watch + watch-templates.mjs (consumers npm link this)
-npm run test    # vitest (netlify commerce logic has real unit tests)
+npm run test    # vitest (`src/**/__tests__/` — netlify commerce logic, data-layer menus)
 ```
 
 No dev server here — develop against a consumer project that has `npm link`ed this package.

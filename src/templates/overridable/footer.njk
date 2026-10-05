@@ -22,6 +22,10 @@
                     <li>
                       <a href="{{ item.internal._id | pageUrl }}" class="footer-nav__link">{{ item.title or (item.internal._id | docById).title }}</a>
                     </li>
+                  {%- elif item.linkType == 'system' and item.url -%}
+                    <li>
+                      <a href="{{ item.url }}" class="footer-nav__link" {{ item.url | linkActiveState | safe }}>{{ item.title }}</a>
+                    </li>
                   {%- elif item.linkType == 'external' -%}
                     <li>
                       <a href="{{ item.url }}" class="footer-nav__link" rel="noopener noreferrer">{{ item.title }}</a>

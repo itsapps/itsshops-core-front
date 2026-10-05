@@ -150,9 +150,12 @@ export type ResolvedBundleItem = {
 export type ResolvedMenuItem = {
   _key: string
   title: string
-  linkType: 'internal' | 'external' | 'submenu'
+  linkType: 'internal' | 'external' | 'submenu' | 'system'
+  /** External URL, or the resolved route for `linkType: 'system'`. */
   url: string | null
   internal: { _id: string; _type: string; slug: string } | null
+  /** Fixed core route this item links to (`linkType: 'system'`), e.g. `'orderWithdraw'`. */
+  systemPage: string | null
   children: ResolvedMenuItem[]
   // extended fields land here at runtime (e.g. images from Jurtschitsch)
   [key: string]: unknown

@@ -108,6 +108,25 @@ each derived from `urlMap`, `permalinks`, or `userPaths`, and **feature-gated to
 Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read these directly
 (e.g. `cms[locale].checkoutUrl`) instead of constructing URLs.
 
+## Menus & system links (`src/data/resolve/menus.ts`)
+
+A `menuItem` has a `linkType`: `internal` (doc ref), `external` (`url`), `submenu` (`children`), or
+`system`, meaning a **fixed core route** that isn't a document. It is named by `systemPage`, which is
+currently only `orderWithdraw` (the Widerruf form). In the per-locale loop, `resolveMenus` gets a
+`systemUrls` map (`systemPage` → URL, `'#'` when the page's feature is off). For a system item it sets
+`url` from that map, and `title` falls back to `trans('staticPages.<systemPage>.title')`. The item is
+**dropped** when its URL is missing or `'#'`, so a disabled feature never renders a dead link.
+
+`ensureSystemPageLink(menus, 'orderWithdraw', { main, footer }, …)` runs right after. If none of the
+rendered menus (settings' `mainMenus` + `footerMenus`, nested children included) links to the
+withdrawal page, it **appends** a system item to the last footer menu. The withdrawal form must always
+be reachable (legal requirement), and this works for customer footer overrides too. Rationale:
+[../decisions/withdrawal-link-as-menu-system-link.md](../decisions/withdrawal-link-as-menu-system-link.md).
+
+To add a system page: add it to `systemPages` in core-back's `menuItem.ts` (with its feature), add
+its URL to `systemUrls` in `resolver.ts`, and make sure a `staticPages.<name>.title` translation
+exists. Tests: `src/data/__tests__/menus.test.ts`.
+
 ## Filter groups (`src/data/resolve/filters.ts`)
 
 Variant filter attributes accumulate during `resolveVariants` and `buildFilterGroups(acc)` emits the
