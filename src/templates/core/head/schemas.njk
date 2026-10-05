@@ -1,8 +1,10 @@
 {%- set _locale   = page.lang or coreConfig.defaultLocale -%}
 {%- set _settings = cms[_locale].settings -%}
 
-{# WebSite schema — always present when baseUrl is known #}
+{# WebSite schema — present when baseUrl is known, except on noindex pages #}
+{%- if not noindex %}
 {{ _settings | webSiteSchema | safe }}
+{%- endif %}
 {# Page-type schema — driven by pageDoc set in each page template #}
 {%- if pageDoc and coreConfig.baseUrl -%}
   {{ pageDoc | pageSchema(_settings) | safe }}

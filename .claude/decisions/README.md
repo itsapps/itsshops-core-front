@@ -18,3 +18,5 @@ alternative was rejected, a constraint discovered the hard way.
   (for cross-ref resolution) but renders only the previewed one.
 - [withdrawal-link-as-menu-system-link.md](withdrawal-link-as-menu-system-link.md) — Widerruf link is
   a `system` menu link + guaranteed footer fallback, not a page module (fixed route, CSP, legal).
+- [noindex-pages-minimal-head.md](noindex-pages-minimal-head.md) — page-level `noindex` pages skip
+  canonical/hreflang/og/twitter + WebSite/Organization JSON-LD (keyed on the page flag, not site-wide).

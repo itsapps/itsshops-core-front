@@ -50,6 +50,9 @@ link in footers; core adds it.
 key as its `<h1>`); `core/head/seo.njk` falls back to `titleKey | trans` for `<title>`, and
 header overrides should do the same wherever they show `pageDoc.title`. A new system page must
 set `titleKey` too, or it gets only the site name as its title.
+These pages are also `noindex: true`, which gives them a **minimal head**: no canonical, hreflang,
+og/twitter tags or WebSite/Organization JSON-LD (only the page's own flag counts, not site-wide
+`doIndexPages`). Why: `decisions/noindex-pages-minimal-head.md`.
 
 `npm run dev` runs `scripts/watch-templates.mjs` alongside tsup so template edits propagate to
 linked consumers without a full rebuild.
