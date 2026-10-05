@@ -57,6 +57,11 @@ npm offers:
 
 That caveat in step 2 is the one thing to stay aware of; otherwise the hash edit is fine and fast.
 
+**Local `node_modules` gotcha:** after a hash-only edit, `npm install` in a clone that already has
+core installed (not `npm link`ed) does **not** refetch it. It records the new commit but keeps the
+old files. To actually get the new core locally: `rm -rf node_modules/@itsapps/itsshops-core-*`,
+then `npm install` (the lockfile stays unchanged).
+
 ### Going live (production) — use a git tag
 
 When a project goes live, pin core to a **git tag** instead of a floating commit, in `package.json`:
