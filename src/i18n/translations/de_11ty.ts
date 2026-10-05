@@ -31,7 +31,8 @@ export default {
     close: "Schließen",
     ariaClose: "Warenkorb schließen",
     empty: "Dein Warenkorb ist leer.",
-    total: "Gesamtsumme",
+    subtotal: "Zwischensumme",
+    subtotalNote: "Inkl. MwSt. Versandkosten und Gesamtbetrag werden an der Kasse berechnet.",
     removeProduct: "Löschen",
     ariaRemoveProduct: "Aus dem Warenkorb löschen",
     counter: {
@@ -43,7 +44,6 @@ export default {
     toCheckout: "Zur Kasse",
 
     // ariaQuantity: "Menge",
-    // subtotal: "Zwischensumme",
     // tax: "Inkludierte Steuern",
     // shipping: "Versand",
     // discount: "Ermäßigung",

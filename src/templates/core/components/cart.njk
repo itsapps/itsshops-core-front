@@ -35,9 +35,10 @@
 
     <div class="cart-sidebar__footer">
       <div class="cart-sidebar__total-row">
-        <span class="cart-sidebar__total-label">{{ 'cart.total' | trans }}</span>
+        <span class="cart-sidebar__total-label">{{ 'cart.subtotal' | trans }}</span>
         <span class="cart-sidebar__total-amount" data-cart-total></span>
       </div>
+      <p class="cart-sidebar__total-note">{{ 'cart.subtotalNote' | trans }}</p>
       <a href="{{ cms[_locale].checkoutUrl }}" class="cart-sidebar__checkout" data-cart-checkout-link>
         {{ 'cart.toCheckout' | trans }}
       </a>

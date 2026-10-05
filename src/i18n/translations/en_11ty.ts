@@ -31,7 +31,8 @@ export default {
     close: "Close",
     ariaClose: "Close shopping cart",
     empty: "Your cart is empty.",
-    total: "Total",
+    subtotal: "Subtotal",
+    subtotalNote: "Incl. VAT. Shipping and total are calculated at checkout.",
     removeProduct: "Remove",
     ariaRemoveProduct: "Remove from cart",
     counter: {
@@ -43,7 +44,6 @@ export default {
     toCheckout: "Proceed to checkout",
 
     // ariaQuantity: "Quantity",
-    // subtotal: "Subtotal",
     // tax: "Tax included",
     // shipping: "Shipping",
     // discount: "Discount",
