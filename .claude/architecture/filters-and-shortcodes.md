@@ -12,7 +12,8 @@ Usage: `{{ value | filterName(args) }}`.
 | Filter | Purpose |
 |---|---|
 | `trans(key, params?)` | Translate `key` at the current page locale (`this.page.lang`). See [i18n.md](i18n.md). |
-| `nl2br` | Newlines → `<br>`. |
+| `nl2br` | Newlines → `<br>` (does **not** escape — trusted text only). |
+| `paragraphs` | Plain text → escaped HTML: blank lines → `<p>`s, single newlines → `<br>`. Use for editor text (e.g. `product.description`) with `\| safe`. |
 | `truncate(n)` | Shorten a string. |
 | `slugify` | URL-slug a string. |
 | `postalCode` | Format a postal code. |

@@ -470,6 +470,21 @@
 {% endmacro %}
 
 
+{# ─── Description ─────────────────────────────────────────────────────────────
+ # The editor's plain-text description (paragraphs), else — for wines — the VinoFact
+ # description (HTML from VinoFact).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__description")
+ #}
+{% macro productDescription(product, class="product__description") %}
+{%- if product.description %}
+  <div class="{{ class }}">{{ product.description | paragraphs | safe }}</div>
+{%- elif product.wine and product.wine.description %}
+  <div class="{{ class }}">{{ product.wine.description | safe }}</div>
+{%- endif %}
+{% endmacro %}
+
 {# ─── Specifications ──────────────────────────────────────────────────────────
  # Renders a <dl> of the editor-entered label/value lines ("Material: 100% Baumwolle"),
  # for any product kind. Uses the variant's own list, else the product's (resolved).

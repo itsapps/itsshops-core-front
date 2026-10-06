@@ -200,6 +200,20 @@ function countryList(locale: string): Array<{ code: string; name: string }> {
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 }
 
+/**
+ * Plain text → HTML paragraphs: escapes the text, blank lines separate <p>s, single newlines
+ * become <br>. Safe for editor text — pipe through | safe in templates.
+ */
+function paragraphs(text: string): string {
+  if (!text) return ''
+  return escapeHTML(text)
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${p.replace(/\r?\n/g, '<br>')}</p>`)
+    .join('')
+}
+
 /** Convert newlines to <br> — pipe result through | safe in templates */
 function nl2br(text: string): string {
   if (!text) return ''
@@ -282,6 +296,7 @@ export const createFilters = (ctx: CoreContext) => {
     })
   }) as any)
   eleventyConfig.addFilter('nl2br', nl2br)
+  eleventyConfig.addFilter('paragraphs', paragraphs)
   eleventyConfig.addFilter('postalCode', postalCode as any)
   eleventyConfig.addFilter('countryName', function (code: string) {
     return countryName(code, this.page?.lang || config.defaultLocale)

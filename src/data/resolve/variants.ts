@@ -410,6 +410,7 @@ export function resolveVariants(
           },
         }]
       }),
+      description:    ctx.resolveString(variant.description) || ctx.resolveString(product.description) || null,
       // Variant's own list replaces the product's (no merge); incomplete lines are dropped.
       specifications: ((variant.specifications?.length ? variant.specifications : product.specifications) ?? [])
         .map((s: any) => ({ label: ctx.resolveString(s.label), value: ctx.resolveString(s.value) }))
@@ -425,7 +426,10 @@ export function resolveVariants(
       ...(resolveHooks?.variant ? resolveHooks.variant(variant, ctx) : {}),
     }
 
-    // Wine description fallback for SEO meta description
+    // Description fallback for SEO meta description: own description first, then the wine's
+    if (!resolved.seo.metaDescription && resolved.description) {
+      resolved.seo = { ...resolved.seo, metaDescription: resolved.description.replace(/\s+/g, ' ').trim() }
+    }
     if (!resolved.seo.metaDescription && resolved.wine) {
       const wineDesc = (resolved.wine as any).description
       if (typeof wineDesc === 'string' && wineDesc) {

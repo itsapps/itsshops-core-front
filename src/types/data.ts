@@ -271,6 +271,9 @@ export type ResolvedVariant = {
   /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
   variantAxes: ResolvedVariantAxis[]
   bundleItems: ResolvedBundleItem[]
+  /** Editor plain-text description (variant's, else product's); null when unset. For wines it takes
+   *  precedence over `wine.description` (VinoFact HTML). Render with the `paragraphs` filter. */
+  description: string | null
   /** Label/value lines ("Material: 100% Baumwolle") — the variant's own list, else the product's. */
   specifications: ResolvedSpecification[]
   product: { _id: string; title: string }

@@ -1,5 +1,5 @@
 {% from "macros/product.njk" import addToCartButton, productPrice, productStatus, qtyControl, productSiblings,
-  productWineDetails, productSpecifications, productBundleItems, productOptions,
+  productWineDetails, productDescription, productSpecifications, productBundleItems, productOptions,
   productCategories, productManufacturers %}
 
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
@@ -19,6 +19,8 @@
         <p class="product__sku">{{ product.sku }}</p>
       {%- endif %}
     </header>
+
+    {{ productDescription(product) }}
 
     {{ productSiblings(product) }}
 

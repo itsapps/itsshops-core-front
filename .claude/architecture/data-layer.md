@@ -90,6 +90,10 @@ The largest resolver. `resolveVariants` does, per variant:
   fields (locale-resolved) are merged onto the resolved wine.
 - **Filter attributes**: accumulated into `filterAcc` (`buildFilterAttributes` / `accumulateFilterGroups`)
   to later form `filterGroups`.
+- **Description**: `description` (core-back `i18nText`, any kind) → plain string or `null`, variant's
+  else product's. Rendered by the `productDescription` macro with the `paragraphs` filter; for wines
+  it beats `wine.description` (VinoFact), which is the macro's fallback. Also the first fallback for
+  `seo.metaDescription` (whitespace collapsed), before the wine description.
 - **Specifications**: `specifications` (core-back `productSpecification` label/value pairs, any
   kind) → `ResolvedSpecification[]` of plain strings; the variant's non-empty list replaces the
   product's, lines missing a label or value are dropped. Rendered by the `productSpecifications`
