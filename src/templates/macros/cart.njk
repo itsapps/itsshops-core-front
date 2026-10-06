@@ -1,0 +1,54 @@
+{# ─── Cart macros ─────────────────────────────────────────────────────────────
+ #
+ # Markup for client-rendered cart lines and totals. Wrap a call in a <template id="…">;
+ # scripts clone it and fill it (`cart-item-render.ts` → fillCartItem,
+ # `order-totals.ts` → renderTotals).
+ #
+ # Usage (import WITH context — `trans` needs page.lang):
+ #   {% from "macros/cart.njk" import cartItem, totalsRow with context %}
+ #
+ #}
+
+{# ─── Cart item row ───────────────────────────────────────────────────────────
+ # @param editable   quantity −/+ and remove buttons (cart sidebar, checkout); false renders the
+ #                   quantity as text (order thanks)
+ # @param stockNote  slot for the "only N available" note (checkout)
+ #}
+{% macro cartItem(editable=true, stockNote=false) %}
+<div class="cart-item{{ ' cart-item--static' if not editable }}" data-cart-item>
+  <img src="" alt="" class="cart-item__image" loading="lazy" data-slot="image">
+  <div class="cart-item__body">
+    <a href="#" class="cart-item__title" data-slot="title"></a>
+    <span class="cart-item__subtitle" data-slot="subtitle" hidden></span>
+    <div class="cart-item__row">
+      {%- if editable %}
+      <div class="cart-item__qty" data-qty-control>
+        <button type="button" class="cart-item__qty-btn" data-qty-decrease aria-label="{{ 'cart.counter.decreaseQuantity' | trans }}">−</button>
+        <output class="cart-item__qty-count" data-qty-value aria-live="polite">1</output>
+        <button type="button" class="cart-item__qty-btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
+      </div>
+      {%- else %}
+      <span class="cart-item__qty"><span class="cart-item__qty-count" data-qty-value>1</span> ×</span>
+      {%- endif %}
+      <span class="cart-item__price" data-slot="price"></span>
+      {%- if editable %}
+      <button type="button" class="cart-item__remove" data-cart-remove aria-label="{{ 'cart.ariaRemoveProduct' | trans }}"></button>
+      {%- endif %}
+    </div>
+    {%- if stockNote %}
+    <span class="cart-item__stock-note" data-slot="stock-note" aria-live="polite" hidden></span>
+    {%- endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{# ─── Totals row ──────────────────────────────────────────────────────────────
+ # One <dt>/<dd> pair for a <dl class="checkout-totals">. The script adds the modifier class
+ # (--discount, --vat, --total) and fills the coupon code slot for discount rows.
+ #}
+{% macro totalsRow() %}
+<div class="checkout-totals__row">
+  <dt><span data-slot="label"></span> <code data-slot="code" hidden></code></dt>
+  <dd data-slot="value"></dd>
+</div>
+{% endmacro %}

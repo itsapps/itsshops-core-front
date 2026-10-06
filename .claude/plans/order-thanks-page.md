@@ -1,6 +1,7 @@
 # Plan — order thanks page with order summary
 
-Status: **planned** (2026-10-06). Origin: Jurtschitsch — the thanks page is nearly empty and its
+Status: **in progress** — step 1 done (core `9efc28c`), step 0 done (2026-10-06); next: steps 2–4.
+Planned 2026-10-06. Origin: Jurtschitsch — the thanks page is nearly empty and its
 long title ("Vielen Dank für Deine Bestellung!") shows up as the top-nav page title.
 
 When this ships, move the durable parts into `.claude/architecture/commerce-and-netlify.md`

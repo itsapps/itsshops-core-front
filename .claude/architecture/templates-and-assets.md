@@ -165,6 +165,17 @@ The browser modules in `src/scripts/`, grouped by feature:
 - **browse**: `product-filter.ts`, `search.ts`, `carousel.ts`, `menu.ts`, `gallery.ts`,
   `lightbox.ts`
 - **misc**: `age-gate.ts`, `captcha.ts`, `order-thanks.ts`, `order-withdraw.ts`, `inert-lock.ts`
+- **shared rendering**: `template-utils.ts` (clone `<template>`, fill `data-slot`s),
+  `price.ts` (`createPriceFormatter` — the one cents → string formatter for cart, checkout, search),
+  `cart-item-render.ts` (`fillCartItem`), `order-totals.ts` (`renderTotals` / `renderSubtotal`).
+
+**Cart lines & totals** are client-rendered from `<template>`s whose markup comes from
+`macros/cart.njk`: `cartItem({ editable, stockNote })` (editable = qty −/+ and remove; read-only =
+quantity as text) and `totalsRow()` (a `<dt>/<dd>` pair inside `<dl class="checkout-totals">`).
+Import them `with context` — `trans` needs `page.lang`, otherwise labels fall back to the default
+locale. Cart sidebar (`cart-item-template`) and checkout (`checkout-item-template`,
+`checkout-totals-row-template`) share them; don't add another hand-written copy. Values are filled
+via `textContent` only (coupon codes, titles are user/editor input).
 
 **Product filter panel** (`product-filter.ts`): `[data-toggle-products-filter]` toggles `is-open` on
 `[data-filter-panel]` and syncs `aria-expanded` — by default a plain inline disclosure (tinhof,

@@ -1,5 +1,7 @@
 import { addItem, removeItem, updateQuantity, getCart, getCount, getTotal } from './cart-store'
-import { cloneTemplate, fillSlot, fillImageSlot, fillLinkSlot } from './template-utils'
+import { cloneTemplate } from './template-utils'
+import { fillCartItem } from './cart-item-render'
+import { createPriceFormatter } from './price'
 import { lockInertOutside } from './inert-lock'
 
 let cartSidebar: HTMLElement | null = null
@@ -8,19 +10,9 @@ let cartLock: { release: () => void } | null = null
 let cartItemsEl: HTMLElement | null = null
 let cartTotalEl: HTMLElement | null = null
 let cartEmptyEl: HTMLElement | null = null
-let locale = 'de'
-let currency = 'EUR'
-let currencyLabel: string | undefined
+let formatPrice = createPriceFormatter({ locale: 'de', currency: 'EUR' })
 let imgWidth = 80
 let imgHeight = 80
-
-function formatPrice(cents: number): string {
-  if (currencyLabel) {
-    const n = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)
-    return `${n} ${currencyLabel}`
-  }
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(cents / 100)
-}
 
 function updateCount(): void {
   const count = getCount()
@@ -47,13 +39,7 @@ function renderItems(): void {
 
     el.dataset.cartItemId = item.id
 
-    fillImageSlot(el, 'image', item.imageUrl, imgWidth, imgHeight)
-    fillLinkSlot(el, 'title', item.title, item.url)
-    if (item.subtitle) fillSlot(el, 'subtitle', item.subtitle)
-    fillSlot(el, 'price', formatPrice(item.price * item.quantity))
-
-    const qtyValue = el.querySelector<HTMLElement>('[data-qty-value]')
-    if (qtyValue) qtyValue.textContent = String(item.quantity)
+    fillCartItem(el, item, formatPrice, { width: imgWidth, height: imgHeight })
 
     el.querySelector('[data-qty-decrease]')?.addEventListener('click', () => {
       updateQuantity(item.id, item.quantity - 1)
@@ -110,9 +96,11 @@ export function initCart(): void {
   cartTotalEl = cartSidebar.querySelector('[data-cart-total]')
   cartEmptyEl = cartSidebar.querySelector('[data-cart-empty]')
 
-  locale        = document.documentElement.lang || 'de'
-  currency      = cartSidebar.dataset.currency || 'EUR'
-  currencyLabel = cartSidebar.dataset.currencyLabel || undefined
+  formatPrice   = createPriceFormatter({
+    locale: document.documentElement.lang || 'de',
+    currency: cartSidebar.dataset.currency || 'EUR',
+    currencyLabel: cartSidebar.dataset.currencyLabel || undefined,
+  })
   imgWidth      = parseInt(cartSidebar.dataset.cartImageWidth || '80', 10)
   imgHeight     = parseInt(cartSidebar.dataset.cartImageHeight || '80', 10)
 

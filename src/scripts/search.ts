@@ -1,13 +1,13 @@
 import MiniSearch from 'minisearch'
 import type { SearchItem } from '../types/data'
+import { createPriceFormatter } from './price'
 
 type SearchResult = SearchItem & { score: number }
 
 let miniSearch: MiniSearch | null = null
 let indexUrl: string | null = null
 let searchFields: string[] = ['title']
-let currency = 'EUR'
-let currencyLabel: string | undefined
+let formatPrice = createPriceFormatter({ currency: 'EUR' })
 
 async function loadIndex(): Promise<void> {
   if (miniSearch || !indexUrl) return
@@ -25,15 +25,6 @@ async function loadIndex(): Promise<void> {
     },
   })
   miniSearch.addAll(entries)
-}
-
-function formatPrice(cents: number): string {
-  const locale = document.documentElement.lang || undefined
-  if (currencyLabel) {
-    const n = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)
-    return `${n} ${currencyLabel}`
-  }
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(cents / 100)
 }
 
 function renderImage(result: SearchResult): string {
@@ -149,8 +140,11 @@ export function init(): void {
 
   indexUrl = input.dataset.searchIndexUrl ?? null
   searchFields = JSON.parse(input.dataset.searchFields ?? '["title"]')
-  currency = input.dataset.currency || 'EUR'
-  currencyLabel = input.dataset.currencyLabel || undefined
+  formatPrice = createPriceFormatter({
+    locale: document.documentElement.lang || undefined,
+    currency: input.dataset.currency || 'EUR',
+    currencyLabel: input.dataset.currencyLabel || undefined,
+  })
 
   // ── Modal open/close ──────────────────────────────────────────────────────
 
