@@ -173,6 +173,10 @@ export const actionsField = (
 /** refsField — projects an array of references to a plain string[] of IDs without dereferencing */
 export const refsField = (fieldName: string) => `"${fieldName}": ${fieldName}[]._ref`
 
+/** Product/variant specifications — label/value pairs (`productSpecification`), both i18n. */
+export const specificationsField = (fieldName = 'specifications') =>
+  `"${fieldName}": ${fieldName}[]{ ${i18nStringField('label')}, ${i18nStringField('value')} }`
+
 // ---------------------------------------------------------------------------
 // Shared document fragments
 // ---------------------------------------------------------------------------

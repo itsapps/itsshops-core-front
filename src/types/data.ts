@@ -132,6 +132,11 @@ export type ResolvedVariantAxis = {
   }[]
 }
 
+export type ResolvedSpecification = {
+  label: string
+  value: string
+}
+
 export type ResolvedBundleItem = {
   quantity: number
   variant: {
@@ -266,6 +271,8 @@ export type ResolvedVariant = {
   /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
   variantAxes: ResolvedVariantAxis[]
   bundleItems: ResolvedBundleItem[]
+  /** Label/value lines ("Material: 100% Baumwolle") — the variant's own list, else the product's. */
+  specifications: ResolvedSpecification[]
   product: { _id: string; title: string }
   siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string; price: number | null; volume: number | null; vintage: string | null }>
   /** URL-safe filter attributes for client-side filtering. Key = filter group key, value = slugified values. */

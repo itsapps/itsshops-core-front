@@ -76,6 +76,7 @@ export function buildProductQuery(extensions?: Config['extensions']): string {
   compareAtPrice,
   ${proj.i18nAltImageField('image')},
   seo ${proj.seo},
+  ${proj.specificationsField()},
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},
   "taxCategory": taxCategory{ _ref }${extraFields('product', extensions)}
@@ -95,6 +96,7 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   compareAtPrice,
   ${proj.i18nAltImageField('image')},
   seo ${proj.seo},
+  ${proj.specificationsField()},
   stock,
   "categories": categories[]->${proj.category},
   "manufacturers": manufacturers[]->${proj.manufacturer},

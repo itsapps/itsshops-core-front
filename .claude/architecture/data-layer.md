@@ -90,6 +90,10 @@ The largest resolver. `resolveVariants` does, per variant:
   fields (locale-resolved) are merged onto the resolved wine.
 - **Filter attributes**: accumulated into `filterAcc` (`buildFilterAttributes` / `accumulateFilterGroups`)
   to later form `filterGroups`.
+- **Specifications**: `specifications` (core-back `productSpecification` label/value pairs, any
+  kind) → `ResolvedSpecification[]` of plain strings; the variant's non-empty list replaces the
+  product's, lines missing a label or value are dropped. Rendered by the `productSpecifications`
+  macro (`macros/product.njk`) in the core product container, after the kind-specific details.
 - **Resolve hook**: `extensions.resolve.variant` / `.product` output is merged in last.
 
 ## `CmsLocaleData` assembly & well-known URLs

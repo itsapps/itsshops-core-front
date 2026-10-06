@@ -410,6 +410,10 @@ export function resolveVariants(
           },
         }]
       }),
+      // Variant's own list replaces the product's (no merge); incomplete lines are dropped.
+      specifications: ((variant.specifications?.length ? variant.specifications : product.specifications) ?? [])
+        .map((s: any) => ({ label: ctx.resolveString(s.label), value: ctx.resolveString(s.value) }))
+        .filter((s: { label: string; value: string }) => s.label && s.value),
       product: {
         _id:   product._id,
         title: ctx.resolveString(product.title),

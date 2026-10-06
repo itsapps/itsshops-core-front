@@ -469,6 +469,27 @@
 {%- endif %}
 {% endmacro %}
 
+
+{# ─── Specifications ──────────────────────────────────────────────────────────
+ # Renders a <dl> of the editor-entered label/value lines ("Material: 100% Baumwolle"),
+ # for any product kind. Uses the variant's own list, else the product's (resolved).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__specifications")
+ #}
+{% macro productSpecifications(product, class="product__specifications") %}
+{%- if product.specifications and product.specifications.length %}
+  <dl class="{{ class }}">
+    {%- for spec in product.specifications %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ spec.label }}</dt>
+        <dd class="{{ class }}__value">{{ spec.value }}</dd>
+      </div>
+    {%- endfor %}
+  </dl>
+{%- endif %}
+{% endmacro %}
+
 {% macro productFilterResetButton(locale) %}
   <button type="button" class="product-filters__reset" data-filter-reset hidden>
     {{ "filters.reset" | trans( { lng: locale }) }}

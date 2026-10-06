@@ -1,5 +1,5 @@
 {% from "macros/product.njk" import addToCartButton, productPrice, productStatus, qtyControl, productSiblings,
-  productWineDetails, productBundleItems, productOptions,
+  productWineDetails, productSpecifications, productBundleItems, productOptions,
   productCategories, productManufacturers %}
 
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
@@ -52,6 +52,8 @@
     {%- if product.kind == "physical" or product.kind == "digital" %}
       {{ productOptions(product) }}
     {%- endif %}
+
+    {{ productSpecifications(product) }}
 
     {{ productCategories(product) }}
     {{ productManufacturers(product) }}
