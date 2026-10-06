@@ -326,13 +326,10 @@ export default {
       description: "Your orders",
     },
     orderThankYou: {
-      title: "Thank you for your order!",
+      title: "Order complete",
       description: "Thank you for your order!",
+      heading: "Thank you for your order!",
       text: "Your order has been received and is now being processed.",
-      submit: {
-        text: "Load order",
-        loadingText: "Loading order ...",
-      },
     },
     checkout: {
       title: "Checkout",

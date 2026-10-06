@@ -326,13 +326,10 @@ export default {
       description: "Deine Bestellungen",
     },
     orderThankYou: {
-      title: "Vielen Dank für Deine Bestellung!",
+      title: "Bestellung abgeschlossen",
       description: "Vielen Dank für Deine Bestellung!",
+      heading: "Vielen Dank für Deine Bestellung!",
       text: "Deine Bestellung ist bei uns eingegangen und wird nun bearbeitet.",
-      submit: {
-        text: "Bestellung laden",
-        loadingText: "Bestellung wird geladen ...",
-      },
     },
     checkout: {
       title: "Kasse",

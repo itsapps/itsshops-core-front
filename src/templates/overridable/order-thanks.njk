@@ -1,6 +1,6 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
 <article class="static-page order-thanks" data-order-thanks data-checkout-url="{{ cms[_locale].checkoutUrl }}">
-  <h1>{{ 'staticPages.orderThankYou.title' | trans }}</h1>
+  <h1>{{ 'staticPages.orderThankYou.heading' | trans }}</h1>
   <p>{{ 'staticPages.orderThankYou.text' | trans }}</p>
   <p><a href="{{ cms[_locale].shopUrl }}">{{ 'product.allProducts' | trans }}</a></p>
 </article>
