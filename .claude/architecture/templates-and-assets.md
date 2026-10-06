@@ -142,6 +142,11 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
 `src/gallery/render.ts` renders gallery markup; the interactive lightbox is `src/scripts/lightbox.ts`
 + `src/scripts/gallery.ts`.
 
+The embla gallery partials `overridable/gallery/main.njk` + `thumbs.njk` are driven by `_gallery*`
+template variables set by the including template (`_galleryImages`, `_galleryImage`,
+`_galleryImageSize`, `_galleryThumbSize`, …; each partial's header lists them). Thumbs render only
+from `_galleryThumbsMin` images up (default 2; set 1 to show a thumb for a single image).
+
 ## Client-side JS (`src/scripts/`, `src/config/js.ts`)
 
 `setupJs` registers a `.ts` Eleventy extension that **esbuild-bundles the deferred entry** to

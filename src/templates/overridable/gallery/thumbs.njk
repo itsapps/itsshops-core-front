@@ -2,9 +2,12 @@
   Expects:
     _galleryImages    — array of resolved images
     _galleryThumbSize — imageSizes preset for thumbnails
-  Renders nothing when fewer than 2 images.
+    _galleryThumbsMin — optional minimum image count to render thumbs (default 2;
+                        set 1 to show a thumb even for a single image)
+  Renders nothing when there are fewer images than that.
 #}
-{%- set _images = _galleryImages if (_galleryImages and _galleryImages.length > 1) else null -%}
+{%- set _thumbsMin = _galleryThumbsMin or 2 -%}
+{%- set _images = _galleryImages if (_galleryImages and _galleryImages.length >= _thumbsMin) else null -%}
 
 {%- if _images -%}
 <div class="embla-thumbs">
