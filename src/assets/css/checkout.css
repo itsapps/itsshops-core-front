@@ -17,10 +17,13 @@
   &__section {
     border: none;
     padding: 0;
+    margin-inline: 0;           /* UA default 2px would offset it from the page edge */
+    min-inline-size: 0;
     margin-block-end: var(--space-s-m);
   }
 
   &__section legend {
+    padding: 0;                 /* UA default 2px inline padding */
     font-weight: bold;
     margin-block-end: var(--space-xs);
   }
