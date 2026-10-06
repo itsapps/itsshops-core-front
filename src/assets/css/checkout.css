@@ -248,3 +248,27 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+/* ─── Order thanks ─────────────────────────────────────────────────────────── */
+
+.order-thanks__section {
+  margin-block-start: 2rem;
+}
+
+.order-thanks__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-thanks__address {
+  font-style: normal;
+  white-space: pre-line;
+}
+
+.order-thanks__continue {
+  margin-block-start: 2rem;
+}

@@ -1,6 +1,56 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
-<article class="static-page order-thanks" data-order-thanks data-checkout-url="{{ cms[_locale].checkoutUrl }}">
-  <h1>{{ 'staticPages.orderThankYou.heading' | trans }}</h1>
-  <p>{{ 'staticPages.orderThankYou.text' | trans }}</p>
-  <p><a href="{{ cms[_locale].shopUrl }}">{{ 'product.allProducts' | trans }}</a></p>
+{%- from "macros/cart.njk" import cartItem, totalsRow with context -%}
+{#
+  Order thanks. Server-rendered generic content; scripts/order-thanks.ts reads Stripe's
+  redirect_status, shows the matching status text and fills the order summary from the checkout's
+  sessionStorage snapshot (scripts/order-snapshot.ts). Everything except the generic text starts
+  hidden. Placeholders %name% / %email% are replaced via textContent.
+#}
+<article
+  class="static-page order-thanks"
+  data-order-thanks
+  data-checkout-url="{{ cms[_locale].checkoutUrl }}"
+  data-currency="{{ coreConfig.units.price.currency | default('EUR') | upper }}"
+  {% if coreConfig.units.price.currencyLabel %}data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+  data-t-heading-named="{{ 'staticPages.orderThankYou.headingNamed' | trans({ name: '%name%' }) }}"
+  data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
+  data-t-shipping="{{ 'checkout.shipping' | trans }}"
+  data-t-total="{{ 'checkout.total' | trans }}"
+  data-t-vat="{{ 'checkout.vat' | trans }}"
+  data-t-vat-exempt="{{ 'checkout.vatExempt' | trans }}"
+  data-t-discount="{{ 'checkout.discount' | trans }}"
+>
+  <h1 data-order-thanks-heading>{{ 'staticPages.orderThankYou.heading' | trans }}</h1>
+
+  <p data-order-thanks-status="generic">{{ 'staticPages.orderThankYou.text' | trans }}</p>
+  <p data-order-thanks-status="succeeded" data-t-with-email="{{ 'staticPages.orderThankYou.succeededEmail' | trans({ email: '%email%' }) }}" hidden>{{ 'staticPages.orderThankYou.succeeded' | trans }}</p>
+  <p data-order-thanks-status="processing" data-t-with-email="{{ 'staticPages.orderThankYou.processingEmail' | trans({ email: '%email%' }) }}" hidden>{{ 'staticPages.orderThankYou.processing' | trans }}</p>
+
+  <section class="order-thanks__section order-thanks__summary" aria-labelledby="order-thanks-summary-title" data-order-thanks-summary hidden>
+    <h2 id="order-thanks-summary-title">{{ 'staticPages.orderThankYou.summary' | trans }}</h2>
+    <ul class="order-thanks__items" role="list" data-order-thanks-items></ul>
+    <dl class="checkout-totals" data-order-thanks-totals></dl>
+  </section>
+
+  <section class="order-thanks__section order-thanks__delivery" aria-labelledby="order-thanks-delivery-title" data-order-thanks-delivery hidden>
+    <h2 id="order-thanks-delivery-title">{{ 'staticPages.orderThankYou.delivery' | trans }}</h2>
+    <p class="order-thanks__shipping-method" data-slot="shipping-method" hidden></p>
+    <address class="order-thanks__address" data-slot="address" hidden></address>
+  </section>
+
+  <section class="order-thanks__section order-thanks__next" aria-labelledby="order-thanks-next-title" data-order-thanks-next hidden>
+    <h2 id="order-thanks-next-title">{{ 'staticPages.orderThankYou.nextStepsTitle' | trans }}</h2>
+    <p>{{ 'staticPages.orderThankYou.nextSteps' | trans }}</p>
+    {%- if coreConfig.features.shop.checkoutAgeConfirmation %}
+    <p>{{ 'staticPages.orderThankYou.nextStepsAgeRestricted' | trans }}</p>
+    {%- endif %}
+    {%- if cms[_locale].orderWithdrawUrl and cms[_locale].orderWithdrawUrl != '#' %}
+    <p><a href="{{ cms[_locale].orderWithdrawUrl }}">{{ 'staticPages.orderThankYou.withdraw' | trans }}</a></p>
+    {%- endif %}
+  </section>
+
+  <p class="order-thanks__continue"><a href="{{ cms[_locale].shopUrl }}">{{ 'product.allProducts' | trans }}</a></p>
+
+  <template id="order-thanks-item-template"><li>{{ cartItem(editable=false) }}</li></template>
+  <template id="order-thanks-totals-row-template">{{ totalsRow() }}</template>
 </article>

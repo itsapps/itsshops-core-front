@@ -15,6 +15,7 @@ import { CheckoutSummary } from './checkout-summary'
 import { CheckoutStripe } from './checkout-stripe'
 import { CheckoutExpress } from './checkout-express'
 import { CheckoutCoupon, type CouponLabels } from './checkout-coupon'
+import { buildOrderSnapshot, saveOrderSnapshot } from './order-snapshot'
 import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from '../shared/checkout-api'
 
 function dispatch(name: string, detail?: unknown): void {
@@ -343,6 +344,8 @@ export async function initCheckout(): Promise<void> {
             },
           )
           orderMetaId = response.orderMetaId
+          // Order summary for the thanks page (read back after the Stripe redirect).
+          saveOrderSnapshot(buildOrderSnapshot({ response, localCart: localCartMap, email, address, shippingMethodId }))
           return { clientSecret: response.clientSecret }
         } catch (err) {
           return { error: err instanceof Error ? err.message : 'Payment creation failed' }
@@ -457,6 +460,15 @@ export async function initCheckout(): Promise<void> {
 
       orderMetaId = response.orderMetaId
       summary.renderTotals(response)
+
+      // Order summary for the thanks page (read back after the Stripe redirect).
+      saveOrderSnapshot(buildOrderSnapshot({
+        response,
+        localCart: localCartMap,
+        email: form.getEmail(),
+        address: form.getShippingAddress(),
+        shippingMethodId: shipping.getSelectedId(),
+      }))
 
       // On success, confirmPayment redirects to returnUrl — code below only runs on error.
       // Cart is cleared on the order-thanks page (see scripts/order-thanks.ts).

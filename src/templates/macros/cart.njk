@@ -28,7 +28,7 @@
         <button type="button" class="cart-item__qty-btn" data-qty-increase aria-label="{{ 'cart.counter.increaseQuantity' | trans }}">+</button>
       </div>
       {%- else %}
-      <span class="cart-item__qty"><span class="cart-item__qty-count" data-qty-value>1</span> ×</span>
+      <span class="cart-item__qty"><span class="sr-only">{{ 'cart.counter.quantity' | trans }}: </span><span class="cart-item__qty-count" data-qty-value>1</span><span aria-hidden="true"> ×</span></span>
       {%- endif %}
       <span class="cart-item__price" data-slot="price"></span>
       {%- if editable %}

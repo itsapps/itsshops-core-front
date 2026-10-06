@@ -1,6 +1,7 @@
 # Plan — order thanks page with order summary
 
-Status: **in progress** — step 1 done (core `9efc28c`), step 0 done (2026-10-06); next: steps 2–4.
+Status: **in progress** — steps 0–4 done (2026-10-06); next: step 5 (order-status function,
+incl. the P4 pending marker, which moved there since only step 5 consumes it), then step 6.
 Planned 2026-10-06. Origin: Jurtschitsch — the thanks page is nearly empty and its
 long title ("Vielen Dank für Deine Bestellung!") shows up as the top-nav page title.
 

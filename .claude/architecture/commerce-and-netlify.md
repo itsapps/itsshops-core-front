@@ -118,6 +118,28 @@ key is the only one surfaced client-side.
 browser scripts and the functions, so request/response shapes and validation rules stay in sync. When
 changing an endpoint's payload, change it in `src/shared/` and both sides follow.
 
+## Checkout → Stripe → order thanks (client flow)
+
+1. Checkout submit (`scripts/checkout.ts`, also the express path) → `POST /api/payment/create` →
+   `clientSecret`. Right before `stripe.confirmPayment`, an **order snapshot** is written to
+   **sessionStorage** (`scripts/order-snapshot.ts`): items, totals, coupons, shipping method,
+   email, first name, shipping address — keyed to the PaymentIntent id. No phone, billing address,
+   client secret or `orderMetaId`.
+2. Stripe redirects to `orderThanksUrl` with `payment_intent`, `payment_intent_client_secret`,
+   `redirect_status`. `scripts/order-thanks.ts` reads them and **strips them from the URL**
+   (`history.replaceState`).
+3. By status: `succeeded` / `processing` → clear the cart, show the status text, render the
+   snapshot (only if PaymentIntent matches and < 30 min old; deleted on read); `failed` → back to
+   checkout, cart + snapshot kept; none → generic page. All values via `textContent`.
+4. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
+   never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
+   visitor's view and cart). Delayed methods (SEPA, `processing`) have no order/email/stock
+   reservation until they succeed and no failure handling; core doesn't restrict payment methods —
+   shop owners are told not to enable them.
+
+Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
+`macros/cart.njk`, see templates doc). Plan / remaining work: `.claude/plans/order-thanks-page.md`.
+
 ## Gating
 
 Checkout, users, and newsletter are feature-flagged (`shop.checkout`, `users`, `newsletter`). CSP /
