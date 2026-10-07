@@ -20,3 +20,10 @@ alternative was rejected, a constraint discovered the hard way.
   a `system` menu link + guaranteed footer fallback, not a page module (fixed route, CSP, legal).
 - [noindex-pages-minimal-head.md](noindex-pages-minimal-head.md) — page-level `noindex` pages skip
   canonical/hreflang/og/twitter + WebSite/Organization JSON-LD (keyed on the page flag, not site-wide).
+- [order-thanks-summary-from-session-snapshot.md](order-thanks-summary-from-session-snapshot.md) —
+  thanks-page summary from a sessionStorage snapshot; no server fetch of `orderMeta` (the link must
+  not become an access key to personal data).
+- [payment-methods-not-restricted-in-core.md](payment-methods-not-restricted-in-core.md) — Stripe
+  Dashboard decides payment methods; delayed methods (SEPA) unsupported by convention, not in code.
+- [no-first-last-name-guessing.md](no-first-last-name-guessing.md) — express checkout stores only the
+  full name; the Winenet export splits at export time.

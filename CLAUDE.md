@@ -18,6 +18,7 @@ this file stays the always-loaded router.
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |
 | Why a non-obvious choice was made | `.claude/decisions/` |
+| A multi-step feature still in progress (scope, decisions, remaining steps) | `.claude/plans/` |
 
 Keep these docs current: run `/update-docs` after any change that moves a path, adds a subsystem,
 or establishes a rule. See `~/.claude/commands/update-docs.md`.
@@ -42,7 +43,8 @@ eleventyConfig.addPlugin(shopCoreFrontendPlugin, config)   // config: type Confi
 ```bash
 npm run build   # tsup → dist/
 npm run dev     # tsup --watch + watch-templates.mjs (consumers npm link this)
-npm run test    # vitest (`src/**/__tests__/` — netlify commerce logic, data-layer menus)
+npm run test    # vitest (`src/**/__tests__/` — netlify functions/commerce logic, data-layer menus,
+                #   browser scripts; DOM tests opt in with `// @vitest-environment jsdom`)
 ```
 
 No dev server here — develop against a consumer project that has `npm link`ed this package.

@@ -41,7 +41,9 @@ repos' configs aligned.
 - `translations?: Record<string, any>` — per-locale overrides deep-merged over core (`common` /
   `shared` namespaces). See [i18n.md](i18n.md).
 - `permalinks?: Partial<Record<Locale, PermalinkTranslations>>` — per-locale URL **segments** for
-  content types (product/category/blog/page). (User/account/newsletter/withdraw segments live in
+  content types and the checkout: `product`, `category`, `blog`, `checkout`, `orderThanks`. Defaults
+  (`src/i18n/permalinks.ts`): de `produkte` / `kategorien` / `blog` / `kasse` / `danke`, en
+  `products` / `categories` / `blog` / `checkout` / `thank-you`. (User/account/newsletter/withdraw segments live in
   `translations.<locale>.shared.urlPaths` instead — see [i18n.md](i18n.md).)
 
 ### Data extensions

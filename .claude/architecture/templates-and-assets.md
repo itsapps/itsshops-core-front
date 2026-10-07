@@ -164,7 +164,10 @@ The browser modules in `src/scripts/`, grouped by feature:
 - **newsletter**: `newsletter-*.ts`
 - **browse**: `product-filter.ts`, `search.ts`, `carousel.ts`, `menu.ts`, `gallery.ts`,
   `lightbox.ts`
-- **misc**: `age-gate.ts`, `captcha.ts`, `order-thanks.ts`, `order-withdraw.ts`, `inert-lock.ts`
+- **order thanks** (flow in [commerce-and-netlify.md](commerce-and-netlify.md)): `order-thanks.ts`,
+  `order-snapshot.ts` (sessionStorage summary), `order-status.ts` (order-number lookup),
+  `pending-payment.ts` (cart cleanup marker)
+- **misc**: `age-gate.ts`, `captcha.ts`, `order-withdraw.ts`, `inert-lock.ts`
 - **shared rendering**: `template-utils.ts` (clone `<template>`, fill `data-slot`s),
   `price.ts` (`createPriceFormatter` — the one cents → string formatter for cart, checkout, search),
   `cart-item-render.ts` (`fillCartItem`), `order-totals.ts` (`renderTotals` / `renderSubtotal`).
