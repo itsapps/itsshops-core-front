@@ -124,6 +124,10 @@ messages, the legal text of step 4). **Default "Sie".** Jurtschitsch: "Du"; Tinh
   `expand: ['payment_method']` (new helper in `services/stripe.ts`), map to
   `payment: { type, brand?, last4?, wallet? }` (`card` + `apple_pay`/`google_pay` wallet, `eps`,
   `klarna`, `paypal`, `sepa_debit`, …). Store on the order (and pass into `buildOrder`).
+  `last4`: card → last 4 card digits (`payment_method.card.last4`); SEPA → last 4 IBAN digits
+  (`payment_method.sepa_debit.last4`, decided). Never stored: full card number/IBAN, expiry, CVC,
+  client secret (card data never reaches our servers; brand + last4 is PCI-allowed truncation).
+  Label examples: "Visa •••• 4242", "Apple Pay (Visa •••• 4242)", "SEPA-Lastschrift •••• 3000", "EPS".
   On Stripe error: log, store nothing — never block order creation.
 - Stored on the **order only, not on orderMeta**: orderMeta is written in `payment-create` before
   paying, when the method isn't final (customer can switch in the Payment Element; wallets decide
@@ -131,7 +135,10 @@ messages, the legal text of step 4). **Default "Sie".** Jurtschitsch: "Du"; Tinh
 - core-back: `orderPayment` object on the order schema (read-only), shown in `OrderView`.
 - Email: "Zahlungsart: Visa •••• 4242" / "Apple Pay (Visa •••• 4242)" / "EPS" — translated labels,
   unknown types fall back to a generic label.
-- `wc-api`: `payment_method_title` from the stored payment (Winenet invoices) instead of "Stripe".
+- `wc-api` (Winenet) — **decided: change both**: `payment_method` = the stored Stripe type (`card`,
+  `eps`, `klarna`, `paypal`, …; `stripe` when unknown, e.g. old orders) and `payment_method_title` =
+  the readable label ("Visa •••• 4242") instead of "Stripe". **Tell Winenet before releasing** — they
+  may map `payment_method` in their accounting.
 - Existing orders: no payment field → line omitted.
 
 ### 2. Shipping method in the email (core-front) — R4
@@ -145,8 +152,8 @@ messages, the legal text of step 4). **Default "Sie".** Jurtschitsch: "Du"; Tinh
 ### 3. Business details in the footer (core-front + maybe core-back) — R5
 
 - `MailFooter` renders `settings.company`: `name`/`owner`, `phone`, `vatId`, register data — only
-  filled fields. **Decided: in all mails** (the footer is shared by every order mail, not only the
-  confirmation).
+  filled fields. **Decided: in all business mails** — order, withdrawal, account and newsletter mails
+  (they share the footer; UGB §14 applies to business emails generally).
 - **Decided:** optional `registerNumber` (Firmenbuchnummer) + `registerCourt` (Firmenbuchgericht) on
   core-back's `company` object, rendered only when set (sole-trader farm businesses often aren't
   registered — owners decide).
@@ -234,11 +241,27 @@ generated page once.
 Not required by the WKO overview; the checkout links the AGB before ordering. Not part of this plan
 unless an owner asks for it (then: attach a PDF upload or link — revisit; needs step 6).
 
-### 5b. Accepted payment methods before ordering — R6
+### 5b. "Versand & Zahlung" page — R6 (core-front + core-back)
 
-- Show accepted payment methods (and delivery restrictions, e.g. countries) at the latest at the
-  start of ordering: e.g. a line in the cart sidebar / checkout top, from a shopSettings text or
-  translation. Shipping countries already come from the shipping config. **Decide where + source.**
+**Decided (2026-10-07):** accepted payment methods and delivery restrictions are stated on a content
+page, linked before ordering, instead of new UI in cart/checkout.
+
+- core-back: new page module **`shippingInfoModule` without fields** — renders shipping from the
+  shipping-method documents. New `shopSettings.shippingInfoPage` reference (like `termsPage`) so core
+  knows the URL.
+- core-front: module template renders, per shipping method: title, type (delivery / pickup +
+  location), **eligible countries** (delivery restrictions), **prices as rules** (weight rates
+  "bis X kg: Y €", wine packaging rates per case size — never invented example totals; gross, like the
+  checkout), **delivery time** (step 2 field) when set. Same data the checkout calculates with, so the
+  page can't drift from what's charged. Free shipping via coupons isn't shown.
+- **Payment methods**: not in Sanity (Stripe Dashboard decides) → editors write them in a normal
+  rich-text module on the same page, next to the shipping module (no settings field).
+- Links: **footer/menu** (editors add the page like any page) and **checkout** (a link near the top,
+  via `shippingInfoPage`). Not in the cart sidebar.
+- Data layer: `shippingInfoUrl` well-known URL (`'#'` when unset), like `termsUrl`.
+- Tests: module renders rates/packaging/countries/delivery time; checkout link only when set.
+- Per shop: create the page (module + payment-methods text), set `shippingInfoPage`, add to the
+  footer menu.
 
 ### 6. Mail plumbing — only if attachments are needed
 
@@ -252,7 +275,7 @@ time, send without on failure.
 withdrawal instructions whenever `withdrawalNotice` is on and the data is complete (otherwise the
 short fallback); company/register fields and delivery time when filled.
 
-- Jurtschitsch, Tinhof: step 0 labels/overrides check; step 0b env var (Jurtschitsch `informal`); step 4
+- Jurtschitsch, Tinhof: create the "Versand & Zahlung" page (5b); step 0 labels/overrides check; step 0b env var (Jurtschitsch `informal`); step 4
   migration (above); fill company data (step 3); test with Stripe test orders (card, Apple Pay, EPS,
   pickup) and a test withdrawal.
 - Grass-Art: decide "Du"/"Sie" (env var) before its next core bump.
@@ -277,7 +300,8 @@ short fallback); company/register fields and delivery time when filled.
 
 ## Open questions
 
-None of the design questions are open (decided 2026-10-07: separate order inbox (3b), du/Sie via env, additional note =
+None of the design questions are open (decided 2026-10-07: "Versand & Zahlung" page with shipping
+module (5b), Winenet gets payment type + label, footer in all business mails, separate order inbox (3b), du/Sie via env, additional note =
 `returnPolicyNote`, full instructions replace the short notice, on-when-configured, delivery time per
 shipping method, footer link is prominent enough, register fields optional, company details in all
 mails). Remaining checks during implementation:
@@ -285,4 +309,5 @@ mails). Remaining checks during implementation:
 - Official English labels for §13a (step 0).
 - Exact statutory texts from RIS / the directive (step 4) — copy, don't paraphrase.
 - Shop-owner to-dos in step 7 (return costs, return address, approve generated page).
+- Inform Winenet about the `payment_method` change (step 1) before releasing.
 - Payment method on the invoice PDF — not wanted for now.
