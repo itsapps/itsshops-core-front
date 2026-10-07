@@ -7,7 +7,7 @@ const defaults: Record<Locale, Required<PermalinkTranslations>> = {
     product:     'produkte',
     category:    'kategorien',
     blog:        'blog',
-    checkout:    'warenkorb',
+    checkout:    'kasse',
     orderThanks: 'danke',
   },
   en: {

@@ -101,7 +101,7 @@ Override the URL segments used for built-in route types. Only specify what you w
 | `product` | `produkte` | `products` |
 | `category` | `kategorien` | `categories` |
 | `blog` | `blog` | `blog` |
-| `checkout` | `warenkorb` | `checkout` |
+| `checkout` | `kasse` | `checkout` |
 | `account` | `konto` | `account` |
 | `register` | `registrierung` | `register` |
 | `recover` | `passwort-vergessen` | `recover-password` |
