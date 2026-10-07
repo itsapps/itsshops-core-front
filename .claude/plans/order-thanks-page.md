@@ -1,7 +1,7 @@
 # Plan — order thanks page with order summary
 
-Status: **in progress** — steps 0–5 done (2026-10-07); next: step 6 (other customers: CSS + wrapper
-`netlify/functions/order_status.mts` when they bump core).
+Status: **in progress** — steps 0–5 done; step 6 done for Jurtschitsch + Tinhof (2026-10-07). Left:
+other customers with checkout, when they bump core (CSS + `netlify/functions/order_status.mts`).
 Planned 2026-10-06. Origin: Jurtschitsch — the thanks page is nearly empty and its
 long title ("Vielen Dank für Deine Bestellung!") shows up as the top-nav page title.
 
