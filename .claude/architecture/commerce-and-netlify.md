@@ -26,7 +26,7 @@ export default createNewsletterConfirmHandler()
 Rules of thumb:
 - **One wrapper file per function you want live.** Omit the wrapper → that endpoint doesn't exist on
   that site. (Jurtschitsch's frontend wires newsletter, payment-create/-webhooks/-refund,
-  order-notify/-withdraw/-withdraw-notify, preview.)
+  order-notify/-withdraw/-withdraw-notify/-status, preview.)
 - **`config.path` must match the route core's client code calls.** The browser scripts
   (`src/scripts/*`) + `src/shared/*-api.ts` call fixed `/api/...` paths; copy the paths from a
   reference customer (`jurtschitsch/webshop-frontend/netlify/functions/`) as the canonical set.
@@ -46,6 +46,7 @@ Rules of thumb:
 | `payment-refund` | `createRefundHandler` | Refund a payment |
 | `order-notify` | `createNotifyHandler` | Send order confirmation email |
 | `order-withdraw` | `createOrderWithdrawHandler` | Process a right-of-withdrawal request |
+| `order-status` | `createOrderStatusHandler` | `GET /api/order/status?payment_intent=pi_…` → order number only (thanks page, pending-payment cart cleanup) |
 | `order-withdraw-notify` | `createWithdrawNotifyHandler` | Withdrawal notification email |
 | `user-register` / `-login` / `-logout` / `-confirm` / `-recover` / `-reset` | `createUser…Handler` | Supabase-backed auth flows |
 | `auth-webhooks` | `createAuthWebhookHandler` | Supabase auth webhook receiver |
@@ -131,7 +132,15 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
 3. By status: `succeeded` / `processing` → clear the cart, show the status text, render the
    snapshot (only if PaymentIntent matches and < 30 min old; deleted on read); `failed` → back to
    checkout, cart + snapshot kept; none → generic page. All values via `textContent`.
-4. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
+4. **Order number** (`succeeded` only): the page polls `order-status` (≤ 5 requests over ~15 s,
+   `scripts/order-status.ts`) and fills an `aria-live` region; gives up silently (the email has it).
+   The endpoint returns **only** `{ orderNumber }` (404 until the webhook ran), never personal data,
+   `no-store`; per-IP rate limit via `config.rateLimit` in the customer wrapper.
+5. **Pending-payment marker** (`scripts/pending-payment.ts`, localStorage, no PII: PaymentIntent id
+   + cart signature): written before confirm, removed by the thanks page. If the customer never got
+   there (tab closed during 3DS, returned in another browser), opening the cart or the checkout asks
+   `order-status` once per page; order exists + cart unchanged → cart cleared. Expires after 7 days.
+6. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
    never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
    visitor's view and cart). Delayed methods (SEPA, `processing`) have no order/email/stock
    reservation until they succeed and no failure handling; core doesn't restrict payment methods —

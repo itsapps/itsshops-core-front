@@ -14,6 +14,7 @@ export default defineConfig({
     'payment-refund': 'src/netlify/functions/payment-refund.ts',
     'order-notify': 'src/netlify/functions/order-notify.ts',
     'order-withdraw': 'src/netlify/functions/order-withdraw.ts',
+    'order-status': 'src/netlify/functions/order-status.ts',
     'order-withdraw-notify': 'src/netlify/functions/order-withdraw-notify.ts',
     'user-register': 'src/netlify/functions/user-register.ts',
     'user-login': 'src/netlify/functions/user-login.ts',

@@ -1,7 +1,7 @@
 # Plan — order thanks page with order summary
 
-Status: **in progress** — steps 0–4 done (2026-10-06); next: step 5 (order-status function,
-incl. the P4 pending marker, which moved there since only step 5 consumes it), then step 6.
+Status: **in progress** — steps 0–5 done (2026-10-07); next: step 6 (other customers: CSS + wrapper
+`netlify/functions/order_status.mts` when they bump core).
 Planned 2026-10-06. Origin: Jurtschitsch — the thanks page is nearly empty and its
 long title ("Vielen Dank für Deine Bestellung!") shows up as the top-nav page title.
 

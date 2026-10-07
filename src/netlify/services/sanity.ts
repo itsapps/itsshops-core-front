@@ -148,6 +148,15 @@ export async function findOrderByPaymentIntent(
   )
 }
 
+export async function fetchOrderNumberByPaymentIntent(
+  paymentIntentId: string,
+): Promise<string | null> {
+  return sanityClient.fetch<string | null>(
+    `*[_type == "order" && paymentIntentId == $pid][0].orderNumber`,
+    { pid: paymentIntentId },
+  )
+}
+
 export async function getNextInvoiceNumber(): Promise<{
   invoiceNumber: number
   orderNumberPrefix: string | null

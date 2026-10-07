@@ -26,6 +26,9 @@
   <p data-order-thanks-status="succeeded" data-t-with-email="{{ 'staticPages.orderThankYou.succeededEmail' | trans({ email: '%email%' }) }}" hidden>{{ 'staticPages.orderThankYou.succeeded' | trans }}</p>
   <p data-order-thanks-status="processing" data-t-with-email="{{ 'staticPages.orderThankYou.processingEmail' | trans({ email: '%email%' }) }}" hidden>{{ 'staticPages.orderThankYou.processing' | trans }}</p>
 
+  {#- Live region: stays in the DOM (empty) so the late order number is announced. -#}
+  <div class="order-thanks__number" data-order-thanks-number data-t-label="{{ 'staticPages.orderThankYou.orderNumber' | trans }}" aria-live="polite"></div>
+
   <section class="order-thanks__section order-thanks__summary" aria-labelledby="order-thanks-summary-title" data-order-thanks-summary hidden>
     <h2 id="order-thanks-summary-title">{{ 'staticPages.orderThankYou.summary' | trans }}</h2>
     <ul class="order-thanks__items" role="list" data-order-thanks-items></ul>

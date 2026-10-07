@@ -3,6 +3,7 @@ import { cloneTemplate } from './template-utils'
 import { fillCartItem } from './cart-item-render'
 import { createPriceFormatter } from './price'
 import { lockInertOutside } from './inert-lock'
+import { reconcilePendingPayment } from './pending-payment'
 
 let cartSidebar: HTMLElement | null = null
 let lastCartTrigger: HTMLElement | null = null
@@ -63,6 +64,8 @@ function setCartTogglesExpanded(expanded: boolean): void {
 
 function openCart(): void {
   if (!cartSidebar) return
+  // Clears the cart if a payment that never reached the thanks page completed (re-renders via cart:updated).
+  void reconcilePendingPayment()
   cartSidebar.classList.add('is-open')
   cartSidebar.setAttribute('aria-hidden', 'false')
   cartSidebar.removeAttribute('inert')

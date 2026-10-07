@@ -4,6 +4,8 @@ import { fillCartItem } from './cart-item-render'
 import { createPriceFormatter } from './price'
 import { renderTotals } from './order-totals'
 import { takeOrderSnapshot, type OrderSnapshot } from './order-snapshot'
+import { clearPendingPayment } from './pending-payment'
+import { pollOrderNumber } from './order-status'
 
 const STRIPE_PARAMS = ['payment_intent', 'payment_intent_client_secret', 'redirect_status'] as const
 
@@ -100,9 +102,25 @@ export function initOrderThanks(): void {
   // processing (e.g. SEPA): clear too — paying twice is worse than refilling the cart after a
   // later failure.
   clearCart()
+  clearPendingPayment()
 
   const snapshot = paymentIntentId ? takeOrderSnapshot(paymentIntentId) : null
   showStatus(root, status, snapshot?.email)
   root.querySelector<HTMLElement>('[data-order-thanks-next]')?.removeAttribute('hidden')
   if (snapshot) renderSnapshot(root, snapshot)
+
+  // The order (and its number) only exists once the payment webhook ran — and for `processing`
+  // not until the payment arrives, so don't ask then.
+  if (status === 'succeeded' && paymentIntentId) void showOrderNumber(root, paymentIntentId)
+}
+
+/** Fills the live region once the order number exists; on give-up it stays empty (email has it). */
+async function showOrderNumber(root: HTMLElement, paymentIntentId: string): Promise<void> {
+  const region = root.querySelector<HTMLElement>('[data-order-thanks-number]')
+  if (!region) return
+  const orderNumber = await pollOrderNumber(paymentIntentId)
+  if (!orderNumber) return
+  const p = document.createElement('p')
+  p.textContent = `${region.dataset.tLabel ?? 'Order number'}: ${orderNumber}`
+  region.replaceChildren(p)
 }

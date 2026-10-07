@@ -13,6 +13,11 @@ export function isEmptyOrNull(value: unknown): boolean {
   return value === null || value === undefined || value === ''
 }
 
+/** Stripe PaymentIntent id (`pi_…`) — the shape only, not a secret. */
+export function isPaymentIntentId(value: unknown): value is string {
+  return typeof value === 'string' && /^pi_[A-Za-z0-9]{8,64}$/.test(value)
+}
+
 export const REQUIRED_ADDRESS_FIELDS = [
   'name',
   'line1',

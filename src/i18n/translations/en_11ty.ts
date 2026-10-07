@@ -336,6 +336,7 @@ export default {
       processing: "Your payment is still being processed. Once it has arrived, you'll receive a confirmation by email – this can take a few business days.",
       processingEmail: "Your payment is still being processed. Once it has arrived, you'll receive a confirmation at {{email}} – this can take a few business days.",
       summary: "Your order",
+      orderNumber: "Order number",
       delivery: "Delivery",
       nextStepsTitle: "What happens next?",
       nextSteps: "As soon as your order ships, we'll send you a shipping confirmation by email.",

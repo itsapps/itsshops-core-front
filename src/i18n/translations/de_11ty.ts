@@ -336,6 +336,7 @@ export default {
       processing: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung per E-Mail – das kann einige Werktage dauern.",
       processingEmail: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung an {{email}} – das kann einige Werktage dauern.",
       summary: "Deine Bestellung",
+      orderNumber: "Bestellnummer",
       delivery: "Lieferung",
       nextStepsTitle: "Wie geht es weiter?",
       nextSteps: "Sobald Deine Bestellung versendet wird, schicken wir Dir eine Versandbestätigung per E-Mail.",

@@ -16,3 +16,11 @@ export type WithdrawInput = {
 export type WithdrawResult = {
   redirectUrl: string
 }
+
+/** GET `ORDER_STATUS_PATH?payment_intent=pi_…` → 200 `OrderStatusResult` | 404 (no order yet). */
+export const ORDER_STATUS_PATH = '/api/order/status'
+
+export type OrderStatusResult = {
+  /** Only the order number — the endpoint never returns personal data. */
+  orderNumber: string
+}

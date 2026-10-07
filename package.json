@@ -32,6 +32,10 @@
       "types": "./dist/order-notify.d.ts",
       "import": "./dist/order-notify.js"
     },
+    "./functions/order-status": {
+      "types": "./dist/order-status.d.ts",
+      "import": "./dist/order-status.js"
+    },
     "./functions/order-withdraw": {
       "types": "./dist/order-withdraw.d.ts",
       "import": "./dist/order-withdraw.js"
