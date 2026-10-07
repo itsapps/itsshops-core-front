@@ -18,6 +18,7 @@ import type { Context } from '@netlify/functions'
 import { sanityClient } from '../services/sanity'
 import { sendOrderNotification, type SendOrderNotificationOptions } from '../lib/order-notifier'
 import { log } from '../utils/logger'
+import { splitNameForExport } from '../utils/name'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -199,9 +200,10 @@ function mapAddress(addr: SanityAddress | null) {
     first_name: '', last_name: '', company: '', address_1: '', address_2: '',
     city: '', state: '', postcode: '', country: '', phone: '',
   }
+  const { firstName, lastName } = splitNameForExport(addr)
   return {
-    first_name: addr.prename ?? '',
-    last_name: addr.lastname ?? '',
+    first_name: firstName,
+    last_name: lastName,
     company: '',
     address_1: addr.line1 ?? '',
     address_2: addr.line2 ?? '',

@@ -50,7 +50,7 @@ Rules of thumb:
 | `user-register` / `-login` / `-logout` / `-confirm` / `-recover` / `-reset` | `createUser…Handler` | Supabase-backed auth flows |
 | `auth-webhooks` | `createAuthWebhookHandler` | Supabase auth webhook receiver |
 | `newsletter-subscribe` / `-confirm` / `-unsubscribe` | `createNewsletter…Handler` | Double-opt-in newsletter |
-| `wc-api` | `createWcApiHandler` | WooCommerce API bridge |
+| `wc-api` | `createWcApiHandler` | WooCommerce API bridge — read by **Winenet** (third party: reads orders, updates their status, issues invoices / accounting) |
 | `supabase-keep-alive` | `createKeepAliveHandler` | Scheduled ping to keep Supabase warm |
 
 The full built set is the tsup `entry` map; the exposed set is the `exports` map in `package.json`.
@@ -139,6 +139,15 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
 
 Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
 `macros/cart.njk`, see templates doc). Plan / remaining work: `.claude/plans/order-thanks-page.md`.
+
+## Customer names
+
+Orders require only the full `name` (`REQUIRED_ADDRESS_FIELDS`, Sanity `addressStrict`).
+`prename`/`lastname` are stored only when the customer typed them (manual checkout form). Express
+checkout (Apple/Google Pay) delivers just the full name and **must not guess** a split. Where
+separate fields are needed — the `wc-api` export to Winenet — `netlify/utils/name.ts`
+(`splitNameForExport`) splits at export time (last word → last name; a single word → last name).
+Customer-facing text uses `name`, or `prename` only if present (order thanks heading).
 
 ## Gating
 

@@ -62,7 +62,8 @@ export function buildOrderSnapshot(input: {
     paymentIntentId,
     createdAt: input.now ?? Date.now(),
     email,
-    firstName: address.prename || address.name.split(' ')[0] || undefined,
+    // Only a first name the customer typed (manual form); express checkout has just the full name.
+    firstName: address.prename?.trim() || undefined,
     // Server quantities/prices, local display strings — same precedence as the checkout summary.
     items: response.items.map(item => {
       const local = localCart.get(item.variantId)

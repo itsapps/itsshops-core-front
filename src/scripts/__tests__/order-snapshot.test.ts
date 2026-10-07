@@ -74,10 +74,11 @@ describe('buildOrderSnapshot', () => {
     expect(s.firstName).toBe('Anna')
   })
 
-  it('prefers the explicitly selected method (express checkout) and falls back to name', () => {
-    const s = build({ shippingMethodId: 'pick', address: { ...address, prename: undefined, name: 'Max Muster' } })!
+  it('prefers the explicitly selected method (express checkout); no guessed first name', () => {
+    const s = build({ shippingMethodId: 'pick', address: { ...address, prename: undefined, lastname: undefined, name: 'Maria von Trapp' } })!
     expect(s.shippingMethod).toEqual({ title: 'Abholung im Weingut', methodType: 'pickup' })
-    expect(s.firstName).toBe('Max')
+    expect(s.firstName).toBeUndefined()
+    expect(s.shippingAddress?.name).toBe('Maria von Trapp')
   })
 })
 

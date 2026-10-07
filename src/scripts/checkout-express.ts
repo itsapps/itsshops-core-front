@@ -200,15 +200,12 @@ export class CheckoutExpress {
       return
     }
 
+    // Wallets only provide the full name. Don't guess first/last name here — orders only need
+    // `name`; the Winenet export splits it when needed (netlify/utils/name.ts).
     const name = shippingAddress.name
-    const parts = name.trim().split(/\s+/)
-    const prename = parts.length >= 2 ? parts.slice(0, -1).join(' ') : undefined
-    const lastname = parts.length >= 2 ? parts[parts.length - 1] : undefined
 
     const address: AddressInput = {
       name,
-      ...(prename && { prename }),
-      ...(lastname && { lastname }),
       line1: shippingAddress.address.line1,
       ...(shippingAddress.address.line2 && { line2: shippingAddress.address.line2 }),
       city: shippingAddress.address.city,
