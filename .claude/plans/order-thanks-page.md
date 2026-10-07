@@ -76,6 +76,14 @@ replaces that with a local snapshot + an endpoint that returns only the order nu
   `shop.checkoutAgeConfirmation` is on. Shops adjust via translation overrides, not template
   overrides.
 
+- **No server fetch of the order summary (2026-10-07).** `orderMeta` (written by
+  `payment-create` before the redirect, never deleted) could serve the summary via an endpoint
+  authorized by `payment_intent` + client secret (verified against Stripe, time-limited, POST,
+  minimal fields). Rejected: it turns the thanks link into an access key for personal data, adds a
+  Stripe + Sanity call and a loading state per visit, and only helps the minority returning in a
+  different browser (they still get the status text + email). The sessionStorage snapshot stays
+  the only source; `order-status` (step 5) returns only the order number.
+
 ## Existing duplication (cart sidebar vs. checkout)
 
 | Piece | Cart sidebar | Checkout |
