@@ -16,6 +16,20 @@ export type EmailAddress = {
   country: string
 }
 
+/** `settings.company` — business details (UGB §14 / ECG §5) for the mail footer. */
+export type EmailCompany = {
+  name: string | null
+  owner: string | null
+  email: string | null
+  phone: string | null
+  vatId: string | null
+  /** Firmenbuchnummer — only when registered. */
+  registerNumber: string | null
+  /** Firmenbuchgericht — only when registered. */
+  registerCourt: string | null
+  address: EmailAddress | null
+}
+
 export type EmailBankAccount = {
   name: string
   bic: string
@@ -54,6 +68,13 @@ export type EmailShopSettings = {
   returnShippingBorneBy?: 'customer' | 'merchant'
   /** Optional extra return instructions shown in the withdrawal confirmation email. */
   returnPolicyNote?: string | null
+  /**
+   * Recipient of every mail *to the shop* (order-confirmation BCC, withdrawal notifications):
+   * `settings.shopNotificationEmail`, falling back to `senderEmail`.
+   */
+  shopNotificationEmail?: string
+  /** Business details for the footer; only filled fields are rendered. */
+  company?: EmailCompany | null
 }
 
 /**

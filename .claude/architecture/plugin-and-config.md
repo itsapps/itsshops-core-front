@@ -29,7 +29,8 @@ Precedence is **config value ?? env value ?? default**.
 - **Env-only / env-primary:** `URL` (→ `baseUrl`, default `http://localhost:8080`), `MINIFY`,
   `INLINE_CSS`, `MAINTENANCE`, `DO_INDEX_PAGES`, `MAX_PRODUCTS`, `ITSSHOPS_DEBUG`, `SERVE_*`,
   `PREVIEW_*`, `SANITY_TOKEN`/`SANITY_STUDIO_URL`, `VINOFACT_API_*`, `STRIPE_PUBLISHABLE_API_KEY`,
-  `CAPTCHA_SITE_KEY`, `SUPPORT_EMAIL`, `PUBLIC_DEVELOPER_*`
+  `CAPTCHA_SITE_KEY`, `SUPPORT_EMAIL`, `PUBLIC_DEVELOPER_*`, `SHOP_FORMALITY` (→ `formality`,
+  `src/i18n/formality.ts`; also read per call by the functions' `serverT`)
 - `parseBool` treats only the literal string `"true"` as true.
 
 `buildMode` (derived): `preview` if `IS_PREVIEW`, else `maintenance` if `MAINTENANCE`, else `normal`.

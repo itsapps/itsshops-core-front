@@ -57,6 +57,10 @@ export type EnvVars = {
   DEVELOPER_EMAIL:          string | undefined
   SUPPORT_EMAIL:            string | undefined
 
+  // Shop locale behaviour (build + functions)
+  SHOP_FORMALITY: string | undefined  // 'formal' | 'informal' — German form of address (default: 'formal')
+  SHOP_TIMEZONE:  string | undefined  // IANA name for dates/times in mails (default: 'Europe/Vienna')
+
   // Email — provider selection
   EMAIL_PROVIDER: string | undefined  // 'mailgun' | 'resend' (default: 'mailgun')
 
@@ -346,6 +350,7 @@ export type ResolveHooks = NonNullable<Extensions['resolve']>
 //   STRIPE_PUBLISHABLE_API_KEY → stripe.publishableApiKey
 //   CAPTCHA_SITE_KEY           → captchaSiteKey
 //   SUPPORT_EMAIL              → supportEmail
+//   SHOP_FORMALITY             → formality (env only — the functions read it too)
 
 export type Config = {
   // required — project-specific, no env var equivalent
@@ -464,6 +469,8 @@ export type CoreConfig = {
   resolvedPermalinks: Record<Locale, Required<PermalinkTranslations>>
   userPaths: Record<Locale, import('./localization').UserPaths>
   translations: Record<string, any>
+  /** German form of address, from `SHOP_FORMALITY` (see `i18n/formality.ts`) */
+  formality: import('../i18n/formality').Formality
   headers: {
     extra:  ResolvedCspDirectives
     routes: Array<{ path: string; extra: ResolvedCspDirectives }>

@@ -21,9 +21,8 @@ function buildRequest(body: unknown, locale: string): Request {
  * Integration tests for the order-withdraw function, including a live test that
  * records an `orderWithdrawal` document and sends the confirmation + shop emails.
  *
- * Captcha auto-skips when `CAPTCHA_SECRET_KEY` is unset (the test env). Set
- * `SKIP_AUTH_EMAILS=true` to record without sending. Re-runs hit the per-order
- * dedupe and return 200 without a second record/mail.
+ * Set `SKIP_AUTH_EMAILS=true` to record without sending. Re-runs hit the per-order
+ * dedupe: 200, no second record, the receipt is sent again.
  */
 export function orderWithdrawTests(config: TestConfig) {
   const { getOrder, locale = 'de', ...handlerConfig } = config
@@ -49,23 +48,36 @@ export function orderWithdrawTests(config: TestConfig) {
       expect(res.status).toBe(400)
     })
 
-    it('rejects malformed email', async () => {
+    it('rejects a missing name', async () => {
       const res = await handler(
-        buildRequest({ orderNumber: 'X', email: 'not-an-email' }, locale),
+        buildRequest({ orderNumber: 'X', email: 'nobody@example.com' }, locale),
         dummyContext,
       )
       expect(res.status).toBe(400)
     })
 
-    it('rejects an unknown order number + email', async () => {
+    it('rejects a URL-like name', async () => {
       const res = await handler(
-        buildRequest(
-          { orderNumber: 'NONEXISTENT-000000', email: 'nobody@example.com' },
-          locale,
-        ),
+        buildRequest({ name: 'visit www.spam.example', orderNumber: 'X', email: 'nobody@example.com' }, locale),
         dummyContext,
       )
       expect(res.status).toBe(400)
+    })
+
+    it('rejects malformed email', async () => {
+      const res = await handler(
+        buildRequest({ name: 'Test', orderNumber: 'X', email: 'not-an-email' }, locale),
+        dummyContext,
+      )
+      expect(res.status).toBe(400)
+    })
+
+    it('ignores a filled honeypot with a success response', async () => {
+      const res = await handler(
+        buildRequest({ name: 'Bot', orderNumber: 'X', email: 'bot@example.com', website: 'x' }, locale),
+        dummyContext,
+      )
+      expect(res.status).toBe(200)
     })
   })
 
@@ -81,7 +93,7 @@ export function orderWithdrawTests(config: TestConfig) {
     it('records the withdrawal and returns a redirect', async () => {
       const res = await handler(
         buildRequest(
-          { orderNumber: order.orderNumber, email: order.email, reason: 'Test withdrawal' },
+          { name: 'Test Customer', orderNumber: order.orderNumber, email: order.email, reason: 'Test withdrawal' },
           locale,
         ),
         dummyContext,

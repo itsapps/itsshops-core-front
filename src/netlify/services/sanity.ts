@@ -53,7 +53,7 @@ const CHECKOUT_QUERY = `{
     rules[]{ "taxCategoryCode": taxCategory->code.current, rate }
   },
   "shippingMethods": *[_type == "shippingMethod" && references(*[_type == "taxCountry" && countryCode == $country]._id)]{
-    _id, title, methodType, pickupFee, freeShippingThreshold,
+    _id, title, deliveryTime, methodType, pickupFee, freeShippingThreshold,
     "taxCategoryCode": taxCategory->code.current,
     rates[]{ maxWeight, price },
     packagingConfigs[]{ volume, packages[]{ count, price } }
@@ -201,79 +201,132 @@ export type OrderWithdrawalLookup = {
   }
 }
 
+const ORDER_LOOKUP_PROJECTION = `{
+  _id,
+  orderNumber,
+  status,
+  "createdAt": _createdAt,
+  "customer": {
+    "contactEmail": customer.contactEmail,
+    "locale": customer.locale,
+    "name": customer.billingAddress.name
+  }
+}`
+
 /** Look up an order by its human order number (for the withdrawal endpoint). */
 export async function fetchOrderByNumber(
   orderNumber: string,
 ): Promise<OrderWithdrawalLookup | null> {
   const doc = await sanityClient.fetch<OrderWithdrawalLookup | null>(
-    `*[_type == "order" && orderNumber == $orderNumber][0]{
-      _id,
-      orderNumber,
-      status,
-      "createdAt": _createdAt,
-      "customer": {
-        "contactEmail": customer.contactEmail,
-        "locale": customer.locale,
-        "name": customer.billingAddress.name
-      }
-    }`,
+    `*[_type == "order" && orderNumber == $orderNumber][0]${ORDER_LOOKUP_PROJECTION}`,
     { orderNumber },
   )
   return doc ?? null
 }
 
-/** Returns the id of an existing open (received|processing) withdrawal for the order, if any. */
-export async function findOpenWithdrawal(orderId: string): Promise<string | null> {
-  return sanityClient.fetch<string | null>(
-    `*[_type == "orderWithdrawal" && orderRef._ref == $orderId && status in ["received", "processing"]][0]._id`,
-    { orderId },
+const WITHDRAWAL_PROJECTION = `{
+  _id,
+  status,
+  declaredAt,
+  name,
+  email,
+  orderNumber,
+  locale,
+  reason,
+  "order": orderRef->${ORDER_LOOKUP_PROJECTION}
+}`
+
+/**
+ * A stored `orderWithdrawal` record. Every withdrawal mail reads this — date/time, name and reason
+ * come from the record, never from "now" or the request.
+ */
+export type WithdrawalRecord = {
+  _id: string
+  status: 'unmatched' | 'received' | 'processing' | 'refunded' | 'rejected'
+  declaredAt: string
+  /** Submitted via the web form (absent on records logged in the Studio). */
+  name?: string | null
+  email?: string | null
+  orderNumber?: string | null
+  /** Locale of the submission — the unmatched receipt has no order to take it from. */
+  locale?: string | null
+  reason?: string | null
+  /** Linked order; null while `unmatched`. */
+  order: OrderWithdrawalLookup | null
+}
+
+const OPEN_STATUSES = ['received', 'processing']
+
+/** The open (received|processing) withdrawal for an order, if any. */
+export async function findOpenWithdrawal(orderId: string): Promise<WithdrawalRecord | null> {
+  return sanityClient.fetch<WithdrawalRecord | null>(
+    `*[_type == "orderWithdrawal" && orderRef._ref == $orderId && status in $open] | order(declaredAt asc)[0]${WITHDRAWAL_PROJECTION}`,
+    { orderId, open: OPEN_STATUSES },
   )
 }
 
-/** Create a withdrawal declaration record. `declaredAt`/`status` are set server-side. */
-export async function createOrderWithdrawal(input: {
-  orderId: string
+/** An open unmatched declaration with the same (normalized) email + order number, if any. */
+export async function findOpenUnmatchedWithdrawal(
+  email: string,
+  orderNumber: string,
+): Promise<WithdrawalRecord | null> {
+  return sanityClient.fetch<WithdrawalRecord | null>(
+    `*[_type == "orderWithdrawal" && status == "unmatched" && email == $email && orderNumber == $orderNumber] | order(declaredAt asc)[0]${WITHDRAWAL_PROJECTION}`,
+    { email, orderNumber },
+  )
+}
+
+export type NewWithdrawal = {
+  /** Deterministic id — see `withdrawalId()` in the order-withdraw function. */
+  _id: string
+  orderId: string | null
+  declaredAt: string
+  name: string
+  email: string
+  orderNumber: string
+  locale: string
   reason?: string
-}): Promise<{ _id: string }> {
-  return sanityClient.create({
+}
+
+/**
+ * Store a web declaration. `createIfNotExists` on a deterministic id makes two quick submits
+ * produce one record: `created` is false when the id already existed (the caller then treats the
+ * submission as a repeat). Returns the stored record either way.
+ */
+export async function createWithdrawalIfNotExists(
+  input: NewWithdrawal,
+): Promise<{ record: WithdrawalRecord; created: boolean }> {
+  const stored = await sanityClient.createIfNotExists({
+    _id: input._id,
     _type: 'orderWithdrawal',
-    orderRef: { _type: 'reference', _ref: input.orderId },
-    declaredAt: new Date().toISOString(),
-    status: 'received',
+    ...(input.orderId && { orderRef: { _type: 'reference', _ref: input.orderId } }),
+    declaredAt: input.declaredAt,
+    status: input.orderId ? 'received' : 'unmatched',
+    name: input.name,
+    email: input.email,
+    orderNumber: input.orderNumber,
+    locale: input.locale,
     ...(input.reason && { reason: input.reason }),
   })
+  const record = await fetchWithdrawal(stored._id)
+  if (!record) throw new Error(`orderWithdrawal ${stored._id} not readable after create`)
+  return { record, created: stored.declaredAt === input.declaredAt }
 }
 
-/** Load a withdrawal record + its order, for the admin resend endpoint. */
-export async function fetchWithdrawalForNotify(withdrawalId: string): Promise<{
-  order: OrderWithdrawalLookup
-  reason?: string
-  declaredAt: string
-} | null> {
-  const doc = await sanityClient.fetch<{
-    reason: string | null
-    declaredAt: string
-    order: OrderWithdrawalLookup | null
-  } | null>(
-    `*[_type == "orderWithdrawal" && _id == $id][0]{
-      reason,
-      declaredAt,
-      "order": orderRef->{
-        _id,
-        orderNumber,
-        status,
-        "createdAt": _createdAt,
-        "customer": {
-          "contactEmail": customer.contactEmail,
-          "locale": customer.locale,
-          "name": customer.billingAddress.name
-        }
-      }
-    }`,
+/** Number of web-created withdrawal records whose id starts with `prefix` (id sequence). */
+export async function countWithdrawalIds(prefix: string): Promise<number> {
+  return sanityClient.fetch<number>(
+    `count(*[_type == "orderWithdrawal" && string::startsWith(_id, $prefix)])`,
+    { prefix },
+  )
+}
+
+/** Load a withdrawal record + its order (web path after create, admin resend endpoint). */
+export async function fetchWithdrawal(withdrawalId: string): Promise<WithdrawalRecord | null> {
+  return sanityClient.fetch<WithdrawalRecord | null>(
+    `*[_type == "orderWithdrawal" && _id == $id][0]${WITHDRAWAL_PROJECTION}`,
     { id: withdrawalId },
   )
-  if (!doc?.order) return null
-  return { order: doc.order, reason: doc.reason ?? undefined, declaredAt: doc.declaredAt }
 }
 
 export type EmailSettingsQueryResult = {
@@ -303,6 +356,25 @@ export type EmailSettingsQueryResult = {
   } | null
   returnShippingBorneBy: 'customer' | 'merchant' | null
   returnPolicyNote: string | null
+  /** Inbox for mails to the shop (order copies, withdrawals); null → senderEmail. */
+  shopNotificationEmail: string | null
+  /** `settings.company` — business details for the mail footer. */
+  company: {
+    name: string | null
+    owner: string | null
+    email: string | null
+    phone: string | null
+    vatId: string | null
+    registerNumber: string | null
+    registerCourt: string | null
+    address: {
+      line1: string | null
+      line2: string | null
+      zip: string | null
+      city: string | null
+      country: string | null
+    } | null
+  } | null
 }
 
 /**
@@ -343,7 +415,24 @@ export async function fetchEmailSettings(
       "site": *[_type == "settings"][0]{
         senderName,
         senderEmail,
-        "shopName": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "de"][0].value)
+        shopNotificationEmail,
+        "shopName": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "de"][0].value),
+        company{
+          "name": coalesce(name[language == $locale][0].value, name[language == "de"][0].value),
+          owner,
+          email,
+          phone,
+          vatId,
+          registerNumber,
+          registerCourt,
+          address{
+            line1,
+            line2,
+            "city": coalesce(city[language == $locale][0].value, city[language == "de"][0].value),
+            zip,
+            country
+          }
+        }
       }
     }{
       "shopName": site.shopName,
@@ -357,7 +446,9 @@ export async function fetchEmailSettings(
       "invoiceNumberPrefix": shop.invoiceNumberPrefix,
       "returnAddress": shop.returnAddress,
       "returnShippingBorneBy": shop.returnShippingBorneBy,
-      "returnPolicyNote": shop.returnPolicyNote
+      "returnPolicyNote": shop.returnPolicyNote,
+      "shopNotificationEmail": site.shopNotificationEmail,
+      "company": site.company
     }`,
     { locale },
   )

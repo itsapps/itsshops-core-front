@@ -1,6 +1,6 @@
 import type { Context } from '@netlify/functions'
 import type Stripe from 'stripe'
-import { constructWebhookEvent } from '../services/stripe'
+import { constructWebhookEvent, retrievePaymentIntentWithCharge } from '../services/stripe'
 import {
   fetchOrderMeta,
   commitOrderTransaction,
@@ -9,12 +9,13 @@ import {
   getNextInvoiceNumber,
 } from '../services/sanity'
 import { buildOrder, formatOrderNumber } from '../lib/order-builder'
+import { mapPaymentMethodDetails } from '../lib/payment-method'
 import {
   sendOrderNotification,
   type SendOrderNotificationOptions,
 } from '../lib/order-notifier'
 import { log } from '../utils/logger'
-import type { OrderDocument } from '../types/checkout'
+import type { OrderDocument, OrderPaymentMethod } from '../types/checkout'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
 
 export type WebhookHandlerOptions = ServerConfig & {
@@ -25,6 +26,24 @@ export type WebhookHandlerOptions = ServerConfig & {
    * options passed to `createNotifyHandler`.
    */
   notify?: SendOrderNotificationOptions
+}
+
+/**
+ * What was actually charged, from the PaymentIntent's latest charge. Never blocks order
+ * creation: on a Stripe error it logs and returns null (the mail then omits the line).
+ */
+export async function fetchChargedPaymentMethod(paymentIntentId: string): Promise<OrderPaymentMethod | null> {
+  try {
+    const pi = await retrievePaymentIntentWithCharge(paymentIntentId)
+    const charge = typeof pi.latest_charge === 'object' ? pi.latest_charge : null
+    return mapPaymentMethodDetails(charge?.payment_method_details)
+  } catch (err) {
+    log.error('Payment method lookup failed', {
+      paymentIntentId,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
 }
 
 async function handlePaymentSucceeded(
@@ -62,6 +81,9 @@ async function handlePaymentSucceeded(
     orderMeta,
     orderNumber: formatOrderNumber(orderNumberPrefix, invoiceNumber),
     invoiceNumber: formatOrderNumber(invoiceNumberPrefix, invoiceNumber),
+    // When the customer placed the order — for async methods the order is created days later.
+    orderDate: new Date(paymentIntent.created * 1000).toISOString(),
+    payment: await fetchChargedPaymentMethod(paymentIntent.id),
   })
 
   log.debug('Order doc built', {

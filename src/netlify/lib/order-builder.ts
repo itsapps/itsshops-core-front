@@ -11,6 +11,7 @@ import type {
   AddressStrict,
   OrderStatusHistoryEntry,
   AppliedCouponSnapshot,
+  OrderPaymentMethod,
 } from '../types/checkout'
 import type { AddressInput } from '../types/api'
 import { findTaxRate } from './tax'
@@ -120,6 +121,7 @@ function buildFulfillment(
   return {
     _type: 'fulfillment',
     methodTitle: selectedShipping.title,
+    ...(selectedShipping.deliveryTime && { deliveryTime: selectedShipping.deliveryTime }),
     methodType: selectedShipping.methodType,
     shippingCost,
     taxSnapshot: {
@@ -176,6 +178,10 @@ export type BuildOrderInput = {
   orderMeta: OrderMetaDocument
   orderNumber: string
   invoiceNumber: string
+  /** When the customer placed the order — PaymentIntent `created` (ISO). */
+  orderDate?: string
+  /** What was charged (webhook, from the Stripe charge). */
+  payment?: OrderPaymentMethod | null
 }
 
 export function buildOrder(input: BuildOrderInput): OrderDocument {
@@ -198,6 +204,8 @@ export function buildOrder(input: BuildOrderInput): OrderDocument {
       },
     ],
     paymentIntentId: input.orderMeta.paymentIntentId,
+    ...(input.orderDate && { orderDate: input.orderDate }),
+    ...(input.payment && { payment: input.payment }),
     orderItems: input.orderMeta.orderItems,
     customer: input.orderMeta.customer,
     totals: input.orderMeta.totals,

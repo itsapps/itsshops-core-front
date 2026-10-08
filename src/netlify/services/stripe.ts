@@ -28,6 +28,11 @@ export function updatePaymentIntent(
   return stripe().paymentIntents.update(id, params)
 }
 
+/** PaymentIntent with its latest charge expanded — `payment_method_details` is what was charged. */
+export function retrievePaymentIntentWithCharge(id: string): Promise<Stripe.PaymentIntent> {
+  return stripe().paymentIntents.retrieve(id, { expand: ['latest_charge'] })
+}
+
 export function refundPayment(
   paymentIntentId: string,
   amount?: number,

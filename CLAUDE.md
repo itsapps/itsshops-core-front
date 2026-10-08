@@ -8,7 +8,7 @@ this file stays the always-loaded router.
 |---|---|
 | Plugin wiring, config resolution, env vars, feature flags, build modes | `.claude/architecture/plugin-and-config.md` |
 | Configuring the plugin — full `Config` field reference + env-var map | `.claude/architecture/configuration.md` |
-| Translations (UI strings + URL segments) and how to override them / add a locale | `.claude/architecture/i18n.md` |
+| Translations (UI strings + URL segments, "Sie"/"Du" via `SHOP_FORMALITY`) and how to override them / add a locale | `.claude/architecture/i18n.md` |
 | Extending for custom schemas/fields/modules — `config.extensions`, resolve hooks, portable text, search | `.claude/architecture/extending.md` |
 | GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
 | Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS | `.claude/architecture/templates-and-assets.md` |

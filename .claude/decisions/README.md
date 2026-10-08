@@ -27,3 +27,7 @@ alternative was rejected, a constraint discovered the hard way.
   Dashboard decides payment methods; delayed methods (SEPA) unsupported by convention, not in code.
 - [no-first-last-name-guessing.md](no-first-last-name-guessing.md) — express checkout stores only the
   full name; the Winenet export splits at export time.
+- [formality-env-and-overlays.md](formality-env-and-overlays.md) — "Sie" base + "Du" overlays switched
+  by `SHOP_FORMALITY` (env, both runtimes), not a Sanity toggle.
+- [withdrawal-never-lost-no-captcha.md](withdrawal-never-lost-no-captcha.md) — unmatched withdrawals
+  are stored + confirmed + flagged; no captcha, rate limit + honeypot instead.

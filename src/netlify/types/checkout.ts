@@ -65,6 +65,7 @@ export type SanityTaxRuleResult = {
 export type SanityShippingMethodResult = {
   _id: string
   title: LocaleString[] | null
+  deliveryTime?: LocaleString[] | null
   methodType: 'delivery' | 'pickup'
   pickupFee: number | null
   freeShippingThreshold: number | null
@@ -170,6 +171,7 @@ export type AppliedCouponSnapshot = {
 export type AvailableShippingMethod = {
   _id: string
   title: string
+  deliveryTime?: string
   methodType: 'delivery' | 'pickup'
   price: number
   isFree: boolean
@@ -243,9 +245,22 @@ export type FulfillmentPackagingLine = {
   price: number
 }
 
+/** What was charged (from the Stripe charge) — see `lib/payment-method.ts`. */
+export type OrderPaymentMethod = {
+  _type: 'orderPaymentMethod'
+  /** Stripe payment method type: card, eps, klarna, paypal, sepa_debit, … */
+  type: string
+  brand?: string
+  last4?: string
+  /** Card wallet: apple_pay, google_pay, link, … */
+  wallet?: string
+}
+
 export type Fulfillment = {
   _type: 'fulfillment'
   methodTitle: string
+  /** Snapshot of the shipping method's delivery time (e.g. "2–4 Werktage"), when set. */
+  deliveryTime?: string
   methodType: 'delivery' | 'pickup'
   shippingCost: number
   taxSnapshot: VatBreakdownItem & { _type: 'vatBreakdownItem' }
@@ -283,6 +298,10 @@ export type OrderDocument = {
   paymentStatus: 'succeeded' | 'refunded' | 'partiallyRefunded'
   statusHistory: OrderStatusHistoryEntry[]
   paymentIntentId: string
+  /** When the customer placed the order (PaymentIntent `created`). Absent on older orders. */
+  orderDate?: string
+  /** What was charged. Absent on older orders or when the Stripe lookup failed. */
+  payment?: OrderPaymentMethod
   orderItems: OrderItem[]
   customer: OrderCustomer
   totals: OrderTotals

@@ -198,6 +198,19 @@ describe('buildOrder', () => {
     expect(order.customer).toEqual(meta.customer)
     expect(order.totals).toEqual(meta.totals)
     expect(order.fulfillment).toEqual(meta.fulfillment)
+    expect(order).not.toHaveProperty('payment')
+    expect(order).not.toHaveProperty('orderDate')
+  })
+
+  it('snapshots order date, payment method and delivery time', () => {
+    const meta = buildOrderMeta(makeInput({
+      selectedShipping: { _id: 'sm1', title: 'Post', deliveryTime: '2–4 Werktage', methodType: 'delivery', price: 500, isFree: false, taxCategoryCode: null },
+    }))
+    const payment = { _type: 'orderPaymentMethod' as const, type: 'card', brand: 'visa', last4: '4242' }
+    const order = buildOrder({ orderMeta: meta, orderNumber: '1', invoiceNumber: '1', orderDate: '2026-10-05T20:00:00.000Z', payment })
+    expect(order.orderDate).toBe('2026-10-05T20:00:00.000Z')
+    expect(order.payment).toEqual(payment)
+    expect(order.fulfillment.deliveryTime).toBe('2–4 Werktage')
   })
 })
 

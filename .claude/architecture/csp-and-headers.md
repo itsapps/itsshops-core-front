@@ -45,8 +45,8 @@ there (least privilege) via `securityHeaders(allowPayment)`. If express pay is e
    because the newsletter widget is usually in the footer).
 2. **Checkout routes** `/<locale>/<checkout>/*` (when `shop.checkout`) — adds Stripe origins to
    `script-src`/`connect-src`/`style-src`/`frame-src`.
-3. **Captcha routes** — auth `register`/`recover` (when `users`) and the withdrawal page (when shop +
-   `captchaSiteKey`) get hCaptcha origins.
+3. **Captcha routes** — auth `register`/`recover` (when `users`) get hCaptcha origins. The withdrawal
+   page has no captcha (FAGG §13a: easy to use; rate-limited in the customer's function wrapper).
 4. **Customer custom routes** — one block per `config.headers.routes[]` entry (base + that route's
    `extra`).
 

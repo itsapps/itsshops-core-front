@@ -39,7 +39,7 @@ export function EmailLayout({
   ctx,
   children,
   header = <MailHeader settings={ctx.settings} />,
-  footer = <MailFooter settings={ctx.settings} locale={ctx.locale} />,
+  footer = <MailFooter settings={ctx.settings} locale={ctx.locale} t={ctx.t} />,
 }: EmailLayoutProps) {
   return (
     <Html lang={ctx.locale}>

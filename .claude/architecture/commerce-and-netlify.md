@@ -71,7 +71,7 @@ Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `conf
 `export default create<Name>Handler()`).
 
 Public, unauthenticated endpoints (`order-status`, `order-withdraw`) get a per-IP limit in that
-wrapper via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
+wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot — no captcha) via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
 `aggregateBy: ['ip', 'domain']`) — not in core. Netlify rate limiting needs a **paid Netlify plan**,
 and over-limit requests are answered by Netlify (429) before the function runs.
 
@@ -101,6 +101,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math
 - `order-builder.ts`, `order-item-display.ts` — order construction
 - `*-notifier.tsx` — React-email templates (auth, order, newsletter, withdraw)
+- `payment-method.ts` — Stripe charge → `order.payment` snapshot + readable label
 - `email-settings.ts`, `auth-urls.ts`, `newsletter-urls.ts`
 
 When touching pricing/tax/shipping/coupon math, **update or add a test in `__tests__/`** — this is
@@ -154,17 +155,59 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
 Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
 `macros/cart.njk`, see templates doc). Plan / remaining work: `.claude/plans/order-thanks-page.md`.
 
-## Withdrawal (Widerruf) — declaration only
+## Withdrawal (Widerruf) — declaration only (FAGG §13a)
 
-`order-withdraw` never cancels or refunds. It matches order number + email against the order, records
-an `orderWithdrawal` document (status `received`, `declaredAt`), and `order-withdraw-notifier.tsx`
-mails the customer a receipt (return instructions + `returnShippingBorneBy` sentence when shipped,
-"will be refunded" when not dispatched) and the shop a notification. Processing is manual in the
-Studio (core-back `WithdrawalActions.tsx`): **"Refund & close"** does a full Stripe refund, sets the
-order refunded (and canceled if undispatched) and closes the withdrawal; partial refunds go through
-the order's refund action. Kept manual on purpose: the refund may be withheld until the goods are
-back, and its amount varies (return costs, deductions, partial withdrawals). Planned §13a/legal
-changes: `.claude/plans/order-email-legal.md`.
+`order-withdraw` never cancels or refunds. The form (`core/components/order/order-withdraw.njk`,
+`scripts/order-withdraw.ts`) asks for **name**, order number, email, optional reason. Labels are fixed
+by law: page/links "Vertrag widerrufen", button "Widerruf bestätigen". Always available (no date
+check), **no captcha** — the customer wrapper's Netlify `rateLimit` (429 → translated "try again
+later" in the client) plus a hidden **honeypot** field (`website`; filled → same success, nothing
+stored/sent). Name and order number are capped and URL-like input is rejected
+(`checkWithdrawText` in `shared/validation.ts`) — both are echoed in a mail to any typed address.
+
+**A declaration is never lost** — every valid submission is stored as an `orderWithdrawal`
+(name/email/orderNumber/locale/reason/`declaredAt` as submitted):
+- order number + email match → linked to the order, status `received`;
+- otherwise → status **`unmatched`**, no order; the shop mail is flagged (+ "order exists, email
+  differs" hint, shop-only). Editors assign the order in the Studio (status follows) or delete it
+  (core-back: guarded delete, unmatched only; 30-day retention rule for editors).
+- Same response either way (no order-number probing).
+- Repeat submission (open record for that order / same email + number) → receipt re-sent, no new
+  record, no shop mail. Double submits: deterministic `_id` (`withdrawal-<orderId | u-hash>-<n>`) +
+  `createIfNotExists`.
+
+Every mail is built from the **stored record** (`buildWithdrawalMails` in
+`lib/order-withdraw-notifier.tsx`): the receipt repeats name, order number, reason (matched only) and
+date + time (`formatShopDate`, shop timezone), then return instructions (`returnShippingBorneBy`,
+`returnPolicyNote`) or "not dispatched → refund". The admin resend (`order-withdraw-notify`,
+`fetchWithdrawal`) uses the same record → original timestamp; after assigning an unmatched record it
+mails the order's email. Processing stays manual in the Studio (core-back `WithdrawalActions.tsx`):
+**"Refund & close"** does a full Stripe refund, sets the order refunded (and canceled if undispatched)
+and closes the withdrawal; partial refunds go through the order's refund action. Kept manual on
+purpose: the refund may be withheld until the goods are back, and its amount varies. Remaining legal
+work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/plans/order-email-legal.md`.
+
+## Order confirmation content & shop inbox
+
+- **Order details** (`OrderEmail.tsx` → `OrderDetails`): order date (`order.orderDate` = PaymentIntent
+  `created`, fallback first status entry), payment method, shipping method, delivery time, pickup
+  location — each only when present; statutory warranty sentence on `orderConfirmation`.
+- **Payment method:** the webhook retrieves the PaymentIntent with `latest_charge` expanded and maps
+  `payment_method_details` to `order.payment` (`lib/payment-method.ts`: type, card brand, last4,
+  wallet; SEPA last4) — order only, not orderMeta (the method isn't final before payment). A Stripe
+  error logs and stores nothing; never blocks the order. `paymentMethodLabel` → "Apple Pay (Visa ••••
+  4242)". `wc-api` reports `payment_method` = type (`stripe` for old orders) and
+  `payment_method_title` = that label to Winenet.
+- **Delivery time:** optional `shippingMethod.deliveryTime` (i18n), snapshotted into
+  `order.fulfillment.deliveryTime` at checkout.
+- **Withdrawal section** in the confirmation is **default on** (`withdrawalNotice`, opt out with
+  `false`).
+- **Shop inbox:** `settings.shopNotificationEmail` (fallback `senderEmail`, resolved in
+  `buildEmailShopSettings`) receives the order-confirmation BCC and withdrawal notifications. `From:`
+  stays `senderName <senderEmail>`.
+- **Footer** (`MailFooter.tsx`, all business mails): `settings.company` — name, owner, address,
+  phone, email, VAT ID, register number/court — only filled fields; falls back to shop name, billing
+  address, sender email. The invoice PDF still uses the shopSettings billing address.
 
 All mail notifiers throw when `settings.senderEmail` / `senderName` / `siteTitle` are missing —
 core-back makes them required when shop/users/newsletter is on (core-back `schemas.md` → "Settings

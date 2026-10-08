@@ -19,6 +19,9 @@ import { sanityClient } from '../services/sanity'
 import { sendOrderNotification, type SendOrderNotificationOptions } from '../lib/order-notifier'
 import { log } from '../utils/logger'
 import { splitNameForExport } from '../utils/name'
+import { paymentMethodLabel } from '../lib/payment-method'
+import { serverT } from '../utils/i18n'
+import type { OrderPaymentMethod } from '../types/checkout'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +45,8 @@ type SanityOrder = {
   status: string
   paymentStatus: string
   paymentIntentId: string
+  /** What was charged (absent on older orders). */
+  payment: OrderPaymentMethod | null
   /** True when an open (received|processing) withdrawal references this order. */
   hasOpenWithdrawal: boolean
   customer: {
@@ -313,8 +318,12 @@ function mapOrder(order: SanityOrder, tz: string) {
       email: order.customer?.contactEmail ?? '',
     },
     shipping: mapAddress(order.customer?.shippingAddress),
-    payment_method: 'stripe',
-    payment_method_title: 'Stripe',
+    // Stripe type (card, eps, klarna, …) + readable label ("Visa •••• 4242"); 'stripe' for
+    // older orders without the snapshot.
+    payment_method: order.payment?.type ?? 'stripe',
+    payment_method_title: order.payment
+      ? paymentMethodLabel(order.payment, (key) => serverT('de', key))
+      : 'Stripe',
     transaction_id: order.paymentIntentId ?? '',
     meta_data: [],
     line_items: order.orderItems.map((item, i) => {
@@ -374,7 +383,7 @@ function mapOrder(order: SanityOrder, tz: string) {
 
 const ORDER_PROJECTION = `{
   _id, _createdAt,
-  orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId,
+  orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId, payment,
   "hasOpenWithdrawal": count(*[_type == "orderWithdrawal" && orderRef._ref == ^._id && status in ["received", "processing"]]) > 0,
   customer { contactEmail, locale, billingAddress, shippingAddress },
   totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },

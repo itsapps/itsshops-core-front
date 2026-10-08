@@ -1,4 +1,7 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{#- FAGG §13a withdrawal function: always available (no date check), labels fixed by law —
+    page/link "Vertrag widerrufen", confirm button "Widerruf bestätigen". No captcha; the shop's
+    function wrapper rate-limits per IP. -#}
 <article class="static-page order-withdraw">
   {% block page_header %}<h1>{{ 'staticPages.orderWithdraw.title' | trans }}</h1>{% endblock %}
   {% block page_info %}<p>{{ 'staticPages.orderWithdraw.info' | trans }}</p>{% endblock %}
@@ -6,30 +9,42 @@
   <div data-order-withdraw
     data-api="/api/order/withdraw"
     data-locale="{{ _locale }}"
-    data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
     data-t-error-service="{{ 'forms.errors.service' | trans }}"
+    data-t-error-rate-limited="{{ 'forms.errors.rateLimited' | trans }}"
+    data-t-error-name="{{ 'forms.fields.name.errorMessage' | trans }}"
+    data-t-error-order-number="{{ 'forms.fields.orderNumber.errorMessage' | trans }}"
+    data-t-error-no-links="{{ 'forms.fields.name.errorMessageNoLinks' | trans }}"
+    data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
   >
     <form class="form" novalidate>
       <div class="form-field">
+        <label for="withdraw-name">{{ 'forms.fields.name.label' | trans }}</label>
+        <input type="text" id="withdraw-name" name="name" required maxlength="100" autocomplete="name" aria-describedby="withdraw-name-error">
+        <span class="form-field__error" id="withdraw-name-error" data-field-error="name" hidden></span>
+      </div>
+
+      <div class="form-field">
         <label for="withdraw-order-number">{{ 'forms.fields.orderNumber.label' | trans }}</label>
-        <input type="text" id="withdraw-order-number" name="orderNumber" required autocomplete="off">
-        <span class="form-field__error" data-field-error="orderNumber"></span>
+        <input type="text" id="withdraw-order-number" name="orderNumber" required maxlength="100" autocomplete="off" aria-describedby="withdraw-order-number-error">
+        <span class="form-field__error" id="withdraw-order-number-error" data-field-error="orderNumber" hidden></span>
       </div>
 
       <div class="form-field">
         <label for="withdraw-email">{{ 'forms.fields.email.label' | trans }}</label>
-        <input type="email" id="withdraw-email" name="email" required autocomplete="email">
-        <span class="form-field__error" data-field-error="email"></span>
+        <input type="email" id="withdraw-email" name="email" required autocomplete="email" aria-describedby="withdraw-email-error">
+        <span class="form-field__error" id="withdraw-email-error" data-field-error="email" hidden></span>
       </div>
 
       <div class="form-field">
         <label for="withdraw-reason">{{ 'forms.fields.reason.label' | trans }}</label>
-        <textarea id="withdraw-reason" name="reason" rows="3"></textarea>
+        <textarea id="withdraw-reason" name="reason" rows="3" maxlength="2000"></textarea>
       </div>
 
-      {%- if coreConfig.captchaSiteKey %}
-      <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
-      {%- endif %}
+      {#- Honeypot: off-screen, hidden from assistive tech and the tab order; people leave it empty. -#}
+      <div class="sr-only" aria-hidden="true">
+        <label for="withdraw-website">{{ 'forms.fields.website.label' | trans }}</label>
+        <input type="text" id="withdraw-website" name="website" tabindex="-1" autocomplete="off">
+      </div>
 
       <div class="form__error" role="alert" hidden data-form-error></div>
 

@@ -122,7 +122,9 @@ A `menuItem` has a `linkType`: `internal` (doc ref), `external` (`url`), `submen
 `system`, meaning a **fixed core route** that isn't a document. It is named by `systemPage`, which is
 currently only `orderWithdraw` (the Widerruf form). In the per-locale loop, `resolveMenus` gets a
 `systemUrls` map (`systemPage` → URL, `'#'` when the page's feature is off). For a system item it sets
-`url` from that map, and `title` falls back to `trans('staticPages.<systemPage>.title')`. The item is
+`url` from that map, and `title` falls back to `trans('staticPages.<systemPage>.title')`. For
+`orderWithdraw` the editor title is **ignored** (`FIXED_LABEL_SYSTEM_PAGES` in `resolve/menus.ts`): the
+label must be exactly "Vertrag widerrufen" (FAGG §13a). The item is
 **dropped** when its URL is missing or `'#'`, so a disabled feature never renders a dead link.
 
 `ensureSystemPageLink(menus, 'orderWithdraw', { main, footer }, …)` runs right after. If none of the

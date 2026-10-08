@@ -18,9 +18,9 @@ describe('system menu links', () => {
     expect(legal.items[0]).toMatchObject({ linkType: 'system', systemPage: 'orderWithdraw', url: '/de/widerruf/', title: 't:staticPages.orderWithdraw.title' })
   })
 
-  it('keeps an editor title', () => {
+  it('ignores an editor title on the withdrawal link (label fixed by FAGG §13a)', () => {
     const [, legal] = resolveMenus(rawMenus([{ _key: 'a', title: str('Rücktritt'), linkType: 'system', systemPage: 'orderWithdraw' }]), ctx, undefined, urls)
-    expect(legal.items[0].title).toBe('Rücktritt')
+    expect(legal.items[0].title).toBe('t:staticPages.orderWithdraw.title')
   })
 
   it('drops system links whose feature is off', () => {

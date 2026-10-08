@@ -1,6 +1,9 @@
 # Plan — legally complete order confirmation email
 
-Status: **agreed, not started** (2026-10-07). Origin: review of what the automatic order
+Status: **Release 1 implemented** (steps 0, 0b, 1, 2, 2b, 3, 3b — 2026-10-08, on
+`feature/order-email-legal` in core-front + core-back; durable parts are in
+`architecture/commerce-and-netlify.md`, `i18n.md`, `configuration.md` and two ADRs). **Release 2
+(steps 4 + 5b) not started.** Agreed 2026-10-07. Origin: review of what the automatic order
 confirmation contains vs. Austrian/EU consumer-law expectations. Not legal advice: the legal
 requirements below are an orientation; the shop owner confirms them (WKO templates / lawyer).
 

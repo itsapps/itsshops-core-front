@@ -80,6 +80,15 @@ Each has an env default; the config value wins when set:
 (`CAPTCHA_SITE_KEY`), `supportEmail` (`SUPPORT_EMAIL`). Build mode: `IS_PREVIEW`→preview,
 `MAINTENANCE`→maintenance, else normal.
 
+### Env-only shop settings (build **and** functions)
+No `Config` field — both runtimes must see the same value, so set them on the Netlify site for
+**all scopes** (and in the shop's `.env` for local dev):
+- `SHOP_FORMALITY` = `formal` (default, "Sie") | `informal` ("Du") — German form of address for every
+  core text: website, emails, server messages. Build-only would give a "Du" site with "Sie" mails.
+  Mechanism: [i18n.md](i18n.md) → "Form of address".
+- `SHOP_TIMEZONE` — IANA name for dates/times in mails (default `Europe/Vienna`; invalid → warning +
+  default). Helper: `formatShopDate` in `src/netlify/utils/i18n.ts`.
+
 ## Env var → config field map
 The authoritative list is the comment block in `src/types/config.ts` (above `Config`). Env is the
 fallback; the matching `Config` field overrides it. `SANITY_PROJECT_ID` / `SANITY_DATASET` are the

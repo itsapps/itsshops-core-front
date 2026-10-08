@@ -5,6 +5,8 @@ import { EmailText, EmailHeading, EmailHr } from './components'
 import type { OrderEmailProps } from './types'
 import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout'
 import { colors } from './tokens'
+import { paymentMethodLabel } from '../../lib/payment-method'
+import { formatShopDate } from '../../utils/i18n'
 
 function AddressBlock({
   title,
@@ -63,6 +65,35 @@ function ItemRow({
       </Section>
       {drawSeparator && <EmailHr />}
     </>
+  )
+}
+
+/** Order date, payment method and shipping method — part of the contract confirmation (FAGG §4/§7). */
+function OrderDetails({ ctx, order }: Pick<OrderEmailProps, 'ctx' | 'order'>) {
+  const { t, locale } = ctx
+  const { fulfillment } = order
+  // Older orders have no orderDate snapshot → the first status entry (order creation).
+  const placedAt = order.orderDate ?? order.statusHistory?.[0]?.timestamp
+  const rows: Array<[string, string]> = [
+    ...(placedAt ? [[t('emails.order.orderDate'), formatShopDate(placedAt, locale)] as [string, string]] : []),
+    ...(order.payment
+      ? [[t('emails.order.paymentMethod'), paymentMethodLabel(order.payment, t)] as [string, string]]
+      : []),
+    ...(fulfillment.methodTitle ? [[t('emails.order.shippingMethod'), fulfillment.methodTitle] as [string, string]] : []),
+    ...(fulfillment.deliveryTime ? [[t('emails.order.deliveryTime'), fulfillment.deliveryTime] as [string, string]] : []),
+    ...(fulfillment.methodType === 'pickup' && fulfillment.pickupLocation
+      ? [[t('emails.order.pickupLocation'), fulfillment.pickupLocation] as [string, string]]
+      : []),
+  ]
+  if (!rows.length) return null
+  return (
+    <Section style={{ marginTop: '32px' }}>
+      {rows.map(([label, value]) => (
+        <EmailText key={label}>
+          {label}: <strong>{value}</strong>
+        </EmailText>
+      ))}
+    </Section>
   )
 }
 
@@ -169,6 +200,8 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
 
       <TotalsBlock totals={totals} ctx={ctx} />
 
+      <OrderDetails ctx={ctx} order={order} />
+
       {fulfillment.trackingCode && (
         <Section style={{ marginTop: '24px' }}>
           <EmailText>
@@ -201,7 +234,14 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
         )}
       </Section>
 
-      {/* Right-of-withdrawal notice (opt-in, confirmation email only) */}
+      {/* Statutory warranty notice (FAGG §4) — confirmation email only */}
+      {mailType === 'orderConfirmation' && (
+        <Section style={{ marginTop: '32px' }}>
+          <EmailText muted>{t('emails.order.warrantyNotice')}</EmailText>
+        </Section>
+      )}
+
+      {/* Right-of-withdrawal notice (default on, confirmation email only) */}
       {ctx.withdrawUrl && mailType === 'orderConfirmation' && (
         <Section style={{ marginTop: '32px' }}>
           <EmailHr />

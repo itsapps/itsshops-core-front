@@ -33,12 +33,13 @@ export type SendOrderNotificationOptions = {
   baseUrl?: string
   /** Force-attach the invoice PDF regardless of mailType. */
   attachInvoice?: boolean
-  /** BCC the sender (shop admin) on the outgoing mail. */
+  /** BCC the shop inbox (`settings.shopNotificationEmail`, falling back to the sender). */
   bccSender?: boolean
   /**
-   * Include a right-of-withdrawal ("Widerruf") notice + link to the withdrawal
-   * page in the order-confirmation email. Opt-in: only enable once the withdrawal
-   * page and `/api/order/withdraw` function are wired in the consumer project.
+   * Include the right-of-withdrawal ("Widerruf") section + link to the withdrawal
+   * page in the order-confirmation email. **Default on** (FAGG §7: the confirmation
+   * must carry the withdrawal information); pass `false` only for a shop without
+   * consumer withdrawal right.
    */
   withdrawalNotice?: boolean
   /** Refunded amount in cents — interpolated into the refund emails. */
@@ -84,10 +85,10 @@ export async function sendOrderNotification(
 
   const settings = buildEmailShopSettings(settingsRaw, options.baseUrl ?? process.env.URL ?? '')
 
-  // Withdrawal page URL for the opt-in confirmation notice. The slug lives in the
-  // shared `urlPaths` translations, resolved via serverT.
+  // Withdrawal page URL for the confirmation's withdrawal section (default on). The slug
+  // lives in the shared `urlPaths` translations, resolved via serverT.
   let withdrawUrl: string | undefined
-  if (options.withdrawalNotice && settings.baseUrl) {
+  if ((options.withdrawalNotice ?? true) && settings.baseUrl) {
     const slug = serverT(locale, 'urlPaths.orderWithdraw')
     if (slug && slug !== 'urlPaths.orderWithdraw') {
       withdrawUrl = `${settings.baseUrl}/${locale}/${slug}/`
@@ -121,7 +122,7 @@ export async function sendOrderNotification(
   const result = await sendMail({
     from: `${settings.senderName} <${settings.senderEmail}>`,
     to: order.customer.contactEmail,
-    ...(options.bccSender && { bcc: settings.senderEmail }),
+    ...(options.bccSender && { bcc: settings.shopNotificationEmail || settings.senderEmail }),
     subject,
     text,
     html,

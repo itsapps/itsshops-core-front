@@ -2,15 +2,16 @@
  * Studio-triggered (re)send of the customer withdrawal confirmation email.
  *
  * Called from the withdrawal document actions in core-back — when an admin logs
- * a withdrawal manually (with "notify customer" checked) or resends after a
- * delivery failure. Sends the customer-facing mail only (the shop already knows).
+ * a withdrawal manually (with "notify customer" checked), resends after a
+ * delivery failure, or after assigning an unmatched declaration to an order.
+ * Sends the customer-facing mail only (the shop already knows).
  *
  * Request body: { withdrawalId: string }
  * Auth: x-server-secret header (must match SERVER_FUNCTIONS_SECRET).
  */
 import type { Context } from '@netlify/functions'
 
-import { fetchWithdrawalForNotify } from '../services/sanity'
+import { fetchWithdrawal } from '../services/sanity'
 import { sendWithdrawalNotifications } from '../lib/order-withdraw-notifier'
 import { ErrorCode } from '../types/errors'
 import { log } from '../utils/logger'
@@ -51,7 +52,7 @@ export function createWithdrawNotifyHandler(options: WithdrawNotifyHandlerOption
     }
 
     try {
-      const record = await fetchWithdrawalForNotify(body.withdrawalId)
+      const record = await fetchWithdrawal(body.withdrawalId)
       if (!record) {
         return withCors(
           errorResponse(ErrorCode.ORDER_NOT_FOUND, 'Withdrawal not found', requestId, 404),
@@ -59,12 +60,12 @@ export function createWithdrawNotifyHandler(options: WithdrawNotifyHandlerOption
         )
       }
 
-      const result = await sendWithdrawalNotifications(
-        record.order,
-        record.reason,
-        record.declaredAt,
-        { audience: 'customer', baseUrl: options.baseUrl },
-      )
+      // Receipt from the stored record (original timestamp). Matched → the order's email
+      // (e.g. after an editor assigned an unmatched record); unmatched → the submitted email.
+      const result = await sendWithdrawalNotifications(record, {
+        audience: 'customer',
+        baseUrl: options.baseUrl,
+      })
 
       log.debug('Withdrawal confirmation sent', {
         requestId,

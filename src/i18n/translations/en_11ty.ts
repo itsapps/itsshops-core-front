@@ -341,16 +341,16 @@ export default {
       nextStepsTitle: "What happens next?",
       nextSteps: "As soon as your order ships, we'll send you a shipping confirmation by email.",
       nextStepsAgeRestricted: "Please note: we only deliver to persons aged 18 or over. Proof of age may be requested on delivery.",
-      withdraw: "Withdraw from your order",
+      withdraw: "Withdraw from contract here",
     },
     checkout: {
       title: "Checkout",
       description: "Pay for order",
     },
     orderWithdraw: {
-      title: "Withdrawal",
-      description: "Withdraw from your order",
-      info: "You may withdraw from your order within 14 days. Please enter your order number and the email address used for the order.",
+      title: "Withdraw from contract here",
+      description: "Declare withdrawal from a contract",
+      info: "You may withdraw from your order within 14 days. Please enter your name, your order number and the email address used for the order.",
     },
     orderWithdrawSuccess: {
       title: "Withdrawal received",
@@ -361,6 +361,7 @@ export default {
   forms: {
     errors: {
       service: "A technical error occurred. Please try again later.",
+      rateLimited: "Too many requests. Please try again in a minute.",
     },
     fields: {
       email: {
@@ -416,6 +417,14 @@ export default {
         label: "Phone",
         errorMessage: "Phone number must not be empty",
       },
+      name: {
+        label: "Name",
+        errorMessage: "Please enter your name.",
+        errorMessageNoLinks: "Please do not enter links or web addresses (100 characters max).",
+      },
+      website: {
+        label: "Website (please leave empty)",
+      },
       orderNumber: {
         label: "Order number",
         errorMessage: "Please enter your order number.",
@@ -451,7 +460,7 @@ export default {
     },
     orderWithdraw: {
       submit: {
-        text: "Submit withdrawal",
+        text: "Confirm withdrawal",
         loadingText: "Sending ...",
       }
     },

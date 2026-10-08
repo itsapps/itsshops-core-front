@@ -188,20 +188,15 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
 
   // Routes that render an hCaptcha widget need the hcaptcha origins whitelisted.
   // The widget is shown whenever `captchaSiteKey` is set (see the form templates),
-  // so the CSP must cover every captcha-bearing page: auth (register/recover) and
-  // the right-of-withdrawal page. (The site-wide newsletter form is already
-  // covered by the base /* CSP above.)
+  // so the CSP must cover every captcha-bearing page: auth (register/recover).
+  // (The site-wide newsletter form is already covered by the base /* CSP above;
+  // the withdrawal form has no captcha — FAGG §13a, rate-limited instead.)
   const captchaCsp = buildCsp(withCaptcha(merged))
   const captchaRoutes: string[] = []
   if (config.features.users.enabled) {
     for (const locale of config.locales) {
       captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRegistration}/*`)
       captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRecover}/*`)
-    }
-  }
-  if (config.features.shop.enabled && config.captchaSiteKey) {
-    for (const locale of config.locales) {
-      captchaRoutes.push(`/${locale}/${config.userPaths[locale].orderWithdraw}/*`)
     }
   }
   for (const route of captchaRoutes) {

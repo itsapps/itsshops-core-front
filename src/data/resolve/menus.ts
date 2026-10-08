@@ -23,6 +23,12 @@ export function addSystemUrls(urlMap: Record<string, string>, systemUrls: System
 const systemTitle = (systemPage: string, ctx: ResolveContext) =>
   ctx.translate(`staticPages.${systemPage}.title`)
 
+/**
+ * System pages whose link label is fixed by law — an editor title is ignored. The withdrawal
+ * function must be labelled exactly "Vertrag widerrufen" (FAGG §13a / Directive 2023/2673).
+ */
+const FIXED_LABEL_SYSTEM_PAGES = new Set(['orderWithdraw'])
+
 export function resolveMenuItems(
   items: any[],
   ctx: ResolveContext,
@@ -38,7 +44,9 @@ export function resolveMenuItems(
     return [{
       ...rest,
       _key,
-      title:      isSystem ? resolvedTitle || systemTitle(systemPage!, ctx) : resolvedTitle,
+      title:      isSystem
+        ? (FIXED_LABEL_SYSTEM_PAGES.has(systemPage!) ? '' : resolvedTitle) || systemTitle(systemPage!, ctx)
+        : resolvedTitle,
       linkType:   linkType ?? 'internal',
       url:        isSystem ? systemUrls[systemPage!] : stegaClean(ctx.resolveString(url)) || null,
       internal:   internal ?? null,

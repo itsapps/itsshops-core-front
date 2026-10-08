@@ -1,6 +1,7 @@
 import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName, CspDirectives, ResolvedCspDirectives } from '../types'
 import type { ClientPerspective } from '@sanity/client'
 import { buildPermalinkTranslations, buildUserPaths } from '../i18n/permalinks'
+import { readFormality } from '../i18n/formality'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
@@ -42,6 +43,7 @@ export function resolveConfig(config: Config): CoreConfig {
     resolvedPermalinks: buildPermalinkTranslations(config.permalinks),
     userPaths: buildUserPaths(),
     translations:       config.translations ?? {},
+    formality:          readFormality(),
     headers: {
       extra:  resolveCspDirectives(config.headers?.extra),
       routes: (config.headers?.routes ?? []).map(r => ({

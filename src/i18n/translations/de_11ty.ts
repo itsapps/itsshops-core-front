@@ -30,7 +30,7 @@ export default {
     title: "Warenkorb",
     close: "Schließen",
     ariaClose: "Warenkorb schließen",
-    empty: "Dein Warenkorb ist leer.",
+    empty: "Ihr Warenkorb ist leer.",
     subtotal: "Zwischensumme",
     subtotalNote: "Inkl. MwSt., zzgl. Versandkosten – diese werden an der Kasse berechnet.",
     removeProduct: "Löschen",
@@ -218,10 +218,10 @@ export default {
     vat: "MwSt.",
     vatExempt: "Steuerfrei",
     freeShipping: "Kostenloser Versand",
-    cartEmpty: "Dein Warenkorb ist leer.",
+    cartEmpty: "Ihr Warenkorb ist leer.",
     loading: "Wird geladen...",
-    error: "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
-    serviceError: "Ein technischer Fehler ist aufgetreten. Bitte versuche es später erneut oder kontaktiere den Support.",
+    error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    serviceError: "Ein technischer Fehler ist aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.",
     serviceErrorContact: "Support kontaktieren",
     itemsUnavailable: "Einige Artikel sind nicht mehr verfügbar und wurden entfernt.",
     available: "verfügbar",
@@ -245,19 +245,19 @@ export default {
     },
   },
   ageGate: {
-    title:       "Bist du mindestens {{age}} Jahre alt?",
-    text:        "Um diesen Shop zu betreten, musst du das gesetzliche Mindestalter für den Kauf von Alkohol erreicht haben.",
+    title:       "Sind Sie mindestens {{age}} Jahre alt?",
+    text:        "Um diesen Shop zu betreten, müssen Sie das gesetzliche Mindestalter für den Kauf von Alkohol erreicht haben.",
     confirm:     "Ja, ich bin mindestens {{age}}",
     deny:        "Nein, ich bin jünger",
-    note:        "Mit der Bestätigung akzeptierst du, dass wir deine Angabe lokal in deinem Browser speichern.",
-    deniedText:  "Du musst mindestens {{age}} Jahre alt sein, um diesen Shop nutzen zu können.",
+    note:        "Mit der Bestätigung akzeptieren Sie, dass wir Ihre Angabe lokal in Ihrem Browser speichern.",
+    deniedText:  "Sie müssen mindestens {{age}} Jahre alt sein, um diesen Shop nutzen zu können.",
   },
   staticPages: {
     errorPage: {
       title: "Ich kann diese Seite nicht finden!",
-      description: "404 - Ich kann diese Seite nicht finden! Bitte versuche, die Startseite zu besuchen. Bitte lass mich wissen, wenn weitere Fehler auftreten!",
-      goToHomepage: "Am besten versuchst du es mit der <a href='/{{ url }}/'>Startseite!</a>",
-      contactSupport: "Bitte lass mich wissen, wenn weitere Fehler auftreten, damit ich sie korrigieren kann: <a href='mailto:{{ email }}'>{{ email }}</a>"
+      description: "404 - Ich kann diese Seite nicht finden! Bitte versuchen Sie, die Startseite zu besuchen. Bitte lassen Sie mich wissen, wenn weitere Fehler auftreten!",
+      goToHomepage: "Am besten versuchen Sie es mit der <a href='/{{ url }}/'>Startseite!</a>",
+      contactSupport: "Bitte lassen Sie mich wissen, wenn weitere Fehler auftreten, damit ich sie korrigieren kann: <a href='mailto:{{ email }}'>{{ email }}</a>"
     },
     userLogin: {
       title: "Anmeldung",
@@ -266,12 +266,12 @@ export default {
     userRegistration: {
       title: "Registrierung",
       description: "Benutzer registrieren",
-      info: "Nach dem Registrieren senden wir Dir per E-Mail einen Link zu, mit dem du deinen Account aktivieren kannst.",
+      info: "Nach dem Registrieren senden wir Ihnen per E-Mail einen Link zu, mit dem Sie Ihren Account aktivieren können.",
     },
     userRegistrationSuccess: {
       title: "Danke!",
       description: "Danke für's registrieren",
-      info: "Du bekommst in Kürze eine E-Mail, um deinen Account zu aktivieren.",
+      info: "Sie bekommen in Kürze eine E-Mail, um Ihren Account zu aktivieren.",
     },
     userConfirm: {
       title: "Benutzerkonto bestätigen",
@@ -280,17 +280,17 @@ export default {
     userConfirmSuccess: {
       title: "Willkommen!",
       description: "Benutzer erfolgreich bestätigt",
-      info: "Dein Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!",
+      info: "Ihr Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!",
     },
     userRecover: {
       title: "Passwort zurücksetzen",
-      description: "Passwort für deinen Account zurücksetzen",
-      info: "Bitte gib Deine E-Mail-Adresse an, mit der du dich bei uns registriert hast. Wir senden Dir dann einen Link, mit dem Du ein neues Passwort festlegen kannst."
+      description: "Passwort für Ihren Account zurücksetzen",
+      info: "Bitte geben Sie Ihre E-Mail-Adresse an, mit der Sie sich bei uns registriert haben. Wir senden Ihnen dann einen Link, mit dem Sie ein neues Passwort festlegen können."
     },
     userRecoverSuccess: {
       title: "Passwort zurückgesetzt",
       description: "Passwort wurde erfolgreich zurückgesetzt",
-      info: "Du bekommst in Kürze eine E-Mail mit einem Link zum Zurücksetzen deines Passworts.",
+      info: "Sie bekommen in Kürze eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts.",
     },
     userReset: {
       title: "Passwort ändern",
@@ -299,73 +299,74 @@ export default {
     userResetSuccess: {
       title: "Super!",
       description: "Passwort erfolgreich geändert",
-      info: "Dein Passwort wurde erfolgreich geändert.",
+      info: "Ihr Passwort wurde erfolgreich geändert.",
     },
     newsletterConfirm: {
       title: "Newsletter bestätigen",
       description: "Newsletter-Anmeldung bestätigen",
-      info: "Bitte bestätige mit einem Klick, dass Du unseren Newsletter erhalten möchtest.",
+      info: "Bitte bestätigen Sie mit einem Klick, dass Sie unseren Newsletter erhalten möchten.",
     },
     newsletterConfirmSuccess: {
       title: "Anmeldung bestätigt!",
       description: "Newsletter-Anmeldung bestätigt",
-      info: "Vielen Dank! Du erhältst ab sofort unseren Newsletter.",
+      info: "Vielen Dank! Sie erhalten ab sofort unseren Newsletter.",
     },
     newsletterUnsubscribe: {
       title: "Newsletter abbestellen",
       description: "Vom Newsletter abmelden",
-      info: "Schade, dass Du gehst. Klicke unten, um Dich von unserem Newsletter abzumelden.",
+      info: "Schade, dass Sie gehen. Klicken Sie unten, um sich von unserem Newsletter abzumelden.",
     },
     newsletterUnsubscribeSuccess: {
       title: "Abgemeldet",
       description: "Erfolgreich vom Newsletter abgemeldet",
-      info: "Du wurdest von unserem Newsletter abgemeldet und erhältst keine weiteren E-Mails.",
+      info: "Sie wurden von unserem Newsletter abgemeldet und erhalten keine weiteren E-Mails.",
     },
     userOrders: {
       title: "Bestellungen",
-      description: "Deine Bestellungen",
+      description: "Ihre Bestellungen",
     },
     orderThankYou: {
       title: "Bestellung abgeschlossen",
-      description: "Vielen Dank für Deine Bestellung!",
-      heading: "Vielen Dank für Deine Bestellung!",
-      headingNamed: "Vielen Dank für Deine Bestellung, {{name}}!",
-      text: "Sobald Deine Bestellung bei uns eingegangen ist, erhältst Du eine Bestätigung per E-Mail.",
-      succeeded: "Deine Bestellung ist bei uns eingegangen. Eine Bestätigung mit Deiner Bestellnummer erhältst Du per E-Mail.",
-      succeededEmail: "Deine Bestellung ist bei uns eingegangen. Eine Bestätigung mit Deiner Bestellnummer ist unterwegs an {{email}}.",
-      processing: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung per E-Mail – das kann einige Werktage dauern.",
-      processingEmail: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung an {{email}} – das kann einige Werktage dauern.",
-      summary: "Deine Bestellung",
+      description: "Vielen Dank für Ihre Bestellung!",
+      heading: "Vielen Dank für Ihre Bestellung!",
+      headingNamed: "Vielen Dank für Ihre Bestellung, {{name}}!",
+      text: "Sobald Ihre Bestellung bei uns eingegangen ist, erhalten Sie eine Bestätigung per E-Mail.",
+      succeeded: "Ihre Bestellung ist bei uns eingegangen. Eine Bestätigung mit Ihrer Bestellnummer erhalten Sie per E-Mail.",
+      succeededEmail: "Ihre Bestellung ist bei uns eingegangen. Eine Bestätigung mit Ihrer Bestellnummer ist unterwegs an {{email}}.",
+      processing: "Ihre Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhalten Sie eine Bestätigung per E-Mail – das kann einige Werktage dauern.",
+      processingEmail: "Ihre Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhalten Sie eine Bestätigung an {{email}} – das kann einige Werktage dauern.",
+      summary: "Ihre Bestellung",
       orderNumber: "Bestellnummer",
       delivery: "Lieferung",
       nextStepsTitle: "Wie geht es weiter?",
-      nextSteps: "Sobald Deine Bestellung versendet wird, schicken wir Dir eine Versandbestätigung per E-Mail.",
-      nextStepsAgeRestricted: "Bitte beachte: Wir liefern nur an Personen ab 18 Jahren. Bei der Zustellung kann ein Altersnachweis verlangt werden.",
-      withdraw: "Bestellung widerrufen",
+      nextSteps: "Sobald Ihre Bestellung versendet wird, schicken wir Ihnen eine Versandbestätigung per E-Mail.",
+      nextStepsAgeRestricted: "Bitte beachten Sie: Wir liefern nur an Personen ab 18 Jahren. Bei der Zustellung kann ein Altersnachweis verlangt werden.",
+      withdraw: "Vertrag widerrufen",
     },
     checkout: {
       title: "Kasse",
       description: "Bestellung bezahlen",
     },
     orderWithdraw: {
-      title: "Widerruf",
-      description: "Bestellung widerrufen",
-      info: "Du kannst Deine Bestellung innerhalb von 14 Tagen widerrufen. Bitte gib Deine Bestellnummer und die bei der Bestellung verwendete E-Mail-Adresse an.",
+      title: "Vertrag widerrufen",
+      description: "Widerruf eines Vertrags erklären",
+      info: "Sie können Ihre Bestellung innerhalb von 14 Tagen widerrufen. Bitte geben Sie Ihren Namen, Ihre Bestellnummer und die bei der Bestellung verwendete E-Mail-Adresse an.",
     },
     orderWithdrawSuccess: {
       title: "Widerruf erhalten",
-      description: "Dein Widerruf ist bei uns eingegangen",
-      info: "Wir haben Deinen Widerruf erhalten und Dir eine Bestätigung per E-Mail geschickt.",
+      description: "Ihr Widerruf ist bei uns eingegangen",
+      info: "Wir haben Ihren Widerruf erhalten und Ihnen eine Bestätigung per E-Mail geschickt.",
     },
   },
   forms: {
     errors: {
-      service: "Ein technischer Fehler ist aufgetreten. Bitte versuche es später erneut.",
+      service: "Ein technischer Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+      rateLimited: "Zu viele Anfragen. Bitte versuchen Sie es in einer Minute erneut.",
     },
     fields: {
       email: {
         label: "Email",
-        errorMessage: "Bitte gib eine gültige E-Mail Adresse ein.",
+        errorMessage: "Bitte geben Sie eine gültige E-Mail Adresse ein.",
       },
       password: {
         label: "Passwort",
@@ -416,19 +417,27 @@ export default {
         label: "Telefon",
         errorMessage: "Telefonnummer darf nicht leer sein",
       },
+      name: {
+        label: "Name",
+        errorMessage: "Bitte geben Sie Ihren Namen ein.",
+        errorMessageNoLinks: "Bitte keine Links oder Webadressen eingeben (höchstens 100 Zeichen).",
+      },
+      website: {
+        label: "Webseite (bitte leer lassen)",
+      },
       orderNumber: {
         label: "Bestellnummer",
-        errorMessage: "Bitte gib Deine Bestellnummer ein.",
+        errorMessage: "Bitte geben Sie Ihre Bestellnummer ein.",
       },
       reason: {
         label: "Grund / betroffene Artikel (optional)",
       },
       registerForNewsletter: {
         label: "Newsletter abonnieren",
-        privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu.',
+        privacyNotice: 'Mit der Anmeldung stimmen Sie unserer <a href="{{url}}">Datenschutzerklärung</a> zu.',
       },
       captcha: {
-        errorMessage: "Bitte löse das Captcha, um fortzufahren.",
+        errorMessage: "Bitte lösen Sie das Captcha, um fortzufahren.",
       }
     },
     userLogin: {
@@ -451,7 +460,7 @@ export default {
     },
     orderWithdraw: {
       submit: {
-        text: "Widerruf absenden",
+        text: "Widerruf bestätigen",
         loadingText: "Wird gesendet ...",
       }
     },
@@ -477,9 +486,9 @@ export default {
     newsletter: {
       trigger: "Newsletter abonnieren",
       close: "Schließen",
-      intro: "Bleib auf dem Laufenden und abonniere unseren Newsletter.",
-      privacyNotice: 'Mit der Anmeldung stimmst du unserer <a href="{{url}}">Datenschutzerklärung</a> zu. Du kannst dich jederzeit wieder abmelden.',
-      successNotice: "Fast geschafft! Falls Du noch nicht angemeldet bist, erhältst Du in Kürze eine E-Mail mit einem Bestätigungslink.",
+      intro: "Bleiben Sie auf dem Laufenden und abonnieren Sie unseren Newsletter.",
+      privacyNotice: 'Mit der Anmeldung stimmen Sie unserer <a href="{{url}}">Datenschutzerklärung</a> zu. Sie können sich jederzeit wieder abmelden.',
+      successNotice: "Fast geschafft! Falls Sie noch nicht angemeldet sind, erhalten Sie in Kürze eine E-Mail mit einem Bestätigungslink.",
       submit: {
         text: "Anmelden",
         loadingText: "Wird gesendet ...",
@@ -507,25 +516,25 @@ export default {
   cookies: {
     title: "Cookie Einwilligung",
     close: "Schließen",
-    description: "Wir verwenden Cookies, um dein Browsing-Erlebnis zu verbessern, personalisierte Werbung oder Inhalte bereitzustellen und unseren Traffic zu analysieren. Durch Klick auf \"Alle akzeptieren\" stimmst du der Verwendung unserer Cookies zu. Du kannst deine Einstellungen unten verwalten.",
+    description: "Wir verwenden Cookies, um Ihr Browsing-Erlebnis zu verbessern, personalisierte Werbung oder Inhalte bereitzustellen und unseren Traffic zu analysieren. Durch Klick auf \"Alle akzeptieren\" stimmen Sie der Verwendung unserer Cookies zu. Sie können Ihre Einstellungen unten verwalten.",
     privacyPolicy: "Datenschutzerklärung",
     essential: {
       title: "Notwendige Cookies",
       required: "Erforderlich",
       description: "Diese Cookies sind notwendig, damit die Website ordnungsgemäß funktioniert und können nicht deaktiviert werden.",
-      accessToken: "Speichert dein Authentifizierungstoken für sicheren Login",
-      refreshToken: "Erneuert deine Authentifizierung um dich angemeldet zu halten",
-      cart: "Behält deinen Warenkorb über Sessions hinweg bei",
+      accessToken: "Speichert Ihr Authentifizierungstoken für sicheren Login",
+      refreshToken: "Erneuert Ihre Authentifizierung um Sie angemeldet zu halten",
+      cart: "Behält Ihren Warenkorb über Sessions hinweg bei",
       stripe: "Notwendig für sichere Zahlungsabwicklung",
     },
     analytics: {
       title: "Analyse Cookies",
-      description: "Wir verwenden Google Analytics, um die Nutzung unserer Website zu analysieren und zu verbessern. Die dabei erhobenen Daten werden anonymisiert verarbeitet. Du kannst die Verwendung von Analytics-Cookies akzeptieren oder ablehnen. Weitere Informationen findest du in unserer {{ privacyPolicy }}.",
+      description: "Wir verwenden Google Analytics, um die Nutzung unserer Website zu analysieren und zu verbessern. Die dabei erhobenen Daten werden anonymisiert verarbeitet. Sie können die Verwendung von Analytics-Cookies akzeptieren oder ablehnen. Weitere Informationen finden Sie in unserer {{ privacyPolicy }}.",
       cookiePolicy: "Cookie-Richtlinie",
     },
     marketing: {
       title: "Marketing Cookies",
-      description: "Diese Cookies ermöglichen es uns, dir personalisierte Anzeigen zu zeigen und die Leistung von Marketingkampagnen zu verfolgen. Du kannst diese deaktivieren, ohne dass die Website-Funktionalität beeinträchtigt wird.",
+      description: "Diese Cookies ermöglichen es uns, Ihnen personalisierte Anzeigen zu zeigen und die Leistung von Marketingkampagnen zu verfolgen. Sie können diese deaktivieren, ohne dass die Website-Funktionalität beeinträchtigt wird.",
     },
     actions: {
       rejectAll: "Alle ablehnen",

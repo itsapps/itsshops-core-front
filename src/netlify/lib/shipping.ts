@@ -226,11 +226,13 @@ export function resolveShippingMethods(
 
   for (const method of methods) {
     const title = resolveLocalizedTitle(method.title, locale)
+    const deliveryTime = resolveLocalizedTitle(method.deliveryTime ?? null, locale) || undefined
 
     if (method.methodType === 'pickup') {
       available.push({
         _id: method._id,
         title,
+        ...(deliveryTime && { deliveryTime }),
         methodType: 'pickup',
         price: method.pickupFee ?? 0,
         isFree: (method.pickupFee ?? 0) === 0,
@@ -267,6 +269,7 @@ export function resolveShippingMethods(
     available.push({
       _id: method._id,
       title,
+      ...(deliveryTime && { deliveryTime }),
       methodType: 'delivery',
       price: free ? 0 : price,
       isFree: free,

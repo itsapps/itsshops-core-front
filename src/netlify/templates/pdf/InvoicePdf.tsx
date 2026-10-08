@@ -17,6 +17,7 @@ import {
 } from '@react-pdf/renderer'
 import type { OrderDocument } from '../../types/checkout'
 import type { EmailContext } from '../email/types'
+import { formatShopDate } from '../../utils/i18n'
 
 const styles = StyleSheet.create({
   page: {
@@ -73,7 +74,7 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
   const billing = order.customer.billingAddress
   const billingCountry = new Intl.DisplayNames([locale], { type: 'region' }).of(billing.country) ?? billing.country
   const orderDate = new Date(order.statusHistory[0]?.timestamp ?? Date.now())
-  const formattedOrderDate = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(orderDate)
+  const formattedOrderDate = formatShopDate(orderDate, locale, { dateStyle: 'medium' })
 
   const showLogo = !!(settings.logoUrl && settings.logoWidth && settings.logoHeight)
 

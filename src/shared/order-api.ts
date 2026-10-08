@@ -4,13 +4,16 @@
  */
 
 export type WithdrawInput = {
-  /** Human order number the customer received (e.g. "2024-001"). */
+  /** Consumer's name (FAGG §13a). Required, capped, no links (`checkWithdrawText`). */
+  name: string
+  /** Order number as typed — free text; a typo lands in the unmatched flow, not in an error. */
   orderNumber: string
-  /** Email used on the order — must match the order's contactEmail. */
+  /** Email the receipt goes to. Matches the order's contactEmail → linked to the order. */
   email: string
   /** Optional free-text reason / "which items" note. */
   reason?: string
-  captchaToken?: string
+  /** Honeypot — always empty for people; filled → success response, nothing stored or sent. */
+  website?: string
 }
 
 export type WithdrawResult = {

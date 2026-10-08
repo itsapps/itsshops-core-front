@@ -1,5 +1,5 @@
 import type { EmailSettingsQueryResult } from '../services/sanity'
-import type { EmailAddress, EmailShopSettings } from '../templates/email/types'
+import type { EmailAddress, EmailCompany, EmailShopSettings } from '../templates/email/types'
 
 function toEmailAddress(
   a: EmailSettingsQueryResult['billingAddress'],
@@ -11,6 +11,20 @@ function toEmailAddress(
     zip: a.zip ?? '',
     city: a.city ?? '',
     country: a.country ?? '',
+  }
+}
+
+function toEmailCompany(c: EmailSettingsQueryResult['company']): EmailCompany | null {
+  if (!c) return null
+  return {
+    name: c.name ?? null,
+    owner: c.owner ?? null,
+    email: c.email ?? null,
+    phone: c.phone ?? null,
+    vatId: c.vatId ?? null,
+    registerNumber: c.registerNumber ?? null,
+    registerCourt: c.registerCourt ?? null,
+    address: c.address?.line1 ? toEmailAddress(c.address) : null,
   }
 }
 
@@ -45,5 +59,7 @@ export function buildEmailShopSettings(
     returnAddress: toEmailAddress(raw.returnAddress),
     returnShippingBorneBy: raw.returnShippingBorneBy ?? 'customer',
     returnPolicyNote: raw.returnPolicyNote,
+    shopNotificationEmail: raw.shopNotificationEmail || raw.senderEmail || '',
+    company: toEmailCompany(raw.company),
   }
 }
