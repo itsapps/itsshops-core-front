@@ -132,18 +132,27 @@ an obligation, but lower risk than R0.
     the matched repeat case below).
   - core-back: `order` reference optional on `orderWithdrawal`, new status `unmatched`; editors can
     link the record to the right order in the Studio (it then counts as matched).
-  - **Editor flow for unmatched** (decided 2026-10-08): order found → **"Assign order"**; junk →
-    guarded delete (below); real but no order found → editor contacts the submitted email
-    manually, then assigns or deletes.
-  - **"Assign order" action** (core-back, `WithdrawalActions.tsx`, only on `unmatched` records):
-    dialog with an order-number field; checks the order exists and has no open withdrawal (if it
-    has one → say so and suggest deleting this record as a duplicate). On confirm: sets `orderRef`
-    + status `received` in one patch (`orderRef` stays `readOnly` in the form, set
-    programmatically like `OrderWithdrawalCreateAction`). Checkbox **"send confirmation to the
-    customer", default on** → `frontendClient.withdrawNotify` (existing path) → normal receipt to
-    the **order's** email — so the real buyer learns a withdrawal was filed on their order (an
-    unmatched submission often had a different email). Afterwards it's a normal withdrawal;
-    "Erstatten & abschließen" works as today (full refund + `orderRefunded` mail).
+  - **Editor flow for unmatched** (decided 2026-10-08): order found → **assign it in the order
+    field**; junk → guarded delete (below); real but no order found → editor contacts the
+    submitted email manually, then assigns or deletes.
+  - **Assigning an order** (core-back, no new document action — replaces the "Assign order"
+    dialog idea):
+    - `orderRef` is **editable while the published status is `unmatched`**, `readOnly` otherwise
+      (normal withdrawals stay protected).
+    - Normal Sanity reference picker → the editor can choose **any** order; the field's
+      `options.filter` excludes orders that already have an open (`received`/`processing`)
+      withdrawal. Check that the `order` schema's search/preview cover order number, customer
+      name and email; extend if not.
+    - **Suggestions** above the picker (custom input): orders matching the submitted order number,
+      email or name, each with a "use this order" button. None fits → use the picker.
+    - **Status follows the field:** picking an order sets status `received`, clearing it (before
+      publish) sets `unmatched` again. Validation: `unmatched` ⇔ no `orderRef`; the chosen order
+      has no other open withdrawal (guards races the filter can't).
+    - Customer mail: after publishing, the existing **resend confirmation** action
+      (`WithdrawalResendAction` → `withdrawNotify`) sends the normal receipt to the **order's**
+      email — so the real buyer learns a withdrawal was filed on their order (an unmatched
+      submission often had a different email). Afterwards it's a normal withdrawal;
+      "Erstatten & abschließen" works as today (full refund + `orderRefunded` mail).
   - Update the schema comment in `orderWithdrawal.ts` ("never delete") to the new rule.
   - **Retention — editor rule, no code** (decided 2026-10-08): unmatched records may hold personal
     data of non-customers. Rule: within 30 days, link them to the right order or delete them in
