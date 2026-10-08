@@ -194,8 +194,25 @@ export function buildSettingsQuery(extensions: Record<string, string> = {}): str
     email,
     phone,
     vatId,
+    registerNumber,
+    registerCourt,
     "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }${companyFields}
   }
+}`
+}
+
+/** Shipping methods for the "Versand & Zahlung" module — the same documents the checkout prices with. */
+export function buildShippingMethodsQuery(): string {
+  return `*[_type == 'shippingMethod'] | order(_createdAt asc){
+  _id,
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('deliveryTime')},
+  methodType,
+  pickupFee,
+  freeShippingThreshold,
+  "countries": eligibleCountries[]->{ countryCode, enabled },
+  rates[]{ maxWeight, price },
+  packagingConfigs[]{ volume, packages[]{ count, price } }
 }`
 }
 
@@ -205,6 +222,7 @@ export function buildShopSettingsQuery(): string {
   "shopPage": shopPage{ _ref },
   "termsPage": termsPage{ _ref },
   "withdrawalPolicyPage": withdrawalPolicyPage{ _ref },
+  "shippingInfoPage": shippingInfoPage{ _ref },
   "defaultCountry": defaultCountry->{ _id, countryCode },
   freeShippingCalculation,
   stockThreshold,
@@ -213,6 +231,11 @@ export function buildShopSettingsQuery(): string {
   invoiceNumberPrefix,
   billingAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
   bankAccount { name, bic, iban },
+  returnAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
+  returnShippingBorneBy,
+  ${proj.i18nStringField('returnPolicyNote')},
+  withdrawalPeriodStart,
+  withdrawalExceptions,
   "filters": filters[]{
     _type == 'productFieldFilter' => { _type, field },
     _type == 'wineFieldFilter' => { _type, field },

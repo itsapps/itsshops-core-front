@@ -1,6 +1,7 @@
 import { createClient } from '@sanity/client'
 import { sanityApiVersion } from '../../config/constants'
 import { log } from '../utils/logger'
+import type { WithdrawalPeriodStart } from '../../shared/withdrawal-instructions'
 import type {
   SanityCheckoutQueryResult,
   OrderMetaDocument,
@@ -356,6 +357,8 @@ export type EmailSettingsQueryResult = {
   } | null
   returnShippingBorneBy: 'customer' | 'merchant' | null
   returnPolicyNote: string | null
+  withdrawalPeriodStart: WithdrawalPeriodStart | null
+  withdrawalExceptions: string[] | null
   /** Inbox for mails to the shop (order copies, withdrawals); null → senderEmail. */
   shopNotificationEmail: string | null
   /** `settings.company` — business details for the mail footer. */
@@ -410,6 +413,8 @@ export async function fetchEmailSettings(
           country
         },
         returnShippingBorneBy,
+        withdrawalPeriodStart,
+        withdrawalExceptions,
         "returnPolicyNote": coalesce(returnPolicyNote[language == $locale][0].value, returnPolicyNote[language == "de"][0].value)
       },
       "site": *[_type == "settings"][0]{
@@ -447,6 +452,8 @@ export async function fetchEmailSettings(
       "returnAddress": shop.returnAddress,
       "returnShippingBorneBy": shop.returnShippingBorneBy,
       "returnPolicyNote": shop.returnPolicyNote,
+      "withdrawalPeriodStart": shop.withdrawalPeriodStart,
+      "withdrawalExceptions": shop.withdrawalExceptions,
       "shopNotificationEmail": site.shopNotificationEmail,
       "company": site.company
     }`,

@@ -1,0 +1,56 @@
+{#- Generated withdrawal instructions + model withdrawal form (FAGG Anhang I) from shopSettings +
+    settings.company — same builder as the order confirmation mail (shared/withdrawal-instructions.ts).
+    Statutory wording comes verbatim from the `shared` translations; don't hand-edit it here. -#}
+{%- set _wi = cms[_locale] | withdrawalInstructions -%}
+{%- set _wiData = _wi.instructions -%}
+{%- if _wiData %}
+<div class="withdrawal-instructions">
+  {%- for section in _wiData.sections %}
+  <section class="withdrawal-instructions__section">
+    <h2>{{ section.heading }}</h2>
+    {%- for paragraph in section.paragraphs %}
+    <p>{{ paragraph }}</p>
+    {%- endfor %}
+    {%- if loop.first and cms[_locale].orderWithdrawUrl and cms[_locale].orderWithdrawUrl != '#' %}
+    <p><a class="btn withdrawal-instructions__action" href="{{ cms[_locale].orderWithdrawUrl }}">{{ 'staticPages.orderWithdraw.title' | trans }}</a></p>
+    {%- endif %}
+  </section>
+  {%- endfor %}
+
+  <section class="withdrawal-instructions__section withdrawal-instructions__form">
+    <h2>{{ _wiData.form.heading }}</h2>
+    <p>{{ _wiData.form.intro }}</p>
+    <ul>
+      <li>{{ _wiData.form.to }}</li>
+      {%- for line in _wiData.form.lines %}
+      <li>{{ line }}</li>
+      {%- endfor %}
+    </ul>
+    <p>{{ _wiData.form.footnote }}</p>
+  </section>
+
+  {%- if _wiData.exceptions %}
+  <section class="withdrawal-instructions__section">
+    <h2>{{ _wiData.exceptions.heading }}</h2>
+    <p>{{ _wiData.exceptions.intro }}</p>
+    <ul>
+      {%- for item in _wiData.exceptions.items %}
+      <li>{{ item }}</li>
+      {%- endfor %}
+    </ul>
+  </section>
+  {%- endif %}
+
+  {%- if _wiData.note %}
+  <section class="withdrawal-instructions__section">
+    <h2>{{ _wiData.note.heading }}</h2>
+    <p>{{ _wiData.note.text | escape | nl2br | safe }}</p>
+  </section>
+  {%- endif %}
+</div>
+{%- else %}
+  {{- ("withdrawalPolicyModule: settings incomplete (" + (_wi.missing | join(', ')) + ") — nothing rendered") | log -}}
+  {%- if coreConfig.buildMode == 'preview' %}
+  <p class="editor-hint" role="note">{{ 'withdrawalInstructions.missing' | trans({ fields: _wi.missing | join(', ') }) }}</p>
+  {%- endif %}
+{%- endif %}

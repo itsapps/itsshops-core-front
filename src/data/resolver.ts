@@ -12,6 +12,7 @@ import {
   buildMenuQuery,
   buildSettingsQuery,
   buildShopSettingsQuery,
+  buildShippingMethodsQuery,
 } from './queries'
 import { fetchVinofactWines } from './vinofact'
 import { makeCtx } from './resolve/context'
@@ -20,7 +21,7 @@ import { resolvePages } from './resolve/pages'
 import { resolvePosts } from './resolve/posts'
 import { resolveVariants } from './resolve/variants'
 import { resolveMenus, ensureSystemPageLink, addSystemUrls } from './resolve/menus'
-import { resolveSettings, resolveShopSettings } from './resolve/settings'
+import { resolveSettings, resolveShopSettings, resolveShippingMethods } from './resolve/settings'
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
 import { buildSearchIndex, resolveSearchFields } from './search'
 import { formatVolumeMl } from '../filters'
@@ -54,7 +55,7 @@ export async function buildCmsData(
 
   const [
     rawProducts, rawVariants, rawCategories,
-    rawPages, rawPosts, rawMenus, rawSettings, rawShopSettings,
+    rawPages, rawPosts, rawMenus, rawSettings, rawShopSettings, rawShippingMethods,
   ] = await Promise.all([
     features.shop.enabled ? fetchQuery(buildProductQuery(extensions))  : Promise.resolve([]),
     features.shop.enabled ? fetchQuery(buildVariantQuery(extensions))  : Promise.resolve([]),
@@ -65,6 +66,7 @@ export async function buildCmsData(
     fetchQuery(buildMenuQuery(extensions, config.menu.maxDepth)),
     fetchQuery(buildSettingsQuery(extensions.fields)),
     features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
+    features.shop.enabled ? fetchQuery(buildShippingMethodsQuery()) : Promise.resolve([]),
   ])
 
   // ─── Extension queries (fetched once, resolved per-locale via resolveData) ──
@@ -176,6 +178,7 @@ export async function buildCmsData(
       menus,
       settings,
       shopSettings,
+      shippingMethods: resolveShippingMethods(rawShippingMethods, ctx),
       urlMap,
       docMap,
       homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
@@ -183,6 +186,7 @@ export async function buildCmsData(
       privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
       termsUrl:    urlMap[shopSettings?.termsPageId ?? '']       ?? '#',
       withdrawalPolicyUrl: urlMap[shopSettings?.withdrawalPolicyPageId ?? ''] ?? '#',
+      shippingInfoUrl: urlMap[shopSettings?.shippingInfoPageId ?? ''] ?? '#',
       checkoutUrl:    features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/`    : '#',
       orderThanksUrl: features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/${permalinks[locale].orderThanks}/` : '#',
       loginUrl:               features.users ? `/${locale}/${context.config.userPaths[locale].userLogin}/` : '#',

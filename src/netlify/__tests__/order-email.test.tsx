@@ -22,6 +22,8 @@ const rawSettings = (over: Partial<EmailSettingsQueryResult> = {}): EmailSetting
   returnPolicyNote: null,
   shopNotificationEmail: null,
   company: null,
+  withdrawalPeriodStart: null,
+  withdrawalExceptions: null,
   ...over,
 })
 
@@ -77,12 +79,13 @@ describe('order confirmation email', () => {
       fulfillment: { ...order().fulfillment, deliveryTime: '2–4 Werktage' },
     }))
     await sendOrderNotification('o1', 'orderConfirmation')
-    const text = textOf((await sent()).html)
+    const { html } = await sent()
+    const text = textOf(html)
     expect(text).toContain('Bestelldatum: 5. Oktober 2026')
     expect(text).toContain('Zahlungsart: Apple Pay (Visa •••• 4242)')
     expect(text).toContain('Versandart: Post')
     expect(text).toContain('Lieferzeit: 2–4 Werktage')
-    expect(text).toContain('gesetzliche Gewährleistungsrecht')
+    expect(html).toContain('https://shop.example/assets/legal/legal-guarantee-notice-de.png')
   })
 
   it('older orders: no payment line, order date from the first status entry', async () => {
@@ -103,6 +106,33 @@ describe('order confirmation email', () => {
     await sendOrderNotification('o1', 'orderConfirmation', { withdrawalNotice: false })
     html = (await sent()).html
     expect(html).not.toContain('/de/widerruf/')
+  })
+
+  it('confirmation carries the full withdrawal instructions + model form', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings({
+      returnShippingBorneBy: 'merchant',
+      withdrawalExceptions: ['alcoholMarketPrice'],
+      returnPolicyNote: 'Bitte in versandgeeigneter Verpackung.',
+    }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const text = textOf((await sent()).html)
+    expect(text).toContain('Sie haben das Recht, binnen vierzehn Tagen')
+    expect(text).toContain('müssen Sie uns (Weingut Test, Hauptstraße 1, 3550 Langenlois, Österreich, E-Mail noreply@shop.example)')
+    expect(text).toContain('auch online unter https://shop.example/de/widerruf/ ausüben')
+    expect(text).toContain('Wir tragen die Kosten der Rücksendung')
+    expect(text).toContain('Muster-Widerrufsformular')
+    expect(text).toContain('Ausschluss des Widerrufsrechts')
+    expect(text).toContain('Bitte in versandgeeigneter Verpackung.')
+  })
+
+  it('incomplete settings → short notice instead of a half-filled legal text', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings({ billingAddress: null }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const text = textOf((await sent()).html)
+    expect(text).not.toContain('Muster-Widerrufsformular')
+    expect(text).toContain('Vertrag widerrufen')
   })
 
   it('BCC goes to the shop inbox, falling back to the sender', async () => {
@@ -149,7 +179,7 @@ describe('order confirmation email', () => {
     await sendOrderNotification('o1', 'orderConfirmation')
     const text = textOf((await sent()).html)
     expect(text).toContain('Withdraw from contract here')
-    expect(text).toContain('statutory warranty')
+    expect((await sent()).html).toContain('/assets/legal/legal-guarantee-notice-en.png')
   })
 })
 

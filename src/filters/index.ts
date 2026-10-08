@@ -6,6 +6,8 @@ import { imageUrl, imageSizeUrl, image, imageSrcsetData, vinofactImageUrl, vinof
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
+import { buildWithdrawalInstructions, missingWithdrawalData, type WithdrawalInstructionsInput } from "../shared/withdrawal-instructions"
+import type { CmsLocaleData } from "../types/data"
 
 function toIsoString(text: string) {
   return new Date(text).toISOString()
@@ -301,6 +303,36 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter('countryName', function (code: string) {
     return countryName(code, this.page?.lang || config.defaultLocale)
   })
+  // Generated withdrawal instructions + model form (withdrawalPolicyModule). Same builder as the
+  // order confirmation mail. Returns { instructions, missing } — instructions null when settings
+  // are incomplete (the template shows an editor hint in preview only).
+  eleventyConfig.addFilter('withdrawalInstructions', (function (this: any, localeData: CmsLocaleData) {
+    const locale = this.page?.lang || config.defaultLocale
+    const company = localeData?.settings?.company
+    const shop = localeData?.shopSettings
+    const input: WithdrawalInstructionsInput = {
+      trader: {
+        name: company?.name || localeData?.settings?.siteTitle,
+        address: company?.address?.line1 ? company.address : shop?.billingAddress,
+        phone: company?.phone,
+        email: company?.email,
+      },
+      returnAddress: shop?.returnAddress,
+      returnShippingBorneBy: shop?.returnShippingBorneBy ?? 'customer',
+      periodStart: shop?.withdrawalPeriodStart ?? 'multipleGoods',
+      exceptions: shop?.withdrawalExceptions ?? [],
+      returnPolicyNote: shop?.returnPolicyNote,
+      withdrawUrl: localeData?.orderWithdrawUrl && localeData.orderWithdrawUrl !== '#'
+        ? `${config.baseUrl}${localeData.orderWithdrawUrl}`
+        : '',
+      countryName: (code) => countryName(code, locale),
+    }
+    return {
+      instructions: buildWithdrawalInstructions(input, (key, params) =>
+        ctx.translate(`shared:${key}`, params ?? {}, locale)),
+      missing: missingWithdrawalData(input),
+    }
+  }) as any)
   eleventyConfig.addFilter('countryList', (function (this: any, locale?: string) {
     return countryList(locale || this.page?.lang || config.defaultLocale)
   }) as any)

@@ -1,3 +1,4 @@
+import type { WithdrawalPeriodStart } from '../shared/withdrawal-instructions'
 import type { VinofactWine } from './vinofact'
 
 type SanityImageHotspot = {
@@ -187,6 +188,8 @@ export type ResolvedCompany = {
   email: string | null
   phone: string | null
   vatId: string | null
+  registerNumber: string | null
+  registerCourt: string | null
   [key: string]: unknown
 }
 
@@ -203,11 +206,28 @@ export type ResolvedSettings = {
   defaultShareImage: ResolvedImage | null
 }
 
+/** A shipping method as the "Versand & Zahlung" module shows it (prices: gross cents). */
+export type ResolvedShippingMethod = {
+  _id: string
+  title: string
+  deliveryTime: string | null
+  methodType: 'delivery' | 'pickup'
+  pickupFee: number | null
+  freeShippingThreshold: number | null
+  /** Enabled tax countries this method ships to (ISO codes). */
+  countries: string[]
+  /** Weight rates, ascending: up to `maxWeight` kg → `price`. */
+  rates: Array<{ maxWeight: number | null; price: number }>
+  /** Wine packaging: per bottle volume (ml), price per case size. */
+  packagingConfigs: Array<{ volume: number | null; packages: Array<{ count: number; price: number }> }>
+}
+
 export type ResolvedShopSettings = {
   _id: string
   shopPageId: string | null
   termsPageId: string | null
   withdrawalPolicyPageId: string | null
+  shippingInfoPageId: string | null
   defaultCountry: { _id: string; countryCode: string } | null
   freeShippingCalculation: 'beforeDiscount' | 'afterDiscount'
   stockThreshold: number | null
@@ -216,6 +236,15 @@ export type ResolvedShopSettings = {
   invoiceNumberPrefix: string | null
   billingAddress: ResolvedAddress | null
   bankAccount: { name: string; bic: string; iban: string } | null
+  /** Where withdrawn goods go; null → company / billing address. */
+  returnAddress: ResolvedAddress | null
+  /** Who pays return postage — drives the withdrawal instructions + mails. Unset → 'customer'. */
+  returnShippingBorneBy: 'customer' | 'merchant'
+  returnPolicyNote: string | null
+  /** FAGG Anhang I note [1] variant — see `shared/withdrawal-instructions.ts`. */
+  withdrawalPeriodStart: WithdrawalPeriodStart
+  /** Statutory exceptions (§ 18 FAGG) listed next to the instructions. */
+  withdrawalExceptions: string[]
   /** Global default filters applied when a module/category defines no local filters */
   filters: ResolvedFilterKey[]
 }
@@ -321,6 +350,8 @@ export type CmsLocaleData = {
   menus: ResolvedMenu[]
   settings: ResolvedSettings | null
   shopSettings: ResolvedShopSettings | null
+  /** Shipping methods (shop only) — rendered by the shippingInfoModule. */
+  shippingMethods: ResolvedShippingMethod[]
   /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
   urlMap: Record<string, string>
   /** Sanity _id → resolved document (variant, category, page, or post) for the current locale. */
@@ -335,6 +366,8 @@ export type CmsLocaleData = {
   termsUrl: string
   /** URL of the withdrawal-policy (Widerrufsbelehrung) page for the current locale. */
   withdrawalPolicyUrl: string
+  /** "Versand & Zahlung" page (`shopSettings.shippingInfoPage`), `'#'` when unset. */
+  shippingInfoUrl: string
   /** URL of the checkout page for the current locale. */
   checkoutUrl: string
   /** URL of the order confirmation page for the current locale. */

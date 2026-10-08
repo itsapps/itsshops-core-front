@@ -3,7 +3,8 @@
 Status: **Release 1 implemented** (steps 0, 0b, 1, 2, 2b, 3, 3b — 2026-10-08, on
 `feature/order-email-legal` in core-front + core-back; durable parts are in
 `architecture/commerce-and-netlify.md`, `i18n.md`, `configuration.md` and two ADRs). **Release 2
-(steps 4 + 5b) not started.** Agreed 2026-10-07. Origin: review of what the automatic order
+(2c, 4, 5b) implemented 2026-10-08** — remaining: per-shop migration (step 4/5b "Migration per
+shop", step 7 owner to-dos). Agreed 2026-10-07. Origin: review of what the automatic order
 confirmation contains vs. Austrian/EU consumer-law expectations. Not legal advice: the legal
 requirements below are an orientation; the shop owner confirms them (WKO templates / lawyer).
 
@@ -305,6 +306,22 @@ for all German texts — website, emails, server messages, **including** the sta
 - Complaint-handling procedure: only if a shop has one — then via `returnPolicyNote` / page text, no
   new field for now.
 - Tests: both appear in de/en render.
+
+### 2c. Harmonised warranty notice (Anhang II) — R1/§4 (1) — added 2026-10-08
+
+Found while fetching the statutory texts: §4 (1) FAGG (in force 2026-10-01, Directive 2024/825,
+Implementing Regulation (EU) 2025/1960, applicable 2026-09-27) requires the statutory-warranty
+information "in hervorgehobener Weise unter Verwendung der harmonisierten Mitteilung laut Anhang II"
+— a fixed EU graphic (no element editable, RGB online, QR code to "Ihr Europa"). The free-text
+warranty sentence from step 2b is not enough and is replaced.
+
+**Decided (2026-10-08):**
+- Core ships the official graphic as an image (de from the RIS PDF, en from the Commission annex);
+  no "Du" version (not editable). QR code must stay scannable.
+- Website, before ordering: **checkout page** and the **"Versand & Zahlung" page** (step 5b
+  module); **footer link** = editors link that page in the footer menu.
+- Order confirmation: the graphic as an image (replaces the step 2b sentence).
+- Step 4: returns are always "customer sends back" (no collection setting).
 
 ### 3. Business details in the footer (core-front + maybe core-back) — R5
 

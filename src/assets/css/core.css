@@ -75,3 +75,17 @@
 html.has-filter-panel-open {
   overflow: hidden;
 }
+
+/* ─── Harmonised warranty notice ─────────────────────────────────────────────
+ * core/components/partials/legal-guarantee-notice.njk — the official EU graphic, never altered;
+ * only its size may change.
+ */
+.legal-guarantee-notice {
+  margin: 0;
+  max-width: 36rem;
+}
+.legal-guarantee-notice img {
+  display: block;
+  width: 100%;
+  height: auto;
+}

@@ -198,6 +198,7 @@ export default {
   //   orderStatus: "Status",
   // },
   checkout: {
+    shippingInfo: 'Delivery countries, shipping costs and payment methods: <a href="{{url}}">Shipping & payment</a>',
     confirmations: {
       terms: 'I have read the <a href="{{url}}">Terms & Conditions</a> and agree to them.',
       withdrawalPolicy: 'I have read the <a href="{{url}}">withdrawal policy</a>.',
@@ -512,6 +513,36 @@ export default {
         loadingText: "Loading orders ...",
       }
     },
+  },
+  shippingInfo: {
+    type: "Type",
+    types: { delivery: "Delivery", pickup: "Pickup" },
+    deliveryTime: "Delivery time",
+    countries: "Delivery countries",
+    pickupFee: "Fee",
+    free: "free",
+    freeShipping: "Free shipping",
+    freeShippingFrom: "from an order value of {{amount}}",
+    packagingCaption: "Shipping costs for wine ({{volume}} bottles), per case",
+    package: "Case",
+    packageCount: "for {{count}} bottles",
+    ratesCaption: "Shipping costs by weight",
+    ratesCaptionOther: "Shipping costs for other items by weight",
+    weight: "Weight",
+    price: "Price",
+    upTo: "up to {{weight}} kg",
+    anyWeight: "any weight",
+    pricesGross: "All prices incl. VAT.",
+    legalGuarantee: "Legal guarantee",
+  },
+  withdrawalInstructions: {
+    missing: "Withdrawal instructions can't be generated – missing settings: {{fields}}. (Visible in preview only.)",
+  },
+  // Harmonised notice on the statutory warranty (FAGG Anhang II / Reg. (EU) 2025/1960) — official
+  // wording, not editable: no informal variant.
+  legalGuarantee: {
+    alt: "Legal guarantee – harmonised EU notice",
+    text: "<p><strong>Legal guarantee</strong></p><p><strong>Minimum two-year legal guarantee protection</strong> for goods sold in the European Union.</p><p>Consumers can claim their rights under the legal guarantee of conformity, for example if goods:</p><ul><li>do not match the description;</li><li>do not function as intended.</li></ul><p><strong>Sellers are liable</strong> for any lack of conformity which existed when the goods were delivered, and which becomes apparent within the legal guarantee period. Sellers in such a situation are required to offer:</p><ul><li><strong>free repair</strong> or <strong>free replacement</strong>;</li><li>in some cases, a <strong>price reduction</strong> or <strong>full reimbursement</strong>.</li></ul><p>Some countries have a longer legal guarantee period. For second-hand goods, a shorter period may apply, but not less than one year.</p><p>For more information on your rights in a specific country, scan the QR code below or ask the seller: <a href=\"https://europa.eu/youreurope/guarantees\">europa.eu/youreurope/guarantees</a></p><p><strong>What to do if you receive non-conforming goods:</strong></p><ol><li>Contact the seller as soon as possible to report the issue;</li><li>Provide proof of purchase, such as a receipt, invoice, or bank statement.</li></ol><p>Sellers and producers may also offer commercial guarantees, which apply independently from the legal guarantee. For example, you may see this GARAN label representing a <strong>commercial guarantee of durability</strong> offered by the producer at no additional cost and covering the entire good.</p>",
   },
   cookies: {
     title: "Cookie consent",

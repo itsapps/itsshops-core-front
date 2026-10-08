@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Column, Link, Row, Section } from '@react-email/components'
+import { Column, Img, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
 import { EmailText, EmailHeading, EmailHr } from './components'
 import type { OrderEmailProps } from './types'
@@ -7,6 +7,7 @@ import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout
 import { colors } from './tokens'
 import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
+import type { WithdrawalInstructions } from '../../../shared/withdrawal-instructions'
 
 function AddressBlock({
   title,
@@ -93,6 +94,56 @@ function OrderDetails({ ctx, order }: Pick<OrderEmailProps, 'ctx' | 'order'>) {
           {label}: <strong>{value}</strong>
         </EmailText>
       ))}
+    </Section>
+  )
+}
+
+/** Generated withdrawal instructions + model form — same content as the website module. */
+function WithdrawalInstructionsBlock({
+  instructions,
+  withdrawUrl,
+  linkLabel,
+}: {
+  instructions: WithdrawalInstructions
+  withdrawUrl: string
+  linkLabel: string
+}) {
+  const heading = (text: string) => (
+    <EmailText bold style={{ marginTop: '16px', marginBottom: '4px' }}>{text}</EmailText>
+  )
+  const paragraph = (text: string, i: number) => (
+    <EmailText key={i} size={14} style={{ marginBottom: '8px' }}>{text}</EmailText>
+  )
+  return (
+    <Section style={{ marginTop: '32px' }}>
+      <EmailHr />
+      {instructions.sections.map((section, s) => (
+        <React.Fragment key={s}>
+          {heading(section.heading)}
+          {section.paragraphs.map(paragraph)}
+          {s === 0 && (
+            <EmailText style={{ marginBottom: '8px' }}>
+              <Link href={withdrawUrl} style={{ color: colors.text, textDecoration: 'underline' }}>
+                {linkLabel}
+              </Link>
+            </EmailText>
+          )}
+        </React.Fragment>
+      ))}
+      {heading(instructions.form.heading)}
+      {[instructions.form.intro, instructions.form.to, ...instructions.form.lines.map((l) => `– ${l}`), instructions.form.footnote].map(paragraph)}
+      {instructions.exceptions && (
+        <>
+          {heading(instructions.exceptions.heading)}
+          {[instructions.exceptions.intro, ...instructions.exceptions.items.map((i) => `– ${i}`)].map(paragraph)}
+        </>
+      )}
+      {instructions.note && (
+        <>
+          {heading(instructions.note.heading)}
+          {instructions.note.text.split('\n').map(paragraph)}
+        </>
+      )}
     </Section>
   )
 }
@@ -234,29 +285,43 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
         )}
       </Section>
 
-      {/* Statutory warranty notice (FAGG §4) — confirmation email only */}
-      {mailType === 'orderConfirmation' && (
+      {/* Harmonised warranty notice (FAGG §4 (1) + Anhang II) — the official graphic, served by
+          the shop site (core ships it at /assets/legal/); confirmation email only. */}
+      {mailType === 'orderConfirmation' && ctx.settings.baseUrl && (
         <Section style={{ marginTop: '32px' }}>
-          <EmailText muted>{t('emails.order.warrantyNotice')}</EmailText>
+          <Link href={t('emails.order.legalGuaranteeUrl')}>
+            <Img
+              src={`${ctx.settings.baseUrl}/assets/legal/legal-guarantee-notice-${locale === 'de' ? 'de' : 'en'}.png`}
+              alt={t('emails.order.legalGuaranteeAlt')}
+              width={560}
+              style={{ width: '100%', maxWidth: '560px', height: 'auto' }}
+            />
+          </Link>
         </Section>
       )}
 
-      {/* Right-of-withdrawal notice (default on, confirmation email only) */}
+      {/* Right of withdrawal (default on, confirmation email only): the full generated
+          instructions + model form (FAGG §7 (3): on a durable medium), or — when settings are
+          incomplete — the short notice + link. */}
       {ctx.withdrawUrl && mailType === 'orderConfirmation' && (
-        <Section style={{ marginTop: '32px' }}>
-          <EmailHr />
-          <EmailText bold style={{ marginTop: '16px' }}>
-            {t('emails.order.withdrawalTitle')}
-          </EmailText>
-          <EmailText muted style={{ marginTop: '4px' }}>
-            {t('emails.order.withdrawalText')}
-          </EmailText>
-          <EmailText style={{ marginTop: '8px' }}>
-            <Link href={ctx.withdrawUrl} style={{ color: colors.text, textDecoration: 'underline' }}>
-              {t('emails.order.withdrawalLink')}
-            </Link>
-          </EmailText>
-        </Section>
+        ctx.withdrawalInstructions
+          ? <WithdrawalInstructionsBlock instructions={ctx.withdrawalInstructions} withdrawUrl={ctx.withdrawUrl} linkLabel={t('emails.order.withdrawalLink')} />
+          : (
+            <Section style={{ marginTop: '32px' }}>
+              <EmailHr />
+              <EmailText bold style={{ marginTop: '16px' }}>
+                {t('emails.order.withdrawalTitle')}
+              </EmailText>
+              <EmailText muted style={{ marginTop: '4px' }}>
+                {t('emails.order.withdrawalText')}
+              </EmailText>
+              <EmailText style={{ marginTop: '8px' }}>
+                <Link href={ctx.withdrawUrl} style={{ color: colors.text, textDecoration: 'underline' }}>
+                  {t('emails.order.withdrawalLink')}
+                </Link>
+              </EmailText>
+            </Section>
+          )
       )}
 
     </EmailLayout>

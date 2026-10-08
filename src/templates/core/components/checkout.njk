@@ -1,6 +1,14 @@
 {%- set _locale = page.lang or coreConfig.defaultLocale -%}
 <article class="static-page checkout">
   <h1>{{ 'staticPages.checkout.title' | trans }}</h1>
+  {#- FAGG §8 (3): delivery restrictions + accepted payment methods at the start of the ordering
+      process — linked "Versand & Zahlung" page (shopSettings.shippingInfoPage), when set. -#}
+  {%- set _shippingInfoUrl = cms[_locale].shippingInfoUrl -%}
+  {% block checkout_shipping_info %}
+    {%- if _shippingInfoUrl and _shippingInfoUrl != '#' %}
+    <p class="checkout__shipping-info">{{ 'checkout.shippingInfo' | trans({ url: _shippingInfoUrl }) | safe }}</p>
+    {%- endif %}
+  {% endblock %}
 
   <div
     id="checkout"
@@ -230,6 +238,17 @@
             <legend>{{ 'checkout.sections.payment' | trans }}</legend>
             <div data-checkout-payment class="checkout-payment"></div>
           </fieldset>
+
+          {#- Statutory warranty notice before ordering (FAGG §4 (1), harmonised notice). -#}
+          {% block checkout_legal_guarantee %}
+            <div class="checkout__section">
+              {% include "core/components/partials/legal-guarantee-notice.njk" %}
+            </div>
+          {% endblock %}
+
+          {%- if _shippingInfoUrl and _shippingInfoUrl != '#' %}
+            <p class="checkout__confirmation">{{ 'checkout.shippingInfo' | trans({ url: _shippingInfoUrl }) | safe }}</p>
+          {%- endif %}
 
           {% block checkout_confirmations %}
             {%- if coreConfig.features.shop.checkoutAgeConfirmation %}

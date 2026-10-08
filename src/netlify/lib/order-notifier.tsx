@@ -20,7 +20,14 @@ import type { EmailContext } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
 import type { MailType } from '../types/orderTransitions'
 import { ErrorCode } from '../types/errors'
-import { formatPrice as fmtPrice, serverT } from '../utils/i18n'
+import { countryName, formatPrice as fmtPrice, serverT } from '../utils/i18n'
+import { log } from '../utils/logger'
+import {
+  buildWithdrawalInstructions,
+  missingWithdrawalData,
+  type WithdrawalInstructionsInput,
+} from '../../shared/withdrawal-instructions'
+import type { EmailShopSettings } from '../templates/email/types'
 
 const MAIL_TYPES_WITH_INVOICE: ReadonlyArray<MailType> = ['orderInvoice']
 
@@ -63,6 +70,41 @@ export class OrderNotifierError extends Error {
   }
 }
 
+/**
+ * Full withdrawal instructions + model form for the confirmation — the same builder and wording as
+ * the website's withdrawalPolicyModule. Incomplete settings → null + a warning (the mail then shows
+ * the short notice), never a half-filled legal text.
+ */
+export function withdrawalInstructionsFor(
+  settings: EmailShopSettings,
+  locale: string,
+  withdrawUrl: string,
+) {
+  const company = settings.company
+  const input: WithdrawalInstructionsInput = {
+    trader: {
+      name: company?.name || settings.shopName,
+      address: company?.address ?? settings.billingAddress,
+      phone: company?.phone,
+      email: company?.email || settings.senderEmail,
+    },
+    returnAddress: settings.returnAddress,
+    returnShippingBorneBy: settings.returnShippingBorneBy ?? 'customer',
+    periodStart: settings.withdrawalPeriodStart ?? 'multipleGoods',
+    exceptions: settings.withdrawalExceptions ?? [],
+    returnPolicyNote: settings.returnPolicyNote,
+    withdrawUrl,
+    countryName: (code) => countryName(locale, code),
+  }
+  const instructions = buildWithdrawalInstructions(input, (key, params) => serverT(locale, key, params))
+  if (!instructions) {
+    log.warn('Order confirmation: withdrawal instructions incomplete, sending short notice', {
+      missing: missingWithdrawalData(input),
+    })
+  }
+  return instructions
+}
+
 export async function sendOrderNotification(
   orderId: string,
   mailType: MailType,
@@ -101,6 +143,9 @@ export async function sendOrderNotification(
     formatPrice: (cents) => fmtPrice(cents, locale),
     settings,
     ...(withdrawUrl && { withdrawUrl }),
+    ...(withdrawUrl && mailType === 'orderConfirmation' && {
+      withdrawalInstructions: withdrawalInstructionsFor(settings, locale, withdrawUrl),
+    }),
   }
 
   const html = await renderMailFor(mailType, ctx, order, options.templates, options.refundAmount)

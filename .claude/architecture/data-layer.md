@@ -113,6 +113,9 @@ each derived from `urlMap`, `permalinks`, or `userPaths`, and **feature-gated to
   `users`), from `config.userPaths[locale]`.
 - newsletter: `newsletterConfirm*`, `newsletterUnsubscribe*` (only when `newsletter`).
 - withdrawal: `orderWithdrawUrl`, `orderWithdrawSuccessUrl` (when shop).
+- `shippingInfoUrl` (`shopSettings.shippingInfoPage`, `'#'` when unset); `cms[locale].shippingMethods`
+  (`resolveShippingMethods`: title, delivery time, enabled countries, weight rates, packaging prices —
+  gross cents, the checkout's own data).
 Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read these directly
 (e.g. `cms[locale].checkoutUrl`) instead of constructing URLs.
 

@@ -198,6 +198,7 @@ export default {
   //   orderStatus: "Status",
   // },
   checkout: {
+    shippingInfo: 'Lieferländer, Versandkosten und Zahlungsarten: <a href="{{url}}">Versand & Zahlung</a>',
     confirmations: {
       terms: 'Ich habe die <a href="{{url}}">AGB</a> gelesen und stimme ihnen zu.',
       withdrawalPolicy: 'Ich habe die <a href="{{url}}">Widerrufsbelehrung</a> zur Kenntnis genommen.',
@@ -512,6 +513,36 @@ export default {
         loadingText: "Bestellungen werden geladen ...",
       }
     },
+  },
+  shippingInfo: {
+    type: "Art",
+    types: { delivery: "Lieferung", pickup: "Abholung" },
+    deliveryTime: "Lieferzeit",
+    countries: "Lieferländer",
+    pickupFee: "Gebühr",
+    free: "kostenlos",
+    freeShipping: "Versandkostenfrei",
+    freeShippingFrom: "ab einem Bestellwert von {{amount}}",
+    packagingCaption: "Versandkosten für Wein ({{volume}} Flaschen), je Karton",
+    package: "Karton",
+    packageCount: "für {{count}} Flaschen",
+    ratesCaption: "Versandkosten nach Gewicht",
+    ratesCaptionOther: "Versandkosten für weitere Artikel nach Gewicht",
+    weight: "Gewicht",
+    price: "Preis",
+    upTo: "bis {{weight}} kg",
+    anyWeight: "jedes Gewicht",
+    pricesGross: "Alle Preise inkl. MwSt.",
+    legalGuarantee: "Gesetzliche Gewährleistung",
+  },
+  withdrawalInstructions: {
+    missing: "Widerrufsbelehrung kann nicht erzeugt werden – fehlende Einstellungen: {{fields}}. (Nur in der Vorschau sichtbar.)",
+  },
+  // Harmonised notice on the statutory warranty (FAGG Anhang II / Reg. (EU) 2025/1960) — official
+  // wording, not editable: no informal variant.
+  legalGuarantee: {
+    alt: "Gesetzliche Gewährleistung – harmonisierte Mitteilung der EU",
+    text: "<p><strong>Gesetzliche Gewährleistung</strong></p><p><strong>Mindestens zwei Jahre gesetzliche Gewährleistung der Vertragsmäßigkeit</strong> für Waren, die in der Europäischen Union verkauft werden.</p><p>Verbraucherinnen und Verbraucher können ihre Rechte im Rahmen des gesetzlichen Gewährleistungsrechts geltend machen, z. B. wenn die Waren</p><ul><li>nicht der Beschreibung entsprechen,</li><li>nicht bestimmungsgemäß funktionieren.</li></ul><p><strong>Verkäufer haften</strong> für jede Vertragswidrigkeit, die zum Zeitpunkt der Lieferung der Waren bestand und innerhalb des Zeitraums der gesetzlichen Gewährleistung erkennbar wird. Verkäufer müssen in solchen Fällen Folgendes anbieten:</p><ul><li><strong>kostenlose Nachbesserung</strong> oder <strong>kostenlose Ersatzlieferung</strong>,</li><li>in bestimmten Fällen eine <strong>Preisminderung</strong> oder eine <strong>vollständige Erstattung des Kaufpreises</strong>.</li></ul><p>In einigen Ländern gilt ein längerer Zeitraum für die gesetzliche Gewährleistung. Für gebrauchte Waren kann ein kürzerer Zeitraum gelten, jedoch nicht weniger als ein Jahr.</p><p>Für weitere Informationen zu Ihren Rechten in einem bestimmten Land scannen Sie den nachstehenden QR-Code oder fragen Sie den Verkäufer: <a href=\"https://europa.eu/youreurope/citizens/consumers/shopping/guarantees-returns/index_de.htm\">europa.eu/youreurope/garantien</a></p><p><strong>Was ist zu tun, wenn Sie vertragswidrige Waren erhalten?</strong></p><ol><li>Melden Sie dem Verkäufer das Problem so bald wie möglich.</li><li>Legen Sie einen Kaufnachweis vor, z. B. die Quittung, Rechnung oder einen Kontoauszug.</li></ol><p>Verkäufer und Hersteller können auch gewerbliche Garantien gewähren, die unabhängig von der gesetzlichen Gewährleistung gelten. Diese GARAN-Kennzeichnung zeigt beispielsweise, dass der Hersteller eine <strong>gewerbliche Haltbarkeitsgarantie</strong> ohne zusätzliche Kosten gewährt, die die gesamte Ware abdeckt.</p>",
   },
   cookies: {
     title: "Cookie Einwilligung",

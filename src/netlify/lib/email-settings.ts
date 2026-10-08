@@ -60,6 +60,8 @@ export function buildEmailShopSettings(
     returnShippingBorneBy: raw.returnShippingBorneBy ?? 'customer',
     returnPolicyNote: raw.returnPolicyNote,
     shopNotificationEmail: raw.shopNotificationEmail || raw.senderEmail || '',
+    withdrawalPeriodStart: raw.withdrawalPeriodStart ?? 'multipleGoods',
+    withdrawalExceptions: raw.withdrawalExceptions ?? [],
     company: toEmailCompany(raw.company),
   }
 }

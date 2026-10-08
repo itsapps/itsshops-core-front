@@ -1,0 +1,76 @@
+{#- "Versand & Zahlung": shipping methods from the same documents the checkout prices with
+    (countries = delivery restrictions, rates as rules — never invented totals; gross prices as
+    charged), then the harmonised warranty notice. Payment methods are editor-written in a normal
+    rich-text module next to this one (Stripe decides them, not Sanity). FAGG §8 (3). -#}
+{%- set _methods = cms[_locale].shippingMethods or [] -%}
+<div class="shipping-info">
+  {%- for method in _methods %}
+  <section class="shipping-info__method">
+    <h2>{{ method.title }}</h2>
+    <dl class="shipping-info__facts">
+      <dt>{{ 'shippingInfo.type' | trans }}</dt>
+      <dd>{{ ('shippingInfo.types.' + method.methodType) | trans }}</dd>
+      {%- if method.deliveryTime %}
+      <dt>{{ 'shippingInfo.deliveryTime' | trans }}</dt>
+      <dd>{{ method.deliveryTime }}</dd>
+      {%- endif %}
+      {%- if method.countries.length %}
+      <dt>{{ 'shippingInfo.countries' | trans }}</dt>
+      <dd>{% for code in method.countries %}{{ code | countryName }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+      {%- endif %}
+      {%- if method.methodType == 'pickup' %}
+      <dt>{{ 'shippingInfo.pickupFee' | trans }}</dt>
+      <dd>{% if method.pickupFee %}{{ method.pickupFee | formatPrice }}{% else %}{{ 'shippingInfo.free' | trans }}{% endif %}</dd>
+      {%- endif %}
+      {%- if method.freeShippingThreshold %}
+      <dt>{{ 'shippingInfo.freeShipping' | trans }}</dt>
+      <dd>{{ 'shippingInfo.freeShippingFrom' | trans({ amount: method.freeShippingThreshold | formatPrice }) }}</dd>
+      {%- endif %}
+    </dl>
+
+    {%- for config in method.packagingConfigs %}
+    {%- if config.packages.length %}
+    <table class="shipping-info__table">
+      <caption>{{ 'shippingInfo.packagingCaption' | trans({ volume: config.volume | formatVolume }) }}</caption>
+      <thead><tr>
+        <th scope="col">{{ 'shippingInfo.package' | trans }}</th>
+        <th scope="col">{{ 'shippingInfo.price' | trans }}</th>
+      </tr></thead>
+      <tbody>
+        {%- for package in config.packages %}
+        <tr>
+          <td>{{ 'shippingInfo.packageCount' | trans({ count: package.count }) }}</td>
+          <td>{{ package.price | formatPrice }}</td>
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+    {%- endif %}
+    {%- endfor %}
+
+    {%- if method.rates.length %}
+    <table class="shipping-info__table">
+      <caption>{{ ('shippingInfo.ratesCaption' + ('Other' if method.packagingConfigs.length else '')) | trans }}</caption>
+      <thead><tr>
+        <th scope="col">{{ 'shippingInfo.weight' | trans }}</th>
+        <th scope="col">{{ 'shippingInfo.price' | trans }}</th>
+      </tr></thead>
+      <tbody>
+        {%- for rate in method.rates %}
+        <tr>
+          <td>{% if rate.maxWeight %}{{ 'shippingInfo.upTo' | trans({ weight: rate.maxWeight | formatNumber }) }}{% else %}{{ 'shippingInfo.anyWeight' | trans }}{% endif %}</td>
+          <td>{{ rate.price | formatPrice }}</td>
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+    {%- endif %}
+  </section>
+  {%- endfor %}
+  <p class="shipping-info__note">{{ 'shippingInfo.pricesGross' | trans }}</p>
+
+  <section class="shipping-info__guarantee">
+    <h2>{{ 'shippingInfo.legalGuarantee' | trans }}</h2>
+    {% include "core/components/partials/legal-guarantee-notice.njk" %}
+  </section>
+</div>

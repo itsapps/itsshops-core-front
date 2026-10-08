@@ -207,7 +207,11 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
 - **Delivery time:** optional `shippingMethod.deliveryTime` (i18n), snapshotted into
   `order.fulfillment.deliveryTime` at checkout.
 - **Withdrawal section** in the confirmation is **default on** (`withdrawalNotice`, opt out with
-  `false`).
+  `false`). It carries the **full generated instructions + model form** (see "Legal texts" below);
+  incomplete settings → the short notice + link and a `log.warn`, never a half-filled legal text.
+- **Harmonised warranty notice** (FAGG §4 (1) + Anhang II): the official EU graphic as an image
+  (`${baseUrl}/assets/legal/legal-guarantee-notice-<de|en>.png`, served by the shop site) in every
+  order confirmation.
 - **Shop inbox:** `settings.shopNotificationEmail` (fallback `senderEmail`, resolved in
   `buildEmailShopSettings`) receives the order-confirmation BCC and withdrawal notifications. `From:`
   stays `senderName <senderEmail>`.
@@ -218,6 +222,29 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
 All mail notifiers throw when `settings.senderEmail` / `senderName` / `siteTitle` are missing —
 core-back makes them required when shop/users/newsletter is on (core-back `schemas.md` → "Settings
 validation").
+
+## Legal texts generated from settings
+
+One builder, `src/shared/withdrawal-instructions.ts` (`buildWithdrawalInstructions`), produces the
+withdrawal instructions + model form (FAGG Anhang I / Directive 2011/83/EU Annex I) for the website
+module (`withdrawalPolicyModule`, Nunjucks filter `withdrawalInstructions`) **and** the order
+confirmation (`withdrawalInstructionsFor` in `lib/order-notifier.tsx`) — page and mail can't
+contradict each other. It only chooses the statutory variants and fills the gaps:
+period start ← `shopSettings.withdrawalPeriodStart`; trader identity ← `settings.company` (fallback
+billing address / sender email); online-function sentence ← always; refund-withheld sentence ←
+always (core never collects goods); return address + costs ← `returnAddress` /
+`returnShippingBorneBy`. `withdrawalExceptions` (§ 18) and `returnPolicyNote` render as separate
+blocks, never inside the model text. Missing name/address/email → `null`.
+
+**Wording rule:** the texts in `shared` translations (`withdrawalInstructions.*`) are copied
+**verbatim** — German from RIS (FAGG, version from 2026-10-01), English from the EUR-Lex consolidated
+Directive 2011/83/EU (2026-09-27). Never reword them; the "Du" overlay changes only the forms of
+address. The harmonised warranty notice is an unaltered official graphic (`src/assets/legal/`, from
+the Commission's package; colours untouched, QR code must scan) — no "Du" variant.
+
+Placement before ordering: checkout (notice in the summary; "Versand & Zahlung" link at the top and
+above the order button when `shippingInfoPage` is set) and the `shippingInfoModule` page (shipping
+methods from `cms[locale].shippingMethods` + the notice).
 
 ## Customer names
 

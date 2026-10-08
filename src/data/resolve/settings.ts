@@ -1,5 +1,5 @@
 import type { ResolveContext, Extensions } from '../../types'
-import type { ResolvedSettings, ResolvedShopSettings, ResolvedCompany, ResolvedAddress } from '../../types/data'
+import type { ResolvedSettings, ResolvedShopSettings, ResolvedCompany, ResolvedAddress, ResolvedShippingMethod } from '../../types/data'
 import { resolveFilterSpecs } from './filters'
 
 export function resolveSettings(
@@ -23,7 +23,7 @@ export function resolveSettings(
 
 function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions): ResolvedCompany {
   const addr = raw.address
-  const { name, owner, email, phone, vatId, address: _addr, ...rest } = raw
+  const { name, owner, email, phone, vatId, registerNumber, registerCourt, address: _addr, ...rest } = raw
   const extensionFields = extensions?.resolve?.company?.(rest, ctx) ?? {}
   return {
     name:  ctx.resolveString(name),
@@ -31,6 +31,8 @@ function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions):
     email: email ?? null,
     phone: phone ?? null,
     vatId: vatId ?? null,
+    registerNumber: registerNumber ?? null,
+    registerCourt:  registerCourt  ?? null,
     address: addr ? {
       line1:   addr.line1   ?? '',
       line2:   addr.line2   ?? '',
@@ -42,6 +44,32 @@ function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions):
   }
 }
 
+export function resolveShippingMethods(raw: any[], ctx: ResolveContext): ResolvedShippingMethod[] {
+  return (raw ?? []).map((m: any) => ({
+    _id:          m._id,
+    title:        ctx.resolveString(m.title),
+    deliveryTime: ctx.resolveString(m.deliveryTime) || null,
+    methodType:   m.methodType === 'pickup' ? 'pickup' as const : 'delivery' as const,
+    pickupFee:    m.pickupFee ?? null,
+    freeShippingThreshold: m.freeShippingThreshold ?? null,
+    countries:    (m.countries ?? [])
+      .filter((c: any) => c?.enabled && c.countryCode)
+      .map((c: any) => c.countryCode as string),
+    // Weight rates ascending — "bis X kg: Y"; prices are gross cents, as the checkout charges them.
+    rates: [...(m.rates ?? [])]
+      .filter((r: any) => typeof r?.price === 'number')
+      .sort((a: any, b: any) => (a.maxWeight ?? Infinity) - (b.maxWeight ?? Infinity))
+      .map((r: any) => ({ maxWeight: r.maxWeight ?? null, price: r.price })),
+    packagingConfigs: (m.packagingConfigs ?? []).map((c: any) => ({
+      volume: c.volume ?? null,
+      packages: [...(c.packages ?? [])]
+        .filter((p: any) => typeof p?.count === 'number' && typeof p?.price === 'number')
+        .sort((a: any, b: any) => a.count - b.count)
+        .map((p: any) => ({ count: p.count, price: p.price })),
+    })),
+  }))
+}
+
 export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
   return {
     filters: resolveFilterSpecs(raw.filters, ctx),
@@ -49,6 +77,7 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
     shopPageId:              raw.shopPage?._ref ?? null,
     termsPageId:              raw.termsPage?._ref ?? null,
     withdrawalPolicyPageId:  raw.withdrawalPolicyPage?._ref ?? null,
+    shippingInfoPageId:      raw.shippingInfoPage?._ref ?? null,
     defaultCountry:          raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,
@@ -73,5 +102,16 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
     bankAccount:         raw.bankAccount
       ? { name: raw.bankAccount.name ?? '', bic: raw.bankAccount.bic ?? '', iban: raw.bankAccount.iban ?? '' }
       : null,
+    returnAddress: raw.returnAddress?.line1 ? {
+      line1:   raw.returnAddress.line1   ?? '',
+      line2:   raw.returnAddress.line2   ?? '',
+      zip:     raw.returnAddress.zip     ?? '',
+      city:    ctx.resolveString(raw.returnAddress.city),
+      country: raw.returnAddress.country ?? '',
+    } satisfies ResolvedAddress : null,
+    returnShippingBorneBy: raw.returnShippingBorneBy === 'merchant' ? 'merchant' : 'customer',
+    returnPolicyNote:      ctx.resolveString(raw.returnPolicyNote) || null,
+    withdrawalPeriodStart: raw.withdrawalPeriodStart ?? 'multipleGoods',
+    withdrawalExceptions:  raw.withdrawalExceptions ?? [],
   }
 }

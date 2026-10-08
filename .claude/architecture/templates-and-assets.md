@@ -45,6 +45,12 @@ no `rel`, `{{ item.url | linkActiveState | safe }}` for `aria-current`. An overr
 branch silently omits the link, including the guaranteed Widerruf footer link. Don't hardcode that
 link in footers; core adds it.
 
+**Core-shipped static files:** `src/assets/legal/` → `dist/assets/legal/` (tsup `onSuccess`) →
+passed through to `/assets/legal/` by `setupAssets` (official legal graphics, also linked from the
+order email). Legal modules/partials: `core/modules/withdrawalPolicyModule.njk`,
+`core/modules/shippingInfoModule.njk`, `core/components/partials/legal-guarantee-notice.njk` —
+see `commerce-and-netlify.md` → "Legal texts".
+
 **System pages have no `pageDoc`** (withdrawal, login, checkout, 404, newsletter/user flows in
 `pages/standard/`). Each sets `titleKey: staticPages.<name>.title` in its front matter (the same
 key as its `<h1>`); `core/head/seo.njk` falls back to `titleKey | trans` for `<title>`, and

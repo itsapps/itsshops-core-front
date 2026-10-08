@@ -1,0 +1,15 @@
+{#- Harmonised notice on the statutory warranty (FAGG §4 (1) Z 12 + Anhang II, Implementing
+    Regulation (EU) 2025/1960): the official EU graphic, unaltered and in colour. Shipped by core
+    (`src/assets/legal/`, served at /assets/legal/); German for de, English otherwise.
+    The image carries a short alt; the full official text follows visually hidden, with the QR
+    code's link, so the notice is fully available without seeing the graphic. -#}
+{%- set _lgLocale = page.lang or coreConfig.defaultLocale -%}
+{%- set _lgLang = 'de' if _lgLocale == 'de' else 'en' -%}
+<figure class="legal-guarantee-notice">
+  <img
+    src="/assets/legal/legal-guarantee-notice-{{ _lgLang }}.png"
+    alt="{{ 'legalGuarantee.alt' | trans }}"
+    width="1000" height="1413" loading="lazy" decoding="async"
+  >
+  <figcaption class="sr-only">{{ 'legalGuarantee.text' | trans | safe }}</figcaption>
+</figure>

@@ -17,4 +17,60 @@ export default {
     orderWithdraw:            "widerruf",
     orderWithdrawSuccess:     "widerruf/erledigt",
   },
+  // FAGG Anhang I (Muster-Widerrufsbelehrung + Muster-Widerrufsformular), verbatim from RIS — version
+  // for contracts from 2026-10-01 (BGBl. I Nr. 59/2026) — plus § 18 Abs. 1 exceptions. Do not reword:
+  // only the variants are chosen by shared/withdrawal-instructions.ts.
+  withdrawalInstructions: {
+    rightHeading: "Widerrufsrecht",
+    right: "Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.",
+    periodStart: {
+      goods: "Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag, an dem Sie oder ein von Ihnen benannter Dritter, der nicht der Beförderer ist, die Waren in Besitz genommen haben bzw. hat.",
+      multipleGoods: "Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag, an dem Sie oder ein von Ihnen benannter Dritter, der nicht der Beförderer ist, die letzte Ware in Besitz genommen haben bzw. hat.",
+      partialDeliveries: "Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag, an dem Sie oder ein von Ihnen benannter Dritter, der nicht der Beförderer ist, die letzte Teilsendung oder das letzte Stück in Besitz genommen haben bzw. hat.",
+      subscription: "Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag, an dem Sie oder ein von Ihnen benannter Dritter, der nicht der Beförderer ist, die erste Ware in Besitz genommen haben bzw. hat.",
+    },
+    howTo: "Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ({{trader}}) mittels einer eindeutigen Erklärung (z. B. mit der Post versandter Brief oder E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.",
+    online: "Sie können Ihr Widerrufsrecht auch online unter {{url}} ausüben. Wenn Sie diese Online-Funktion nutzen, übermitteln wir Ihnen auf einem dauerhaften Datenträger (z. B. durch eine E-Mail) unverzüglich eine Eingangsbestätigung mit Informationen zum Inhalt der Widerrufserklärung sowie dem Datum und der Uhrzeit ihres Eingangs.",
+    deadline: "Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.",
+    consequencesHeading: "Folgen des Widerrufs",
+    refund: "Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben, einschließlich der Lieferkosten (mit Ausnahme der zusätzlichen Kosten, die sich daraus ergeben, dass Sie eine andere Art der Lieferung als die von uns angebotene, günstigste Standardlieferung gewählt haben), unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, es sei denn, mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser Rückzahlung Entgelte berechnet.",
+    refundWithheld: "Wir können die Rückzahlung verweigern, bis wir die Waren wieder zurückerhalten haben oder bis Sie den Nachweis erbracht haben, dass Sie die Waren zurückgesandt haben, je nachdem, welches der frühere Zeitpunkt ist.",
+    returnGoods: "Sie haben die Waren unverzüglich und in jedem Fall spätestens binnen vierzehn Tagen ab dem Tag, an dem Sie uns über den Widerruf dieses Vertrags unterrichten, an {{returnTo}} zurückzusenden oder zu übergeben. Die Frist ist gewahrt, wenn Sie die Waren vor Ablauf der Frist von vierzehn Tagen absenden.",
+    returnToUs: "uns",
+    returnCost: {
+      customer: "Sie tragen die unmittelbaren Kosten der Rücksendung der Waren.",
+      merchant: "Wir tragen die Kosten der Rücksendung der Waren.",
+    },
+    diminishedValue: "Sie müssen für einen etwaigen Wertverlust der Waren nur aufkommen, wenn dieser Wertverlust auf einen zur Prüfung der Beschaffenheit, Eigenschaften und Funktionsweise der Waren nicht notwendigen Umgang mit ihnen zurückzuführen ist.",
+    phone: "Tel. {{phone}}",
+    email: "E-Mail {{email}}",
+    form: {
+      heading: "Muster-Widerrufsformular",
+      intro: "(Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und senden Sie es zurück)",
+      to: "An {{trader}}:",
+      lines: {
+        declaration: "Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*)",
+        orderedOn: "Bestellt am (*)/erhalten am (*)",
+        consumerName: "Name des/der Verbraucher(s)",
+        consumerAddress: "Anschrift des/der Verbraucher(s)",
+        signature: "Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier)",
+        date: "Datum",
+      },
+      footnote: "(*) Unzutreffendes streichen.",
+    },
+    exceptions: {
+      heading: "Ausschluss des Widerrufsrechts",
+      intro: "Das Widerrufsrecht besteht nicht bei Verträgen über",
+      items: {
+        customMade: "Waren, die nach Kundenspezifikationen angefertigt werden oder eindeutig auf die persönlichen Bedürfnisse zugeschnitten sind",
+        perishable: "Waren, die schnell verderben können oder deren Verfallsdatum schnell überschritten würde",
+        sealedHygiene: "Waren, die versiegelt geliefert werden und aus Gründen des Gesundheitsschutzes oder aus Hygienegründen nicht zur Rückgabe geeignet sind, sofern deren Versiegelung nach der Lieferung entfernt wurde",
+        mixed: "Waren, die nach ihrer Lieferung auf Grund ihrer Beschaffenheit untrennbar mit anderen Gütern vermischt wurden",
+        alcoholMarketPrice: "alkoholische Getränke, deren Preis bei Vertragsabschluss vereinbart wurde, die aber nicht früher als 30 Tage nach Vertragsabschluss geliefert werden können und deren aktueller Wert von Schwankungen auf dem Markt abhängt, auf die der Unternehmer keinen Einfluss hat",
+        sealedMedia: "Ton- oder Videoaufnahmen oder Computersoftware, die in einer versiegelten Packung geliefert werden, sofern deren Versiegelung nach der Lieferung entfernt wurde",
+        newspapers: "Zeitungen, Zeitschriften oder Illustrierte mit Ausnahme von Abonnement-Verträgen über die Lieferung solcher Publikationen",
+      },
+    },
+    noteHeading: "Hinweis zur Rücksendung",
+  },
 };

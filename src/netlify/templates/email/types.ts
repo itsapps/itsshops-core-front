@@ -6,6 +6,7 @@
  * to whichever template the mailType resolves to.
  */
 import type { OrderDocument } from '../../types/checkout'
+import type { WithdrawalInstructions, WithdrawalPeriodStart } from '../../../shared/withdrawal-instructions'
 import type { MailType } from '../../types/orderTransitions'
 
 export type EmailAddress = {
@@ -75,6 +76,10 @@ export type EmailShopSettings = {
   shopNotificationEmail?: string
   /** Business details for the footer; only filled fields are rendered. */
   company?: EmailCompany | null
+  /** FAGG Anhang I note [1] variant for the generated withdrawal instructions. */
+  withdrawalPeriodStart?: WithdrawalPeriodStart
+  /** § 18 exceptions listed next to the instructions. */
+  withdrawalExceptions?: string[]
 }
 
 /**
@@ -96,8 +101,13 @@ export type EmailContext = {
   t: EmailTranslator
   formatPrice: EmailFormatPrice
   settings: EmailShopSettings
-  /** Absolute URL of the withdrawal page. Set only when the shop opts in; drives the order-confirmation withdrawal notice. */
+  /** Absolute URL of the withdrawal page. Set when the withdrawal section is on (default). */
   withdrawUrl?: string
+  /**
+   * Full withdrawal instructions + model form for the confirmation (same builder as the website
+   * module). Absent when settings are incomplete → the mail falls back to the short notice.
+   */
+  withdrawalInstructions?: WithdrawalInstructions | null
 }
 
 export type OrderEmailProps = {
