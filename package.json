@@ -113,6 +113,7 @@
     "build": "tsup",
     "dev": "tsup --watch & node scripts/watch-templates.mjs",
     "test": "vitest run",
+    "check:functions": "node scripts/check-functions.mjs",
     "test:watch": "vitest",
     "prepare": "npm run build"
   },

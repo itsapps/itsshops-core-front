@@ -4,8 +4,8 @@ import deShared from '../../i18n/translations/de_shared'
 import enShared from '../../i18n/translations/en_shared'
 import deInformal from '../../i18n/translations/de_server.informal'
 import deSharedInformal from '../../i18n/translations/de_shared.informal'
-import merge from 'lodash/merge'
 import { readFormality, type Formality } from '../../i18n/formality'
+import { mergeTranslations } from '../../i18n/merge-translations'
 
 const baseTranslations: Record<string, object> = {
   de: { ...de, ...deShared },
@@ -14,7 +14,7 @@ const baseTranslations: Record<string, object> = {
 
 const informalTranslations: Record<string, object> = {
   ...baseTranslations,
-  de: merge({}, baseTranslations.de, deInformal, deSharedInformal),
+  de: mergeTranslations(baseTranslations.de, deInformal, deSharedInformal),
 }
 
 /** Translation table for the shop's form of address (`SHOP_FORMALITY`, read per call). */

@@ -67,6 +67,12 @@ All four are required (verified against the current wiring); miss one and custom
    Unlike CSS, functions *are* consumed through `exports` (normal JS module resolution), so this is
    mandatory.
 4. Shared request/response types in `src/shared/` if the browser side calls it.
+**Functions run as plain Node ESM on Netlify.** Vitest resolves imports more leniently, so a passing
+test suite doesn't prove a function loads: never import an extensionless package subpath of a
+package without an `exports` map (e.g. `lodash/merge` — it broke every function once). Run
+`npm run check:functions` after `npm run build` before pushing a core commit that touches
+`src/netlify/` or anything it imports.
+
 Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `config.path`,
 `export default create<Name>Handler()`).
 

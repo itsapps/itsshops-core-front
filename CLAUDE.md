@@ -45,6 +45,7 @@ npm run build   # tsup → dist/
 npm run dev     # tsup --watch + watch-templates.mjs (consumers npm link this)
 npm run test    # vitest (`src/**/__tests__/` — netlify functions/commerce logic, data-layer menus,
                 #   browser scripts; DOM tests opt in with `// @vitest-environment jsdom`)
+npm run check:functions  # after build: loads every dist function in plain Node ESM (as Netlify does)
 ```
 
 No dev server here — develop against a consumer project that has `npm link`ed this package.
