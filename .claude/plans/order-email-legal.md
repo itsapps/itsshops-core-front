@@ -10,6 +10,21 @@ Main source: WKO, "Webshops — die wesentlichen Bestimmungen (Verbraucherrechte
 is live yet (2026-10-07), so no hotfix release is needed — everything must be in place before each
 shop's go-live.
 
+**Releases (decided 2026-10-08):** two core releases, each tested on staging on its own.
+- **Release 1 — code only:** steps 0 + 0b (together: 0b rewrites every German string, so the new
+  step 0 labels are written once, in the right form of address) + 3b + 1 + 2 + 2b + 3. No Sanity
+  content migration. Before it ships: Winenet informed (step 1), `SHOP_FORMALITY` set on the
+  Jurtschitsch Netlify site (step 0b).
+- **Release 2 — content:** steps 4 + 5b. Needs the per-shop migration (withdrawal page module,
+  "Versand & Zahlung" page) and the owner's approval of the generated text.
+
+**Shop timezone:** all dates/times in mails (withdrawal receipt, order date) use one core helper,
+not hard-coded per call site. Source: env var `SHOP_TIMEZONE` (IANA name), **default
+`Europe/Vienna`** (decided 2026-10-08 — customers are in Austria or Germany, which share CET/CEST,
+so the default is right for both). Read like `SHOP_FORMALITY` (functions; build too if the website
+ever formats dates). Invalid value (`Intl.DateTimeFormat` throws `RangeError`) → log a warning and
+fall back to the default, never fail a mail.
+
 When this ships, move the durable parts into `.claude/architecture/commerce-and-netlify.md`, add an
 ADR for the withdrawal-instructions approach (step 4: core-generated, settings as the single source),
 and delete this file.
@@ -104,8 +119,27 @@ an obligation, but lower risk than R0.
     — **without the free-text reason** (no third-party text through our mail); name length capped.
     Shop notification flagged "no matching order — please check".
   - Same response in both cases (no "not found" → order numbers can't be probed).
+  - Order number is **free text** — no format validation; a typo lands in the unmatched flow, not in
+    an error (Art. 11a only asks for something that identifies the contract).
+  - Order number exists but the email doesn't match → still `unmatched`, but the **shop**
+    notification says so ("order X exists, email differs") so editors don't have to search. Never
+    in the customer's receipt.
+  - **Name validation** (decided 2026-10-08): required, capped (~100 chars), and **URL-like input
+    rejected** (`://`, `www.`, domain patterns) — the name is echoed in a mail that can go to any
+    typed address, so it must not carry links.
+  - **Dedupe unmatched** (decided 2026-10-08): an open unmatched record with the same email + order
+    number (normalized: trimmed, lower-cased email) → re-send the receipt, no new record (same as
+    the matched repeat case below).
   - core-back: `order` reference optional on `orderWithdrawal`, new status `unmatched`; editors can
     link the record to the right order in the Studio (it then counts as matched).
+  - **Retention — editor rule, no code** (decided 2026-10-08): unmatched records may hold personal
+    data of non-customers. Rule: within 30 days, link them to the right order or delete them in
+    the Studio. Written (a) in the docs + each shop's go-live checklist and (b) in the Studio
+    description of the `orderWithdrawal` status/order field ("Unmatched: assign it to an order or
+    delete it after checking"). No auto-delete (a genuine late declaration must never be lost).
+- **Double-submit race** (exists today): `findOpenWithdrawal` → `createOrderWithdrawal` is
+  check-then-create, so two quick submits can create two records. Use a deterministic `_id` for the
+  open record + `createIfNotExists` (or an equivalent transaction) for matched and unmatched.
 - **Repeat submission → receipt again:** today an existing open withdrawal makes the function return
   success silently with no mail (`order-withdraw.ts`, `findOpenWithdrawal`). Every submission must be
   confirmed (Art. 11a (3)): still no duplicate record, but re-send the receipt for the existing one
@@ -117,8 +151,13 @@ an obligation, but lower risk than R0.
   config (`windowSize: 60`, `windowLimit: 5`, `aggregateBy: ['ip', 'domain']`) — works on paid
   Netlify plans only, so every shop using the withdrawal function needs a paid plan (go-live
   checklist). Netlify answers over-limit requests itself (429) — the form's client script must show
-  a translated "try again later" message for that status. No per-email limit via Sanity (decided
-  2026-10-07: no counting queries against the CMS).
+  a translated "try again later" message for that status (the 429 body isn't our JSON — handle
+  non-JSON responses). No per-email limit via Sanity (decided 2026-10-07: no counting queries
+  against the CMS).
+  - **Honeypot** (decided 2026-10-08): a per-IP limit doesn't stop distributed bots, and unmatched
+    submissions now create Sanity documents + mails. Add a hidden honeypot field (visually hidden,
+    `aria-hidden="true"`, `tabindex="-1"`, `autocomplete="off"`, never announced to screen-reader
+    users); filled → the same success response, nothing stored or sent.
   - Jurtschitsch's wrapper passes `createOrderWithdrawHandler({ captcha: true })`, an option
     `OrderWithdrawConfig` doesn't define (core enforces the captcha unconditionally today) → remove it
     when the captcha goes.
@@ -132,10 +171,12 @@ an obligation, but lower risk than R0.
   here" / "confirm withdrawal").
 - Customer overrides: check customer `footer.njk` overrides and menus for hard-coded labels
   (Jurtschitsch, Tinhof, Grass-Art).
-- Tests: form validation (name required), function stores/sends the name; receipt mail contains
-  submission content + date and time; unmatched → stored + receipt without reason + flagged shop
-  mail, same response as a match; repeat submission → receipt, no second record; resend keeps the
-  original timestamp; client shows the "try again later" message on 429; render check of labels.
+- Tests: form validation (name required, URL-like name rejected), function stores/sends the name;
+  receipt mail contains submission content + date and time; unmatched → stored + receipt without
+  reason + flagged shop mail, same response as a match; "number exists, email differs" hint in the
+  shop mail only; repeat submission (matched and unmatched) → receipt, no second record; honeypot
+  filled → success response, nothing stored/sent; resend keeps the original timestamp; client shows
+  the "try again later" message on 429; render check of labels.
 
 ### 0b. Form of address: "Sie" by default, "Du" per shop (core-front)
 
@@ -169,10 +210,13 @@ for all German texts — website, emails, server messages, **including** the sta
 - English: unaffected.
 - Naming: code, values and comments in English (`formal`/`informal`); German only inside translation
   strings and German Studio labels.
-- **Tests:** every overlay key exists in the base; heuristic lint — base has no "Du/Dein/Dir/Dich",
-  overlay has no polite "Sie/Ihr"; render thanks page + order email with both settings; for the
+- **Missing env var → "Sie"** (decided 2026-10-08: no build check): the fallback is the literal
+  statutory form, so forgetting the variable is a tone issue, not a legal one. Set it for **all
+  scopes** — build-only would give a "Du" website with "Sie" emails.
+- **Tests:** every overlay key exists in the base; render thanks page + order email with both settings; for the
   statutory keys (steps 2b/4), the overlay differs from the base only in address forms (normalize
-  pronouns/verb forms, then compare).
+  pronouns/verb forms, then compare). No du/Sie word lint (decided 2026-10-08: too many false
+  positives — "Sie"/"Ihr" can mean the order; tone is checked by reading).
 - **Release gate (checklist, not just a note):** set `SHOP_FORMALITY=informal` on the Jurtschitsch
   Netlify site (all scopes) — and Grass-Art if it stays "Du" — **before** any staging/production
   deploy of the core version containing 0b.
@@ -219,7 +263,10 @@ for all German texts — website, emails, server messages, **including** the sta
 ### 2b. Order date + warranty notice in the email (core-front) — R1
 
 **Decided (2026-10-07):** R1 asks for "sämtliche vorvertragliche Informationen"; two cheap gaps:
-- **Order date** in the order details (from the order's creation date, shop timezone).
+- **Order date** in the order details — **from the PaymentIntent's `created`** (decided
+  2026-10-08: when the customer placed the order; the order document is only created at
+  `payment_intent.succeeded`, days later for SEPA). Snapshot it onto the order at creation; shop
+  timezone (`SHOP_TIMEZONE`). Existing orders without it → fall back to the order's creation date.
 - **Statutory warranty notice** (FAGG §4: "Hinweis auf das Bestehen eines gesetzlichen
   Gewährleistungsrechts"): one translated sentence, near the withdrawal section. Follows the
   shop's form of address like step 4 (informal variant changes only the address forms, step 0b).
@@ -293,10 +340,14 @@ the informal overlay (step 0b) changes only the address forms, everything else v
 override wording via translations — then the shop owns that change (website only; see 0b).
 
 **Structure rules:**
-- Annex I has **three** variants for when the period starts: single item / several items of one
-  order delivered separately / one item delivered in several lots or pieces. The new shopSettings
-  field maps to these variants explicitly (default: "several items delivered separately" — cases
-  can ship as several parcels), not a plain yes/no.
+- Annex I has these variants for when the period starts (goods): single item / several items of one
+  order delivered separately / one item delivered in several lots or pieces / **regular delivery
+  over a defined period** (subscriptions — relevant if a shop sells wine subscriptions). The new
+  shopSettings field maps to these variants explicitly (default: "several items delivered
+  separately" — cases can ship as several parcels), not a plain yes/no. Check the full list of
+  optional Annex I sentences too (return-cost options incl. cost estimate, trader collects the
+  goods, withholding the refund until the goods are back) and map each one to a setting or a fixed
+  choice.
 - **Exceptions are not part of the model text** (Annex I Part A has no slot for them; they're
   separate pre-contractual information). Render them as their own block next to the instructions,
   never spliced into the statutory wording. Same for `returnPolicyNote`.
@@ -373,6 +424,10 @@ time, send without on failure.
 **Enabling — decided: on when configured, no new flags.** Payment and shipping lines always; full
 withdrawal instructions whenever `withdrawalNotice` is on and the data is complete (otherwise the
 short fallback); company/register fields and delivery time when filled.
+**`withdrawalNotice` becomes default-on** (decided 2026-10-08): R1/R2 apply to every consumer
+shop, so a shop that forgets the flag must not send a confirmation without withdrawal information.
+On by default for the order-confirmation webhook, the option can turn it off (opt-out). Release
+note: shops that didn't pass it now get the section.
 
 - Jurtschitsch, Tinhof: create the "Versand & Zahlung" page (5b); step 0 labels/overrides check; step 0b env var (Jurtschitsch `informal`); step 4
   migration (above); fill company data (step 3); test with Stripe test orders (card, Apple Pay, EPS,
@@ -391,10 +446,12 @@ short fallback); company/register fields and delivery time when filled.
 
 ## Tests
 
-- Step 0b: overlay keys ⊆ base keys; du/Sie lint; both variants render.
+- Step 0b: overlay keys ⊆ base keys; both variants render.
 - Step 0: name required (client + function), stored + in both mails; receipt has submission
-  content + date/time; unmatched handling; repeat submission → receipt; resend keeps original
-  timestamp; 429 message; labels.
+  content + date/time; unmatched handling (+ dedupe, shop-only "email differs" hint); URL-like name
+  rejected; honeypot; repeat submission → receipt; resend keeps original timestamp; 429 message;
+  labels.
+- `withdrawalNotice` default-on: the section renders without the option, disappears with opt-out.
 - Step 2b: order date + warranty sentence in the email.
 - Payment mapping (unit): card/wallet/eps/klarna/unknown → stored shape + label.
 - Webhook: payment retrieval failure doesn't block order + mail.
@@ -410,9 +467,16 @@ module (5b), Winenet gets payment type + label, footer in all business mails, se
 shipping method, footer link is prominent enough, register fields optional, company details in all
 mails; unmatched withdrawals stored + confirmed + flagged, no captcha but rate limit, withdrawal form
 always available, payment methods on the "Versand & Zahlung" page stay editor-written; decided
-2026-10-08: statutory texts follow the du/Sie setting too, address forms only). Remaining
-checks during implementation:
+2026-10-08: statutory texts follow the du/Sie setting too, address forms only; two releases
+(code / content); URL-like names rejected + honeypot; unmatched deduped on email + number;
+unmatched retention as an editor rule (docs + Studio description, no code); `withdrawalNotice`
+default-on; no build check for `SHOP_FORMALITY`; statutory overrides accepted as planned; order
+date = PaymentIntent `created`; `SHOP_TIMEZONE` default Vienna; no du/Sie word lint). Remaining checks during implementation:
 
+- Cite the Austrian law behind §13a FAGG (RIS) in the docs — housekeeping, no impact on the work
+  (no shop is live).
+- Whether Netlify's function `rateLimit` config really needs a paid plan (decides a go-live
+  requirement, step 0).
 - Official English labels for §13a (step 0).
 - Exact statutory texts from RIS / the directive (step 4) — copy, don't paraphrase; use the
   version in force since 2026-10-01.
