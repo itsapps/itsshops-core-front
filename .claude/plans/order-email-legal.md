@@ -481,6 +481,16 @@ note: shops that didn't pass it now get the section.
 - Jurtschitsch, Tinhof: create the "Versand & Zahlung" page (5b); step 0 labels/overrides check; step 0b env var (Jurtschitsch `informal`); step 4
   migration (above); fill company data (step 3); test with Stripe test orders (card, Apple Pay, EPS,
   pickup) and a test withdrawal.
+- **Status 2026-10-08:** Tinhof released (production) incl. content migration (withdrawal page
+  module, "Versand & Zahlung" page + footer link + `shippingInfoPage`; old rich text disabled, not
+  deleted). Jurtschitsch: code on `main` (core-front fcc94f8, core-back edb182f, legal-module CSS),
+  content migrated in the **development** dataset only — **not deployed**. Jurtschitsch release
+  checklist: (1) `SHOP_FORMALITY=informal` on Netlify, all scopes; (2) repeat the content steps in
+  the **production** dataset (withdrawal page: disable rich text + add `withdrawalPolicyModule`;
+  create "Versand & Zahlung" page with slugs `versand-und-zahlung` / `shipping-and-payment` +
+  `shippingInfoModule`; set `shippingInfoPage`; footer link) — in the same go as the deploy, since the
+  old core can't render the new modules; (3) payment-methods rich text on that page (Stripe live);
+  (4) owner settings + approvals below.
 - Grass-Art: decide "Du"/"Sie" (env var) before its next core bump.
 - **To-dos for the shop owners** (found 2026-10-07, not code):
   - Decide who pays return shipping and set `returnShippingBorneBy` accordingly. Today Tinhof
