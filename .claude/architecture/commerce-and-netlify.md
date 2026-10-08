@@ -70,6 +70,11 @@ All four are required (verified against the current wiring); miss one and custom
 Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `config.path`,
 `export default create<Name>Handler()`).
 
+Public, unauthenticated endpoints (`order-status`, `order-withdraw`) get a per-IP limit in that
+wrapper via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
+`aggregateBy: ['ip', 'domain']`) — not in core. Netlify rate limiting needs a **paid Netlify plan**,
+and over-limit requests are answered by Netlify (429) before the function runs.
+
 > Note: the JS `exports` subpaths are the public API and are in active use across the ecosystem —
 > `.` (~30 files), `./core`, `./scripts`, `./test-utils`, and the `./functions/*` set (all wired by
 > customers except `auth-webhooks`, which is exposed but currently unused). Keep them, `auth-webhooks`
@@ -148,6 +153,22 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
 
 Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
 `macros/cart.njk`, see templates doc). Plan / remaining work: `.claude/plans/order-thanks-page.md`.
+
+## Withdrawal (Widerruf) — declaration only
+
+`order-withdraw` never cancels or refunds. It matches order number + email against the order, records
+an `orderWithdrawal` document (status `received`, `declaredAt`), and `order-withdraw-notifier.tsx`
+mails the customer a receipt (return instructions + `returnShippingBorneBy` sentence when shipped,
+"will be refunded" when not dispatched) and the shop a notification. Processing is manual in the
+Studio (core-back `WithdrawalActions.tsx`): **"Refund & close"** does a full Stripe refund, sets the
+order refunded (and canceled if undispatched) and closes the withdrawal; partial refunds go through
+the order's refund action. Kept manual on purpose: the refund may be withheld until the goods are
+back, and its amount varies (return costs, deductions, partial withdrawals). Planned §13a/legal
+changes: `.claude/plans/order-email-legal.md`.
+
+All mail notifiers throw when `settings.senderEmail` / `senderName` / `siteTitle` are missing —
+core-back makes them required when shop/users/newsletter is on (core-back `schemas.md` → "Settings
+validation").
 
 ## Customer names
 
