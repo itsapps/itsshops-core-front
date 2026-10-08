@@ -148,7 +148,8 @@ an obligation, but lower risk than R0.
   use, so drop `enforceCaptcha` on this form. Since unmatched submissions now send mail to any typed
   address, rely on the per-IP limit. **Already in place:** the shops' function wrappers
   (`netlify/functions/order_withdraw.mts` in Jurtschitsch and Tinhof) set Netlify's `rateLimit`
-  config (`windowSize: 60`, `windowLimit: 5`, `aggregateBy: ['ip', 'domain']`) — works on paid
+  config (`windowSize: 60`, `windowLimit: 5`, `aggregateBy: ['ip', 'domain']`) — Jurtschitsch and Tinhof are on paid plans (confirmed
+  2026-10-08); works on paid
   Netlify plans only, so every shop using the withdrawal function needs a paid plan (go-live
   checklist). Netlify answers over-limit requests itself (429) — the form's client script must show
   a translated "try again later" message for that status (the 429 body isn't our JSON — handle
@@ -236,7 +237,8 @@ for all German texts — website, emails, server messages, **including** the sta
   `last4`: card → `card.last4`; SEPA → last 4 IBAN digits (`sepa_debit.last4`, decided).
 - Async methods: `payment_intent.succeeded` is when the webhook creates the order and sends the
   confirmation. For SEPA Direct Debit that's days after checkout (R1 "within reasonable time") —
-  check whether any shop has SEPA enabled before relying on the SEPA path. Never stored: full card number/IBAN, expiry, CVC,
+  no shop has SEPA enabled (confirmed 2026-10-08) → map `sepa_debit` generically, no special
+  delayed-payment handling; revisit if a shop enables it. Never stored: full card number/IBAN, expiry, CVC,
   client secret (card data never reaches our servers; brand + last4 is PCI-allowed truncation).
   Label examples: "Visa •••• 4242", "Apple Pay (Visa •••• 4242)", "SEPA-Lastschrift •••• 3000", "EPS".
   On Stripe error: log, store nothing — never block order creation.
@@ -475,12 +477,9 @@ date = PaymentIntent `created`; `SHOP_TIMEZONE` default Vienna; no du/Sie word l
 
 - Cite the Austrian law behind §13a FAGG (RIS) in the docs — housekeeping, no impact on the work
   (no shop is live).
-- Whether Netlify's function `rateLimit` config really needs a paid plan (decides a go-live
-  requirement, step 0).
 - Official English labels for §13a (step 0).
 - Exact statutory texts from RIS / the directive (step 4) — copy, don't paraphrase; use the
   version in force since 2026-10-01.
-- Whether any shop has SEPA Direct Debit enabled (step 1).
 - Shop-owner to-dos in step 7 (return costs, return address, approve generated page).
 - Inform Winenet about the `payment_method` change (step 1) before releasing.
 - Payment method on the invoice PDF — not wanted for now.
