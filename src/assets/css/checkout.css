@@ -276,3 +276,8 @@
 .order-thanks__continue {
   margin-block-start: 2rem;
 }
+
+/* "Versand & Zahlung" link at the start of the checkout (FAGG §8 (3)) */
+.checkout__shipping-info {
+  margin-block-end: var(--space-s-m);
+}

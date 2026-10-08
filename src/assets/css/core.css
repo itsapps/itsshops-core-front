@@ -89,3 +89,63 @@ html.has-filter-panel-open {
   width: 100%;
   height: auto;
 }
+
+/* ─── Generated legal modules ────────────────────────────────────────────────
+ * withdrawalPolicyModule + shippingInfoModule — structural baseline only (spacing, table/fact
+ * layout). Width, alignment and typography come from the customer's module wrapper CSS.
+ */
+.withdrawal-instructions,
+.shipping-info {
+  line-height: 1.6;
+}
+.withdrawal-instructions > * + *,
+.shipping-info > * + * {
+  margin-block-start: var(--space-l, 2.5em);
+}
+.withdrawal-instructions__section > * + *,
+.shipping-info__method > * + * {
+  margin-block-start: var(--space-s, 1em);
+}
+.withdrawal-instructions__form ul {
+  padding: 0;
+  list-style: none;
+}
+.withdrawal-instructions__form li + li {
+  margin-block-start: var(--space-2xs, 0.5em);
+}
+.shipping-info__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3xs, 0.25em) var(--space-s, 1em);
+  margin: 0;
+  text-align: start;
+}
+.shipping-info__facts dt {
+  font-weight: 600;
+}
+.shipping-info__facts dd {
+  margin: 0;
+}
+.shipping-info__table {
+  width: 100%;
+  max-width: 32rem;
+  border-collapse: collapse;
+  text-align: start;
+}
+.shipping-info__table caption {
+  caption-side: top;
+  text-align: start;
+  font-weight: 600;
+  padding-block-end: var(--space-3xs, 0.25em);
+}
+.shipping-info__table th,
+.shipping-info__table td {
+  padding: var(--space-3xs, 0.25em) var(--space-s, 1em) var(--space-3xs, 0.25em) 0;
+  border-block-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  text-align: start;
+}
+.shipping-info__table td:last-child,
+.shipping-info__table th:last-child {
+  text-align: end;
+  padding-inline-end: 0;
+}
