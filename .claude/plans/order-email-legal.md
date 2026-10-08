@@ -137,6 +137,11 @@ an obligation, but lower risk than R0.
     the Studio. Written (a) in the docs + each shop's go-live checklist and (b) in the Studio
     description of the `orderWithdrawal` status/order field ("Unmatched: assign it to an order or
     delete it after checking"). No auto-delete (a genuine late declaration must never be lost).
+  - **Delete is blocked today** (`orderWithdrawal.ts`: `disallowedActions: ['delete', 'duplicate']`)
+    → core-back re-adds a **guarded delete** in `config/actions.ts` (same pattern as `category`:
+    keep `delete` disallowed in the schema, push a `createCustomAction` wrapper): allowed only when
+    `status == "unmatched"`, otherwise a translated "only unmatched declarations can be deleted"
+    message. Matched records stay undeletable (proof that a declaration was received).
 - **Double-submit race** (exists today): `findOpenWithdrawal` → `createOrderWithdrawal` is
   check-then-create, so two quick submits can create two records. Use a deterministic `_id` for the
   open record + `createIfNotExists` (or an equivalent transaction) for matched and unmatched.
