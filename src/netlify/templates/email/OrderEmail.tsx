@@ -7,7 +7,7 @@ import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout
 import { colors } from './tokens'
 import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
-import type { WithdrawalInstructions } from '../../../shared/withdrawal-instructions'
+import type { WithdrawalInstructions, WithdrawalRichText } from '../../../shared/withdrawal-instructions'
 
 function AddressBlock({
   title,
@@ -111,8 +111,16 @@ function WithdrawalInstructionsBlock({
   const heading = (text: string) => (
     <EmailText bold style={{ marginTop: '16px', marginBottom: '4px' }}>{text}</EmailText>
   )
-  const paragraph = (text: string, i: number) => (
-    <EmailText key={i} size={14} style={{ marginBottom: '8px' }}>{text}</EmailText>
+  const linkStyle = { color: colors.text, textDecoration: 'underline' }
+  const paragraph = (content: string | WithdrawalRichText, i: number) => (
+    <EmailText key={i} size={14} style={{ marginBottom: '8px' }}>
+      {typeof content === 'string'
+        ? content
+        : content.map((segment, s) =>
+            segment.href
+              ? <Link key={s} href={segment.href} style={linkStyle}>{segment.text}</Link>
+              : <React.Fragment key={s}>{segment.text}</React.Fragment>)}
+    </EmailText>
   )
   return (
     <Section style={{ marginTop: '32px' }}>

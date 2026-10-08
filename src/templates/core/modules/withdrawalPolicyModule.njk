@@ -1,6 +1,12 @@
 {#- Generated withdrawal instructions + model withdrawal form (FAGG Anhang I) from shopSettings +
     settings.company — same builder as the order confirmation mail (shared/withdrawal-instructions.ts).
     Statutory wording comes verbatim from the `shared` translations; don't hand-edit it here. -#}
+{#- Rich paragraph: segments with an href (phone, email, withdrawal URL) become links. -#}
+{%- macro richText(segments) -%}
+  {%- for segment in segments -%}
+    {%- if segment.href -%}<a href="{{ segment.href }}">{{ segment.text }}</a>{%- else -%}{{ segment.text }}{%- endif -%}
+  {%- endfor -%}
+{%- endmacro -%}
 {%- set _wi = cms[_locale] | withdrawalInstructions -%}
 {%- set _wiData = _wi.instructions -%}
 {%- if _wiData %}
@@ -9,7 +15,7 @@
   <section class="withdrawal-instructions__section">
     <h2>{{ section.heading }}</h2>
     {%- for paragraph in section.paragraphs %}
-    <p>{{ paragraph }}</p>
+    <p>{{ richText(paragraph) }}</p>
     {%- endfor %}
     {%- if loop.first and cms[_locale].orderWithdrawUrl and cms[_locale].orderWithdrawUrl != '#' %}
     <p><a class="btn withdrawal-instructions__action" href="{{ cms[_locale].orderWithdrawUrl }}">{{ 'staticPages.orderWithdraw.title' | trans }}</a></p>
@@ -21,7 +27,7 @@
     <h2>{{ _wiData.form.heading }}</h2>
     <p>{{ _wiData.form.intro }}</p>
     <ul>
-      <li>{{ _wiData.form.to }}</li>
+      <li>{{ richText(_wiData.form.to) }}</li>
       {%- for line in _wiData.form.lines %}
       <li>{{ line }}</li>
       {%- endfor %}

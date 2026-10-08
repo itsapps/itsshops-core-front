@@ -54,11 +54,19 @@ export type WithdrawalInstructionsInput = {
   countryName: (code: string) => string
 }
 
+/** A run of text; `href` makes it a link (phone → `tel:`, email → `mailto:`, the withdrawal URL). */
+export type WithdrawalSegment = { text: string; href?: string }
+/** A paragraph as segments, so renderers can link contact details without parsing text. */
+export type WithdrawalRichText = WithdrawalSegment[]
+
+/** Plain text of a rich paragraph (plain-text mail parts, tests). */
+export const richToText = (rich: WithdrawalRichText): string => rich.map((s) => s.text).join('')
+
 export type WithdrawalInstructions = {
   /** Teil A: "Widerrufsrecht", "Folgen des Widerrufs". */
-  sections: Array<{ heading: string; paragraphs: string[] }>
+  sections: Array<{ heading: string; paragraphs: WithdrawalRichText[] }>
   /** Teil B. */
-  form: { heading: string; intro: string; to: string; lines: string[]; footnote: string }
+  form: { heading: string; intro: string; to: WithdrawalRichText; lines: string[]; footnote: string }
   exceptions: { heading: string; intro: string; items: string[] } | null
   note: { heading: string; text: string } | null
 }
@@ -80,6 +88,9 @@ export function missingWithdrawalData(input: WithdrawalInstructionsInput): strin
   ].filter((v): v is string => !!v)
 }
 
+/** `tel:` href: digits and a leading +, without the "(0)" trunk prefix of international numbers. */
+const telHref = (phone: string) => `tel:${phone.replace(/\(0\)/g, '').replace(/[^\d+]/g, '')}`
+
 function addressLine(a: WithdrawalAddress, countryName: (code: string) => string): string {
   return [a.line1, a.line2, `${a.zip} ${a.city}`, countryName(a.country)].filter(Boolean).join(', ')
 }
@@ -97,12 +108,23 @@ export function buildWithdrawalInstructions(
   const { trader, countryName } = input
   const traderAddress = addressLine(trader.address!, countryName)
 
+  // Links travel through the translator as opaque tokens, then become segments.
+  const links: WithdrawalSegment[] = []
+  const link = (text: string, href: string) => `\u0001${links.push({ text, href }) - 1}\u0001`
+  const rich = (text: string): WithdrawalRichText =>
+    text.split(/\u0001(\d+)\u0001/).flatMap((part, i) =>
+      i % 2 ? [links[Number(part)]] : part ? [{ text: part }] : [])
+
+  const phone = trader.phone?.trim()
+  const email = trader.email!.trim()
+  const emailLink = link(email, `mailto:${email}`)
+
   // [2] name, address, phone, email
   const traderLine = [
     trader.name!.trim(),
     traderAddress,
-    trader.phone?.trim() && k('phone', { phone: trader.phone.trim() }),
-    k('email', { email: trader.email!.trim() }),
+    phone && k('phone', { phone: link(phone, telHref(phone)) }),
+    k('email', { email: emailLink }),
   ].filter(Boolean).join(', ')
 
   const periodStart = PERIOD_STARTS.includes(input.periodStart) ? input.periodStart : 'multipleGoods'
@@ -121,9 +143,9 @@ export function buildWithdrawalInstructions(
         paragraphs: [
           k('right'),
           k(`periodStart.${periodStart}`),
-          `${k('howTo', { trader: traderLine })} ${k('online', { url: input.withdrawUrl })}`,
+          `${k('howTo', { trader: traderLine })} ${k('online', { url: link(input.withdrawUrl, input.withdrawUrl) })}`,
           k('deadline'),
-        ],
+        ].map(rich),
       },
       {
         heading: k('consequencesHeading'),
@@ -132,15 +154,13 @@ export function buildWithdrawalInstructions(
           k('returnGoods', { returnTo }),
           k(`returnCost.${input.returnShippingBorneBy === 'merchant' ? 'merchant' : 'customer'}`),
           k('diminishedValue'),
-        ],
+        ].map(rich),
       },
     ],
     form: {
       heading: k('form.heading'),
       intro: k('form.intro'),
-      to: k('form.to', {
-        trader: [trader.name!.trim(), traderAddress, trader.email!.trim()].join(', '),
-      }),
+      to: rich(k('form.to', { trader: [trader.name!.trim(), traderAddress, emailLink].join(', ') })),
       lines: ['declaration', 'orderedOn', 'consumerName', 'consumerAddress', 'signature', 'date'].map(
         (line) => k(`form.lines.${line}`),
       ),

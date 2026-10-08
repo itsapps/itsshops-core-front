@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
   buildWithdrawalInstructions,
   missingWithdrawalData,
+  richToText,
   type WithdrawalInstructionsInput,
 } from '../withdrawal-instructions'
 import { serverT } from '../../netlify/utils/i18n'
@@ -30,10 +31,21 @@ describe('withdrawal instructions', () => {
 
   it('fills the trader identity and the online function sentence', () => {
     const wi = buildWithdrawalInstructions(input(), t)!
-    const how = wi.sections[0].paragraphs[2]
+    const how = richToText(wi.sections[0].paragraphs[2])
     expect(how).toContain('müssen Sie uns (Weingut Test, Hauptstraße 1, 3550 Langenlois, Österreich, Tel. +43 1 234, E-Mail office@shop.example)')
     expect(how).toContain('auch online unter https://shop.example/de/widerruf/ ausüben')
-    expect(wi.form.to).toBe('An Weingut Test, Hauptstraße 1, 3550 Langenlois, Österreich, office@shop.example:')
+    expect(richToText(wi.form.to)).toBe('An Weingut Test, Hauptstraße 1, 3550 Langenlois, Österreich, office@shop.example:')
+  })
+
+  it('links phone, email and the withdrawal URL', () => {
+    const wi = buildWithdrawalInstructions(input({ trader: { ...input().trader, phone: '+43 (0) 2682 626 48' } }), t)!
+    const links = wi.sections[0].paragraphs[2].filter((s) => s.href)
+    expect(links).toEqual([
+      { text: '+43 (0) 2682 626 48', href: 'tel:+43268262648' },
+      { text: 'office@shop.example', href: 'mailto:office@shop.example' },
+      { text: 'https://shop.example/de/widerruf/', href: 'https://shop.example/de/widerruf/' },
+    ])
+    expect(wi.form.to.find((s) => s.href)).toEqual({ text: 'office@shop.example', href: 'mailto:office@shop.example' })
   })
 
   it.each([
@@ -42,7 +54,7 @@ describe('withdrawal instructions', () => {
     ['partialDeliveries', 'die letzte Teilsendung oder das letzte Stück'],
     ['subscription', 'die erste Ware in Besitz genommen'],
   ] as const)('period start %s', (periodStart, expected) => {
-    expect(buildWithdrawalInstructions(input({ periodStart }), t)!.sections[0].paragraphs[1]).toContain(expected)
+    expect(richToText(buildWithdrawalInstructions(input({ periodStart }), t)!.sections[0].paragraphs[1])).toContain(expected)
   })
 
   it('return costs follow returnShippingBorneBy', () => {
@@ -51,7 +63,7 @@ describe('withdrawal instructions', () => {
   })
 
   it('always says the refund may be withheld until the goods are back', () => {
-    expect(buildWithdrawalInstructions(input(), t)!.sections[1].paragraphs[0]).toContain('Wir können die Rückzahlung verweigern')
+    expect(richToText(buildWithdrawalInstructions(input(), t)!.sections[1].paragraphs[0])).toContain('Wir können die Rückzahlung verweigern')
   })
 
   it('return address: "an uns" or the separate address', () => {
@@ -78,8 +90,8 @@ describe('withdrawal instructions', () => {
   it('English: the directive wording with the same variants', () => {
     const en = (key: string, params?: Record<string, string>) => serverT('en', key, params)
     const wi = buildWithdrawalInstructions(input({ returnShippingBorneBy: 'merchant' }), en)!
-    expect(wi.sections[0].paragraphs[1]).toBe('The withdrawal period will expire after 14 days from the day on which you acquire, or a third party other than the carrier and indicated by you acquires, physical possession of the last good.')
-    expect(wi.sections[0].paragraphs[2]).toContain('You can also exercise your right of withdrawal online at https://shop.example/de/widerruf/.')
+    expect(richToText(wi.sections[0].paragraphs[1])).toBe('The withdrawal period will expire after 14 days from the day on which you acquire, or a third party other than the carrier and indicated by you acquires, physical possession of the last good.')
+    expect(richToText(wi.sections[0].paragraphs[2])).toContain('You can also exercise your right of withdrawal online at https://shop.example/de/widerruf/.')
     expect(text(wi)).toContain('We will bear the cost of returning the goods.')
     expect(wi.form.heading).toBe('Model withdrawal form')
   })
@@ -87,7 +99,7 @@ describe('withdrawal instructions', () => {
   it('"Du" changes only the forms of address', () => {
     vi.stubEnv('SHOP_FORMALITY', 'informal')
     const wi = buildWithdrawalInstructions(input(), t)!
-    expect(wi.sections[0].paragraphs[0]).toBe('Du hast das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.')
+    expect(richToText(wi.sections[0].paragraphs[0])).toBe('Du hast das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.')
     expect(text(wi)).not.toMatch(/\b(Sie|Ihnen|Ihr|Ihre|Ihren)\b/)
   })
 })
