@@ -210,7 +210,7 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
   `false`). It carries the **full generated instructions + model form** (see "Legal texts" below);
   incomplete settings → the short notice + link and a `log.warn`, never a half-filled legal text.
 - **Harmonised warranty notice** (FAGG §4 (1) + Anhang II): the official EU graphic as an image
-  (`${baseUrl}/assets/legal/legal-guarantee-notice-<de|en>.png`, served by the shop site) in every
+  (`${baseUrl}/assets/legal/legal-guarantee-notice-<de|en>-1200.png`, served by the shop site) in every
   order confirmation.
 - **Shop inbox:** `settings.shopNotificationEmail` (fallback `senderEmail`, resolved in
   `buildEmailShopSettings`) receives the order-confirmation BCC and withdrawal notifications. `From:`

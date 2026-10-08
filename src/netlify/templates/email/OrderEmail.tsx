@@ -299,7 +299,7 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
         <Section style={{ marginTop: '32px' }}>
           <Link href={t('emails.order.legalGuaranteeUrl')}>
             <Img
-              src={`${ctx.settings.baseUrl}/assets/legal/legal-guarantee-notice-${locale === 'de' ? 'de' : 'en'}.png`}
+              src={`${ctx.settings.baseUrl}/assets/legal/legal-guarantee-notice-${locale === 'de' ? 'de' : 'en'}-1200.png`}
               alt={t('emails.order.legalGuaranteeAlt')}
               width={560}
               style={{ width: '100%', maxWidth: '560px', height: 'auto' }}

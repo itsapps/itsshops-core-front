@@ -85,7 +85,7 @@ describe('order confirmation email', () => {
     expect(text).toContain('Zahlungsart: Apple Pay (Visa •••• 4242)')
     expect(text).toContain('Versandart: Post')
     expect(text).toContain('Lieferzeit: 2–4 Werktage')
-    expect(html).toContain('https://shop.example/assets/legal/legal-guarantee-notice-de.png')
+    expect(html).toContain('https://shop.example/assets/legal/legal-guarantee-notice-de-1200.png')
   })
 
   it('older orders: no payment line, order date from the first status entry', async () => {
@@ -182,7 +182,7 @@ describe('order confirmation email', () => {
     await sendOrderNotification('o1', 'orderConfirmation')
     const text = textOf((await sent()).html)
     expect(text).toContain('Withdraw from contract here')
-    expect((await sent()).html).toContain('/assets/legal/legal-guarantee-notice-en.png')
+    expect((await sent()).html).toContain('/assets/legal/legal-guarantee-notice-en-1200.png')
   })
 })
 
