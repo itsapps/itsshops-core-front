@@ -328,8 +328,9 @@ export const createFilters = (ctx: CoreContext) => {
       countryName: (code) => countryName(code, locale),
     }
     return {
+      // escapeValue: false — Nunjucks autoescapes the output; i18next escaping would double it.
       instructions: buildWithdrawalInstructions(input, (key, params) =>
-        ctx.translate(`shared:${key}`, params ?? {}, locale)),
+        ctx.translate(`shared:${key}`, { ...params, interpolation: { escapeValue: false } } as any, locale)),
       missing: missingWithdrawalData(input),
     }
   }) as any)
