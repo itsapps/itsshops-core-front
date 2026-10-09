@@ -1,0 +1,25 @@
+# Harmonised warranty notice: official graphic as pre-sized lossless PNGs
+
+**Status:** Active
+**Date:** 2026-10-08
+
+## Context
+
+FAGG §4 (1) requires the statutory-warranty information via the harmonised notice of Anhang II
+(Implementing Regulation (EU) 2025/1960): a fixed graphic, no element editable, RGB online, with a QR
+code. Shops already have an image pipeline (`assets/images/static` → eleventy-img, `staticImage`).
+
+## Decision
+
+- Core ships the official Commission artwork (page 1 = colour), rasterised once to 256-colour PNGs in
+  two widths (600/1200) per language; the partial uses `srcset`, the email the 1200 file via a fixed
+  URL (`/assets/legal/`).
+- Rejected: eleventy-img / WebP. Lossy WebP alters colours and QR edges of a graphic that may not be
+  altered; lossless WebP was larger than the indexed PNG for this graphic (measured: ~255 KB vs
+  ~200 KB at 1000 px). Mail clients need one stable URL anyway.
+- Rejected: each shop adding the file — the graphic is identical everywhere.
+
+## Consequences
+
+- When regenerating: check the official blue stays exact and `zbarimg` decodes the QR code at both
+  widths. No "Du" variant (not editable).

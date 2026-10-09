@@ -29,9 +29,8 @@ so the default is right for both). Read like `SHOP_FORMALITY` (functions; build 
 ever formats dates). Invalid value (`Intl.DateTimeFormat` throws `RangeError`) → log a warning and
 fall back to the default, never fail a mail.
 
-When this ships, move the durable parts into `.claude/architecture/commerce-and-netlify.md`, add an
-ADR for the withdrawal-instructions approach (step 4: core-generated, settings as the single source),
-and delete this file.
+When this ships, delete this file — the durable parts are already in `.claude/architecture/` and
+`decisions/legal-texts-generated-from-settings.md`.
 
 ## Current state
 

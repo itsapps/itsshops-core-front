@@ -31,3 +31,7 @@ alternative was rejected, a constraint discovered the hard way.
   by `SHOP_FORMALITY` (env, both runtimes), not a Sanity toggle.
 - [withdrawal-never-lost-no-captcha.md](withdrawal-never-lost-no-captcha.md) — unmatched withdrawals
   are stored + confirmed + flagged; no captcha, rate limit + honeypot instead.
+- [legal-texts-generated-from-settings.md](legal-texts-generated-from-settings.md) — withdrawal
+  instructions + model form built from settings by one builder for page and mail; wording verbatim.
+- [legal-graphic-unaltered-png.md](legal-graphic-unaltered-png.md) — harmonised warranty notice as
+  pre-sized lossless PNGs + srcset, not eleventy-img/WebP.

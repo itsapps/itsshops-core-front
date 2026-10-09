@@ -236,6 +236,12 @@ always (core never collects goods); return address + costs ← `returnAddress` /
 `returnShippingBorneBy`. `withdrawalExceptions` (§ 18) and `returnPolicyNote` render as separate
 blocks, never inside the model text. Missing name/address/email → `null`.
 
+**Output shape:** paragraphs (and the form's "An …" line) are arrays of segments
+`{ text, href? }` (`WithdrawalRichText`; `richToText` flattens): the trader's phone (`tel:`, without
+"(0)"), email (`mailto:`) and the withdrawal URL become links on the page and in the mail. Links pass
+through the translator as opaque tokens, so the statutory wording stays untouched; on the website the
+filter calls i18next with `escapeValue: false` (Nunjucks escapes the output itself).
+
 **Wording rule:** the texts in `shared` translations (`withdrawalInstructions.*`) are copied
 **verbatim** — German from RIS (FAGG, version from 2026-10-01), English from the EUR-Lex consolidated
 Directive 2011/83/EU (2026-09-27). Never reword them; the "Du" overlay changes only the forms of
