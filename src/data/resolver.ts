@@ -178,7 +178,7 @@ export async function buildCmsData(
       menus,
       settings,
       shopSettings,
-      shippingMethods: resolveShippingMethods(rawShippingMethods, ctx),
+      shippingMethods: resolveShippingMethods(rawShippingMethods, ctx, shopSettings?.defaultCountry?.countryCode),
       urlMap,
       docMap,
       homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,

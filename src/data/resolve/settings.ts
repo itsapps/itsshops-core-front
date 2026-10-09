@@ -44,8 +44,10 @@ function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions):
   }
 }
 
-export function resolveShippingMethods(raw: any[], ctx: ResolveContext): ResolvedShippingMethod[] {
-  return (raw ?? []).map((m: any) => ({
+/** Methods serving the shop's home country (`shopSettings.defaultCountry`) come first; otherwise
+ *  creation order is kept. */
+export function resolveShippingMethods(raw: any[], ctx: ResolveContext, homeCountry?: string | null): ResolvedShippingMethod[] {
+  const methods: ResolvedShippingMethod[] = (raw ?? []).map((m: any) => ({
     _id:          m._id,
     title:        ctx.resolveString(m.title),
     deliveryTime: ctx.resolveString(m.deliveryTime) || null,
@@ -68,6 +70,9 @@ export function resolveShippingMethods(raw: any[], ctx: ResolveContext): Resolve
         .map((p: any) => ({ count: p.count, price: p.price })),
     })),
   }))
+  if (!homeCountry) return methods
+  const servesHome = (m: ResolvedShippingMethod) => (m.countries.includes(homeCountry) ? 0 : 1)
+  return methods.sort((a, b) => servesHome(a) - servesHome(b))
 }
 
 export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
