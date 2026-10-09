@@ -94,10 +94,6 @@ html.has-filter-panel-open {
  * withdrawalPolicyModule + shippingInfoModule — structural baseline only (spacing, table/fact
  * layout). Width, alignment and typography come from the customer's module wrapper CSS.
  */
-.withdrawal-instructions,
-.shipping-info {
-  line-height: 1.6;
-}
 .withdrawal-instructions > * + *,
 .shipping-info > * + * {
   margin-block-start: var(--space-l, 2.5em);
