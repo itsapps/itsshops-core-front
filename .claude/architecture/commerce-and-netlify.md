@@ -248,9 +248,13 @@ Directive 2011/83/EU (2026-09-27). Never reword them; the "Du" overlay changes o
 address. The harmonised warranty notice is an unaltered official graphic (`src/assets/legal/`, from
 the Commission's package; colours untouched, QR code must scan) — no "Du" variant.
 
-Placement before ordering: checkout (notice in the summary; "Versand & Zahlung" link at the top and
-above the order button when `shippingInfoPage` is set) and the `shippingInfoModule` page (shipping
-methods from `cms[locale].shippingMethods` + the notice).
+Placement before ordering: checkout — a **compact** notice above the order confirmations
+(`partials/legal-guarantee-compact.njk`: official thumbnail + one line, linking to the full notice at
+`shippingInfoUrl#legal-guarantee`, else the full-size graphic) and the "Versand & Zahlung" link at the
+top and above the order button when `shippingInfoPage` is set; the full notice on the
+`shippingInfoModule` page (with the shipping methods from `cms[locale].shippingMethods`) and in the
+order confirmation. The compact form stays visible (not behind a click): WKO reads "hervorgehoben" as
+clearly noticeable before ordering, not hidden or only on request.
 
 ## Customer names
 

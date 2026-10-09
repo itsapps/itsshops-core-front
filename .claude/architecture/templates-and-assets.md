@@ -48,10 +48,11 @@ link in footers; core adds it.
 **Core-shipped static files:** `src/assets/legal/` → `dist/assets/legal/` (tsup `onSuccess`) →
 passed through to `/assets/legal/` by `setupAssets` (official legal graphics, also linked from the
 order email). The warranty notice ships as lossless 256-colour PNGs in two widths
-(`legal-guarantee-notice-<de|en>-{600,1200}.png`, `srcset` in the partial; the email uses the 1200
-one) — deliberately not WebP / eleventy-img: no element of the official graphic may be altered
+(`legal-guarantee-notice-<de|en>-{160,600,1200}.png`: 160 = checkout thumbnail, 600/1200 =
+`srcset` of the full notice; the email uses the 1200 one) — deliberately not WebP / eleventy-img: no element of the official graphic may be altered
 (colours, QR code), and lossless WebP is larger than the indexed PNG for this graphic. Legal modules/partials: `core/modules/withdrawalPolicyModule.njk`,
-`core/modules/shippingInfoModule.njk`, `core/components/partials/legal-guarantee-notice.njk` —
+`core/modules/shippingInfoModule.njk`, `core/components/partials/legal-guarantee-notice.njk` (full),
+`core/components/partials/legal-guarantee-compact.njk` (checkout) —
 see `commerce-and-netlify.md` → "Legal texts".
 
 **System pages have no `pageDoc`** (withdrawal, login, checkout, 404, newsletter/user flows in

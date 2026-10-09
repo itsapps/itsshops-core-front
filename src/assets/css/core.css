@@ -149,3 +149,15 @@ html.has-filter-panel-open {
   text-align: end;
   padding-inline-end: 0;
 }
+
+/* Compact warranty notice in the checkout (legal-guarantee-compact.njk): thumbnail + one line */
+.legal-guarantee-compact__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs, 0.75em);
+}
+.legal-guarantee-compact__thumb {
+  flex-shrink: 0;
+  inline-size: 4.5rem;
+  block-size: auto;
+}

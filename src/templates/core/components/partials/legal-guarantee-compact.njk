@@ -1,0 +1,18 @@
+{#- Compact form of the harmonised warranty notice for the checkout: the official graphic as an
+    unaltered, scaled-down thumbnail plus one line, linking to the full notice — on the
+    "Versand & Zahlung" page when set (#legal-guarantee), else the full-size graphic. Kept visible
+    (not behind a click) so it stays "hervorgehoben" before ordering (FAGG §4 (1)). -#}
+{%- set _lgLocale = page.lang or coreConfig.defaultLocale -%}
+{%- set _lgLang = 'de' if _lgLocale == 'de' else 'en' -%}
+{%- set _lgInfoUrl = cms[_lgLocale].shippingInfoUrl -%}
+{%- set _lgHref = (_lgInfoUrl + '#legal-guarantee') if (_lgInfoUrl and _lgInfoUrl != '#') else ('/assets/legal/legal-guarantee-notice-' + _lgLang + '-1200.png') -%}
+<p class="legal-guarantee-compact">
+  <a class="legal-guarantee-compact__link" href="{{ _lgHref }}">
+    <img
+      class="legal-guarantee-compact__thumb"
+      src="/assets/legal/legal-guarantee-notice-{{ _lgLang }}-160.png"
+      alt="" width="160" height="226" loading="lazy" decoding="async"
+    >
+    <span>{{ 'legalGuarantee.compact' | trans }}</span>
+  </a>
+</p>

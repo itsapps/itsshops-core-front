@@ -239,11 +239,10 @@
             <div data-checkout-payment class="checkout-payment"></div>
           </fieldset>
 
-          {#- Statutory warranty notice before ordering (FAGG §4 (1), harmonised notice). -#}
+          {#- Statutory warranty notice before ordering (FAGG §4 (1), harmonised notice): compact
+              thumbnail + line, linking to the full notice. -#}
           {% block checkout_legal_guarantee %}
-            <div class="checkout__section">
-              {% include "core/components/partials/legal-guarantee-notice.njk" %}
-            </div>
+            {% include "core/components/partials/legal-guarantee-compact.njk" %}
           {% endblock %}
 
           {%- if _shippingInfoUrl and _shippingInfoUrl != '#' %}
