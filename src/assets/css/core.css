@@ -82,7 +82,7 @@ html.has-filter-panel-open {
  */
 .legal-guarantee-notice {
   margin: 0;
-  max-width: 36rem;
+  max-width: 40rem;
 }
 .legal-guarantee-notice img {
   display: block;
@@ -124,7 +124,7 @@ html.has-filter-panel-open {
 }
 .shipping-info__table {
   width: 100%;
-  max-width: 32rem;
+  max-width: 40rem;
   border-collapse: collapse;
   text-align: start;
 }
