@@ -154,6 +154,6 @@ html.has-filter-panel-open {
 }
 .legal-guarantee-compact__thumb {
   flex-shrink: 0;
-  inline-size: 4.5rem;
+  inline-size: 3.5rem;
   block-size: auto;
 }
