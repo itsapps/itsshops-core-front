@@ -46,7 +46,7 @@ branch silently omits the link, including the guaranteed Widerruf footer link. D
 link in footers; core adds it.
 
 **Core-shipped static files:** `src/assets/legal/` → `dist/assets/legal/` (tsup `onSuccess`) →
-passed through to `/assets/legal/` by `setupAssets` (official legal graphics, also linked from the
+passed through to `/assets/legal/` by `setupAssets` (shop sites only) (official legal graphics, also linked from the
 order email). The warranty notice ships as lossless 256-colour PNGs in two widths
 (`legal-guarantee-notice-<de|en>-{160,600,1200}.png`: 160 = checkout thumbnail, 600/1200 =
 `srcset` of the full notice; the email uses the 1200 one) — deliberately not WebP / eleventy-img: no element of the official graphic may be altered

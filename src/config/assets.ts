@@ -19,8 +19,11 @@ export const setupAssets = (ctx: CoreContext) => {
   eleventyConfig.addPassthroughCopy({
     [path.join(input, 'assets/images/favicon/*')]: '/'
   })
-  // Core-shipped legal graphics (harmonised warranty notice) — also linked from the order email.
-  eleventyConfig.addPassthroughCopy({
-    [path.join(coreDist, 'assets/legal')]: '/assets/legal'
-  })
+  // Core-shipped legal graphics (harmonised warranty notice) — used by the checkout, the shipping
+  // info module and the order email, so only shops get them.
+  if (config.features.shop.enabled) {
+    eleventyConfig.addPassthroughCopy({
+      [path.join(coreDist, 'assets/legal')]: '/assets/legal'
+    })
+  }
 }
