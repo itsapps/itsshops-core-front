@@ -47,13 +47,15 @@ link in footers; core adds it.
 
 **Core-shipped static files:** `src/assets/legal/` → `dist/assets/legal/` (tsup `onSuccess`) →
 passed through to `/assets/legal/` by `setupAssets` (shop sites only) (official legal graphics, also linked from the
-order email). The warranty notice ships as lossless 256-colour PNGs in two widths
+order email). The warranty notice ships as lossless 256-colour PNGs in three widths
 (`legal-guarantee-notice-<de|en>-{160,600,1200}.png`: 160 = checkout thumbnail, 600/1200 =
 `srcset` of the full notice; the email uses the 1200 one) — deliberately not WebP / eleventy-img: no element of the official graphic may be altered
 (colours, QR code), and lossless WebP is larger than the indexed PNG for this graphic. Legal modules/partials: `core/modules/withdrawalPolicyModule.njk`,
 `core/modules/shippingInfoModule.njk`, `core/components/partials/legal-guarantee-notice.njk` (full),
 `core/components/partials/legal-guarantee-compact.njk` (checkout) —
-see `commerce-and-netlify.md` → "Legal texts".
+see `commerce-and-netlify.md` → "Legal texts". Their CSS in `core.css` is a **structural baseline
+only** (spacing, fact grid, table layout, max-widths): no fonts or line-height — typography and the
+container (width, indent, alignment) come from each site's module CSS.
 
 **System pages have no `pageDoc`** (withdrawal, login, checkout, 404, newsletter/user flows in
 `pages/standard/`). Each sets `titleKey: staticPages.<name>.title` in its front matter (the same
