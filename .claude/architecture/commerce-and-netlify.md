@@ -51,7 +51,7 @@ Rules of thumb:
 | `user-register` / `-login` / `-logout` / `-confirm` / `-recover` / `-reset` | `createUser…Handler` | Supabase-backed auth flows |
 | `auth-webhooks` | `createAuthWebhookHandler` | Supabase auth webhook receiver |
 | `newsletter-subscribe` / `-confirm` / `-unsubscribe` | `createNewsletter…Handler` | Double-opt-in newsletter |
-| `wc-api` | `createWcApiHandler` | WooCommerce API bridge — read by **Winenet** (third party: reads orders, updates their status, issues invoices / accounting) |
+| `wc-api` | `createWcApiHandler` | WooCommerce API bridge — read by **Winenet** (third party: reads orders, updates their status, issues invoices / accounting). See "WooCommerce API bridge" below |
 | `supabase-keep-alive` | `createKeepAliveHandler` | Scheduled ping to keep Supabase warm |
 
 The full built set is the tsup `entry` map; the exposed set is the `exports` map in `package.json`.
@@ -255,6 +255,55 @@ top and above the order button when `shippingInfoPage` is set; the full notice o
 `shippingInfoModule` page (with the shipping methods from `cms[locale].shippingMethods`) and in the
 order confirmation. The compact form stays visible (not behind a click): WKO reads "hervorgehoben" as
 clearly noticeable before ordering, not hidden or only on request.
+
+## WooCommerce API bridge (`wc-api`, read by Winenet)
+
+`src/netlify/functions/wc-api.ts` exposes Sanity orders as a **WooCommerce REST v3** subset so an
+ERP that speaks WooCommerce (Winenet: polls orders, marks them shipped, does invoicing/accounting)
+works without custom code. Wrapper in the customer repo:
+
+```ts
+export const config: Config = { path: "/wp-json/wc/v3/*" }
+export default createWcApiHandler({ timezone: 'Europe/Vienna', notify: {} })
+```
+
+- **Options:** `timezone` (→ `WC_TIMEZONE` → `Europe/Vienna`; used for `date_created`), `version`
+  (reported WC version, default `9.0.0`), `notify` (if set, a status change to shipped sends the
+  `orderShipping` mail via `sendOrderNotification`; omit it to send no mail).
+- **Auth:** `WC_CONSUMER_KEY` + `WC_CONSUMER_SECRET` (Netlify env, functions scope), passed as
+  `consumer_key`/`consumer_secret` query params **or** a Basic auth header. If either env var is missing,
+  every request gets a 401 (`woocommerce_rest_cannot_view`). Winenet is given these two values.
+- **Routes** (anything else → 404 `woocommerce_rest_no_route`; thrown errors → 500):
+  - `GET system_status` → `{ environment: { version, default_timezone }, settings: { api_enabled, currency } }`.
+  - `GET orders` → `page`, `per_page` (≤ 100, default 10), `status` (WC status, comma list; unknown
+    ones such as `pending`/`on-hold` are ignored, only unknown → empty list), `after`/`before`
+    (`_createdAt`). Newest first; `x-wp-total` / `x-wp-totalpages` headers.
+  - `PUT orders/:id` with `{ status }` → sets the internal `status` and appends an
+    `orderStatusHistory` entry (`source: 'wc-api'`). Returns the mapped order.
+- **IDs:** WC `id` = the trailing digits of `orderNumber` (`TH-000123` → `123`); PUT looks the order
+  up by a 6-digit zero-padded suffix match. Line-item/product/variation ids are stable hashes of the
+  Sanity ids (the originals are in `meta_data` `_sanity_product_id` / `_sanity_variant_id`).
+- **Status mapping:** internal → WC: `created`/`processing` → `processing`, `shipped`/`delivered` →
+  `completed`, `canceled` → `cancelled`, `returned` → `refunded`. WC → internal: `completed` →
+  `shipped` (so a PUT never sets `delivered`). **Overrides on read**, which affect only the response
+  (Sanity is unchanged): fully refunded (`paymentStatus: refunded`) → `refunded`; an open withdrawal
+  (`orderWithdrawal` with status `received`/`processing`) on a not-yet-shipped order → `cancelled`, so the ERP
+  drops it from its ship queue. Partial refunds are not overridden.
+- **Write guard:** PUT `completed` on a refunded, withdrawn or cancelled order → **409**
+  `woocommerce_rest_order_not_fulfillable` (catches a race between poll and ship; no shipping mail).
+- **Money:** cents → decimal strings, `prices_include_tax: true` (`price` = gross unit price).
+  The discount is split into net `discount_total` + `discount_tax`, spread proportionally over line
+  items; the rounding remainder goes to the last item so lines + shipping = `total` exactly. Tax lines
+  come from `totals.vatBreakdown`; shipping tax goes onto the tax line with the matching rate.
+- **Customer/payment:** names via `splitNameForExport` (see "Customer names"); `payment_method` =
+  stored Stripe type (`card`, `eps`, …) and `payment_method_title` = readable German label (both
+  `stripe`/`Stripe` on old orders without the snapshot). **Tell Winenet before changing the response
+  shape.**
+- **Testing:** customer repos have `tests/integration/wc-api.test.ts` (Tinhof), which hits a running
+  deployment at `WC_API_BASE_URL` (default `http://localhost:8888` = `netlify dev`) using the
+  `WC_CONSUMER_*` from `.env`. The PUT test is `it.skip` (it would change real data), so the rest of
+  the suite only reads and can run against a deployed site. `WC_API_BASE_URL` is test-only, never read
+  by the function.
 
 ## Customer names
 

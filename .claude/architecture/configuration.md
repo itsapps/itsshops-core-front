@@ -89,6 +89,15 @@ No `Config` field — both runtimes must see the same value, so set them on the 
 - `SHOP_TIMEZONE` — IANA name for dates/times in mails (default `Europe/Vienna`; invalid → warning +
   default). Helper: `formatShopDate` in `src/netlify/utils/i18n.ts`.
 
+### Env-only function settings (`wc-api`)
+Functions scope only, no `Config` field. Details: [commerce-and-netlify.md](commerce-and-netlify.md)
+→ "WooCommerce API bridge".
+- `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` — credentials Winenet uses. If either is missing, every
+  request gets a 401.
+- `WC_TIMEZONE` — fallback when the wrapper passes no `timezone` (default `Europe/Vienna`).
+- `WC_API_BASE_URL` — **test-only** (customer `tests/integration/wc-api.test.ts`), the deployment the
+  test calls; the function never reads it.
+
 ## Env var → config field map
 The authoritative list is the comment block in `src/types/config.ts` (above `Config`). Env is the
 fallback; the matching `Config` field overrides it. `SANITY_PROJECT_ID` / `SANITY_DATASET` are the
