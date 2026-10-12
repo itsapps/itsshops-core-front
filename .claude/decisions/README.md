@@ -35,3 +35,5 @@ alternative was rejected, a constraint discovered the hard way.
   instructions + model form built from settings by one builder for page and mail; wording verbatim.
 - [legal-graphic-unaltered-png.md](legal-graphic-unaltered-png.md) — harmonised warranty notice as
   pre-sized lossless PNGs + srcset, not eleventy-img/WebP.
+- [cli-sanity-delete-guarded.md](cli-sanity-delete-guarded.md) — `itsshops sanity delete` needs a
+  typed dataset-name confirmation (`--yes` for scripts) and runs as one all-or-nothing transaction.

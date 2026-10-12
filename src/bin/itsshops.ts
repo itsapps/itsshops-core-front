@@ -203,21 +203,36 @@ program
 
 const sanity = program
   .command('sanity')
-  .description('Sanity data operations');
+  .description('Sanity data operations')
+  .option('-e, --env <path>', 'Path to environment file', '.env');
 
-function loadEnv() {
+// Fills process.env from the env file; variables already set in the shell win (like node --env-file).
+function loadEnv(envFile: string = '.env') {
   const root = process.cwd();
-  const envPath = path.resolve(root, '.env');
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, 'utf-8');
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq === -1) continue;
-      const key = trimmed.slice(0, eq).trim();
-      const value = trimmed.slice(eq + 1).trim();
-      if (!process.env[key]) process.env[key] = value;
+  const envPath = path.resolve(root, envFile);
+  if (!fs.existsSync(envPath)) {
+    // Same as `eleventy`: a missing default .env is fine, a missing custom file is an error
+    if (envFile !== '.env') {
+      console.error(`❌ Error: Env file not found at ${envPath}`);
+      process.exit(1);
+    }
+    return;
+  }
+  // stderr, so `sanity query` output stays pipeable JSON
+  console.error(`✅ Env loaded: ${envFile}`);
+  const content = fs.readFileSync(envPath, 'utf-8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) {
+      process.env[key] = value;
+    } else if (key.startsWith('SANITY_') && process.env[key] !== value) {
+      // Shell wins — say so, or `-e .env.production` could silently hit another dataset
+      console.error(`⚠️  ${key} from the shell overrides ${envFile}`);
     }
   }
 }
@@ -231,6 +246,7 @@ async function getSanityClient() {
     console.error('Missing SANITY_PROJECT_ID, SANITY_DATASET, or SANITY_TOKEN in environment');
     process.exit(1);
   }
+  console.error(`Sanity: ${projectId} / ${dataset}\n`);
   return createClient({ projectId, dataset, token, apiVersion: 'v2025-05-25', useCdn: false });
 }
 
@@ -238,8 +254,8 @@ sanity
   .command('query')
   .description('Run a GROQ query')
   .argument('<groq>', 'GROQ query string')
-  .action(async (groq: string) => {
-    loadEnv();
+  .action(async (groq: string, _options, command: Command) => {
+    loadEnv(command.optsWithGlobals().env);
     const client = await getSanityClient();
     const result = await client.fetch(groq);
     console.log(JSON.stringify(result, null, 2));
@@ -250,30 +266,59 @@ sanity
   .description('Delete documents by type')
   .argument('<types>', 'Comma-separated document types (e.g. orderMeta,order)')
   .option('--dry-run', 'Show what would be deleted without deleting')
-  .action(async (types: string, options: { dryRun?: boolean }) => {
-    loadEnv();
+  .option('-y, --yes', 'Skip the confirmation prompt (for scripts)')
+  .action(async (types: string, options: { dryRun?: boolean; yes?: boolean }, command: Command) => {
+    loadEnv(command.optsWithGlobals().env);
     const client = await getSanityClient();
+    const dataset = process.env.SANITY_DATASET!;
     const typeList = types.split(',').map(t => t.trim()).filter(Boolean);
 
+    const ids: string[] = [];
     for (const type of typeList) {
-      const ids: string[] = await client.fetch(`*[_type == $type]._id`, { type });
-      console.log(`${type}: ${ids.length} document(s)`);
+      const typeIds: string[] = await client.fetch(`*[_type == $type]._id`, { type });
+      console.log(`${type}: ${typeIds.length} document(s)`);
+      ids.push(...typeIds);
+    }
 
-      if (options.dryRun || ids.length === 0) continue;
+    if (options.dryRun || ids.length === 0) return;
 
-      for (const id of ids) {
-        await client.delete(id);
-        console.log(`  deleted ${id}`);
+    if (!options.yes) {
+      if (!process.stdin.isTTY) {
+        console.error('❌ Refusing to delete without a terminal to confirm — pass --yes');
+        process.exit(1);
+      }
+      const { createInterface } = await import('node:readline/promises');
+      const rl = createInterface({ input: process.stdin, output: process.stderr });
+      // Ctrl+C / Ctrl+D reject the question — treat like a wrong answer
+      const answer = await rl
+        .question(`\nDelete ${ids.length} document(s) from "${dataset}"? Type the dataset name to confirm: `)
+        .catch(() => '');
+      rl.close();
+      if (answer.trim() !== dataset) {
+        console.error('Aborted — nothing deleted.');
+        process.exit(1);
       }
     }
+
+    // One transaction: all or nothing, and referrers/referenced docs may be deleted together in
+    // any order (a ref error aborts the whole delete instead of leaving it half done).
+    const tx = client.transaction();
+    for (const id of ids) tx.delete(id);
+    try {
+      await tx.commit();
+    } catch (err) {
+      console.error(`❌ Delete failed — nothing deleted: ${(err as Error).message}`);
+      process.exit(1);
+    }
+    console.log(`\n🗑️  Deleted ${ids.length} document(s) from "${dataset}"`);
   });
 
 sanity
   .command('count')
   .description('Count documents by type')
   .argument('<types>', 'Comma-separated document types')
-  .action(async (types: string) => {
-    loadEnv();
+  .action(async (types: string, _options, command: Command) => {
+    loadEnv(command.optsWithGlobals().env);
     const client = await getSanityClient();
     const typeList = types.split(',').map(t => t.trim()).filter(Boolean);
 

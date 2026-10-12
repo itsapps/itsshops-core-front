@@ -14,6 +14,7 @@ this file stays the always-loaded router.
 | Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS | `.claude/architecture/templates-and-assets.md` |
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
+| The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |
 | Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts) | `.claude/architecture/commerce-and-netlify.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |
@@ -118,7 +119,7 @@ src/
 ├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
 ├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
 ├── types/               # Config, data shapes, netlify, vinofact, generated sanity.types
-└── bin/                 # itsshops CLI
+└── bin/                 # itsshops CLI (see .claude/architecture/cli.md)
 ```
 
 ## Build outputs (tsup)
