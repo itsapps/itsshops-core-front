@@ -80,6 +80,11 @@ SANITY_DATASET=development itsshops sanity count order
   - needs a token with write access (a read-only token makes `query`/`count` work, `delete` fail).
   - one transaction holds all IDs; for very large deletes (thousands of docs) it may hit Sanity's
     request-size limit — split by type then.
+- There is **no write/patch command.** For bulk content edits use a one-off Node script with
+  `@sanity/client` (resolve it from the customer frontend's `node_modules` via `createRequire`, run
+  with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by
+  `language` (append new ones with a fresh `_key`), `set` the whole field in one transaction, and
+  dry-run + guard the dataset name first.
 - The CLI **bypasses studio guards.** E.g. the studio only lets editors delete *unmatched*
   withdrawals (matched ones are the legal proof a declaration was received —
   core-back `src/schemas/documents/orders/orderWithdrawal.ts`); `delete orderWithdrawal` removes all

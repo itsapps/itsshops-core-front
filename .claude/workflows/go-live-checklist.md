@@ -39,6 +39,10 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       (the checkout links it at the top and above the order button); linked in the footer menu.
 - [ ] Footer: the withdrawal function link ("Vertrag widerrufen") is present (core appends it if
       missing) and the policy pages are linked.
+- [ ] **SEO texts** (every locale): each page has a meta description (an empty one falls back to
+      `settings.siteShortDescription` — the same text on every page, and in the default language on
+      other locales unless that field is translated); meta titles only where they should differ
+      from the page title. Fallback chain: `architecture/templates-and-assets.md` → "SEO head".
 - [ ] Customer page `modules` array (backend `schema/extensions.ts`) includes
       `withdrawalPolicyModule` and `shippingInfoModule`; the site's CSS lays them out like its text
       modules.

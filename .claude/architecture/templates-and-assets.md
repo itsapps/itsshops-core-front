@@ -66,6 +66,19 @@ These pages are also `noindex: true`, which gives them a **minimal head**: no ca
 og/twitter tags or WebSite/Organization JSON-LD (only the page's own flag counts, not site-wide
 `doIndexPages`). Why: `decisions/noindex-pages-minimal-head.md`.
 
+**SEO head** (`core/head/seo.njk`, values from `pageDoc` = the CMS doc of the page):
+- `<title>` = `seo.metaTitle` → doc `title` → `titleKey | trans`, then `" - " + settings.siteTitle`
+  (omitted if equal to the site title). The suffix counts toward the ~60-char limit, so a meta
+  title should only be set when it says something different from the page title — a copy of the
+  title goes stale when the page is renamed.
+- meta description = `seo.metaDescription` → doc `description` → `settings.siteShortDescription`.
+  Pages have no `description` field, so a page without a meta description gets the site-wide
+  slogan (duplicate across pages; default-language text on other locales unless translated).
+- share title/description = `seo.shareTitle`/`shareDescription` → the values above (the share
+  title is the raw title **without** the site suffix — `og:site_name` carries the brand); share
+  image = `seo.shareImage` → doc `image` → `settings.defaultShareImage`. Leave the share fields
+  empty unless a page should read differently when shared than in search results.
+
 `npm run dev` runs `scripts/watch-templates.mjs` alongside tsup so template edits propagate to
 linked consumers without a full rebuild.
 
