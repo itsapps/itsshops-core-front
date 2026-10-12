@@ -30,7 +30,7 @@ or establishes a rule. See `~/.claude/commands/update-docs.md`.
 
 ## What this is
 
-`@itsapps/itsshops-core-front` (package v1.4.1) — a shared npm **library + Eleventy plugin** consumed
+`@itsapps/itsshops-core-front` (version: `package.json` / git tags) — a shared npm **library + Eleventy plugin** consumed
 by customer Eleventy shop frontends. It provides the full frontend: data layer (Sanity → resolved
 `cms` global), templates, CSS/Tailwind, client-side JS, and a Netlify-function commerce/users backend.
 

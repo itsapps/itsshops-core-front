@@ -94,8 +94,9 @@ plan and asking before anything that pushes.
    - **minor** (`2.1.0` → `2.2.0`): new features / optional config, nothing breaks
    - **major** (`2.1.0` → `3.0.0`): a customer must change something (config shape, schema/data
      migration, override template contract) — list the required changes in the tag message
-   Then, in the core repo (own GitHub user): `npm run build` + `npm run test`, then
-   `npm version <patch|minor|major>` (bumps `package.json`, commits, tags; `.npmrc`
+   Then, in the core repo (own GitHub user): `npm run build` + `npm run test`; add the version's
+   entry to **`CHANGELOG.md`** (Upgrading / Added / Changed / Fixed — "Upgrading" is what a customer
+   must change; commit it); then `npm version <patch|minor|major>` (bumps `package.json`, commits, tags; `.npmrc`
    `tag-version-prefix=""` keeps tags unprefixed) and `git push --follow-tags`.
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
    in the frontend and/or backend; build locally (`npm run build`) to check; commit on `main`, push
