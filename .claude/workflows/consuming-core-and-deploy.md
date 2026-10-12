@@ -93,20 +93,29 @@ plan and asking before anything that pushes.
    - **patch** (`2.1.0` → `2.1.1`): fixes only
    - **minor** (`2.1.0` → `2.2.0`): new features / optional config, nothing breaks
    - **major** (`2.1.0` → `3.0.0`): a customer must change something (config shape, schema/data
-     migration, override template contract) — list the required changes in the tag message
+     migration, override template contract)
    Then, in the core repo (own GitHub user): `npm run build` + `npm run test`; add the version's
    entry to **`CHANGELOG.md`** (Upgrading / Added / Changed / Fixed — "Upgrading" is what a customer
-   must change; commit it); then `npm version <patch|minor|major>` (bumps `package.json`, commits, tags; `.npmrc`
-   `tag-version-prefix=""` keeps tags unprefixed) and `git push --follow-tags`.
+   must change) and commit it, or fold it into the version commit; then
+   `npm version <patch|minor|major> -m "<message>"` (`%s` in the message = the version; first line
+   `%s`, then the upgrade notes) — bumps `package.json`, commits, creates the annotated tag
+   (`.npmrc` `tag-version-prefix=""` keeps tags unprefixed); then `git push --follow-tags origin main`. Until pushed, the version commit/tag can still be amended
+   (`git tag -f -a <tag>`); once pushed, treat a tag as final.
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
    in the frontend and/or backend; build locally (`npm run build`) to check; commit on `main`, push
-   `origin`.
-3. **Customer — release:** bump the customer `package.json` version (minor for features, patch for
-   fixes — semver is loose for a site), merge `main` → `production`, annotated tag on that commit
-   (`git tag -a <version> -m "core-front <x>, core-back <y>"`), push `production` + the tag via the
-   **`user`** remote → Netlify builds. Frontend and backend are tagged separately; when a release
-   needs both (schema + rendering), release the backend first and name the paired release in the
-   tag message.
+   `origin`. This replaces an existing `npm link` — re-run `npm link @itsapps/itsshops-core-…` for
+   dev afterwards (the tag pin in `package.json`/lockfile stays).
+3. **Customer — release:** bump the customer version without a tag
+   (`npm version <minor|patch> --no-git-tag-version`, minor for features, patch for fixes — semver is
+   loose for a site; customer repos have no `.npmrc`, tags are unprefixed anyway), commit
+   `Release <version>` on `main` + push `origin`; `git checkout production && git merge --ff-only
+   main`; annotated tag on that commit (`git tag -a <version> -m "core-front <x>, core-back <y>"`);
+   then push `production` + the tag via the **`user`** remote (`git push user production <version>`)
+   → Netlify builds. **The production push is the user's:** Claude Code's auto-mode classifier
+   blocks it as a production deploy, so Claude prepares everything locally and hands over the
+   `! git -C <repo> push user production <version>` lines (unless the user added a permission
+   rule). Frontend and backend are tagged separately; when a release needs both (schema +
+   rendering), release the backend first and name the paired release in the tag message.
 4. Update the customer's `CLAUDE.md` status line if it tracks the live core version.
 
 Netlify's deploy history covers emergency rollbacks; the tags record *what* was live.

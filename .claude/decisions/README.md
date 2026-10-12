@@ -37,3 +37,5 @@ alternative was rejected, a constraint discovered the hard way.
   pre-sized lossless PNGs + srcset, not eleventy-img/WebP.
 - [cli-sanity-delete-guarded.md](cli-sanity-delete-guarded.md) — `itsshops sanity delete` needs a
   typed dataset-name confirmation (`--yes` for scripts) and runs as one all-or-nothing transaction.
+- [production-pins-core-tags.md](production-pins-core-tags.md) — production pins core by unprefixed
+  semver tag (semver vs. last tag, `CHANGELOG.md`), customers tag each production release.
