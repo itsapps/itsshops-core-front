@@ -30,7 +30,8 @@ is just:
 1. `npm run build` (also runs on `prepare`/`prepublishOnly`) and `npm run test`.
 2. Commit + push to GitHub (`main`, your own user).
 3. Customers pick it up per `consuming-core-and-deploy.md`: bump the pinned commit in their
-   `package-lock.json` (dev/test), or pin a git **tag** (go-live). A `package.json` version bump
-   (currently 1.4.x) is for cutting that tag.
+   `package-lock.json` (dev/test), or pin a git **tag** (production — required). Cutting a version
+   (`npm version <patch|minor|major>` + `git push --follow-tags`, tags without `v` prefix) is part
+   of the customer release flow there ("Release flow").
 
 Commit/push only when the user asks.

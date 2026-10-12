@@ -62,22 +62,53 @@ core installed (not `npm link`ed) does **not** refetch it. It records the new co
 old files. To actually get the new core locally: `rm -rf node_modules/@itsapps/itsshops-core-*`,
 then `npm install` (the lockfile stays unchanged).
 
-### Going live (production) — use a git tag
+### Production — only tagged core
 
-When a project goes live, pin core to a **git tag** instead of a floating commit, in `package.json`:
+**Rule: `production` never ships an untagged core.** `main`/`staging` may float on lockfile hashes;
+before a customer release to `production`, core is cut as a version and pinned by tag in
+`package.json` (tags have **no `v` prefix** — `1.5.0`, not `v1.5.0`):
 
 ```json
-"@itsapps/itsshops-core-front": "github:itsapps/itsshops-core-front#v1.4.1"
+"@itsapps/itsshops-core-front": "github:itsapps/itsshops-core-front#1.5.0"
 ```
 
-Bump it with npm (rewrites `package.json` + lockfile correctly, including any dep changes):
+Pin it with npm (rewrites `package.json` + lockfile correctly, including any dep changes):
 
 ```bash
-npm install 'github:itsapps/itsshops-core-front#v1.4.1'
+npm install 'github:itsapps/itsshops-core-front#1.5.0'
 ```
 
-A tag gives production a stable, named core version that can't drift, while dev/test keeps the quick
-hash-edit loop.
+Each customer opts in separately — a new core version changes nothing in a customer until it's
+pinned there. Because `production` is merged from `main`, the tag pin lands on `main` first; the
+next dev cycle may swap back to a hash.
+
+## Release flow (core version → customer release)
+
+Trigger phrase: **"release <customer>"** (optionally which repos, e.g. "release tinhof frontend",
+and the core bump if known, e.g. "core-back major"). Claude then runs the steps below, showing the
+plan and asking before anything that pushes.
+
+1. **Core — cut a version** (only for a core repo the customer's `main` uses past its last tag).
+   Decide the bump from the commits since the last tag (`git log <lastTag>..main`) — semver:
+   - **patch** (`2.1.0` → `2.1.1`): fixes only
+   - **minor** (`2.1.0` → `2.2.0`): new features / optional config, nothing breaks
+   - **major** (`2.1.0` → `3.0.0`): a customer must change something (config shape, schema/data
+     migration, override template contract) — list the required changes in the tag message
+   Then, in the core repo (own GitHub user): `npm run build` + `npm run test`, then
+   `npm version <patch|minor|major>` (bumps `package.json`, commits, tags; `.npmrc`
+   `tag-version-prefix=""` keeps tags unprefixed) and `git push --follow-tags`.
+2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
+   in the frontend and/or backend; build locally (`npm run build`) to check; commit on `main`, push
+   `origin`.
+3. **Customer — release:** bump the customer `package.json` version (minor for features, patch for
+   fixes — semver is loose for a site), merge `main` → `production`, annotated tag on that commit
+   (`git tag -a <version> -m "core-front <x>, core-back <y>"`), push `production` + the tag via the
+   **`user`** remote → Netlify builds. Frontend and backend are tagged separately; when a release
+   needs both (schema + rendering), release the backend first and name the paired release in the
+   tag message.
+4. Update the customer's `CLAUDE.md` status line if it tracks the live core version.
+
+Netlify's deploy history covers emergency rollbacks; the tags record *what* was live.
 
 ## Deploying a customer project (Netlify)
 

@@ -18,6 +18,7 @@ this file stays the always-loaded router.
 | Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts) | `.claude/architecture/commerce-and-netlify.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |
+| **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What every shop needs before go-live (env, settings, legal pages, approvals, tests) | `.claude/workflows/go-live-checklist.md` |
 | Why a non-obvious choice was made | `.claude/decisions/` |
 | A multi-step feature still in progress (scope, decisions, remaining steps) | `.claude/plans/` |
