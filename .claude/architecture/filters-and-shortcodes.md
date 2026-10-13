@@ -71,7 +71,7 @@ Usage: `{% image img, size, options %}`.
 
 | Shortcode | Purpose |
 |---|---|
-| `image(img, size, options?)` | Responsive `<picture>` for a Sanity image at a named/`PictureSize`. |
+| `image(img, size, options?)` | Responsive `<img srcset sizes>` (no `<picture>`) for a Sanity image at a named/`PictureSize`. |
 | `preload(img, size, options?)` | `<link rel="preload">` for an image (LCP). |
 | `staticImage(filename, size, options)` | Responsive image for a local static file. |
 | `staticPreload(filename, size)` | Preload for a local static file. |
@@ -112,3 +112,13 @@ Strip it for:
 Do **not** strip it for plain visible output (`{{ title }}`) — leaving stega in is what enables
 click-to-edit in the Studio preview. (`stegaClean` comes from `@sanity/client/stega`, re-exported
 from the package root and registered as the `stegaClean` filter.)
+
+- **Clean at the source** in customer extensions: a resolver that passes a raw Sanity string later
+  used in an attribute should `stegaClean` it there (`url: stegaClean(link.url)`), so templates
+  don't have to remember.
+- **Decorative copies** of visible text (e.g. an `aria-hidden` page name in the header) may be
+  cleaned too — otherwise the Studio shows click-to-edit overlays on header chrome.
+- **`escapeHTML`** (re-exported from `@portabletext/to-html`) is for HTML built in **TypeScript
+  template literals** (portable-text components, extension renderers) — escape every interpolated
+  value, attributes included (`href="${escapeHTML(stegaClean(url))}"`). Not needed in Nunjucks
+  `{{ }}`, which auto-escapes.

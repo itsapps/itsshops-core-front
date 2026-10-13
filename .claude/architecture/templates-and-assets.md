@@ -166,8 +166,29 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
 `imageSizeUrl`, `imageSizes`, `imageSrcsetData`, plus vinofact variants. Types `PictureSize` /
 `PictureOptions`. `imageSizes` defaults merge with `config.imageSizes`.
 
+- **`{% image img, size, options %}` renders a plain `<img srcset sizes>`, no `<picture>`** — the
+  browser's preload scanner evaluates `sizes` on `<img srcset>` but not on `<source>`, and
+  `<picture>` caused double downloads on mobile. One format per preset (`PictureSize.format`,
+  default `webp`, via Sanity's URL API); no jpg fallback.
+- **Core presets** (`imageSizes` in `src/image/index.ts`): `hero` 16:9, `content` 4:3, `carousel`
+  3:2, `card` 3:2, `thumb` 1:1. Customer `imageSizes` are merged over them (override a key or add
+  new ones). `PictureSize` = `{ sizes: [w, h | null][], widths, format?, quality?, fit? }` — `null`
+  height keeps the natural aspect ratio; fixed heights keep layouts stable.
+- **LCP:** `fetchpriority: 'high'` on the image, and/or `{% preload img, size %}` with the **same
+  preset** — it builds the identical srcset, so the browser reuses the preloaded file (a mismatched
+  URL/format downloads twice).
+- `{% staticImage %}` is for local files (eleventy-img writes them to disk); `imageUrl` filter for
+  plain URLs (og:image, JSON-LD, CSS/JS). Catalog: [filters-and-shortcodes.md](filters-and-shortcodes.md).
+
 `src/gallery/render.ts` renders gallery markup; the interactive lightbox is `src/scripts/lightbox.ts`
 + `src/scripts/gallery.ts`.
+
+Two Embla scripts, lazy-loaded by `src/scripts/index.ts` only when their hook is on the page:
+`[data-carousel]` (`carousel.ts`: content carousels — autoplay, fade, loop, pause button) and
+`[data-gallery]` (`gallery.ts`: a main carousel synced with an optional thumbs strip inside the same
+`[data-gallery]` ancestor — they needn't be siblings). The partials emit unstyled `.embla` /
+`.embla-thumbs` markup; layout CSS lives in the customer project (Jurtschitsch:
+`src/assets/css/global/blocks/embla-gallery.css`).
 
 The embla gallery partials `overridable/gallery/main.njk` + `thumbs.njk` are driven by `_gallery*`
 template variables set by the including template (`_galleryImages`, `_galleryImage`,
@@ -284,6 +305,10 @@ deferred bundle. `src/shared/` holds code shared between client scripts and Netl
 
 `setupAssets` passthrough-copies (skipped in preview): `src/assets/fonts/` → `/assets/fonts/`,
 `src/assets/images/static/*` → `/assets/images/`, and `src/assets/images/favicon/*` → `/`.
+
+**Font preload:** every `.woff2` under the customer's `src/assets/fonts/preload/` (recursive) becomes
+the global `preloadFonts` (`src/config/plugins.ts`) → `<link rel="preload">` in the head. No config —
+put only the fonts needed above the fold there.
 
 ## Template API (filters, shortcodes, schema.org)
 

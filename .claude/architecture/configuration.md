@@ -33,7 +33,7 @@ features: {
   newsletter?: boolean,
 }
 ```
-`checkout` is frontend-only (Stripe flow). `vinofact.fields` lists extra wine fields to fetch;
+`checkout` is frontend-only (Stripe flow). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`);
 `integration` falls back to `VINOFACT_API_*` env. Backend feature flags are a superset — keep both
 repos' configs aligned.
 
@@ -89,14 +89,29 @@ No `Config` field — both runtimes must see the same value, so set them on the 
 - `SHOP_TIMEZONE` — IANA name for dates/times in mails (default `Europe/Vienna`; invalid → warning +
   default). Helper: `formatShopDate` in `src/netlify/utils/i18n.ts`.
 
-### Env-only function settings (`wc-api`)
-Functions scope only, no `Config` field. Details: [commerce-and-netlify.md](commerce-and-netlify.md)
-→ "WooCommerce API bridge".
-- `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` — credentials Winenet uses. If either is missing, every
-  request gets a 401.
-- `WC_TIMEZONE` — fallback when the wrapper passes no `timezone` (default `Europe/Vienna`).
-- `WC_API_BASE_URL` — **test-only** (customer `tests/integration/wc-api.test.ts`), the deployment the
-  test calls; the function never reads it.
+### Env-only function settings (Netlify functions scope)
+No `Config` field; read by the Netlify functions at runtime (checked against `src/netlify/`).
+Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
+- **Stripe:** `STRIPE_SECRET_API_KEY` (`services/stripe.ts`), `STRIPE_ENDPOINT_SECRET` (webhook
+  signature).
+- **Mail:** `EMAIL_PROVIDER` = `mailgun` (default) | `resend` (`services/email.ts`).
+  Resend: `RESEND_API_KEY`. Mailgun: `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`,
+  `MAILGUN_USE_EU_REGION_URL` (default **true**; `false` → US endpoint).
+- **Studio → functions** (refund, send mail, …): `SERVER_FUNCTIONS_SECRET` (shared secret in the
+  `x-server-secret` header) and `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (comma-separated CORS allowlist,
+  i.e. the studio origins). Missing → fail closed (`utils/server-auth.ts`).
+- **Users (Supabase):** `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_EMAIL_HOOKS_SECRET`
+  (`auth-webhooks`), `SUPABASE_KEEP_ALIVE_URL` (`supabase-keep-alive`). `SKIP_AUTH_EMAILS=true`
+  suppresses auth + newsletter mails (tests). `PUBLIC_URL` overrides `URL` as the base for links in
+  those mails.
+- **Captcha:** `CAPTCHA_SECRET_KEY` — unset → captcha check skipped (`utils/captcha.ts`).
+- **Logging:** `LOG_LEVEL` = `debug` | `info` (default) | `warn` | `error` (`utils/logger.ts`); the
+  wc-api `Request` / `List orders` lines are `debug`.
+- **wc-api:** `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` (missing → every request 401), `WC_TIMEZONE`
+  (fallback when the wrapper passes no `timezone`). `WC_API_BASE_URL` is **test-only** (customer
+  `tests/integration/wc-api.test.ts`). Details: [wc-api.md](wc-api.md).
+- Shared with the build: `SANITY_*`, `SHOP_FORMALITY`, `SHOP_TIMEZONE`, `SUPPORT_EMAIL`,
+  `VINOFACT_*` (see above).
 
 ## Env var → config field map
 The authoritative list is the comment block in `src/types/config.ts` (above `Config`). Env is the

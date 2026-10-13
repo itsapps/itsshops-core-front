@@ -259,7 +259,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
     reportedStatus = STATUS_TO_WC[order.status] ?? order.status
   }
   // Taxes and line amounts follow WooCommerce (prices entered incl. tax), because the ERP
-  // was built against it — see docs/wc-api.md "Rounding":
+  // was built against it — see .claude/architecture/wc-api.md "Rounding":
   //   - line net = gross minus the *unrounded* tax; `price` = that net / quantity, unrounded
   //   - line tax is rounded per line; a tax line's `tax_total` = sum of its item line taxes
   //   - shipping tax is rounded on its own and reported only in `shipping_tax_total`

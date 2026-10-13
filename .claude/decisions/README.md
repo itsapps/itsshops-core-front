@@ -39,3 +39,8 @@ alternative was rejected, a constraint discovered the hard way.
   typed dataset-name confirmation (`--yes` for scripts) and runs as one all-or-nothing transaction.
 - [production-pins-core-tags.md](production-pins-core-tags.md) — production pins core by unprefixed
   semver tag (semver vs. last tag, `CHANGELOG.md`), customers tag each production release.
+- [wc-api-mirrors-woocommerce.md](wc-api-mirrors-woocommerce.md) — wc-api reproduces WooCommerce's
+  amounts/rounding from its source (net `price`, per-line tax, shipping tax separate); ERP quirks go
+  to the vendor, no deviating workarounds.
+- [shipping-vat-largest-gross-goods-value.md](shipping-vat-largest-gross-goods-value.md) — shipping
+  VAT rate = rate with the largest gross goods value (owner's choice; not most VAT, not net, no split).

@@ -37,7 +37,7 @@ Pairs with **core-back 3.1.0** (`shippingInfoModule.paymentInfo`).
 ## 2.0.1 — 2026-10-13
 
 ### Fixed
-- wc-api: amounts now follow WooCommerce's rounding exactly (see `docs/wc-api.md` → "Rounding"):
+- wc-api: amounts now follow WooCommerce's rounding exactly (see `.claude/architecture/wc-api.md` → "Rounding"):
   - line-item `price` is the net unit price (unrounded number). It was the gross price, so wineNET
     added VAT twice (order total 112.02 instead of 100).
   - `tax_lines[].tax_total` no longer includes shipping tax (it is only in `shipping_tax_total`);
