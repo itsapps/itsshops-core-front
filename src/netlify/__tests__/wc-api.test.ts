@@ -4,7 +4,8 @@ vi.mock('../services/sanity', () => ({ sanityClient: {} }))
 vi.mock('../lib/order-notifier', () => ({ sendOrderNotification: vi.fn() }))
 vi.mock('../utils/logger', () => ({ log: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() } }))
 
-import { mapOrder, type SanityOrder } from '../functions/wc-api'
+import { createWcApiHandler, mapOrder, type SanityOrder } from '../functions/wc-api'
+import { log } from '../utils/logger'
 import { calculateTotals } from '../lib/totals'
 import { extractVat } from '../lib/tax'
 
@@ -115,5 +116,20 @@ describe('wc-api mapOrder (WooCommerce-compatible amounts)', () => {
         expect(Math.abs(Math.round(li.price * li.quantity * (100 + rate)) - gross)).toBeLessThanOrEqual(1)
       })
     }
+  })
+})
+
+describe('wc-api request logging', () => {
+  it('logs param names and dp, never the credentials', async () => {
+    process.env.WC_CONSUMER_KEY = 'ck_secret'
+    process.env.WC_CONSUMER_SECRET = 'cs_secret'
+    const handler = createWcApiHandler()
+    await handler(
+      new Request('https://shop.test/wp-json/wc/v3/system_status?consumer_key=ck_secret&consumer_secret=cs_secret&dp=4'),
+      {} as never,
+    )
+    const call = vi.mocked(log.debug).mock.calls.find(([msg]) => msg === 'Request')!
+    expect(call[1]).toMatchObject({ path: 'system_status', params: ['consumer_key', 'consumer_secret', 'dp'], dp: '4' })
+    expect(JSON.stringify(call)).not.toMatch(/ck_secret|cs_secret/)
   })
 })

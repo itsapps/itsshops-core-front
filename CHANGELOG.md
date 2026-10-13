@@ -4,6 +4,12 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+### Changed
+- wc-api: debug log per request with the query param *names*, `dp` and the user agent (to see
+  what the ERP sends; credentials are never logged).
+
 ## 2.1.0 — 2026-10-13
 
 Pairs with **core-back 3.1.0** (`shippingInfoModule.paymentInfo`).

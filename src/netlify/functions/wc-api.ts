@@ -609,6 +609,16 @@ export function createWcApiHandler(userConfig: WcApiConfig = {}) {
     const url = new URL(request.url)
     const path = url.pathname.replace(/.*\/wp-json\/wc\/v3\/?/, '')
 
+    // Which query params the client sends (names only — consumer_key/secret may be
+    // among them), plus `dp` (decimal places), which this API does not support yet.
+    log.debug('Request', {
+      method: request.method,
+      path,
+      params: [...new Set(url.searchParams.keys())],
+      dp: url.searchParams.get('dp'),
+      userAgent: request.headers.get('user-agent'),
+    })
+
     try {
       // GET /system_status
       if (path === 'system_status' && request.method === 'GET') {
