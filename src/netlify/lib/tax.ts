@@ -47,26 +47,26 @@ export function extractNet(grossCents: number, ratePercent: number): number {
 /**
  * Determine the shipping VAT rate from cart items.
  *
- * Austrian tax rules allow shipping to be taxed at the rate of the "dominant"
- * goods in the order. We pick the rate that contributes the most VAT across
- * cart items; ties break to the higher rate (safer for the tax authority).
- * Returns 0 if the cart is empty or all items are tax-exempt.
+ * Shipping follows the "dominant" goods of the order: the rate whose items have the
+ * largest **net** goods value (sum of price × quantity excl. VAT). Net, not gross and
+ * not the VAT amount — both would tilt the choice towards the higher rate. Ties break
+ * to the higher rate (safer for the tax authority). Zero-rate items are ignored;
+ * returns 0 if the cart is empty or all items are tax-exempt. A coupon reduces every
+ * item by the same factor, so it never changes the result.
  */
 export function dominantItemVatRate(items: ValidatedCartItem[]): number {
-  const vatByRate = new Map<number, number>()
+  const netByRate = new Map<number, number>()
   for (const item of items) {
     if (item.vatRate <= 0) continue
-    const gross = item.price * item.quantity
-    const vat = extractVat(gross, item.vatRate)
-    vatByRate.set(item.vatRate, (vatByRate.get(item.vatRate) ?? 0) + vat)
+    const net = extractNet(item.price * item.quantity, item.vatRate)
+    netByRate.set(item.vatRate, (netByRate.get(item.vatRate) ?? 0) + net)
   }
-  if (vatByRate.size === 0) return 0
   let bestRate = 0
-  let bestVat = -1
-  for (const [rate, vat] of vatByRate) {
-    if (vat > bestVat || (vat === bestVat && rate > bestRate)) {
+  let bestNet = -1
+  for (const [rate, net] of netByRate) {
+    if (net > bestNet || (net === bestNet && rate > bestRate)) {
       bestRate = rate
-      bestVat = vat
+      bestNet = net
     }
   }
   return bestRate
