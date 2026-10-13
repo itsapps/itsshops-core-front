@@ -299,7 +299,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
 
   // One tax line per rate (items first, then a shipping-only rate if any).
   const rates = [...new Set(order.orderItems.map(item => item.vatRate))]
-  if (shippingRate !== null && shippingTax > 0 && !rates.includes(shippingRate)) rates.push(shippingRate)
+  if (shippingRate && !rates.includes(shippingRate)) rates.push(shippingRate)
   const taxLines = rates.map((rate, i) => ({
     id: i + 1,
     rate_code: `TAX-${rate}`,
@@ -375,7 +375,8 @@ export function mapOrder(order: SanityOrder, tz: string) {
       method_title: f.methodTitle ?? '',
       total: price(shippingNet),
       total_tax: price(shippingTax),
-      taxes: shippingRate !== null && shippingTax > 0 ? [{
+      // WC lists the shipping rate even at 0 tax (free shipping); only no rate → []
+      taxes: shippingRate ? [{
         id: taxLineId(shippingRate),
         total: price(shippingTax),
         subtotal: price(shippingTax),

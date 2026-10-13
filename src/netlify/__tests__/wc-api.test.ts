@@ -60,6 +60,12 @@ describe('wc-api mapOrder (WooCommerce-compatible amounts)', () => {
     expect(wc.total_tax).toBe('12.02')
   })
 
+  it('lists the shipping tax rate with 0.00 on free shipping, as WooCommerce does', () => {
+    expect(map(tinhof).shipping_lines[0].taxes).toEqual([{ id: 1, total: '0.00', subtotal: '0.00' }])
+    expect(map(order([{ price: 1500, quantity: 1, vatRate: 13 }], { shippingRate: 0 })).shipping_lines[0].taxes)
+      .toEqual([])
+  })
+
   it('reports shipping tax only in shipping_tax_total, not in tax_total', () => {
     const wc = map(order([{ price: 1500, quantity: 6, vatRate: 13 }], { shipping: 1050 }))
     const line13 = wc.tax_lines.find(tl => tl.rate_percent === '13.00')!
