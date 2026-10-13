@@ -166,21 +166,21 @@ Each order maps Sanity fields to the WC format:
 | `status` | `status` mapped to WC status |
 | `currency` | `totals.currency` |
 | `total` | `totals.grandTotal` (as decimal string) |
-| `total_tax` | `totals.totalVat` |
+| `total_tax` | Sum of line taxes + shipping tax (WooCommerce rounding, see below) |
 | `subtotal` | `totals.subtotal` |
-| `discount_total` | `totals.discount` |
+| `discount_total` / `discount_tax` | Net / tax part of `totals.discount` (line `subtotal` − `total`) |
 | `shipping_total` | `fulfillment.shippingCost` minus shipping tax |
 | `shipping_tax` | `fulfillment.taxSnapshot.vat` |
 | `billing` | `customer.billingAddress` + `customer.contactEmail` |
 | `shipping` | `customer.shippingAddress` |
-| `line_items` | `orderItems[]` with net prices, tax, sku, quantity |
-| `tax_lines` | `totals.vatBreakdown[]` |
+| `line_items` | `orderItems[]`: net `price` per unit, `subtotal`/`total` net, per-line tax, sku, quantity |
+| `tax_lines` | One per rate: `tax_total` = item line taxes, `shipping_tax_total` = shipping tax |
 | `shipping_lines` | `fulfillment` method + cost |
-| `fee_lines` | `fulfillment.packagingLines[]` |
-| `payment_method` | `"stripe"` |
+| `fee_lines` | always `[]` (packaging is part of the shipping price) |
+| `payment_method` / `_title` | `payment.type` + readable label (`"stripe"` for old orders) |
 | `transaction_id` | `paymentIntentId` |
 
-All price values are decimal strings (e.g. `"12.34"`), matching WC convention. Prices in Sanity are stored in cents as integers.
+All price values are decimal strings (e.g. `"12.34"`), matching WC convention — except line-item `price`, which (as in WC) is the **net** unit price after discount as an unrounded number (e.g. `13.275`). Prices in Sanity are stored in cents as integers.
 
 ---
 
@@ -196,33 +196,30 @@ All price values are decimal strings (e.g. `"12.34"`), matching WC convention. P
 | `returned` | `refunded` |
 
 
-## Coupons/Discount
+## Rounding (mirrors WooCommerce)
 
-In real WooCommerce, subtotal/subtotal_tax on a line item are pre-discount, while total/total_tax are post-discount (coupon distributed proportionally across lines). tax_lines[].tax_total is then the sum of
-line_items[].total_tax — so they always reconcile.
+The ERP (wineNET) was built against real WooCommerce, so amounts follow WooCommerce's own logic
+for prices entered incl. tax (checked against WC source: `class-wc-cart-totals.php`,
+`abstract-wc-order.php`, REST orders controller):
 
-Our wc-api currently sets total = subtotal (no discount applied to line items), so line_items[0].total_tax = "12.65" but tax_lines[0].tax_total = "11.50" — they don't reconcile. We need to distribute the
-discount proportionally into each line's total and total_tax.
+- **Line net** = gross − *unrounded* tax. `price` = line net / quantity, an unrounded **number**
+  (e.g. `13.274336…`), never the gross price — wineNET adds VAT to it. `total`/`subtotal` are the
+  line net rounded to cents.
+- **Line tax** (`total_tax`/`subtotal_tax`) is rounded **per line**.
+- **`tax_lines[].tax_total`** = sum of the item line taxes of that rate — **without shipping**.
+  Shipping tax (rounded on its own) is only in `shipping_tax_total` / `shipping_tax`.
+- **Order `total_tax`** = sum of all tax lines incl. shipping. **`total`** is always
+  `totals.grandTotal` (the amount charged).
+- **Coupons:** the gross discount is spread proportionally over the lines (rounding remainder on
+  the last line). `subtotal`/`subtotal_tax` are pre-discount, `total`/`total_tax` post-discount;
+  `discount_total`/`discount_tax` are the differences.
 
-The fix is to distribute the discount proportionally into each line's total/total_tax, keeping subtotal/subtotal_tax as the pre-discount figures. While there, we can also properly compute discount_total (net) and discount_tax.
+Invariants (tested in `src/netlify/__tests__/wc-api.test.ts`):
+- `tax_lines[r].tax_total` == sum of `line_items[].total_tax` with rate r
+- sum of `tax_lines[].tax_total + shipping_tax_total` == `total_tax`
+- `price × quantity` rounds to the line `total`; `price × quantity × (1 + rate)` rounds to the line
+  gross — both up to 1 cent at an exact half-cent (WooCommerce has the same tie)
 
-
-
-For the test order (2× Spargelpaket at 55€, fixed 10€ coupon, free shipping):
-
-subtotal / subtotal_tax — what the item costs before any coupon. Taken directly from orderItem.vatAmount (pre-discount VAT stored at order creation time). wineNET can show this as the original line price.
-
-total / total_tax — what was actually charged after the coupon. Computed by applying the discount proportionally: the gross discount (1000) divided by the subtotal (11000) gives a factor (≈9.09%), applied to
-each line's gross to get the discounted gross, then VAT is extracted from that at the item's rate. For this order, that gives discountedGross = 10000, total_tax = floor(10000 × 13/113) = 1150.
-
-tax_lines[0].tax_total — sourced from totals.vatBreakdown.vat, which calculateTotals computed the same way (discount applied proportionally before extracting VAT). So it's always 1150 and always matches
-sum(line_items[].total_tax).
-
-discount_total / discount_tax — the net/tax split of the coupon saving. Derived by comparing pre-discount item VAT (sum of orderItem.vatAmount = 1265) against post-discount item VAT (totals.totalVat -
-shippingTax = 1150). The difference (115) is the tax portion of the discount, remainder (885) is the net portion. So discount_total = "8.85", discount_tax = "1.15", and 8.85 + 1.15 = 10.00 (the full coupon
-value).
-
-The invariants wineNET can rely on:
-- sum(line_items[].total_tax) == tax_lines[].tax_total ✓
-- discount_total + discount_tax == coupon face value ✓
-- sum(line_items[].total) + shipping_total - discount_total == order.total - total_tax ✓
+**Known difference:** the checkout rounds VAT once per rate (`totals.vatBreakdown`, shown in the
+order email and invoice PDF), WooCommerce per line. On orders with several items at the same rate,
+`total_tax` here can differ from the shop's VAT by a cent; the gross `total` always matches.

@@ -21,6 +21,7 @@ import { log } from '../utils/logger'
 import { splitNameForExport } from '../utils/name'
 import { paymentMethodLabel } from '../lib/payment-method'
 import { serverT } from '../utils/i18n'
+import { extractVat } from '../lib/tax'
 import type { OrderPaymentMethod } from '../types/checkout'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -37,7 +38,7 @@ type ResolvedWcApiConfig = {
   version: string
 }
 
-type SanityOrder = {
+export type SanityOrder = {
   _id: string
   _createdAt: string
   orderNumber: string
@@ -151,6 +152,11 @@ function formatDateGmt(iso: string): string {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`
 }
 
+/** Net cents from gross cents, unrounded (WooCommerce keeps line nets unrounded). */
+function exactNet(grossCents: number, ratePercent: number): number {
+  return ratePercent > 0 ? grossCents / (1 + ratePercent / 100) : grossCents
+}
+
 // ── Status mapping ───────────────────────────────────────────────────────────
 
 const STATUS_TO_WC: Record<string, string> = {
@@ -229,7 +235,7 @@ function stableId(s: string): number {
   return (hash % 2_000_000_000) + 1
 }
 
-function mapOrder(order: SanityOrder, tz: string) {
+export function mapOrder(order: SanityOrder, tz: string) {
   const id = orderNumberToId(order.orderNumber)
   const t = order.totals
   const f = order.fulfillment
@@ -252,17 +258,17 @@ function mapOrder(order: SanityOrder, tz: string) {
   } else {
     reportedStatus = STATUS_TO_WC[order.status] ?? order.status
   }
+  // Taxes and line amounts follow WooCommerce (prices entered incl. tax), because the ERP
+  // was built against it — see docs/wc-api.md "Rounding":
+  //   - line net = gross minus the *unrounded* tax; `price` = that net / quantity, unrounded
+  //   - line tax is rounded per line; a tax line's `tax_total` = sum of its item line taxes
+  //   - shipping tax is rounded on its own and reported only in `shipping_tax_total`
+  //   - order `total_tax` = sum of all of the above
+  // Our checkout rounds VAT per rate (totals.vatBreakdown), so `total_tax` can differ from the
+  // shop's invoice VAT by a cent on multi-line orders; `total` is always the amount charged.
   const shippingTax = f?.taxSnapshot?.vat ?? 0
   const shippingNet = f ? f.shippingCost - shippingTax : 0
-
-  // Pre-discount item VAT = sum of per-line vatAmount stored on orderItems.
-  // Post-discount item VAT = totalVat minus shipping tax.
-  // The difference is the tax portion of the discount — needed for WC's
-  // discount_total (net) / discount_tax split.
-  const preDiscountItemVat = order.orderItems.reduce((sum, item) => sum + item.vatAmount, 0)
-  const postDiscountItemVat = t.totalVat - shippingTax
-  const discountTax = t.discount > 0 ? preDiscountItemVat - postDiscountItemVat : 0
-  const discountTotal = t.discount > 0 ? t.discount - discountTax : 0
+  const shippingRate = f?.taxSnapshot?.rate ?? null
 
   // Proportional factor used to distribute the gross discount across line items.
   const discountFactor = t.subtotal > 0 ? t.discount / t.subtotal : 0
@@ -277,23 +283,39 @@ function mapOrder(order: SanityOrder, tz: string) {
   if (discountedGrossPerItem.length > 0)
     discountedGrossPerItem[discountedGrossPerItem.length - 1] += roundingRemainder
 
-  // Tax lines from vatBreakdown
-  const taxLines = (t.vatBreakdown ?? []).map((vb, i) => ({
-    id: i + 1,
-    rate_code: `TAX-${vb.rate}`,
-    rate_id: i + 1,
-    label: `${vb.rate}%`,
-    compound: false,
-    rate_percent: vb.rate.toFixed(2),
-    tax_total: price(vb.vat),
-    shipping_tax_total: '0.00',
-  }))
+  // Per line, in cents: exact (unrounded) net and per-line rounded tax, before (subtotal)
+  // and after (total) the discount.
+  const lines = order.orderItems.map((item, i) => {
+    const gross = item.price * item.quantity
+    const discountedGross = discountedGrossPerItem[i]
+    return {
+      item,
+      subtotalNet: exactNet(gross, item.vatRate),
+      subtotalTax: extractVat(gross, item.vatRate),
+      totalNet: exactNet(discountedGross, item.vatRate),
+      totalTax: extractVat(discountedGross, item.vatRate),
+    }
+  })
 
-  // If there's shipping tax, add it to the matching tax line
-  if (shippingTax > 0 && f?.taxSnapshot && taxLines.length > 0) {
-    const match = taxLines.find(tl => tl.rate_percent === f.taxSnapshot!.rate.toFixed(2))
-    if (match) match.shipping_tax_total = price(shippingTax)
-  }
+  // One tax line per rate (items first, then a shipping-only rate if any).
+  const rates = [...new Set(order.orderItems.map(item => item.vatRate))]
+  if (shippingRate !== null && shippingTax > 0 && !rates.includes(shippingRate)) rates.push(shippingRate)
+  const taxLines = rates.map((rate, i) => ({
+    id: i + 1,
+    rate_code: `TAX-${rate}`,
+    rate_id: i + 1,
+    label: `${rate}%`,
+    compound: false,
+    rate_percent: rate.toFixed(2),
+    tax_total: price(lines.filter(l => l.item.vatRate === rate).reduce((s, l) => s + l.totalTax, 0)),
+    shipping_tax_total: price(rate === shippingRate ? shippingTax : 0),
+  }))
+  const taxLineId = (rate: number) => taxLines.find(tl => tl.rate_percent === rate.toFixed(2))?.id ?? 1
+
+  const itemsTax = lines.reduce((s, l) => s + l.totalTax, 0)
+  // Discount split as WooCommerce reports it: net and tax difference of the line amounts.
+  const discountTotal = lines.reduce((s, l) => s + Math.round(l.subtotalNet) - Math.round(l.totalNet), 0)
+  const discountTax = lines.reduce((s, l) => s + l.subtotalTax - l.totalTax, 0)
 
   return {
     id,
@@ -310,7 +332,7 @@ function mapOrder(order: SanityOrder, tz: string) {
     shipping_total: price(shippingNet),
     shipping_tax: price(shippingTax),
     total: price(t.grandTotal),
-    total_tax: price(t.totalVat),
+    total_tax: price(itemsTax + shippingTax),
     customer_id: 0,
     customer_note: '',
     billing: {
@@ -326,42 +348,26 @@ function mapOrder(order: SanityOrder, tz: string) {
       : 'Stripe',
     transaction_id: order.paymentIntentId ?? '',
     meta_data: [],
-    line_items: order.orderItems.map((item, i) => {
-      const lineGross = item.price * item.quantity
-      // vatAmount is already the VAT for the full line (price × quantity), not per unit.
-      // subtotal/subtotal_tax = pre-discount; total/total_tax = post-discount.
-      const lineTax = item.vatAmount
-      const lineNet = lineGross - lineTax
-
-      const discountedGross = discountedGrossPerItem[i]
-      const lineTaxDiscounted = Math.round(discountedGross * item.vatRate / (100 + item.vatRate))
-      const lineNetDiscounted = discountedGross - lineTaxDiscounted
-
-      return {
-        id: stableId(`${order.orderNumber}:${item._key}`),
-        name: item.subtitle ? `${item.title} - ${item.subtitle}` : item.title,
-        product_id: stableId(item.productId),
-        variation_id: stableId(item.variantId),
-        quantity: item.quantity,
-        sku: item.sku ?? '',
-        price: price(item.price), // gross unit price, consistent with prices_include_tax: true
-        subtotal: price(lineNet),
-        subtotal_tax: price(lineTax),
-        total: price(lineNetDiscounted),
-        total_tax: price(lineTaxDiscounted),
-        taxes: taxLines
-          .filter(tl => tl.rate_percent === item.vatRate.toFixed(2))
-          .map(tl => ({
-            id: tl.id,
-            subtotal: price(lineTax),
-            total: price(lineTaxDiscounted),
-          })),
-        meta_data: [
-          { key: '_sanity_product_id', value: item.productId },
-          { key: '_sanity_variant_id', value: item.variantId },
-        ],
-      }
-    }),
+    line_items: lines.map(({ item, subtotalNet, subtotalTax, totalNet, totalTax }) => ({
+      id: stableId(`${order.orderNumber}:${item._key}`),
+      name: item.subtitle ? `${item.title} - ${item.subtitle}` : item.title,
+      product_id: stableId(item.productId),
+      variation_id: stableId(item.variantId),
+      quantity: item.quantity,
+      sku: item.sku ?? '',
+      // Net unit price after discount, unrounded number (WC: line total / quantity). Never
+      // the gross price — the ERP adds the VAT to it.
+      price: totalNet / item.quantity / 100,
+      subtotal: price(Math.round(subtotalNet)),
+      subtotal_tax: price(subtotalTax),
+      total: price(Math.round(totalNet)),
+      total_tax: price(totalTax),
+      taxes: [{ id: taxLineId(item.vatRate), subtotal: price(subtotalTax), total: price(totalTax) }],
+      meta_data: [
+        { key: '_sanity_product_id', value: item.productId },
+        { key: '_sanity_variant_id', value: item.variantId },
+      ],
+    })),
     tax_lines: taxLines,
     shipping_lines: f ? [{
       id: 1,
@@ -369,8 +375,8 @@ function mapOrder(order: SanityOrder, tz: string) {
       method_title: f.methodTitle ?? '',
       total: price(shippingNet),
       total_tax: price(shippingTax),
-      taxes: f.taxSnapshot ? [{
-        id: taxLines.find(tl => tl.rate_percent === f.taxSnapshot!.rate.toFixed(2))?.id ?? 1,
+      taxes: shippingRate !== null && shippingTax > 0 ? [{
+        id: taxLineId(shippingRate),
         total: price(shippingTax),
         subtotal: price(shippingTax),
       }] : [],

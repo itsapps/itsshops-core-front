@@ -291,10 +291,13 @@ export default createWcApiHandler({ timezone: 'Europe/Vienna', notify: {} })
   drops it from its ship queue. Partial refunds are not overridden.
 - **Write guard:** PUT `completed` on a refunded, withdrawn or cancelled order → **409**
   `woocommerce_rest_order_not_fulfillable` (catches a race between poll and ship; no shipping mail).
-- **Money:** cents → decimal strings, `prices_include_tax: true` (`price` = gross unit price).
-  The discount is split into net `discount_total` + `discount_tax`, spread proportionally over line
-  items; the rounding remainder goes to the last item so lines + shipping = `total` exactly. Tax lines
-  come from `totals.vatBreakdown`; shipping tax goes onto the tax line with the matching rate.
+- **Money — mirrors WooCommerce rounding** (wineNET was built against it; full rules in
+  `docs/wc-api.md` → "Rounding"): line net = gross − unrounded tax; `price` = net / quantity as an
+  unrounded number (never gross — wineNET adds VAT; Tinhof order 000001 showed 112.02 vs 100);
+  line tax rounded per line; `tax_lines[].tax_total` = item taxes only, shipping tax only in
+  `shipping_tax_total`; `total_tax` = sum. The discount is spread proportionally over line items
+  (remainder on the last). Because checkout rounds VAT per rate, `total_tax` can differ from the
+  invoice VAT by a cent on multi-line orders; `total` is always the charged amount.
 - **Customer/payment:** names via `splitNameForExport` (see "Customer names"); `payment_method` =
   stored Stripe type (`card`, `eps`, …) and `payment_method_title` = readable German label (both
   `stripe`/`Stripe` on old orders without the snapshot). **Tell Winenet before changing the response
