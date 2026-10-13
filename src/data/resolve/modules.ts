@@ -29,6 +29,9 @@ export function resolveModules(
       case 'productVariantList':
         resolved = { ...m, title: ctx.resolveString(m.title) }
         break
+      case 'shippingInfoModule':
+        resolved = { ...m, paymentInfo: ctx.resolveString(m.paymentInfo) }
+        break
       case 'youtube':
         resolved = { ...m, url: stegaClean(m.url) }
         break

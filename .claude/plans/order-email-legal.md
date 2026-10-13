@@ -448,8 +448,11 @@ page, linked before ordering, instead of new UI in cart/checkout.
   "bis X kg: Y €", wine packaging rates per case size — never invented example totals; gross, like the
   checkout), **delivery time** (step 2 field) when set. Same data the checkout calculates with, so the
   page can't drift from what's charged. Free shipping via coupons isn't shown.
-- **Payment methods**: not in Sanity (Stripe Dashboard decides) → editors write them in a normal
-  rich-text module on the same page, next to the shipping module (no settings field).
+- **Payment methods**: not in Sanity (Stripe Dashboard decides) → editor-written text. Originally a
+  separate rich-text module next to the shipping module; **changed 2026-10-13** to the module's own
+  `paymentInfo` field (localized plain text, `i18nText`): two modules couldn't give the page one
+  heading outline (Zahlung / Versand / Gewährleistung) or consistent spacing, and the text is a
+  sentence or two, so no portable text.
 - **Payment methods** text is editor-written and can drift from what's enabled in the Stripe
   Dashboard — per-shop checklist item: re-check it whenever payment methods change in Stripe.
 - Links (decided 2026-10-07): **footer/menu** (editors add the page like any page) and **checkout**

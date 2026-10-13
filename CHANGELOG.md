@@ -4,9 +4,24 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 2.1.0 — 2026-10-13
+
+Pairs with **core-back 3.1.0** (`shippingInfoModule.paymentInfo`).
+
+### Upgrading
+- "Versand & Zahlung" page: move the payment-methods text from the separate rich-text module into
+  the shipping module's new "Zahlungsarten" field, then remove the rich-text module.
+- Shipping method titles in `shippingInfoModule` are now **h3** (under a new h2 "Versand"); site CSS
+  that styled them via `.shipping-info h2` must also target `h3`.
+
+### Added
+- `shippingInfoModule`: optional payment text (`paymentInfo`) rendered as an h2 "Zahlung" section;
+  heading outline h2 Zahlung · h2 Versand > h3 per method · h2 Gesetzliche Gewährleistung
+  (i18n `shippingInfo.paymentHeading` / `shippingHeading`).
 
 ### Fixed
+- `shippingInfoModule`: the warranty section gets the baseline spacing (the graphic sat directly on
+  the heading); more space below headings than between content blocks.
 - wc-api: a shipping line lists its tax rate with `0.00` on free shipping (as WooCommerce does)
   instead of an empty `taxes` array.
 

@@ -95,12 +95,19 @@ html.has-filter-panel-open {
  * layout). Width, alignment and typography come from the customer's module wrapper CSS.
  */
 .withdrawal-instructions > * + *,
-.shipping-info > * + * {
+.shipping-info > * + *,
+.shipping-info__shipping > * + * {
   margin-block-start: var(--space-l, 2.5em);
 }
 .withdrawal-instructions__section > * + *,
-.shipping-info__method > * + * {
+.shipping-info__payment > * + *,
+.shipping-info__method > * + *,
+.shipping-info__guarantee > * + * {
   margin-block-start: var(--space-s, 1em);
+}
+/* more air below a heading than between its content blocks (display headings often have line-height 1) */
+.shipping-info :is(h2, h3) + * {
+  margin-block-start: var(--space-m, 1.5em);
 }
 .withdrawal-instructions__form ul {
   padding: 0;

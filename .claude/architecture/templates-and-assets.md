@@ -53,7 +53,9 @@ order email). The warranty notice ships as lossless 256-colour PNGs in three wid
 (colours, QR code), and lossless WebP is larger than the indexed PNG for this graphic. Legal modules/partials: `core/modules/withdrawalPolicyModule.njk`,
 `core/modules/shippingInfoModule.njk`, `core/components/partials/legal-guarantee-notice.njk` (full),
 `core/components/partials/legal-guarantee-compact.njk` (checkout) —
-see `commerce-and-netlify.md` → "Legal texts". Their CSS in `core.css` is a **structural baseline
+see `commerce-and-netlify.md` → "Legal texts". `shippingInfoModule.njk` renders the heading outline
+h2 Zahlung (`module.paymentInfo`, plain text → `paragraphs` filter; omitted when empty) · h2 Versand
+(h3 per shipping method) · h2 Gesetzliche Gewährleistung — site CSS styles these h2/h3. Their CSS in `core.css` is a **structural baseline
 only** (spacing, fact grid, table layout, max-widths): no fonts or line-height — typography and the
 container (width, indent, alignment) come from each site's module CSS.
 

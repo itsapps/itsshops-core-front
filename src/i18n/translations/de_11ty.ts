@@ -515,6 +515,8 @@ export default {
     },
   },
   shippingInfo: {
+    paymentHeading: "Zahlung",
+    shippingHeading: "Versand",
     type: "Art",
     types: { delivery: "Lieferung", pickup: "Abholung" },
     deliveryTime: "Lieferzeit",

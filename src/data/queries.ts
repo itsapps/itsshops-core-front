@@ -60,6 +60,10 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     ${proj.i18nStringField('title')},
     ${proj.refsField('products')}
   }`,
+  shippingInfoModule: `{
+    _type,
+    ${proj.i18nStringField('paymentInfo')}
+  }`,
   youtube: `{ _type, url, showControls, autoload, autopause, start }`,
 }
 

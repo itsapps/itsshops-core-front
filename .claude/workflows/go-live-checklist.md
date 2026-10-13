@@ -34,8 +34,9 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] **Withdrawal policy page** (`shopSettings.withdrawalPolicyPage`) contains the
       `withdrawalPolicyModule`; any old hand-typed policy text removed (page and order mail must not
       say different things).
-- [ ] **"Versand & Zahlung" page** with the `shippingInfoModule` + a rich-text block listing the
-      **payment methods enabled in Stripe live mode**; selected as `shopSettings.shippingInfoPage`
+- [ ] **"Versand & Zahlung" page** with the `shippingInfoModule`, its "Zahlungsarten" field
+      (`paymentInfo`, every locale) listing the **payment methods enabled in Stripe live mode**;
+      selected as `shopSettings.shippingInfoPage`
       (the checkout links it at the top and above the order button); linked in the footer menu.
 - [ ] Footer: the withdrawal function link ("Vertrag widerrufen") is present (core appends it if
       missing) and the policy pages are linked.
