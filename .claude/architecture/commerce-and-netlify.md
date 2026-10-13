@@ -107,8 +107,8 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
-  **net** goods value — not the most VAT, not gross (both favour the higher rate); ties → higher
-  rate; 0 % items ignored. The shipping method's `taxCategoryCode` is not used. Shipping VAT is
+  **gross** goods value (sum of shop prices; the owner's choice) — not the most VAT, which favoured
+  the higher rate; ties → higher rate; 0 % items ignored. The shipping method's `taxCategoryCode` is not used. Shipping VAT is
   rounded on its own and stored as `fulfillment.taxSnapshot`.
 - `order-builder.ts`, `order-item-display.ts` — order construction
 - `*-notifier.tsx` — React-email templates (auth, order, newsletter, withdraw)

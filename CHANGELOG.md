@@ -7,9 +7,9 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 ## Unreleased
 
 ### Changed
-- Shipping VAT rate: the rate whose items have the largest **net goods value** (was: the rate
-  contributing the most VAT, which favoured 20 % — e.g. 39.00 at 13 % vs 37.00 at 20 % gave 20 %,
-  now 13 %). Only new orders; stored orders keep their shipping VAT.
+- Shipping VAT rate: the rate whose items have the largest **gross goods value** (sum of shop
+  prices). Was: the rate contributing the most VAT, which favoured 20 % — e.g. 39.00 at 13 % vs
+  37.00 at 20 % gave 20 %, now 13 %. Only new orders; stored orders keep their shipping VAT.
 - wc-api: debug log per request with the query param *names*, `dp` and the user agent (to see
   what the ERP sends; credentials are never logged).
 

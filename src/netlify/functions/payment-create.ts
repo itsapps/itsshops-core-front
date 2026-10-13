@@ -184,7 +184,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
 
     // ── Calculate totals ────────────────────────────────────────────────
     // Shipping VAT follows the "dominant goods": the rate whose items have the
-    // largest net goods value.
+    // largest gross goods value (sum of shop prices).
     const shippingVatRate = selectedShipping ? dominantItemVatRate(validatedItems) : 0
 
     const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate, couponDiscount)

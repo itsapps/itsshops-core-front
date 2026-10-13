@@ -48,25 +48,24 @@ export function extractNet(grossCents: number, ratePercent: number): number {
  * Determine the shipping VAT rate from cart items.
  *
  * Shipping follows the "dominant" goods of the order: the rate whose items have the
- * largest **net** goods value (sum of price × quantity excl. VAT). Net, not gross and
- * not the VAT amount — both would tilt the choice towards the higher rate. Ties break
- * to the higher rate (safer for the tax authority). Zero-rate items are ignored;
- * returns 0 if the cart is empty or all items are tax-exempt. A coupon reduces every
- * item by the same factor, so it never changes the result.
+ * largest **gross** goods value (sum of price × quantity incl. VAT, i.e. the shop
+ * prices) — not the VAT amount, which would tilt the choice towards the higher rate.
+ * Ties break to the higher rate (safer for the tax authority). Zero-rate items are
+ * ignored; returns 0 if the cart is empty or all items are tax-exempt. A coupon reduces
+ * every item by the same factor, so it never changes the result.
  */
 export function dominantItemVatRate(items: ValidatedCartItem[]): number {
-  const netByRate = new Map<number, number>()
+  const grossByRate = new Map<number, number>()
   for (const item of items) {
     if (item.vatRate <= 0) continue
-    const net = extractNet(item.price * item.quantity, item.vatRate)
-    netByRate.set(item.vatRate, (netByRate.get(item.vatRate) ?? 0) + net)
+    grossByRate.set(item.vatRate, (grossByRate.get(item.vatRate) ?? 0) + item.price * item.quantity)
   }
   let bestRate = 0
-  let bestNet = -1
-  for (const [rate, net] of netByRate) {
-    if (net > bestNet || (net === bestNet && rate > bestRate)) {
+  let bestGross = -1
+  for (const [rate, gross] of grossByRate) {
+    if (gross > bestGross || (gross === bestGross && rate > bestRate)) {
       bestRate = rate
-      bestNet = net
+      bestGross = gross
     }
   }
   return bestRate

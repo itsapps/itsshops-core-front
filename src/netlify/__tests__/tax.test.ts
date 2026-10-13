@@ -136,9 +136,9 @@ describe('dominantItemVatRate', () => {
     expect(dominantItemVatRate(items)).toBe(20)
   })
 
-  it('picks the rate with the largest net goods value, not the most VAT', () => {
-    // Tinhof order 000002: 13 % items 39.00 gross (34.51 net, 4.49 VAT),
-    // 20 % items 37.00 gross (30.83 net, 6.16 VAT) → 13 wins although 20 has more VAT
+  it('picks the rate with the largest gross goods value, not the most VAT', () => {
+    // Tinhof order 000002: 13 % items 39.00 gross (4.49 VAT),
+    // 20 % items 37.00 gross (6.16 VAT) → 13 wins although 20 has more VAT
     const items = [
       makeItem({ vatRate: 20, price: 3200, quantity: 1 }),
       makeItem({ variantId: 'v2', vatRate: 13, price: 1100, quantity: 1 }),
@@ -148,13 +148,13 @@ describe('dominantItemVatRate', () => {
     expect(dominantItemVatRate(items)).toBe(13)
   })
 
-  it('compares net, not gross values', () => {
-    // gross 39.00 (13 %) vs 40.00 (20 %) — but net 34.51 vs 33.33 → 13 wins
+  it('compares gross values (shop prices), not net', () => {
+    // gross 39.00 (13 %) vs 40.00 (20 %) → 20 wins (net would be 34.51 vs 33.33)
     const items = [
       makeItem({ vatRate: 13, price: 3900, quantity: 1 }),
       makeItem({ variantId: 'v2', vatRate: 20, price: 4000, quantity: 1 }),
     ]
-    expect(dominantItemVatRate(items)).toBe(13)
+    expect(dominantItemVatRate(items)).toBe(20)
   })
 
   it('sums quantities per rate', () => {
@@ -162,14 +162,14 @@ describe('dominantItemVatRate', () => {
       makeItem({ vatRate: 13, price: 1000, quantity: 1 }),
       makeItem({ variantId: 'v2', vatRate: 20, price: 500, quantity: 3 }),
     ]
-    // 13 %: 8.85 net; 20 %: 12.50 net → 20 wins
+    // 13 %: 10.00 gross; 20 %: 15.00 gross → 20 wins
     expect(dominantItemVatRate(items)).toBe(20)
   })
 
   it('breaks ties toward the higher rate', () => {
-    // equal net 10.00: 11.30 gross at 13 %, 12.00 gross at 20 %
+    // equal gross 12.00 at 13 % and 20 %
     const items = [
-      makeItem({ vatRate: 13, price: 1130, quantity: 1 }),
+      makeItem({ vatRate: 13, price: 1200, quantity: 1 }),
       makeItem({ variantId: 'v2', vatRate: 20, price: 1200, quantity: 1 }),
     ]
     expect(dominantItemVatRate(items)).toBe(20)
