@@ -1,6 +1,6 @@
 # Plan — generated privacy policy (`privacyPolicyModule`)
 
-Status: **In progress** — step 0 done in code (2026-10-14, uncommitted), next step 1. Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
+Status: **In progress** — step 0 shipped in core-front 3.0.0 (Tinhof wrapper on `main`, ships with its next release); next step 1. Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
 rich text that doesn't describe what the shop does. Not legal advice: the requirements below are an
 orientation; the core wording gets one legal review, each shop owner approves their generated page.
 
@@ -149,8 +149,8 @@ Mailgun EU wording; Du/Sie.
 0. ✅ **Prerequisites** (core-front, 2026-10-14):
    - `order-meta-cleanup` function (`ORDER_META_RETENTION_DAYS` = 30 in `config/constants`, used by
      the builder too) deletes every `orderMeta` not updated for 30 days (paid ones are copies in
-     their `order`). Customer wrapper `schedule: '@daily'` — add it in each shop **with** the
-     release that ships the function (Tinhof's `main` pins a core hash without it).
+     their `order`). Customer wrapper `netlify/functions/order_meta_cleanup.mts`,
+     `schedule: '@daily'` — every shop with checkout needs it (Tinhof: added after 1.5.0).
    - Log audit: removed recipient emails (`to`) from 4 log lines and the wc-api status-update body;
      the rest logs ids, error messages, `emailObfuscated` (4 chars). Rule in `configuration.md`.
      Residual: provider error messages (Supabase, Resend/Mailgun) may echo an address — accepted.
