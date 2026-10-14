@@ -115,16 +115,29 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 
 - No **`refunds`** array. A partial refund only sets `paymentStatus: partiallyRefunded` (the amount
   lives in Stripe, not on the order), so the ERP sees no change — enter it there by hand.
-- The **`dp`** query param (decimal places) is ignored; values are always 2 dp.
+- The **`dp`** query param (decimal places) is ignored; values are always 2 dp. (WC formats the
+  money strings *and* `taxes[].total`/`subtotal` with `dp`, default 2 — so at default `dp` our
+  `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)
+- **`rate_id` is not stable across orders:** tax lines are numbered 1, 2, … in order of first
+  appearance (`tax_lines[].id` = `rate_id`, and `taxes[].id` points at it), so 13 % may be id 1 in
+  one order and 2 in another. Fine for a per-order lookup; in WC a rate id is global. Making it
+  stable (e.g. derived from the rate) changes the response — tell wineNET first.
 
 ## wineNET behaviour (observed)
 
 - **Polling:** hourly, `status=pending,processing,on-hold`, `after` ≈ now − 48 h, `before` ≈ now −
   10 min, `per_page=100`. A new order reaches wineNET within 1–2 h.
 - **VAT rate per line = tax ÷ net, rounded to 1 decimal**, matched against its rates — it does not
-  follow `taxes[].id` → `tax_lines[].rate_percent`. With cent-rounded tax this misses on tiny lines
-  (1 × €5.00 at 20 %: 0.83 / 4.1667 = 19.9 % → booked at 0 %, gross 4.9958). Reported to wineNET;
-  don't work around it by sending more tax decimals (breaks WC parity).
+  follow `taxes[].id` → `tax_lines[].rate_id` → `rate_percent` (in WC, `taxes[].id` is the tax
+  *rate* id = `tax_lines[].rate_id`; `tax_lines[].id` is the tax line's own item id — ours are
+  equal). With cent-rounded tax this misses on tiny lines
+  (1 × €5.00 at 20 %: 0.83 / 4.1667 = 19.9 % → booked at 0 %, gross 4.9958). Per wineNET it reads
+  `price` + `quantity` + `subtotal_tax` (or `taxes[0]`). Real WooCommerce sends the same rounded
+  values (`subtotal_tax` rounded per line, `taxes[]` formatted to `dp` = 2), so this also hits
+  wineNET on real WC shops — a wineNET bug. Reported to wineNET; don't work around it by sending
+  more tax decimals (breaks WC parity).
+- **Does not send `dp`** (request log, checked 2026-10-14), so supporting `dp` alone changes nothing
+  for wineNET.
 
 ## Logging and testing
 
