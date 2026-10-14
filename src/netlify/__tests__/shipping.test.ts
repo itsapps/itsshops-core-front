@@ -7,7 +7,12 @@ import {
   resolveShippingMethods,
   selectShippingMethod,
 } from '../lib/shipping'
-import type { ValidatedCartItem, SanityShippingMethodResult, AvailableShippingMethod } from '../types/checkout'
+import type {
+  ValidatedCartItem,
+  SanityShippingMethodResult,
+  SanityPackagingGroupResult,
+  AvailableShippingMethod,
+} from '../types/checkout'
 
 function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem {
   return {
@@ -159,7 +164,7 @@ describe('resolveShippingMethods', () => {
         { maxWeight: 5, price: 500 },
         { maxWeight: 30, price: 1200 },
       ],
-      packagingConfigs: null,
+      packagingGroups: null,
     },
     {
       _id: 'sm2',
@@ -169,7 +174,7 @@ describe('resolveShippingMethods', () => {
       freeShippingThreshold: null,
       taxCategoryCode: 'standard',
       rates: null,
-      packagingConfigs: null,
+      packagingGroups: null,
     },
   ]
 
@@ -198,76 +203,109 @@ describe('resolveShippingMethods', () => {
     expect(pickup.price).toBe(0)
   })
 
-  it('falls back to weight-based rate when wine volume has no packaging config', () => {
-    const methodWithPackaging: SanityShippingMethodResult[] = [{
-      _id: 'sm-pkg',
-      title: [{ language: 'de', value: 'Weinversand' }],
-      methodType: 'delivery',
-      pickupFee: null,
-      freeShippingThreshold: null,
-      taxCategoryCode: 'standard',
-      rates: [{ maxWeight: 30, price: 800 }],
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 6, price: 500 }] },
-        // no config for 375ml
+  // Tinhof-style setup: half bottles share the 0.75 l boxes (2 per place), magnums their own box.
+  const tinhofGroups: SanityPackagingGroupResult[] = [
+    {
+      bottles: [{ volume: 750, perPlace: 1 }, { volume: 375, perPlace: 2 }],
+      packages: [
+        { places: 1, price: 600 },
+        { places: 2, price: 650 },
+        { places: 3, price: 700 },
+        { places: 6, price: 800 },
+        { places: 12, price: 1050 },
       ],
-    }]
-    const items = [
-      makeItem({ kind: 'wine', weight: 725, quantity: 2, wine: { vintage: '2024', volume: 375 } }),
-    ]
-    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
+    },
+    { bottles: [{ volume: 1500, perPlace: 1 }], packages: [{ places: 1, price: 750 }] },
+  ]
+  const packagingMethod = (
+    packagingGroups: SanityPackagingGroupResult[],
+    rates: SanityShippingMethodResult['rates'] = null,
+  ): SanityShippingMethodResult[] => [{
+    _id: 'sm-pkg',
+    title: [{ language: 'de', value: 'Weinversand' }],
+    methodType: 'delivery',
+    pickupFee: null,
+    freeShippingThreshold: null,
+    taxCategoryCode: 'standard',
+    rates,
+    packagingGroups,
+  }]
+  const wine = (volume: number, quantity: number, variantId = `w${volume}`) =>
+    makeItem({ variantId, kind: 'wine', weight: null, quantity, wine: { vintage: '2024', volume } })
+  const resolvePackaging = (items: ValidatedCartItem[], groups = tinhofGroups, rates: SanityShippingMethodResult['rates'] = null) =>
+    resolveShippingMethods(packagingMethod(groups, rates), items, 3000, 0, 'afterDiscount', 'de')
+
+  it.each([
+    // [cart, price, box places]
+    ['2 × 375', [wine(375, 2)], 600, 1],
+    ['12 × 375', [wine(375, 12)], 800, 6],
+    ['4 × 750 + 4 × 375', [wine(750, 4), wine(375, 4)], 800, 6],
+    ['3 × 375 (1.5 places → 2)', [wine(375, 3)], 650, 2],
+    ['4 × 750 + 3 × 375 (5.5 places → 6, rounded once)', [wine(750, 4), wine(375, 3)], 800, 6],
+    ['1 × 375 (half a place → 1)', [wine(375, 1)], 600, 1],
+  ])('packs half bottles into the shared boxes: %s', (_label, items, price, packSize) => {
+    const result = resolvePackaging(items)
     expect(result).toHaveLength(1)
-    // 2x 375ml bottles → no packaging config → estimated weight 725g each → 1.45kg → weight rate 800
+    expect(result[0].price).toBe(price)
+    expect(result[0].packagingLines).toEqual([{ volumes: [750, 375], packSize, quantity: 1, price }])
+  })
+
+  it('prices each group separately and snapshots one line per box size', () => {
+    const result = resolvePackaging([wine(750, 7), wine(1500, 2)])
+    // 7 places → a 12-box (1050) beats 6-box + 1-box (1400); 2 magnums → 2 × 1-box (750)
+    expect(result[0].price).toBe(1050 + 1500)
+    expect(result[0].packagingLines).toEqual([
+      { volumes: [750, 375], packSize: 12, quantity: 1, price: 1050 },
+      { volumes: [1500], packSize: 1, quantity: 2, price: 750 },
+    ])
+  })
+
+  it('rounds up exactly across mixed perPlace values', () => {
+    const groups: SanityPackagingGroupResult[] = [{
+      bottles: [{ volume: 750, perPlace: 1 }, { volume: 375, perPlace: 2 }, { volume: 187, perPlace: 3 }],
+      packages: [{ places: 1, price: 100 }],
+    }]
+    // 1 + 1/2 + 2/3 = 2.17 places → 3
+    const result = resolvePackaging([wine(750, 1), wine(375, 1), wine(187, 2)], groups)
+    expect(result[0].price).toBe(300)
+  })
+
+  it('puts an unlisted bottle size into the next larger size\'s group, one per place', () => {
+    // 500 ml is in no group → 0.75 l group, 1 place each: 4 × 750 + 2 × 500 = 6 places
+    const result = resolvePackaging([wine(750, 4), wine(500, 2)])
+    expect(result).toHaveLength(1)
     expect(result[0].price).toBe(800)
-    expect(result[0].packagingLines).toEqual([])
+    expect(result[0].packagingLines).toEqual([{ volumes: [750, 500, 375], packSize: 6, quantity: 1, price: 800 }])
   })
 
-  it('allows packaging-only method when uncovered volume has no weight rates', () => {
-    const methodWithPackaging: SanityShippingMethodResult[] = [{
-      _id: 'sm-pkg',
-      title: [{ language: 'de', value: 'Weinversand' }],
-      methodType: 'delivery',
-      pickupFee: null,
-      freeShippingThreshold: null,
-      taxCategoryCode: 'standard',
-      rates: null, // no weight-based rates
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 1, price: 300 }] },
-      ],
-    }]
-    const items = [
-      makeItem({ kind: 'wine', weight: 725, quantity: 1, wine: { vintage: '2024', volume: 375 } }),
-    ]
-    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
-    expect(result).toHaveLength(1)
-    // no packaging config for 375ml, no weight rates → packaging cost only (0)
-    expect(result[0].price).toBe(0)
+  it('drops the method when a bottle is larger than every listed size', () => {
+    expect(resolvePackaging([wine(3000, 1)])).toHaveLength(0)
   })
 
-  it('combines packaging and weight-based fallback for mixed volumes', () => {
-    const methodWithPackaging: SanityShippingMethodResult[] = [{
-      _id: 'sm-pkg',
-      title: [{ language: 'de', value: 'Weinversand' }],
-      methodType: 'delivery',
-      pickupFee: null,
-      freeShippingThreshold: null,
-      taxCategoryCode: 'standard',
-      rates: [{ maxWeight: 30, price: 400 }],
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 1, price: 300 }] },
-        // no config for 375ml
-      ],
-    }]
-    const items = [
-      makeItem({ kind: 'wine', weight: null, quantity: 1, wine: { vintage: '2023', volume: 750 } }),
-      makeItem({ variantId: 'v2', kind: 'wine', weight: null, quantity: 2, wine: { vintage: '2024', volume: 375 } }),
+  it('drops the method when a wine has no volume', () => {
+    const items = [makeItem({ kind: 'wine', weight: null, quantity: 1, wine: { vintage: '2024', volume: null } })]
+    expect(resolvePackaging(items)).toHaveLength(0)
+  })
+
+  it('drops the method when a group has no boxes', () => {
+    const groups: SanityPackagingGroupResult[] = [{ bottles: [{ volume: 750, perPlace: 1 }], packages: [] }]
+    expect(resolvePackaging([wine(750, 1)], groups)).toHaveLength(0)
+  })
+
+  it('keeps separate groups per size (Jurtschitsch-style) unchanged', () => {
+    const groups: SanityPackagingGroupResult[] = [
+      { bottles: [{ volume: 750, perPlace: 1 }], packages: [{ places: 1, price: 300 }, { places: 6, price: 500 }] },
+      { bottles: [{ volume: 1500, perPlace: 1 }], packages: [{ places: 1, price: 400 }] },
     ]
-    const result = resolveShippingMethods(methodWithPackaging, items, 3000, 0, 'afterDiscount', 'de')
-    expect(result).toHaveLength(1)
-    // 1x 750ml → packaging 300 + 2x 375ml uncovered → weight fallback 400 = 700
-    expect(result[0].price).toBe(700)
-    expect(result[0].packagingLines).toHaveLength(1)
-    expect(result[0].packagingLines![0]).toMatchObject({ volume: 750, packSize: 1, quantity: 1 })
+    // 4 × 750 → a 6-box (500) is cheaper than 4 × 1-box (1200); 1 × 1500 → 400
+    const result = resolvePackaging([wine(750, 4), wine(1500, 1)], groups)
+    expect(result[0].price).toBe(900)
+  })
+
+  it('adds weight rates for non-wine items on top of the packaging', () => {
+    const items = [wine(375, 2), makeItem({ variantId: 'p1', kind: 'physical', weight: 500, quantity: 1 })]
+    const result = resolvePackaging(items, tinhofGroups, [{ maxWeight: 30, price: 400 }])
+    expect(result[0].price).toBe(600 + 400)
   })
 
   it('counts wine bottles inside bundles for packaging', () => {
@@ -279,8 +317,8 @@ describe('resolveShippingMethods', () => {
       freeShippingThreshold: null,
       taxCategoryCode: 'standard',
       rates: null,
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 6, price: 600 }] },
+      packagingGroups: [
+        { bottles: [{ volume: 750, perPlace: 1 }], packages: [{ places: 6, price: 600 }] },
       ],
     }]
     // bundle of 6x 750ml wine bottles
@@ -300,7 +338,7 @@ describe('resolveShippingMethods', () => {
     // 6 bottles → 1x 6-pack at 600
     expect(result[0].price).toBe(600)
     expect(result[0].packagingLines).toHaveLength(1)
-    expect(result[0].packagingLines![0]).toMatchObject({ volume: 750, packSize: 6, quantity: 1 })
+    expect(result[0].packagingLines![0]).toMatchObject({ volumes: [750], packSize: 6, quantity: 1 })
   })
 
   it('multiplies bundle wine children by bundle quantity', () => {
@@ -312,8 +350,8 @@ describe('resolveShippingMethods', () => {
       freeShippingThreshold: null,
       taxCategoryCode: 'standard',
       rates: null,
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 6, price: 600 }] },
+      packagingGroups: [
+        { bottles: [{ volume: 750, perPlace: 1 }], packages: [{ places: 6, price: 600 }] },
       ],
     }]
     // 2x bundle of 3x 750ml = 6 bottles total
@@ -342,8 +380,8 @@ describe('resolveShippingMethods', () => {
       freeShippingThreshold: null,
       taxCategoryCode: 'standard',
       rates: [{ maxWeight: 30, price: 400 }],
-      packagingConfigs: [
-        { volume: 750, packages: [{ count: 1, price: 300 }] },
+      packagingGroups: [
+        { bottles: [{ volume: 750, perPlace: 1 }], packages: [{ places: 1, price: 300 }] },
       ],
     }]
     // bundle: 1x 750ml wine + 1x physical (500g)

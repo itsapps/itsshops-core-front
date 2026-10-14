@@ -38,29 +38,34 @@
         {%- endif %}
       </dl>
 
-      {%- for config in method.packagingConfigs %}
-      {%- if config.packages.length %}
+      {#- One table per packaging group (box type). Rows are places; bottles sharing a place
+          (perPlace > 1) get a note in the caption, so screen readers announce it with the table. #}
+      {%- for group in method.packagingGroups %}
       <table class="shipping-info__table">
-        <caption>{{ 'shippingInfo.packagingCaption' | trans({ volume: config.volume | formatVolume }) }}</caption>
+        <caption>
+          {{ 'shippingInfo.packagingCaption' | trans({ volume: group.bottles | map('volume') | formatVolumeList }) }}
+          {%- for bottle in group.bottles %}{% if bottle.perPlace > 1 %}
+          <span class="shipping-info__table-note">{{ 'shippingInfo.packagingShared' | trans({ count: bottle.perPlace, volume: bottle.volume | formatVolume }) }}</span>
+          {%- endif %}{% endfor %}
+        </caption>
         <thead><tr>
           <th scope="col">{{ 'shippingInfo.package' | trans }}</th>
           <th scope="col">{{ 'shippingInfo.price' | trans }}</th>
         </tr></thead>
         <tbody>
-          {%- for package in config.packages %}
+          {%- for package in group.packages %}
           <tr>
-            <td>{{ 'shippingInfo.packageCount' | trans({ count: package.count }) }}</td>
+            <td>{{ 'shippingInfo.packageCount' | trans({ count: package.places }) }}</td>
             <td>{{ package.price | formatPrice }}</td>
           </tr>
           {%- endfor %}
         </tbody>
       </table>
-      {%- endif %}
       {%- endfor %}
 
       {%- if method.rates.length %}
       <table class="shipping-info__table">
-        <caption>{{ ('shippingInfo.ratesCaption' + ('Other' if method.packagingConfigs.length else '')) | trans }}</caption>
+        <caption>{{ ('shippingInfo.ratesCaption' + ('Other' if method.packagingGroups.length else '')) | trans }}</caption>
         <thead><tr>
           <th scope="col">{{ 'shippingInfo.weight' | trans }}</th>
           <th scope="col">{{ 'shippingInfo.price' | trans }}</th>

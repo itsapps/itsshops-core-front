@@ -141,6 +141,10 @@ html.has-filter-panel-open {
   font-weight: 600;
   padding-block-end: var(--space-3xs, 0.25em);
 }
+.shipping-info__table-note {
+  display: block;
+  font-weight: 400;
+}
 .shipping-info__table th,
 .shipping-info__table td {
   padding: var(--space-3xs, 0.25em) var(--space-s, 1em) var(--space-3xs, 0.25em) 0;

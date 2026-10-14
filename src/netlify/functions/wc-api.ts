@@ -72,7 +72,7 @@ export type SanityOrder = {
     shippingCost: number
     taxSnapshot: { rate: number; net: number; vat: number } | null
     trackingCode: string | null
-    packagingLines: Array<{ _key: string; quantity: number; packSize: number; volume: number; price: number }> | null
+    packagingLines: Array<{ _key: string; quantity: number; packSize: number; volumes?: number[]; volume?: number; price: number }> | null
   } | null
 }
 

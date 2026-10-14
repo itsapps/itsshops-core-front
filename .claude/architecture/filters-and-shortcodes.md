@@ -24,6 +24,7 @@ Usage: `{{ value | filterName(args) }}`.
 | `formatPrice(locale?)` | Currency format per `units.price` config. |
 | `formatNumber` | Locale number format. |
 | `formatVolume` | Format ml using the configured `units.volume`. |
+| `formatVolumeList` | Array of ml → locale list ("0,75l, 0,5l und 0,375l"), `Intl.ListFormat`. |
 | `formatDate(style?)` | Locale date (`Intl` dateStyle). |
 | `formatDateRange(to?, { combine? })` | Format a from–to date range. |
 | `toIsoString` | Date → ISO string. |

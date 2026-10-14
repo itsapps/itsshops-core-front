@@ -53,6 +53,15 @@ export function formatVolumeMl(ml: number, unit: string, locale = 'de'): string 
   return `${new Intl.NumberFormat(locale).format(value)}${unit}`
 }
 
+/**
+ * Format several volumes (ml) as a locale-aware list: "0,75l, 0,5l und 0,375l".
+ * Usage: {{ [750, 375] | formatVolumeList }}
+ */
+export function formatVolumeList(mls: number[], unit: string, locale = 'de'): string {
+  const parts = (mls ?? []).map(ml => formatVolumeMl(ml, unit, locale))
+  return new Intl.ListFormat(locale, { type: 'conjunction' }).format(parts)
+}
+
 export function formatNumber(num: number, locale = 'de'): string {
   return `${new Intl.NumberFormat(locale).format(num || 0)}`
 }
@@ -245,6 +254,9 @@ export const createFilters = (ctx: CoreContext) => {
   });
   eleventyConfig.addFilter("formatVolume", function (ml: number) {
     return formatVolumeMl(ml, config.units.volume, this.page?.lang || config.defaultLocale)
+  });
+  eleventyConfig.addFilter("formatVolumeList", function (mls: number[]) {
+    return formatVolumeList(mls, config.units.volume, this.page?.lang || config.defaultLocale)
   });
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("filterGroupsForProducts", filterGroupsForProducts as any);

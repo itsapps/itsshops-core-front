@@ -216,7 +216,7 @@ export function buildShippingMethodsQuery(): string {
   freeShippingThreshold,
   "countries": eligibleCountries[]->{ countryCode, enabled },
   rates[]{ maxWeight, price },
-  packagingConfigs[]{ volume, packages[]{ count, price } }
+  packagingGroups[]{ packages[]{ places, price }, bottles[]{ volume, perPlace } }
 }`
 }
 

@@ -71,7 +71,7 @@ export type SanityShippingMethodResult = {
   freeShippingThreshold: number | null
   taxCategoryCode: string | null
   rates: SanityShippingRateResult[] | null
-  packagingConfigs: SanityWinePackagingConfigResult[] | null
+  packagingGroups: SanityPackagingGroupResult[] | null
 }
 
 export type SanityShippingRateResult = {
@@ -79,13 +79,14 @@ export type SanityShippingRateResult = {
   price: number
 }
 
-export type SanityWinePackagingConfigResult = {
-  volume: number
-  packages: SanityWinePackageResult[]
+/** A box type: its boxes and the bottle sizes that go in them (see `calcWinePackagingCost`). */
+export type SanityPackagingGroupResult = {
+  packages: SanityPackagingGroupPackageResult[] | null
+  bottles: Array<{ volume: number; perPlace: number | null }> | null
 }
 
-export type SanityWinePackageResult = {
-  count: number
+export type SanityPackagingGroupPackageResult = {
+  places: number
   price: number
 }
 
@@ -176,7 +177,7 @@ export type AvailableShippingMethod = {
   price: number
   isFree: boolean
   taxCategoryCode: string | null
-  packagingLines?: Array<{ volume: number; packSize: number; quantity: number; price: number }>
+  packagingLines?: Array<{ volumes: number[]; packSize: number; quantity: number; price: number }>
 }
 
 // ── Sanity order document types (for mutations) ─────────────────────────────
@@ -239,7 +240,9 @@ export type OrderTotals = {
 export type FulfillmentPackagingLine = {
   _key: string
   _type: 'fulfillmentPackagingLine'
-  volume: number
+  /** Bottle sizes (ml) of the packaging group, largest first. */
+  volumes: number[]
+  /** Places of the box. */
   packSize: number
   quantity: number
   price: number

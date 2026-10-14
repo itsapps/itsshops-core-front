@@ -526,6 +526,7 @@ export default {
     freeShipping: "Free shipping",
     freeShippingFrom: "from an order value of {{amount}}",
     packagingCaption: "Shipping costs for wine ({{volume}} bottles), per case",
+    packagingShared: "{{count}} bottles of {{volume}} count as one bottle.",
     package: "Case",
     packageCount_one: "for {{count}} bottle",
     packageCount_other: "for {{count}} bottles",

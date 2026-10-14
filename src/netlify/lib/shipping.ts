@@ -1,12 +1,13 @@
 import type {
   SanityShippingMethodResult,
   SanityShippingRateResult,
-  SanityWinePackagingConfigResult,
-  SanityWinePackageResult,
+  SanityPackagingGroupResult,
+  SanityPackagingGroupPackageResult,
   AvailableShippingMethod,
   ValidatedCartItem,
   LocaleString,
 } from '../types/checkout'
+import { log } from '../utils/logger'
 
 /**
  * Resolve a localized string array to a single string for the given locale.
@@ -74,47 +75,49 @@ export function findShippingRate(
 }
 
 export type PackagingLine = {
-  volume: number
+  /** Bottle sizes (ml) of the packaging group, largest first — the box type's label. */
+  volumes: number[]
+  /** Places of the box. */
   packSize: number
   quantity: number
   price: number
 }
 
 /**
- * Minimum-cost packaging for N bottles using available package sizes.
+ * Minimum-cost boxes for N places using available box sizes.
  *
- * Uses DP over bottle-slots 0..N+maxPackageSize so we can cover cases where
- * exact coverage isn't possible (e.g. only 6-packs available for 5 bottles).
- * Returns null if no combination can cover N bottles (no packages configured).
- * Also reconstructs which packages were chosen for the fulfillment snapshot.
+ * Uses DP over places 0..N+maxBoxSize so we can cover cases where
+ * exact coverage isn't possible (e.g. only 6-place boxes for 5 places).
+ * Returns null if no combination can cover N places (no boxes configured).
+ * Also reconstructs which boxes were chosen for the fulfillment snapshot.
  */
 export function calcMinPackagingCost(
-  bottleCount: number,
-  packages: SanityWinePackageResult[],
+  places: number,
+  packages: SanityPackagingGroupPackageResult[],
 ): { cost: number; lines: Array<{ packSize: number; quantity: number; price: number }> } | null {
-  if (packages.length === 0 || bottleCount <= 0) return null
-  const maxPkg = Math.max(...packages.map(p => p.count))
-  const limit = bottleCount + maxPkg - 1
+  if (packages.length === 0 || places <= 0) return null
+  const maxPkg = Math.max(...packages.map(p => p.places))
+  const limit = places + maxPkg - 1
   const dp = new Array<number>(limit + 1).fill(Infinity)
   const parent = new Array<number>(limit + 1).fill(-1)
   dp[0] = 0
   for (let i = 1; i <= limit; i++) {
     for (const pkg of packages) {
-      if (pkg.count <= i && dp[i - pkg.count] + pkg.price < dp[i]) {
-        dp[i] = dp[i - pkg.count] + pkg.price
-        parent[i] = pkg.count
+      if (pkg.places <= i && dp[i - pkg.places] + pkg.price < dp[i]) {
+        dp[i] = dp[i - pkg.places] + pkg.price
+        parent[i] = pkg.places
       }
     }
   }
 
-  // Find minimum-cost endpoint covering >= bottleCount bottles
-  let bestI = bottleCount
-  for (let i = bottleCount + 1; i <= limit; i++) {
+  // Find minimum-cost endpoint covering >= places
+  let bestI = places
+  for (let i = places + 1; i <= limit; i++) {
     if (dp[i] < dp[bestI]) bestI = i
   }
   if (dp[bestI] === Infinity) return null
 
-  // Reconstruct which packages were used
+  // Reconstruct which boxes were used
   const used = new Map<number, number>()
   let cur = bestI
   while (cur > 0) {
@@ -126,25 +129,31 @@ export function calcMinPackagingCost(
   const lines = Array.from(used.entries()).map(([packSize, quantity]) => ({
     packSize,
     quantity,
-    price: packages.find(p => p.count === packSize)!.price,
+    price: packages.find(p => p.places === packSize)!.price,
   }))
 
   return { cost: dp[bestI], lines }
 }
 
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+const lcm = (a: number, b: number): number => (a / gcd(a, b)) * b
+
 /**
- * Calculate total packaging cost for a cart using wine packaging configs.
+ * Calculate total packaging cost for a cart using the method's packaging groups.
  *
- * Groups wine items by volume, looks up each volume's config, sums costs.
- * Non-wine items are returned separately as grams for weight-based fallback.
- * Returns null if any wine volume has no matching config (method not applicable).
+ * A group is a box type: its boxes (places, price) and the bottle sizes that go in them, each with
+ * `perPlace` bottles per place (e.g. 2 × 375 ml in one 750 ml place). Wine bottles (incl. bundle
+ * children) are mapped to their group; per group the places are summed and rounded up once
+ * (4 × 750 + 3 × 375 = 5.5 → 6), then the cheapest boxes are picked.
+ *
+ * A bottle size no group lists goes into the group of the smallest listed size ≥ it, one per
+ * place (500 ml → the 750 ml group). If no listed size is that large, or a wine has no volume,
+ * returns null (method not applicable). Non-wine items are returned as grams for the weight rates.
  */
 export function calcWinePackagingCost(
   items: ValidatedCartItem[],
-  configs: SanityWinePackagingConfigResult[],
+  groups: SanityPackagingGroupResult[],
 ): { packagingCost: number; nonWineWeightGrams: number; packagingLines: PackagingLine[] } | null {
-  const configByVolume = new Map(configs.map(c => [c.volume, c.packages]))
-
   const bottlesByVolume = new Map<number, number>()
   let nonWineWeightGrams = 0
 
@@ -172,21 +181,50 @@ export function calcWinePackagingCost(
     }
   }
 
+  // Listed bottle sizes → group + bottles per place
+  const listed = new Map<number, { group: number; perPlace: number }>()
+  groups.forEach((group, i) => {
+    for (const bottle of group.bottles ?? []) {
+      if (bottle.volume && !listed.has(bottle.volume)) {
+        listed.set(bottle.volume, { group: i, perPlace: Math.max(1, Math.floor(bottle.perPlace ?? 1)) })
+      }
+    }
+  })
+  const listedVolumes = [...listed.keys()].sort((a, b) => a - b)
+
+  // Per group: bottle counts by perPlace, and the sizes in it (for the snapshot label)
+  const perGroup = new Map<number, { counts: Array<{ count: number; perPlace: number }>; volumes: Set<number> }>()
+  for (const [volume, count] of bottlesByVolume) {
+    let target = listed.get(volume)
+    if (!target) {
+      const larger = listedVolumes.find(v => v >= volume)
+      if (larger === undefined) return null
+      log.warn('Packaging: bottle size not in any packaging group, using the next larger size', { volume, larger })
+      target = { group: listed.get(larger)!.group, perPlace: 1 }
+    }
+    const entry = perGroup.get(target.group) ?? { counts: [], volumes: new Set<number>() }
+    entry.counts.push({ count, perPlace: target.perPlace })
+    entry.volumes.add(volume)
+    perGroup.set(target.group, entry)
+  }
+
   let packagingCost = 0
   const packagingLines: PackagingLine[] = []
 
-  for (const [volume, count] of bottlesByVolume) {
-    const packages = configByVolume.get(volume)
-    if (!packages) {
-      // No packaging config for this volume — fall back to weight-based shipping
-      nonWineWeightGrams += estimateWineBottleWeight(volume) * count
-      continue
-    }
-    const result = calcMinPackagingCost(count, packages)
+  for (const [groupIndex, { counts, volumes }] of perGroup) {
+    const group = groups[groupIndex]
+    // Exact round-up in integer units: one place = `unit` units, a bottle = unit / perPlace.
+    const unit = counts.reduce((acc, c) => lcm(acc, c.perPlace), 1)
+    const units = counts.reduce((sum, c) => sum + c.count * (unit / c.perPlace), 0)
+    const places = Math.ceil(units / unit)
+    const packages = (group.packages ?? []).filter(p => p.places > 0)
+    const result = calcMinPackagingCost(places, packages)
     if (!result) return null
     packagingCost += result.cost
+    for (const b of group.bottles ?? []) if (b.volume) volumes.add(b.volume)
+    const groupVolumes = [...volumes].sort((a, b) => b - a)
     for (const line of result.lines) {
-      packagingLines.push({ volume, ...line })
+      packagingLines.push({ volumes: groupVolumes, ...line })
     }
   }
 
@@ -245,9 +283,9 @@ export function resolveShippingMethods(
     let price: number
     let packagingLines: PackagingLine[] | undefined
 
-    if (method.packagingConfigs?.length) {
-      const packaging = calcWinePackagingCost(items, method.packagingConfigs)
-      if (!packaging) continue // volume not covered — method not applicable
+    if (method.packagingGroups?.length) {
+      const packaging = calcWinePackagingCost(items, method.packagingGroups)
+      if (!packaging) continue // bottle size not covered — method not applicable
       packagingLines = packaging.packagingLines
 
       if (packaging.nonWineWeightGrams > 0 && method.rates?.length) {

@@ -62,13 +62,19 @@ export function resolveShippingMethods(raw: any[], ctx: ResolveContext, homeCoun
       .filter((r: any) => typeof r?.price === 'number')
       .sort((a: any, b: any) => (a.maxWeight ?? Infinity) - (b.maxWeight ?? Infinity))
       .map((r: any) => ({ maxWeight: r.maxWeight ?? null, price: r.price })),
-    packagingConfigs: (m.packagingConfigs ?? []).map((c: any) => ({
-      volume: c.volume ?? null,
-      packages: [...(c.packages ?? [])]
-        .filter((p: any) => typeof p?.count === 'number' && typeof p?.price === 'number')
-        .sort((a: any, b: any) => a.count - b.count)
-        .map((p: any) => ({ count: p.count, price: p.price })),
-    })),
+    // Box types: bottle sizes largest first (caption), boxes by places ascending.
+    packagingGroups: (m.packagingGroups ?? [])
+      .map((g: any) => ({
+        bottles: [...(g.bottles ?? [])]
+          .filter((b: any) => typeof b?.volume === 'number')
+          .sort((a: any, b: any) => b.volume - a.volume)
+          .map((b: any) => ({ volume: b.volume, perPlace: Math.max(1, b.perPlace ?? 1) })),
+        packages: [...(g.packages ?? [])]
+          .filter((p: any) => typeof p?.places === 'number' && typeof p?.price === 'number')
+          .sort((a: any, b: any) => a.places - b.places)
+          .map((p: any) => ({ places: p.places, price: p.price })),
+      }))
+      .filter((g: any) => g.bottles.length && g.packages.length),
   }))
   if (!homeCountry) return methods
   const servesHome = (m: ResolvedShippingMethod) => (m.countries.includes(homeCountry) ? 0 : 1)

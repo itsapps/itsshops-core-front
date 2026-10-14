@@ -57,7 +57,7 @@ const CHECKOUT_QUERY = `{
     _id, title, deliveryTime, methodType, pickupFee, freeShippingThreshold,
     "taxCategoryCode": taxCategory->code.current,
     rates[]{ maxWeight, price },
-    packagingConfigs[]{ volume, packages[]{ count, price } }
+    packagingGroups[]{ packages[]{ places, price }, bottles[]{ volume, perPlace } }
   },
   "shopSettings": *[_type == "shopSettings"][0]{
     "defaultCountryCode": defaultCountry->countryCode,

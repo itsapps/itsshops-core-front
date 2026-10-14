@@ -1,6 +1,10 @@
 # Plan — wine packaging groups (mixed bottle sizes per box)
 
-Status: **planned**, not started. Planned 2026-10-13. Origin: Tinhof — drop the separate 375 ml
+Status: **implemented, unreleased** (2026-10-14) — core-back + core-front code, tests, docs and
+CHANGELOGs done (uncommitted at time of writing). Left: commit, release (core-back 4.0.0 → enter
+groups in Tinhof production → core-front 3.0.0), then delete this plan. Deviation: the order
+snapshot keeps the field name `packSize` (= places) instead of renaming it to `places`.
+Planned 2026-10-13. Origin: Tinhof — drop the separate 375 ml
 packages; half bottles go into the 0.75 l boxes, two per place.
 
 Spans core-back (schema, OrderView) and core-front (data layer, shipping calc, info module). Read

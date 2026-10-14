@@ -4,6 +4,31 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (3.0.0)
+
+Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
+
+### Upgrading
+- Wine packaging is configured as **packaging groups** (box types) instead of per-volume configs:
+  enter `Weinverpackung` on every shipping method again (boxes by places + the bottle sizes that go
+  in them, `perPlace` for sizes that share a place). Until then a method without groups prices wine
+  by weight rates only. Release order for a live shop: core-back first (the old field is kept,
+  hidden), enter the groups, then this frontend.
+- Site CSS for `.shipping-info__table caption` may want to style the new
+  `.shipping-info__table-note` (core: block, normal weight).
+
+### Changed
+- Packaging price: bottle sizes in one group share boxes, places summed and rounded up once
+  (2 × 375 ml = 1 place; 4 × 750 + 4 × 375 → one 6-box). Unlisted sizes go into the next larger
+  size's group (1 per place) instead of the weight fallback, which charged nothing when a method had
+  no weight rates. Larger unlisted sizes make the method unavailable.
+- Order snapshot `fulfillment.packagingLines[]`: `volumes[]` (the group's sizes) replaces `volume`.
+- `shippingInfoModule`: one price table per group; caption lists the sizes, plus a note for sizes
+  sharing a place (i18n `shippingInfo.packagingShared`).
+
+### Added
+- Filter `formatVolumeList`.
+
 ## 2.2.0 — 2026-10-13
 
 ### Changed

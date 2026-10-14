@@ -218,8 +218,12 @@ export type ResolvedShippingMethod = {
   countries: string[]
   /** Weight rates, ascending: up to `maxWeight` kg → `price`. */
   rates: Array<{ maxWeight: number | null; price: number }>
-  /** Wine packaging: per bottle volume (ml), price per case size. */
-  packagingConfigs: Array<{ volume: number | null; packages: Array<{ count: number; price: number }> }>
+  /** Wine packaging: box types — bottle sizes (ml, largest first, `perPlace` bottles per place)
+   *  and boxes (places ascending, gross price). */
+  packagingGroups: Array<{
+    bottles: Array<{ volume: number; perPlace: number }>
+    packages: Array<{ places: number; price: number }>
+  }>
 }
 
 export type ResolvedShopSettings = {

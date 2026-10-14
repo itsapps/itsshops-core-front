@@ -111,6 +111,20 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   the higher rate; ties → higher rate; 0 % items ignored. The shipping method's `taxCategoryCode` is not used. Shipping VAT is
   rounded on its own and stored as `fulfillment.taxSnapshot`. Why: ADR
   `shipping-vat-largest-gross-goods-value.md`.
+- **Wine packaging** (`calcWinePackagingCost` in `shipping.ts`): a delivery method with
+  `packagingGroups` prices wine by boxes. A group = a box type: `packages[]{ places, price }` +
+  `bottles[]{ volume, perPlace }` (`perPlace` bottles share one place, e.g. 2 × 375 ml in a 750 ml
+  place). Per group the places are summed and rounded up **once** (exact, integer units via the LCM
+  of `perPlace`), then `calcMinPackagingCost` picks the cheapest boxes (DP, may over-cover: 4 places
+  → a 6-box if cheaper). A size no group lists goes into the group of the smallest listed size ≥ it,
+  1 per place (`log.warn`); a larger size, a wine without volume, or a group without boxes → method
+  not offered. Non-wine items (incl. non-wine bundle children) are priced by the weight `rates` on
+  top. Each box size → one `fulfillment.packagingLines[]` entry `{ volumes[], packSize, quantity,
+  price }` (`volumes` = the group's sizes, largest first; orders before core-back 4.0.0 have a single
+  `volume`). Info page: `shippingInfoModule.njk` renders one table per group, the caption lists the
+  sizes (`formatVolumeList`) plus a note per shared size. Studio enforces each size in one group per
+  method. A size in several box types (e.g. half-bottle-only boxes, 2 × 750 in a magnum box) is not
+  supported — it would need boxes that accept only certain sizes and a split search.
 - `order-builder.ts`, `order-item-display.ts` — order construction
 - `*-notifier.tsx` — React-email templates (auth, order, newsletter, withdraw)
 - `payment-method.ts` — Stripe charge → `order.payment` snapshot + readable label

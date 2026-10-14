@@ -526,6 +526,7 @@ export default {
     freeShipping: "Versandkostenfrei",
     freeShippingFrom: "ab einem Bestellwert von {{amount}}",
     packagingCaption: "Versandkosten für Wein ({{volume}} Flaschen), je Karton",
+    packagingShared: "{{count}} Flaschen à {{volume}} zählen als eine Flasche.",
     package: "Karton",
     packageCount_one: "für {{count}} Flasche",
     packageCount_other: "für {{count}} Flaschen",
