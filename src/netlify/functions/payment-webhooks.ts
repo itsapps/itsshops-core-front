@@ -123,7 +123,6 @@ async function handlePaymentSucceeded(
     })
     log.debug('Order confirmation sent', {
       orderId: created._id,
-      to: result.to,
       messageId: result.messageId,
     })
   } catch (err) {

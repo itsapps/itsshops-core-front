@@ -28,6 +28,13 @@ Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
 
 ### Added
 - Filter `formatVolumeList`.
+- Function `order-meta-cleanup` (`createOrderMetaCleanupHandler`, scheduled): deletes `orderMeta`
+  not updated for 30 days (`ORDER_META_RETENTION_DAYS`) — abandoned checkouts and the pre-payment
+  copies of paid orders. Customers add a wrapper with `config.schedule: '@daily'`.
+
+### Fixed
+- Function logs no longer contain recipient email addresses (`to` dropped from the order, withdrawal
+  and auth mail log lines) or the wc-api status-update body (only its keys).
 
 ## 2.2.0 — 2026-10-13
 

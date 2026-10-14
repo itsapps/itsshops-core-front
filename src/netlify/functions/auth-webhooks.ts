@@ -141,7 +141,6 @@ export function createAuthWebhookHandler(options: AuthWebhookHandlerOptions) {
       )
       log.info('Auth notification sent', {
         authMailType: result.authMailType,
-        to: result.to,
         messageId: result.messageId,
       })
     } catch (err) {

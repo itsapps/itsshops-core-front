@@ -92,6 +92,10 @@
       "types": "./dist/supabase-keep-alive.d.ts",
       "import": "./dist/supabase-keep-alive.js"
     },
+    "./functions/order-meta-cleanup": {
+      "types": "./dist/order-meta-cleanup.d.ts",
+      "import": "./dist/order-meta-cleanup.js"
+    },
     "./scripts": {
       "import": "./dist/scripts/index.ts"
     },

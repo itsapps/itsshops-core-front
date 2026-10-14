@@ -106,7 +106,9 @@ Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
   those mails.
 - **Captcha:** `CAPTCHA_SECRET_KEY` — unset → captcha check skipped (`utils/captcha.ts`).
 - **Logging:** `LOG_LEVEL` = `debug` | `info` (default) | `warn` | `error` (`utils/logger.ts`); the
-  wc-api `Request` / `List orders` lines are `debug`.
+  wc-api `Request` / `List orders` lines are `debug`. **No personal data in logs** (the privacy
+  policy relies on it): log ids (`orderId`, `paymentIntentId`, `requestId`), never names, addresses,
+  emails (at most the 4-character `emailObfuscated` prefix) or request bodies.
 - **wc-api:** `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` (missing → every request 401), `WC_TIMEZONE`
   (fallback when the wrapper passes no `timezone`). `WC_API_BASE_URL` is **test-only** (customer
   `tests/integration/wc-api.test.ts`). Details: [wc-api.md](wc-api.md).

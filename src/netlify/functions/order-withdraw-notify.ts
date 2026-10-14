@@ -70,7 +70,6 @@ export function createWithdrawNotifyHandler(options: WithdrawNotifyHandlerOption
       log.debug('Withdrawal confirmation sent', {
         requestId,
         withdrawalId: body.withdrawalId,
-        to: result.to,
       })
 
       return withCors(success<WithdrawNotifyResponseBody>(result), request)

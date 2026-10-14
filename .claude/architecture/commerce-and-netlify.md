@@ -53,6 +53,7 @@ Rules of thumb:
 | `newsletter-subscribe` / `-confirm` / `-unsubscribe` | `createNewsletter…Handler` | Double-opt-in newsletter |
 | `wc-api` | `createWcApiHandler` | WooCommerce API bridge — read by **Winenet** (third party: reads orders, updates their status, issues invoices / accounting). See "WooCommerce API bridge" below |
 | `supabase-keep-alive` | `createKeepAliveHandler` | Scheduled ping to keep Supabase warm |
+| `order-meta-cleanup` | `createOrderMetaCleanupHandler` | Scheduled (wrapper: `schedule: '@daily'`): deletes `orderMeta` not updated for `ORDER_META_RETENTION_DAYS` (30, `config/constants`) — the privacy policy states this period |
 
 The full built set is the tsup `entry` map; the exposed set is the `exports` map in `package.json`.
 
@@ -97,7 +98,7 @@ HTTP entry points, one file per endpoint:
   `user-recover.ts`, `user-reset.ts`, `auth-webhooks.ts`
 - **newsletter**: `newsletter-subscribe.ts`, `newsletter-confirm.ts`, `newsletter-unsubscribe.ts`
 - **misc**: `preview.ts` (Sanity preview, built to `dist/preview.js`), `wc-api.ts`,
-  `supabase-keep-alive.ts`
+  `supabase-keep-alive.ts`, `order-meta-cleanup.ts`
 
 ## Business logic (`src/netlify/lib/`) — unit-tested
 

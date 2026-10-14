@@ -83,7 +83,6 @@ export function createNotifyHandler(options: NotifyHandlerOptions = {}) {
         requestId,
         orderId: body.orderId,
         mailType: body.mailType,
-        to: result.to,
         messageId: result.messageId,
       })
 

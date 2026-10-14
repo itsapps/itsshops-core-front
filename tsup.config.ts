@@ -28,6 +28,7 @@ export default defineConfig({
     'newsletter-unsubscribe': 'src/netlify/functions/newsletter-unsubscribe.ts',
     'wc-api': 'src/netlify/functions/wc-api.ts',
     'supabase-keep-alive': 'src/netlify/functions/supabase-keep-alive.ts',
+    'order-meta-cleanup': 'src/netlify/functions/order-meta-cleanup.ts',
     'test-utils': 'src/test-utils/index.ts',
   },
   format: ['esm'],

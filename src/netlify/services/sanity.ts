@@ -107,6 +107,23 @@ export async function fetchOrderMeta(
   return doc ?? null
 }
 
+/**
+ * Delete every `orderMeta` last updated before `cutoff` (ISO). Paid ones are already copied into
+ * their `order`. Deletes in chunks so one transaction stays small; returns the number deleted.
+ */
+export async function deleteOrderMetaUpdatedBefore(cutoff: string): Promise<number> {
+  const ids = await sanityClient.fetch<string[]>(
+    `*[_type == "orderMeta" && _updatedAt < $cutoff]._id`,
+    { cutoff },
+  )
+  for (let i = 0; i < ids.length; i += 100) {
+    const tx = sanityClient.transaction()
+    for (const id of ids.slice(i, i + 100)) tx.delete(id)
+    await tx.commit()
+  }
+  return ids.length
+}
+
 export async function createOrder(
   doc: OrderDocument & { _type: 'order' },
 ): Promise<{ _id: string }> {

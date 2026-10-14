@@ -510,7 +510,7 @@ async function handleUpdateOrder(
 
   const wcStatus = typeof body.status === 'string' ? body.status : null
   if (!wcStatus) {
-    log.error('Update order: Missing status parameter', { body })
+    log.error('Update order: Missing status parameter', { keys: Object.keys(body) })
     return wcError('woocommerce_rest_missing_status', 'Missing status parameter')
   }
 
