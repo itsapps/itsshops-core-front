@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased (3.0.0)
+## 3.0.0
 
 Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
 
@@ -16,6 +16,11 @@ Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
   hidden), enter the groups, then this frontend.
 - Site CSS for `.shipping-info__table caption` may want to style the new
   `.shipping-info__table-note` (core: block, normal weight).
+- `wc-api`: tax rates are per country and stable, as in WooCommerce — `tax_lines[].rate_id` is a
+  fixed id per tax country + rate (was the position in the order, 1, 2, …), `rate_code` is
+  `AT-20` (was `TAX-20`); `line_items[].taxes[].id` / `shipping_lines[].taxes[].id` refer to the
+  `rate_id`. `tax_lines[].id` stays 1, 2, …. Tell the ERP (wineNET) before deploying.
+- Optional: add the scheduled `order-meta-cleanup` function wrapper (see Added).
 
 ### Changed
 - Packaging price: bottle sizes in one group share boxes, places summed and rounded up once
@@ -25,11 +30,6 @@ Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
 - Order snapshot `fulfillment.packagingLines[]`: `volumes[]` (the group's sizes) replaces `volume`.
 - `shippingInfoModule`: one price table per group; caption lists the sizes, plus a note for sizes
   sharing a place (i18n `shippingInfo.packagingShared`).
-
-- `wc-api`: tax rates are per country and stable, as in WooCommerce — `tax_lines[].rate_id` is a
-  fixed id per tax country + rate (was the position in the order, 1, 2, …), `rate_code` is
-  `AT-20` (was `TAX-20`); `line_items[].taxes[].id` / `shipping_lines[].taxes[].id` refer to the
-  `rate_id`. `tax_lines[].id` stays 1, 2, …. Tell the ERP (wineNET) before deploying.
 
 ### Added
 - Filter `formatVolumeList`.
