@@ -26,6 +26,11 @@ Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).
 - `shippingInfoModule`: one price table per group; caption lists the sizes, plus a note for sizes
   sharing a place (i18n `shippingInfo.packagingShared`).
 
+- `wc-api`: tax rates are per country and stable, as in WooCommerce — `tax_lines[].rate_id` is a
+  fixed id per tax country + rate (was the position in the order, 1, 2, …), `rate_code` is
+  `AT-20` (was `TAX-20`); `line_items[].taxes[].id` / `shipping_lines[].taxes[].id` refer to the
+  `rate_id`. `tax_lines[].id` stays 1, 2, …. Tell the ERP (wineNET) before deploying.
+
 ### Added
 - Filter `formatVolumeList`.
 - Function `order-meta-cleanup` (`createOrderMetaCleanupHandler`, scheduled): deletes `orderMeta`

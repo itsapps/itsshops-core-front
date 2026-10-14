@@ -50,6 +50,9 @@ Anything else → 404 `woocommerce_rest_no_route`; thrown errors → 500.
   `meta_data` `_sanity_product_id` / `_sanity_variant_id`). They only change if the document is
   recreated. wineNET learns its article mapping from `product_id`; `sku` is the variant SKU (often
   empty).
+- **Tax rates are per country, like WC's:** `rate_id` = stable hash of (tax country, rate) — the
+  same in every order, AT 20 % ≠ DE 20 %. Tax country = shipping address country (as in checkout),
+  else billing. Until core-front 3.0.0 `rate_id` was the per-order position (1, 2, …).
 - `date_created` = `_createdAt` in the configured timezone, `date_created_gmt` = UTC;
   `date_paid(_gmt)` = the same when `paymentStatus` is `succeeded`, else `null`.
 
@@ -76,7 +79,8 @@ Partial refunds are **not** overridden — such orders may still ship.
 | `shipping_total` / `shipping_tax` | `fulfillment.shippingCost` − tax / `fulfillment.taxSnapshot.vat` |
 | `billing` / `shipping` | addresses (names via `splitNameForExport`, see `commerce-and-netlify.md` → "Customer names") + `contactEmail` |
 | `line_items` | `orderItems[]` — see Rounding |
-| `tax_lines` | one per rate: `tax_total` = item taxes, `shipping_tax_total` = shipping tax |
+| `tax_lines` | one per rate: `tax_total` = item taxes, `shipping_tax_total` = shipping tax; `id` = 1, 2, … (the line's own id), `rate_id` = stable hash of tax country + rate, `rate_code` = `AT-20` (`TAX-20` without a country) |
+| `line_items[].taxes[].id` / `shipping_lines[].taxes[].id` | the `rate_id` (as in WC), not `tax_lines[].id` |
 | `shipping_lines` | one line: `method_id` = `methodType`, `method_title`, net total, tax |
 | `fee_lines` | always `[]` (packaging is part of the shipping price) |
 | `payment_method` / `_title` | stored Stripe type (`card`, `link`, `eps`, …) + German label; `stripe`/`Stripe` on old orders |
@@ -118,10 +122,6 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 - The **`dp`** query param (decimal places) is ignored; values are always 2 dp. (WC formats the
   money strings *and* `taxes[].total`/`subtotal` with `dp`, default 2 — so at default `dp` our
   `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)
-- **`rate_id` is not stable across orders:** tax lines are numbered 1, 2, … in order of first
-  appearance (`tax_lines[].id` = `rate_id`, and `taxes[].id` points at it), so 13 % may be id 1 in
-  one order and 2 in another. Fine for a per-order lookup; in WC a rate id is global. Making it
-  stable (e.g. derived from the rate) changes the response — tell wineNET first.
 
 ## wineNET behaviour (observed)
 
@@ -129,9 +129,8 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   10 min, `per_page=100`. A new order reaches wineNET within 1–2 h.
 - **VAT rate per line = tax ÷ net, rounded to 1 decimal**, matched against its rates — it does not
   follow `taxes[].id` → `tax_lines[].rate_id` → `rate_percent` (in WC, `taxes[].id` is the tax
-  *rate* id = `tax_lines[].rate_id`; `tax_lines[].id` is the tax line's own item id — ours are
-  equal). With cent-rounded tax this misses on tiny lines
-  (1 × €5.00 at 20 %: 0.83 / 4.1667 = 19.9 % → booked at 0 %, gross 4.9958). Per wineNET it reads
+  *rate* id = `tax_lines[].rate_id`; `tax_lines[].id` is the tax line's own item id). With
+  cent-rounded tax this misses on tiny lines (1 × €5.00 at 20 %: 0.83 / 4.1667 = 19.9 % → booked at 0 %, gross 4.9958). Per wineNET it reads
   `price` + `quantity` + `subtotal_tax` (or `taxes[0]`). Real WooCommerce sends the same rounded
   values (`subtotal_tax` rounded per line, `taxes[]` formatted to `dp` = 2), so this also hits
   wineNET on real WC shops — a wineNET bug. Reported to wineNET; don't work around it by sending

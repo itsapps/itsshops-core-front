@@ -12,7 +12,7 @@ import { extractVat } from '../lib/tax'
 type Item = { price: number; quantity: number; vatRate: number }
 
 /** Builds an order the way checkout does (calculateTotals + per-line vatAmount). */
-function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0 } = {}): SanityOrder {
+function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0, country = '' } = {}): SanityOrder {
   const totals = calculateTotals(
     items.map(i => ({ ...i })) as never,
     shipping ? { price: shipping } as never : null,
@@ -30,7 +30,10 @@ function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0 } 
     paymentIntentId: 'pi_1',
     payment: null,
     hasOpenWithdrawal: false,
-    customer: { contactEmail: 'a@b.at', locale: 'de', billingAddress: null, shippingAddress: null },
+    customer: {
+      contactEmail: 'a@b.at', locale: 'de', billingAddress: null,
+      shippingAddress: country ? { country } as never : null,
+    },
     totals: { ...totals, totalVat: totals.tax, currency: 'EUR' },
     orderItems: items.map((i, n) => ({
       _key: `k${n}`, kind: 'wine', variantId: `v${n}`, productId: `p${n}`, title: `Wine ${n}`,
@@ -62,9 +65,31 @@ describe('wc-api mapOrder (WooCommerce-compatible amounts)', () => {
   })
 
   it('lists the shipping tax rate with 0.00 on free shipping, as WooCommerce does', () => {
-    expect(map(tinhof).shipping_lines[0].taxes).toEqual([{ id: 1, total: '0.00', subtotal: '0.00' }])
+    const wc = map(tinhof)
+    const rate13 = wc.tax_lines.find(tl => tl.rate_percent === '13.00')!.rate_id
+    expect(wc.shipping_lines[0].taxes).toEqual([{ id: rate13, total: '0.00', subtotal: '0.00' }])
     expect(map(order([{ price: 1500, quantity: 1, vatRate: 13 }], { shippingRate: 0 })).shipping_lines[0].taxes)
       .toEqual([])
+  })
+
+  it('rate_id is stable per country and rate across orders; taxes[].id refer to it', () => {
+    const a = map(order([{ price: 3200, quantity: 1, vatRate: 20 }, { price: 1100, quantity: 1, vatRate: 13 }],
+      { shipping: 1000, shippingRate: 20, country: 'AT' }))
+    const b = map(order([{ price: 1100, quantity: 1, vatRate: 13 }, { price: 500, quantity: 1, vatRate: 20 }],
+      { country: 'AT' }))
+    const byRate = (wc: typeof a) => Object.fromEntries(wc.tax_lines.map(tl => [tl.rate_code, tl.rate_id]))
+    expect(Object.keys(byRate(a))).toEqual(['AT-20', 'AT-13'])
+    expect(byRate(b)).toEqual(byRate(a))                      // order of appearance doesn't matter
+    expect(b.tax_lines.map(tl => tl.id)).toEqual([1, 2])      // the tax line's own id stays 1, 2, …
+    const lineRates = (wc: typeof a) =>
+      wc.line_items.map(li => wc.tax_lines.find(tl => tl.rate_id === li.taxes[0].id)!.rate_percent)
+    expect(lineRates(a)).toEqual(['20.00', '13.00'])
+    expect(lineRates(b)).toEqual(['13.00', '20.00'])
+    expect(a.shipping_lines[0].taxes[0].id).toBe(byRate(a)['AT-20'])
+    // Same percentage in another country is a different rate (WC: per-country tax rates).
+    const de = map(order([{ price: 1100, quantity: 1, vatRate: 20 }], { country: 'de' }))
+    expect(de.tax_lines[0].rate_code).toBe('DE-20')
+    expect(de.tax_lines[0].rate_id).not.toBe(byRate(a)['AT-20'])
   })
 
   it('reports shipping tax only in shipping_tax_total, not in tax_total', () => {

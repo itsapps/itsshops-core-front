@@ -297,20 +297,25 @@ export function mapOrder(order: SanityOrder, tz: string) {
     }
   })
 
-  // One tax line per rate (items first, then a shipping-only rate if any).
+  // One tax line per rate (items first, then a shipping-only rate if any). As in WooCommerce,
+  // a rate is per country and its `rate_id` is the same in every order (AT 20 % ≠ DE 20 %);
+  // the tax country is the shipping country, as in checkout. `id` is the tax line's own
+  // number; line `taxes[].id` refer to `rate_id`.
+  const taxCountry = (order.customer?.shippingAddress?.country
+    ?? order.customer?.billingAddress?.country ?? '').toUpperCase()
+  const rateId = (rate: number) => stableId(`tax-rate:${taxCountry}:${rate}`)
   const rates = [...new Set(order.orderItems.map(item => item.vatRate))]
   if (shippingRate && !rates.includes(shippingRate)) rates.push(shippingRate)
   const taxLines = rates.map((rate, i) => ({
     id: i + 1,
-    rate_code: `TAX-${rate}`,
-    rate_id: i + 1,
+    rate_code: taxCountry ? `${taxCountry}-${rate}` : `TAX-${rate}`,
+    rate_id: rateId(rate),
     label: `${rate}%`,
     compound: false,
     rate_percent: rate.toFixed(2),
     tax_total: price(lines.filter(l => l.item.vatRate === rate).reduce((s, l) => s + l.totalTax, 0)),
     shipping_tax_total: price(rate === shippingRate ? shippingTax : 0),
   }))
-  const taxLineId = (rate: number) => taxLines.find(tl => tl.rate_percent === rate.toFixed(2))?.id ?? 1
 
   const itemsTax = lines.reduce((s, l) => s + l.totalTax, 0)
   // Discount split as WooCommerce reports it: net and tax difference of the line amounts.
@@ -362,7 +367,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
       subtotal_tax: price(subtotalTax),
       total: price(Math.round(totalNet)),
       total_tax: price(totalTax),
-      taxes: [{ id: taxLineId(item.vatRate), subtotal: price(subtotalTax), total: price(totalTax) }],
+      taxes: [{ id: rateId(item.vatRate), subtotal: price(subtotalTax), total: price(totalTax) }],
       meta_data: [
         { key: '_sanity_product_id', value: item.productId },
         { key: '_sanity_variant_id', value: item.variantId },
@@ -377,7 +382,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
       total_tax: price(shippingTax),
       // WC lists the shipping rate even at 0 tax (free shipping); only no rate → []
       taxes: shippingRate ? [{
-        id: taxLineId(shippingRate),
+        id: rateId(shippingRate),
         total: price(shippingTax),
         subtotal: price(shippingTax),
       }] : [],
