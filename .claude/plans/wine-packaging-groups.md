@@ -1,8 +1,11 @@
 # Plan — wine packaging groups (mixed bottle sizes per box)
 
-Status: **implemented, unreleased** (2026-10-14) — core-back + core-front code, tests, docs and
-CHANGELOGs done (uncommitted at time of writing). Left: commit, release (core-back 4.0.0 → enter
-groups in Tinhof production → core-front 3.0.0), then delete this plan. Deviation: the order
+Status: **implemented, unreleased** (2026-10-14) — core-front `9d9e565`, core-back `0f41586` on
+`main`; mechanism in `commerce-and-netlify.md` (Wine packaging) + core-back `schemas.md`, rationale in
+ADR `wine-packaging-groups-one-size-per-group.md`. Tinhof staging test: both Tinhof repos pin those
+hashes; groups entered in development; test order 000003 priced correctly. Left: release
+(core-back 4.0.0 → enter groups in Tinhof production → core-front 3.0.0), remove
+`packagingConfigs` in the next core-back major, then delete this plan. Deviation: the order
 snapshot keeps the field name `packSize` (= places) instead of renaming it to `places`.
 Planned 2026-10-13. Origin: Tinhof — drop the separate 375 ml
 packages; half bottles go into the 0.75 l boxes, two per place.

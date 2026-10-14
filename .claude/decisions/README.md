@@ -44,3 +44,6 @@ alternative was rejected, a constraint discovered the hard way.
   to the vendor, no deviating workarounds.
 - [shipping-vat-largest-gross-goods-value.md](shipping-vat-largest-gross-goods-value.md) — shipping
   VAT rate = rate with the largest gross goods value (owner's choice; not most VAT, not net, no split).
+- [wine-packaging-groups-one-size-per-group.md](wine-packaging-groups-one-size-per-group.md) — wine
+  packaging by box types; each bottle size in one group, unlisted sizes → next larger size's group
+  ("nur für" boxes / 3D box packing rejected).
