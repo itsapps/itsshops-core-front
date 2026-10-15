@@ -117,7 +117,10 @@ plan and asking before anything that pushes.
    (unless the user added a permission rule). If another session has uncommitted edits in the
    customer repo, stage the release files explicitly (no `commit -a`) and move a deploy branch
    without checking it out: `git branch -f staging main` (only when it fast-forwards —
-   `git merge-base --is-ancestor user/staging main`). Frontend and backend are tagged separately; when a release needs both (schema +
+   `git merge-base --is-ancestor user/staging main`). The checkout itself may not be on `main`
+   (another session or the user switched to `staging` to push): check `git branch --show-current`
+   before committing in a customer repo, or a commit lands on the deploy branch only and is missing
+   from `main`. Frontend and backend are tagged separately; when a release needs both (schema +
    rendering), release the backend first and name the paired release in the tag message.
 4. Update the customer's `CLAUDE.md` status line if it tracks the live core version.
 
