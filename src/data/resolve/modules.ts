@@ -32,6 +32,16 @@ export function resolveModules(
       case 'shippingInfoModule':
         resolved = { ...m, paymentInfo: ctx.resolveString(m.paymentInfo) }
         break
+      case 'privacyPolicyModule':
+        resolved = {
+          ...m,
+          extraSections: (m.extraSections ?? []).map((s: any) => ({
+            heading: ctx.resolveString(s.heading),
+            text: ctx.resolveString(s.text),
+          })),
+          dpoContact: ctx.resolveString(m.dpoContact),
+        }
+        break
       case 'youtube':
         resolved = { ...m, url: stegaClean(m.url) }
         break

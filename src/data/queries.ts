@@ -64,6 +64,11 @@ export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
     _type,
     ${proj.i18nStringField('paymentInfo')}
   }`,
+  privacyPolicyModule: `{
+    _type,
+    "extraSections": extraSections[]{ ${proj.i18nStringField('heading')}, ${proj.i18nStringField('text')} },
+    ${proj.i18nStringField('dpoContact')}
+  }`,
   youtube: `{ _type, url, showControls, autoload, autopause, start }`,
 }
 

@@ -539,6 +539,104 @@ export default {
     pricesGross: "Alle Preise inkl. MwSt.",
     legalGuarantee: "Gesetzliche Gewährleistung",
   },
+  // Generated privacy policy (privacyPolicyModule, shared/privacy-policy.ts). Art. 13 GDPR; one
+  // block per processing, rendered only when the shop runs it. {{provider}} = linked provider name.
+  privacyPolicy: {
+    missing: "Datenschutzerklärung kann nicht erzeugt werden – fehlende Einstellungen: {{fields}}. (Nur in der Vorschau sichtbar.)",
+    updated: "Stand: {{date}}",
+    controller: {
+      heading: "Verantwortlicher",
+      text: "Verantwortlich für die Verarbeitung Ihrer personenbezogenen Daten auf dieser Website ist {{company}}, {{address}}, E-Mail: {{email}}. Bei Fragen zum Datenschutz erreichen Sie uns unter dieser Adresse.",
+      dpo: "Unsere Datenschutzbeauftragte bzw. unseren Datenschutzbeauftragten erreichen Sie unter: {{dpo}}",
+    },
+    overview: {
+      heading: "Überblick",
+      textShop: "Wir verarbeiten nur die Daten, die für den Betrieb dieser Website und – soweit Sie bestellen – für die Abwicklung Ihrer Bestellung nötig sind. Wir verwenden keine Analyse- oder Tracking-Werkzeuge, keine Werbe-Cookies und keine Social-Media-Plugins. Im Folgenden erklären wir, welche Daten wir wofür verarbeiten, an wen sie gehen und wie lange wir sie speichern.",
+      text: "Wir verarbeiten nur die Daten, die für den Betrieb dieser Website nötig sind. Wir verwenden keine Analyse- oder Tracking-Werkzeuge, keine Werbe-Cookies und keine Social-Media-Plugins. Im Folgenden erklären wir, welche Daten wir wofür verarbeiten, an wen sie gehen und wie lange wir sie speichern.",
+    },
+    hosting: {
+      heading: "Hosting und Server-Protokolle",
+      text: "Diese Website wird bei {{provider}} gehostet. Bei jedem Aufruf verarbeitet Netlify technisch notwendige Daten: IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, Referrer und Browser-Kennung (User-Agent). Das ist nötig, um die Website auszuliefern, ihre Sicherheit zu gewährleisten (z. B. Abwehr von Angriffen, Begrenzung von Anfragen je IP-Adresse) und Fehler zu finden. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO).",
+      retention: "Die Zugriffsprotokolle werden höchstens 30 Tage gespeichert, Protokolle unserer Server-Funktionen höchstens 7 Tage; diese enthalten keine Namen, Adressen oder E-Mail-Adressen. Netlify verarbeitet die Daten als Auftragsverarbeiter in den USA; die Übermittlung ist durch den Angemessenheitsbeschluss der EU-Kommission für das EU-US Data Privacy Framework abgesichert, dem Netlify angehört.",
+    },
+    content: {
+      heading: "Inhalte und Bilder",
+      text: "Die Inhalte dieser Website verwalten wir mit {{provider}}. Bilder werden direkt von Sanitys Bildserver (cdn.sanity.io) geladen; dabei erhält Sanity Ihre IP-Adresse und die Browser-Kennung. Rechtsgrundlage ist unser berechtigtes Interesse an einer schnellen und zuverlässigen Bereitstellung der Bilder (Art. 6 Abs. 1 lit. f DSGVO). Sanity verarbeitet die Daten als Auftragsverarbeiter, auch in den USA; die Übermittlung ist durch EU-Standardvertragsklauseln abgesichert.",
+    },
+    orders: {
+      heading: "Bestellungen",
+      text: "Wenn Sie bestellen, verarbeiten wir Ihren Namen, Ihre E-Mail-Adresse, Rechnungs- und Lieferadresse, die bestellten Artikel und den Zahlungsstatus, um den Vertrag zu erfüllen (Art. 6 Abs. 1 lit. b DSGVO) und unsere gesetzlichen Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Die Bestelldaten speichern wir bei {{provider}} (Auftragsverarbeiter). Bestellungen bewahren wir sieben Jahre ab Ende des Kalenderjahres auf (§ 132 BAO). Daten eines begonnenen, aber nicht bezahlten Bestellvorgangs löschen wir nach {{days}} Tagen.",
+      carrier: "Für den Versand geben wir Ihren Namen und die Lieferadresse an das beauftragte Paketdienstleistungsunternehmen weiter, das sie als eigener Verantwortlicher verarbeitet (Art. 6 Abs. 1 lit. b DSGVO). Ihre E-Mail-Adresse geben wir nicht weiter.",
+    },
+    payment: {
+      heading: "Zahlung",
+      text: "Zahlungen wickeln wir über {{provider}} (Stripe Payments Europe Ltd., Irland) ab. Dafür erhält Stripe die Zahlungsdaten, die Sie im Zahlungsformular eingeben, sowie Name, E-Mail-Adresse, Betrag, IP-Adresse und Geräteinformationen. Wir selbst sehen keine vollständigen Karten- oder Kontodaten. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).",
+      fraud: "Zur Verhinderung von Betrug prüft Stripe Zahlungen automatisiert und verarbeitet Daten dafür sowie zur Erfüllung eigener gesetzlicher Pflichten als eigener Verantwortlicher (Art. 6 Abs. 1 lit. c und f DSGVO). Stripe kann Daten an die Stripe, Inc. in den USA übermitteln (EU-US Data Privacy Framework). Auf der Bestellseite setzt Stripe die Cookies __stripe_mid und __stripe_sid zur Betrugserkennung; sie sind für eine sichere Zahlung unbedingt erforderlich. Wie lange Stripe Daten speichert, regelt die Datenschutzerklärung von Stripe.",
+      wallets: "Wenn Sie mit Apple Pay oder Google Pay bezahlen, verarbeiten zusätzlich Apple bzw. Google Daten zur Zahlung nach ihren eigenen Datenschutzbestimmungen.",
+    },
+    email: {
+      heading: "E-Mail-Versand",
+      text: "E-Mails wie Bestellbestätigungen, Versandinformationen und – soweit genutzt – Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Ihre E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Ihre Einwilligung beim Newsletter.",
+      resend: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in den USA verarbeitet (EU-US Data Privacy Framework). Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
+      mailgunEu: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in der EU verarbeitet. Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
+      mailgunUs: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in den USA verarbeitet (EU-Standardvertragsklauseln). Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
+    },
+    withdrawal: {
+      heading: "Online-Widerruf",
+      text: "Wenn Sie über unser Formular vom Vertrag zurücktreten, verarbeiten wir Bestellnummer, E-Mail-Adresse, Ihre Erklärung und deren Zeitpunkt, um den Widerruf zu bearbeiten und Ihnen den Eingang zu bestätigen (Art. 6 Abs. 1 lit. c DSGVO in Verbindung mit dem FAGG). Wir speichern diese Daten zusammen mit der Bestellung.",
+    },
+    orderSystem: {
+      heading: "Warenwirtschaft und Rechnungen",
+      text: "Für Rechnungsstellung, Buchhaltung und Versandabwicklung liest unser Warenwirtschaftssystem wineNET die Bestelldaten (Name, E-Mail-Adresse, Adressen, Artikel, Beträge) ab. Anbieter ist die {{provider}}, Reitschulgasse 19, 7093 Jois, Österreich; sie verarbeitet die Daten als Auftragsverarbeiter in unserem Auftrag. Rechtsgrundlage sind die Vertragserfüllung und unsere gesetzlichen Pflichten (Art. 6 Abs. 1 lit. b und c DSGVO).",
+    },
+    account: {
+      heading: "Kundenkonto",
+      text: "Wenn Sie ein Kundenkonto anlegen, speichern wir Ihre E-Mail-Adresse, Ihren Namen und die Angaben aus dem Registrierungsformular, damit Sie sich anmelden und Ihre Daten verwalten können (Art. 6 Abs. 1 lit. b DSGVO). Anmeldung und Konten verwalten wir über {{provider}} (Auftragsverarbeiter; Übermittlungen in die USA auf Grundlage der EU-Standardvertragsklauseln). Für die Anmeldung setzen wir die Cookies sb_access_token und sb_refresh_token; sie sind dafür unbedingt erforderlich. Ihr Konto und diese Daten löschen wir, wenn Sie das Konto löschen lassen; Bestellungen bleiben für die gesetzliche Aufbewahrungsfrist erhalten.",
+    },
+    newsletter: {
+      heading: "Newsletter",
+      text: "Wenn Sie unseren Newsletter abonnieren, speichern wir Ihre E-Mail-Adresse auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Die Anmeldung wird erst wirksam, wenn Sie den Link in unserer Bestätigungs-E-Mail anklicken (Double-Opt-in); dafür speichern wir einen Bestätigungscode und den Zeitpunkt. Sie können die Einwilligung jederzeit widerrufen – über den Abmeldelink in jedem Newsletter oder per E-Mail an uns. Danach löschen wir Ihre Adresse aus dem Verteiler. Die Daten liegen bei {{provider}}, der Versand erfolgt über den unter „E-Mail-Versand“ genannten Dienst.",
+    },
+    captcha: {
+      heading: "Spamschutz",
+      text: "Um Formulare ({{forms}}) vor automatisiertem Missbrauch zu schützen, verwenden wir {{provider}} (Intuition Machines, Inc., USA). hCaptcha erhält dabei Ihre IP-Adresse und Merkmale Ihres Browsers und Geräts, um zu prüfen, ob die Eingabe von einem Menschen stammt. hCaptcha wird erst geladen, wenn ein solches Formular angezeigt wird. Rechtsgrundlage ist unser berechtigtes Interesse am Schutz vor Spam und Missbrauch (Art. 6 Abs. 1 lit. f DSGVO). Die Übermittlung in die USA ist durch das EU-US Data Privacy Framework abgesichert.",
+      forms: { register: "Registrierung", recover: "Passwort vergessen", newsletter: "Newsletter" },
+    },
+    vinofact: {
+      heading: "Eingebundene Inhalte",
+      text: "Auf Produktseiten zeigen wir Weinbilder (z. B. Flaschenfotos) von vinofact, die direkt von dessen Server (i.vinofact.com) geladen werden. Dabei erhält der Anbieter Ihre IP-Adresse und die Browser-Kennung. Rechtsgrundlage ist unser berechtigtes Interesse an vollständigen Produktinformationen (Art. 6 Abs. 1 lit. f DSGVO). Anbieter ist {{provider}}, Dr. Hoyosstraße 12, 4311 Schwertberg, Österreich.",
+    },
+    storage: {
+      heading: "Cookies und Speicher im Browser",
+      intro: "Wir setzen keine Cookies zu Analyse- oder Werbezwecken. Wir speichern nur, was für die von Ihnen genutzten Funktionen unbedingt erforderlich ist; dafür ist keine Einwilligung nötig (§ 165 Abs. 3 TKG 2021). Die Daten bleiben in Ihrem Browser und werden nicht an uns übertragen:",
+      items: {
+        cart: "Warenkorb und eingegebener Gutscheincode,",
+        pendingPayment: "ein Hinweis auf eine laufende Zahlung, damit der Warenkorb danach geleert werden kann,",
+        orderSnapshot: "eine Zusammenfassung Ihrer Bestellung für die Bestätigungsseite – nur bis Sie den Tab schließen,",
+        ageGate: "Ihre Bestätigung des Mindestalters,",
+        search: "Ihre letzten Suchbegriffe.",
+      },
+      outro: "Sie können diese Daten jederzeit in den Einstellungen Ihres Browsers löschen.",
+      outroCookies: "Sie können diese Daten jederzeit in den Einstellungen Ihres Browsers löschen. Cookies für Zahlung und Kundenkonto sind in den jeweiligen Abschnitten beschrieben.",
+    },
+    required: {
+      heading: "Pflichtangaben",
+      text: "Für eine Bestellung benötigen wir Name, Rechnungs- und Lieferadresse sowie Ihre E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",
+    },
+    automated: {
+      heading: "Automatisierte Entscheidungen",
+      text: "Wir treffen keine ausschließlich automatisierten Entscheidungen und erstellen keine Profile.",
+      stripe: "Stripe prüft Zahlungen automatisiert auf Betrug und kann eine Zahlung dabei ablehnen (siehe „Zahlung“); wenden Sie sich in diesem Fall an uns.",
+    },
+    rights: {
+      heading: "Ihre Rechte",
+      text: "Sie haben das Recht auf Auskunft über Ihre bei uns gespeicherten Daten (Art. 15 DSGVO), auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Verarbeiten wir Daten auf Grundlage unseres berechtigten Interesses, können Sie dem widersprechen (Art. 21). Eine Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen. Wenden Sie sich dazu an {{email}}.",
+    },
+    complaint: {
+      heading: "Beschwerde",
+      text: "Wenn Sie der Meinung sind, dass wir Ihre Daten nicht rechtmäßig verarbeiten, können Sie sich bei der Aufsichtsbehörde beschweren. In Österreich ist das die Datenschutzbehörde, Barichgasse 40–42, 1030 Wien, {{dsb}}.",
+    },
+  },
   withdrawalInstructions: {
     missing: "Widerrufsbelehrung kann nicht erzeugt werden – fehlende Einstellungen: {{fields}}. (Nur in der Vorschau sichtbar.)",
   },

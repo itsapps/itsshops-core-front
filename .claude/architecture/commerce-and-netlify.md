@@ -277,6 +277,43 @@ top and above the order button when `shippingInfoPage` is set; the full notice o
 order confirmation. The compact form stays visible (not behind a click): WKO reads "hervorgehoben" as
 clearly noticeable before ordering, not hidden or only on request.
 
+### Privacy policy (`privacyPolicyModule`)
+
+`src/shared/privacy-policy.ts` (`buildPrivacyPolicy`) builds the Art. 13 GDPR text from what the shop
+runs; filter `privacyPolicy` (`src/filters/index.ts`) feeds it, `core/modules/privacyPolicyModule.njk`
+renders it (website only — no mail). Same rules as the withdrawal builder: rich segments with links
+(provider privacy policies, company email, DSB), missing company name/address/email → `null` +
+preview-only hint.
+
+Each section has a condition, so the text follows the features:
+
+| Section | When |
+|---|---|
+| controller (+ DPO from `module.dpoContact`), overview, hosting (Netlify), content (Sanity CDN) | always |
+| orders (+ carrier paragraph if a non-pickup shipping method exists), payment (Stripe, Apple/Google Pay) | `shop.checkout` |
+| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services` |
+| withdrawal | checkout + `orderWithdrawUrl` |
+| orderSystem (wineNET, hardcoded) | checkout + `services.wcApi` (`WC_CONSUMER_KEY` set) |
+| account (Supabase), newsletter | `users` / `newsletter` |
+| captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it) |
+| vinofact | vinofact on **and** `'bottleImage'` in `vinofact.fields` (only bottle images load from `i.vinofact.com`) |
+| `module.extraSections` (editor: map, embeds …) | after vinofact, before storage |
+| storage (list: cart/coupon, pending payment, order snapshot, age gate, recent searches) | always, items filtered |
+| required data, automated decisions (+ Stripe fraud screening) | checkout / always |
+| rights, complaint (DSB), "Stand" line | always |
+
+- Wording: `privacyPolicy.*` in `de_11ty.ts` / `en_11ty.ts` + `de_11ty.informal.ts` ("Du");
+  provider names + privacy-policy URLs are data (`PRIVACY_PROVIDERS`). Unlike withdrawal it's our
+  own wording (no statutory model).
+- **Bump `PRIVACY_POLICY_UPDATED`** (YYYY-MM, rendered as "Stand: …") whenever the wording or a
+  section condition changes.
+- Facts the text states must stay true in code: unpaid `orderMeta` deleted after
+  `ORDER_META_RETENTION_DAYS` (`order-meta-cleanup` function — the shop must wire it), no personal
+  data in function logs (`configuration.md` → Logging), Stripe.js only on the checkout page (loaded
+  from `checkout.ts`, which `scripts/index.ts` imports only with `[data-checkout]`), hCaptcha only
+  where a captcha form is shown, no analytics. A shop adding an external service (CSP
+  `headers.extra` host) adds an extra section.
+
 ## WooCommerce API bridge (`wc-api`, read by Winenet)
 
 `src/netlify/functions/wc-api.ts` — orders as a WooCommerce REST v3 subset for an ERP (wineNET):

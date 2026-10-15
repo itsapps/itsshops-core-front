@@ -7,6 +7,8 @@ import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
 import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
 import { buildWithdrawalInstructions, missingWithdrawalData, type WithdrawalInstructionsInput } from "../shared/withdrawal-instructions"
+import { buildPrivacyPolicy, missingPrivacyData, type PrivacyPolicyInput } from "../shared/privacy-policy"
+import { ORDER_META_RETENTION_DAYS } from "../config/constants"
 import type { CmsLocaleData } from "../types/data"
 
 function toIsoString(text: string) {
@@ -344,6 +346,44 @@ export const createFilters = (ctx: CoreContext) => {
       instructions: buildWithdrawalInstructions(input, (key, params) =>
         ctx.translate(`shared:${key}`, { ...params, interpolation: { escapeValue: false } } as any, locale)),
       missing: missingWithdrawalData(input),
+    }
+  }) as any)
+  // Generated privacy policy (privacyPolicyModule) from features, function-side services and
+  // settings.company. Returns { policy, missing } — policy null when company data is incomplete.
+  eleventyConfig.addFilter('privacyPolicy', (function (this: any, localeData: CmsLocaleData, module: any) {
+    const locale = this.page?.lang || config.defaultLocale
+    const company = localeData?.settings?.company
+    const shop = config.features.shop
+    const input: PrivacyPolicyInput = {
+      company: {
+        name: company?.name || localeData?.settings?.siteTitle,
+        address: company?.address?.line1 ? company.address : localeData?.shopSettings?.billingAddress,
+        email: company?.email,
+      },
+      features: {
+        checkout: shop.enabled && shop.checkout,
+        users: config.features.users.enabled,
+        newsletter: config.features.newsletter,
+        // Only bottle images load from i.vinofact.com; other vinofact data is fetched at build time.
+        vinofact: shop.vinofact.enabled && !!shop.vinofact.fields?.includes('bottleImage'),
+        ageGate: config.ageGate.enabled,
+      },
+      hasDelivery: (localeData?.shippingMethods ?? []).some((m) => m.methodType !== 'pickup'),
+      hasWithdrawal: !!localeData?.orderWithdrawUrl && localeData.orderWithdrawUrl !== '#',
+      services: config.services,
+      captcha: !!config.captchaSiteKey,
+      orderMetaRetentionDays: ORDER_META_RETENTION_DAYS,
+      dpoContact: module?.dpoContact,
+      extraSections: module?.extraSections ?? [],
+      countryName: (code) => countryName(code, locale),
+      formatUpdated: (yearMonth) => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
+        .format(new Date(`${yearMonth}-01T12:00:00Z`)),
+    }
+    return {
+      // escapeValue: false — Nunjucks autoescapes the output; i18next escaping would double it.
+      policy: buildPrivacyPolicy(input, (key, params) =>
+        ctx.translate(key, { ...params, interpolation: { escapeValue: false } } as any, locale)),
+      missing: missingPrivacyData(input),
     }
   }) as any)
   eleventyConfig.addFilter('countryList', (function (this: any, locale?: string) {

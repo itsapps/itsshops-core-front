@@ -38,6 +38,14 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       (`paymentInfo`, every locale) listing the **payment methods enabled in Stripe live mode**;
       selected as `shopSettings.shippingInfoPage`
       (the checkout links it at the top and above the order button); linked in the footer menu.
+- [ ] **Privacy page** (`settings.privacyPage`) contains the `privacyPolicyModule` (old hand-typed
+      text removed); an **extra section** for every external service the shop adds itself — each
+      host in `headers.extra` (e.g. map tiles) needs one; DPO contact only if one is appointed.
+      Env `EMAIL_PROVIDER` / `MAILGUN_USE_EU_REGION_URL` / `WC_CONSUMER_KEY` visible to the
+      **build** (the policy reads them). Owner: data processing agreements (AVV) with the processors
+      named there that aren't covered by the provider's own terms (e.g. wineNET).
+- [ ] `netlify/functions/order_meta_cleanup.mts` wrapper (`schedule: '@daily'`) — the privacy
+      policy states that unpaid checkout data is deleted after 30 days.
 - [ ] Footer: the withdrawal function link ("Vertrag widerrufen") is present (core appends it if
       missing) and the policy pages are linked.
 - [ ] **SEO texts** (every locale): each page has a meta description (an empty one falls back to
@@ -45,8 +53,8 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       other locales unless that field is translated); meta titles only where they should differ
       from the page title. Fallback chain: `architecture/templates-and-assets.md` → "SEO head".
 - [ ] Customer page `modules` array (backend `schema/extensions.ts`) includes
-      `withdrawalPolicyModule` and `shippingInfoModule`; the site's CSS lays them out like its text
-      modules.
+      `withdrawalPolicyModule`, `shippingInfoModule` and `privacyPolicyModule`; the site's CSS lays
+      them out like its text modules.
 
 ## Owner approval
 

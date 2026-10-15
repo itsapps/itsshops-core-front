@@ -539,6 +539,104 @@ export default {
     pricesGross: "All prices incl. VAT.",
     legalGuarantee: "Legal guarantee",
   },
+  // Generated privacy policy (privacyPolicyModule, shared/privacy-policy.ts). Art. 13 GDPR; one
+  // block per processing, rendered only when the shop runs it. {{provider}} = linked provider name.
+  privacyPolicy: {
+    missing: "Privacy policy cannot be generated – missing settings: {{fields}}. (Only visible in preview.)",
+    updated: "Last updated: {{date}}",
+    controller: {
+      heading: "Controller",
+      text: "The controller responsible for processing your personal data on this website is {{company}}, {{address}}, email: {{email}}. If you have any questions about data protection, please contact us at this address.",
+      dpo: "You can reach our data protection officer at: {{dpo}}",
+    },
+    overview: {
+      heading: "Overview",
+      textShop: "We only process the data needed to run this website and – if you place an order – to process your order. We do not use analytics or tracking tools, advertising cookies or social media plugins. Below we explain which data we process for which purpose, who receives it and how long we keep it.",
+      text: "We only process the data needed to run this website. We do not use analytics or tracking tools, advertising cookies or social media plugins. Below we explain which data we process for which purpose, who receives it and how long we keep it.",
+    },
+    hosting: {
+      heading: "Hosting and server logs",
+      text: "This website is hosted by {{provider}}. Each time a page is requested, Netlify processes technically necessary data: IP address, date and time, requested address, referrer and browser identifier (user agent). This is needed to deliver the website, keep it secure (e.g. defending against attacks, limiting requests per IP address) and find errors. The legal basis is our legitimate interest in secure and stable operation (Art. 6(1)(f) GDPR).",
+      retention: "Access logs are kept for at most 30 days, logs of our server functions for at most 7 days; these contain no names, addresses or email addresses. Netlify processes the data as our processor in the USA; the transfer is covered by the European Commission's adequacy decision for the EU-US Data Privacy Framework, in which Netlify participates.",
+    },
+    content: {
+      heading: "Content and images",
+      text: "We manage the content of this website with {{provider}}. Images are loaded directly from Sanity's image server (cdn.sanity.io), which receives your IP address and browser identifier. The legal basis is our legitimate interest in delivering images quickly and reliably (Art. 6(1)(f) GDPR). Sanity processes the data as our processor, including in the USA; the transfer is covered by the EU Standard Contractual Clauses.",
+    },
+    orders: {
+      heading: "Orders",
+      text: "When you place an order, we process your name, email address, billing and shipping address, the items ordered and the payment status in order to perform the contract (Art. 6(1)(b) GDPR) and to meet our statutory retention obligations (Art. 6(1)(c) GDPR). Order data is stored with {{provider}} (processor). We keep orders for seven years from the end of the calendar year (§ 132 BAO). Data from a checkout that was started but not paid is deleted after {{days}} days.",
+      carrier: "To ship your order, we pass your name and shipping address to the parcel service we use, which processes them as an independent controller (Art. 6(1)(b) GDPR). We do not pass on your email address.",
+    },
+    payment: {
+      heading: "Payment",
+      text: "Payments are processed by {{provider}} (Stripe Payments Europe Ltd., Ireland). Stripe receives the payment details you enter in the payment form as well as your name, email address, the amount, IP address and device information. We never see full card or account details. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR).",
+      fraud: "To prevent fraud, Stripe screens payments automatically and processes data for this and to meet its own legal obligations as an independent controller (Art. 6(1)(c) and (f) GDPR). Stripe may transfer data to Stripe, Inc. in the USA (EU-US Data Privacy Framework). On the checkout page Stripe sets the cookies __stripe_mid and __stripe_sid for fraud detection; they are strictly necessary for a secure payment. How long Stripe keeps data is set out in Stripe's privacy policy.",
+      wallets: "If you pay with Apple Pay or Google Pay, Apple or Google also process payment data under their own privacy policies.",
+    },
+    email: {
+      heading: "Email delivery",
+      text: "We send emails such as order confirmations, shipping updates and – where used – account or newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR) or, for the newsletter, your consent.",
+      resend: "The service is our processor; data is processed in the USA (EU-US Data Privacy Framework). Delivery logs are kept by the service for a limited time only.",
+      mailgunEu: "The service is our processor; data is processed in the EU. Delivery logs are kept by the service for a limited time only.",
+      mailgunUs: "The service is our processor; data is processed in the USA (EU Standard Contractual Clauses). Delivery logs are kept by the service for a limited time only.",
+    },
+    withdrawal: {
+      heading: "Online withdrawal",
+      text: "If you withdraw from the contract using our form, we process the order number, your email address, your declaration and its time in order to handle the withdrawal and confirm receipt to you (Art. 6(1)(c) GDPR in conjunction with the Austrian FAGG). We keep this data together with the order.",
+    },
+    orderSystem: {
+      heading: "Order management and invoicing",
+      text: "For invoicing, accounting and shipping, our merchandise management system wineNET reads the order data (name, email address, addresses, items, amounts). The provider, {{provider}}, Reitschulgasse 19, 7093 Jois, Austria, processes the data on our behalf as our processor. The legal basis is the performance of the contract and our legal obligations (Art. 6(1)(b) and (c) GDPR).",
+    },
+    account: {
+      heading: "Customer account",
+      text: "If you create a customer account, we store your email address, your name and the details from the registration form so that you can sign in and manage your data (Art. 6(1)(b) GDPR). Sign-in and accounts are managed with {{provider}} (processor; transfers to the USA based on the EU Standard Contractual Clauses). For signing in we set the cookies sb_access_token and sb_refresh_token; they are strictly necessary for this. We delete your account and this data when you ask us to delete the account; orders are kept for the statutory retention period.",
+    },
+    newsletter: {
+      heading: "Newsletter",
+      text: "If you subscribe to our newsletter, we store your email address based on your consent (Art. 6(1)(a) GDPR). The subscription only takes effect once you click the link in our confirmation email (double opt-in); for this we store a confirmation code and the time. You can withdraw your consent at any time – via the unsubscribe link in every newsletter or by emailing us. We then remove your address from the list. The data is stored with {{provider}}; emails are sent via the service named under \"Email delivery\".",
+    },
+    captcha: {
+      heading: "Spam protection",
+      text: "To protect forms ({{forms}}) from automated abuse, we use {{provider}} (Intuition Machines, Inc., USA). hCaptcha receives your IP address and characteristics of your browser and device to check whether the input comes from a human. hCaptcha is only loaded when such a form is shown. The legal basis is our legitimate interest in protection against spam and abuse (Art. 6(1)(f) GDPR). The transfer to the USA is covered by the EU-US Data Privacy Framework.",
+      forms: { register: "registration", recover: "forgotten password", newsletter: "newsletter" },
+    },
+    vinofact: {
+      heading: "Embedded content",
+      text: "On product pages we show wine images (e.g. bottle photos) from vinofact, loaded directly from its server (i.vinofact.com). The provider receives your IP address and browser identifier. The legal basis is our legitimate interest in complete product information (Art. 6(1)(f) GDPR). The provider is {{provider}}, Dr. Hoyosstraße 12, 4311 Schwertberg, Austria.",
+    },
+    storage: {
+      heading: "Cookies and browser storage",
+      intro: "We do not use cookies for analytics or advertising. We only store what is strictly necessary for the features you use; no consent is required for this (§ 165(3) Austrian TKG 2021). The data stays in your browser and is not sent to us:",
+      items: {
+        cart: "cart and any coupon code entered,",
+        pendingPayment: "a marker for a payment in progress, so the cart can be cleared afterwards,",
+        orderSnapshot: "a summary of your order for the confirmation page – only until you close the tab,",
+        ageGate: "your confirmation of the minimum age,",
+        search: "your recent searches.",
+      },
+      outro: "You can delete this data at any time in your browser settings.",
+      outroCookies: "You can delete this data at any time in your browser settings. Cookies for payment and the customer account are described in the respective sections.",
+    },
+    required: {
+      heading: "Required data",
+      text: "To place an order we need your name, billing and shipping address and your email address; without them we cannot conclude or perform the contract. Other fields are optional.",
+    },
+    automated: {
+      heading: "Automated decisions",
+      text: "We do not make decisions based solely on automated processing and do not create profiles.",
+      stripe: "Stripe screens payments automatically for fraud and may decline a payment (see \"Payment\"); in that case, please contact us.",
+    },
+    rights: {
+      heading: "Your rights",
+      text: "You have the right to access the data we hold about you (Art. 15 GDPR), to rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18) and data portability (Art. 20). Where we process data based on our legitimate interest, you may object (Art. 21). You can withdraw consent at any time with effect for the future. To do so, contact {{email}}.",
+    },
+    complaint: {
+      heading: "Complaint",
+      text: "If you believe that we are not processing your data lawfully, you can lodge a complaint with a supervisory authority. In Austria this is the Datenschutzbehörde (Data Protection Authority), Barichgasse 40–42, 1030 Vienna, {{dsb}}.",
+    },
+  },
   withdrawalInstructions: {
     missing: "Withdrawal instructions can't be generated – missing settings: {{fields}}. (Visible in preview only.)",
   },

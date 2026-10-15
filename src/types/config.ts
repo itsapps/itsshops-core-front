@@ -513,6 +513,15 @@ export type CoreConfig = {
   }
   captchaSiteKey: string | undefined
   supportEmail: string | undefined
+  /** Function-side services, from env at build time (privacy policy). Flags only, no secrets. */
+  services: {
+    /** `EMAIL_PROVIDER` — same default as the functions (`mailgun`). */
+    emailProvider: 'resend' | 'mailgun'
+    /** `MAILGUN_USE_EU_REGION_URL` — default true, as in `services/mailgun.ts`. */
+    mailgunEu: boolean
+    /** `WC_CONSUMER_KEY` is set → an ERP (wineNET) reads orders via `wc-api`. */
+    wcApi: boolean
+  }
   ageGate: {
     enabled: boolean
     minAge: number

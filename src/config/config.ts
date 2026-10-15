@@ -96,6 +96,7 @@ export function resolveConfig(config: Config): CoreConfig {
     },
     captchaSiteKey: config.captchaSiteKey ?? env.captchaSiteKey,
     supportEmail:   config.supportEmail   ?? env.supportEmail,
+    services: env.services,
     ageGate: {
       enabled: config.ageGate?.enabled ?? false,
       minAge:  config.ageGate?.minAge  ?? 16,
@@ -150,6 +151,12 @@ function readEnv() {
     },
     captchaSiteKey: process.env.CAPTCHA_SITE_KEY,
     supportEmail:   process.env.SUPPORT_EMAIL,
+    // Function-side services, read at build time for the privacy policy (flags only, no secrets).
+    services: {
+      emailProvider: (process.env.EMAIL_PROVIDER === 'resend' ? 'resend' : 'mailgun') as 'resend' | 'mailgun',
+      mailgunEu:     parseBool(process.env.MAILGUN_USE_EU_REGION_URL, true),  // functions default to EU
+      wcApi:         !!process.env.WC_CONSUMER_KEY,
+    },
     developer: {
       name:    process.env.PUBLIC_DEVELOPER_NAME,
       website: process.env.PUBLIC_DEVELOPER_WEBSITE,

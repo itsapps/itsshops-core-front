@@ -33,6 +33,8 @@ alternative was rejected, a constraint discovered the hard way.
   are stored + confirmed + flagged; no captcha, rate limit + honeypot instead.
 - [legal-texts-generated-from-settings.md](legal-texts-generated-from-settings.md) — withdrawal
   instructions + model form built from settings by one builder for page and mail; wording verbatim.
+- [privacy-policy-generated.md](privacy-policy-generated.md) — privacy policy built from features,
+  services and settings; "no tracking" always, carrier as category, wineNET hardcoded, extras by editor.
 - [legal-graphic-unaltered-png.md](legal-graphic-unaltered-png.md) — harmonised warranty notice as
   pre-sized lossless PNGs + srcset, not eleventy-img/WebP.
 - [cli-sanity-delete-guarded.md](cli-sanity-delete-guarded.md) — `itsshops sanity delete` needs a

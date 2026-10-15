@@ -15,7 +15,7 @@ this file stays the always-loaded router.
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |
-| Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts) | `.claude/architecture/commerce-and-netlify.md` |
+| Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |

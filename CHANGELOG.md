@@ -4,6 +4,23 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+Pairs with **core-back** (next minor: `privacyPolicyModule`).
+
+### Upgrading
+- Privacy page: add `privacyPolicyModule` to the backend's page `modules` array, put it on the
+  privacy page (after `pageHeader`), disable the old text; add an extra section per external
+  service the shop embeds itself. Site CSS: lay out `.module--privacyPolicyModule` like the other
+  legal modules. `EMAIL_PROVIDER` / `MAILGUN_USE_EU_REGION_URL` / `WC_CONSUMER_KEY` must be
+  visible to the build.
+
+### Added
+- `privacyPolicyModule`: generated privacy policy (Art. 13 GDPR) — sections follow features and
+  services; builder `shared/privacy-policy.ts`, filter `privacyPolicy`, strings `privacyPolicy.*`
+  (de, de informal, en).
+- `CoreConfig.services` (`emailProvider`, `mailgunEu`, `wcApi`) read from env at build time.
+
 ## 3.0.0
 
 Pairs with **core-back 4.0.0** (`shippingMethod.packagingGroups`).

@@ -1,6 +1,6 @@
 # Plan — generated privacy policy (`privacyPolicyModule`)
 
-Status: **In progress** — step 0 shipped in core-front 3.0.0 (Tinhof wrapper on `main`, ships with its next release); next step 1. Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
+Status: **In progress** — steps 0–4 done (step 0 in core-front 3.0.0; steps 2–4 uncommitted: core-back schema, core-front builder/strings/template, docs). Mechanism now documented in `architecture/commerce-and-netlify.md` → "Privacy policy" and `decisions/privacy-policy-generated.md`. Next: step 5 release, step 6 Tinhof migration (module on the development privacy page, CSS done). Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
 rich text that doesn't describe what the shop does. Not legal advice: the requirements below are an
 orientation; the core wording gets one legal review, each shop owner approves their generated page.
 
@@ -19,7 +19,7 @@ When this ships, delete this file — durable parts go to `architecture/template
 - **Carrier:** named as a **category** ("Paketdienstleister") inside the Orders section, generated
   whenever a shipping method (not pickup-only) exists — Art. 13(1)(e) allows categories, and a
   named carrier would drift when the shop switches. Carrier = independent controller, Art. 6(1)(b),
-  no AVV. If the shop passes email/phone (delivery notifications), the text says so — ask owner.
+  no AVV. The carrier gets name + shipping address only (no email; checkout collects no phone).
   Tinhof uses DPD; not named on the page.
 - **Age confirmation:** not a processing (only a line of text in checkout and the order mail; nothing
   stored) → no section. The age gate is unused → left out of the browser-storage list.
@@ -38,6 +38,18 @@ When this ships, delete this file — durable parts go to `architecture/template
 - **Stripe** loads only on the checkout page — verified: `scripts/index.ts` imports `./checkout`
   only with `[data-checkout]`, `loadStripe` is only called there, all other `@stripe/stripe-js`
   imports are type-only. Cookie statement "checkout page only" holds; no code change.
+- **wineNET:** named as processor — winenet gmbh, Reitschulgasse 19, 7093 Jois, AT (EU, no
+  transfer). Its own privacy page offers no AVV → per shop, owner checks the contract/terms for an
+  AVV (Art. 28) and requests one if missing.
+- **Contact for privacy questions:** `settings.company.email` — no extra field.
+- **Overview** section (no tracking, no ad cookies, no social plugins) stays at the top;
+  **browser storage** is a bullet list filtered by feature.
+- Checkout collects **no phone**; the carrier gets name + shipping address only.
+- **Apple Pay / Google Pay** (Stripe express checkout; Link, PayPal, Amazon Pay off): one sentence
+  in the Payment section — Apple/Google process data under their own policies.
+- **"Stand" date** from a core constant `PRIVACY_POLICY_UPDATED`, bumped with every wording or
+  condition change (release checklist item).
+- **No contact-form section:** core has none; Tinhof's contact module is mailto/tel links only.
 - **CSP ↔ policy:** go-live checklist line — every `headers.extra` host needs a matching privacy
   extra section.
 
@@ -88,7 +100,7 @@ Each row = one generated section. Condition = when core renders it.
 |---|---|---|---|---|---|
 | Hosting & server logs | always | IP, user agent, URL, time; function logs (request ids, no personal data after the audit); per-IP rate limiting of online withdrawal | 6(1)(f) security/operation | Netlify, Inc. (US, DPF) | access logs < 30 days; function logs ≤ 7 days |
 | Content delivery / images | always | IP on image requests to `cdn.sanity.io` | 6(1)(f) | Sanity (US/EU, DPF) | provider logs |
-| Orders | `shop.checkout` | name, addresses, email, phone, items, payment status; stored as Sanity `order` / order meta docs | 6(1)(b), 6(1)(c) (BAO) | Sanity (DPF); shipping carrier as category, when a non-pickup shipping method exists | 7 years (§ 132 BAO); unpaid order meta 30 days (new cleanup) |
+| Orders | `shop.checkout` | name, addresses, email, items, payment status; stored as Sanity `order` / order meta docs | 6(1)(b), 6(1)(c) (BAO) | Sanity (DPF); shipping carrier as category, when a non-pickup shipping method exists | 7 years (§ 132 BAO); unpaid order meta 30 days (new cleanup) |
 | Payment | `shop.checkout` | payment data, name, email, IP, device data; cookies `__stripe_mid`, `__stripe_sid` on checkout page | 6(1)(b); 6(1)(f) fraud prevention | Stripe Payments Europe Ltd. (IE); Stripe Inc. (US, DPF) | Stripe's own retention (own controller for parts) |
 | Transactional email | checkout / users / newsletter | email, order content | 6(1)(b) | Resend (US, DPF) or Mailgun (US/EU per `MAILGUN_USE_EU_REGION_URL`) — from `EMAIL_PROVIDER` | provider logs |
 | Online withdrawal | `orderWithdrawUrl` set | order number, email, declaration | 6(1)(c) (FAGG) | email provider | with the order |
@@ -97,8 +109,8 @@ Each row = one generated section. Condition = when core renders it.
 | Newsletter | `newsletter` | email, double-opt-in token; stored as Sanity `newsletterSubscriber` | 6(1)(a) consent, revocable | Sanity, email provider | until unsubscribe |
 | Spam protection | captcha key **and** a captcha form active (register, recover, newsletter) | IP, device signals | 6(1)(f) | hCaptcha / Intuition Machines (US, DPF) | provider |
 | No tracking | always (decided: no analytics section for now) | statement: no analytics, no tracking, no ad cookies | — | — | — |
-| Browser storage | always (list filtered by feature) | `localStorage`: cart, coupon code, pending-payment marker, recent searches, theme; `sessionStorage`: order snapshot for thank-you page | § 165 Abs 3 TKG 2021 strictly necessary | stays on device | until removed / tab closed |
-| External content | `shop.vinofact.enabled` | IP on images from `i.vinofact.com` | 6(1)(f) | vinofact (AT) | provider |
+| Browser storage | always (list filtered by feature) | `localStorage`: cart, coupon code, pending-payment marker, recent searches; `sessionStorage`: order snapshot for thank-you page | § 165 Abs 3 TKG 2021 strictly necessary | stays on device | until removed / tab closed |
+| External content | `shop.vinofact.enabled` and `'bottleImage'` in `vinofact.fields` (only bottle images load from i.vinofact.com; Tinhof: off) | IP on images from `i.vinofact.com` | 6(1)(f) | vinofact (AT) | provider |
 | Shop-specific extras (render after External content) | editor field | e.g. Tinhof: OpenStreetMap tiles (IP → OSMF, UK, adequacy) | as written | as written | as written |
 | Social links | none rendered by core | plain links, no plugins — state it only if useful | — | — | — |
 | Rights / complaint / contact | always, last | — | — | — | — |
@@ -161,7 +173,7 @@ Mailgun EU wording; Du/Sie.
    - Supabase region: only Rosi Schuster uses `users`; the region is not in `SUPABASE_URL` →
      look it up in that project's dashboard when Rosi Schuster migrates; Tinhof doesn't need it.
 1. **Wording draft** (de formal, de informal, en) per section in the table above, drafted by
-   Claude → reviewed by the user **before** coding the strings. Keep it short; one paragraph per section.
+   Claude, approved 2026-10-15 — now in `privacyPolicy.*` translations → reviewed by the user **before** coding the strings. Keep it short; one paragraph per section.
 2. core-back: module schema + labels; `npm run build`.
 3. core-front: `CoreConfig` additions, builder + tests, strings, filter, templates, CSS; build,
    `npm run test`, `npm run check:functions`.
@@ -180,4 +192,4 @@ Mailgun EU wording; Du/Sie.
 - **Stripe as own controller:** Stripe processes some data as independent controller (fraud, legal
   obligations) — wording per Stripe's privacy policy.
 - Per shop (owner): DPO yes/no, data processing agreements (AVV) with wineNET
-  and the email provider in place; does the shop pass customer email/phone to the carrier?
+  and the email provider in place.

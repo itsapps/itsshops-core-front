@@ -113,7 +113,11 @@ Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
   (fallback when the wrapper passes no `timezone`). `WC_API_BASE_URL` is **test-only** (customer
   `tests/integration/wc-api.test.ts`). Details: [wc-api.md](wc-api.md).
 - Shared with the build: `SANITY_*`, `SHOP_FORMALITY`, `SHOP_TIMEZONE`, `SUPPORT_EMAIL`,
-  `VINOFACT_*` (see above).
+  `VINOFACT_*` (see above), and — for the generated privacy policy — `EMAIL_PROVIDER`,
+  `MAILGUN_USE_EU_REGION_URL` and whether `WC_CONSUMER_KEY` is set. The build reads them into
+  `CoreConfig.services` (`emailProvider`, `mailgunEu`, `wcApi`; flags only, never the secrets, same
+  defaults as the functions) — so these need the **build** scope too, or the policy names the wrong
+  mail provider / omits wineNET.
 
 ## Env var → config field map
 The authoritative list is the comment block in `src/types/config.ts` (above `Config`). Env is the
