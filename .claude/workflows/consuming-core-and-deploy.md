@@ -111,10 +111,13 @@ plan and asking before anything that pushes.
    `Release <version>` on `main` + push `origin`; `git checkout production && git merge --ff-only
    main`; annotated tag on that commit (`git tag -a <version> -m "core-front <x>, core-back <y>"`);
    then push `production` + the tag via the **`user`** remote (`git push user production <version>`)
-   → Netlify builds. **The production push is the user's:** Claude Code's auto-mode classifier
-   blocks it as a production deploy, so Claude prepares everything locally and hands over the
-   `! git -C <repo> push user production <version>` lines (unless the user added a permission
-   rule). Frontend and backend are tagged separately; when a release needs both (schema +
+   → Netlify builds. **Pushes to the `user` remote are the user's:** Claude Code's auto-mode
+   classifier blocks them as a deploy — `production` *and* `staging` — so Claude prepares
+   everything locally and hands over the `! git -C <repo> push user production <version>` lines
+   (unless the user added a permission rule). If another session has uncommitted edits in the
+   customer repo, stage the release files explicitly (no `commit -a`) and move a deploy branch
+   without checking it out: `git branch -f staging main` (only when it fast-forwards —
+   `git merge-base --is-ancestor user/staging main`). Frontend and backend are tagged separately; when a release needs both (schema +
    rendering), release the backend first and name the paired release in the tag message.
 4. Update the customer's `CLAUDE.md` status line if it tracks the live core version.
 

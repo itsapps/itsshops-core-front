@@ -29,6 +29,12 @@ rounded per line; `tax_lines[].tax_total` = item line taxes only, shipping tax o
 `total` stays the charged amount. Rules and invariants: `.claude/architecture/wc-api.md` →
 "Rounding"; tested in `src/netlify/__tests__/wc-api.test.ts`.
 
+Tax rate ids follow WC too (since 3.0.0): a rate is per country, so `tax_lines[].rate_id` is a
+fixed id per (tax country, rate) and line `taxes[].id` refer to it. Not per rate alone — AT 20 %
+and another country's 20 % are different rates in WC and in an ERP's books (destination-country
+VAT); not per order position — an ERP may map the id to its own tax codes, as wineNET does with
+`product_id`. Changing the id scheme again needs a heads-up to the ERP.
+
 ERP quirks are reported to the ERP vendor rather than worked around by deviating from WC (e.g.
 wineNET deriving the VAT rate from tax ÷ net — sending extra tax decimals would "fix" it but break
 parity).
