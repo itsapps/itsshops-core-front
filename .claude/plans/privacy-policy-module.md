@@ -1,6 +1,6 @@
 # Plan — generated privacy policy (`privacyPolicyModule`)
 
-Status: **In progress** — steps 0–4 done (step 0 in core-front 3.0.0; steps 2–4 uncommitted: core-back schema, core-front builder/strings/template, docs). Mechanism now documented in `architecture/commerce-and-netlify.md` → "Privacy policy" and `decisions/privacy-policy-generated.md`. Next: step 5 release, step 6 Tinhof migration (module on the development privacy page, CSS done). Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
+Status: **In progress** — steps 0–5 done: released in core-back 4.1.0 / core-front 3.1.0 (2026-10-15). Mechanism: `architecture/commerce-and-netlify.md` → "Privacy policy", `decisions/privacy-policy-generated.md`. Next: step 6 per shop — Tinhof backend 1.4.0 / frontend 1.6.0 tagged, production push pending; then delete this plan. Decisions 2026-10-14: see "Decided" below. Origin: Tinhof's "Datenschutz" page is a hand-typed
 rich text that doesn't describe what the shop does. Not legal advice: the requirements below are an
 orientation; the core wording gets one legal review, each shop owner approves their generated page.
 
