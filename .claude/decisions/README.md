@@ -49,3 +49,5 @@ alternative was rejected, a constraint discovered the hard way.
 - [wine-packaging-groups-one-size-per-group.md](wine-packaging-groups-one-size-per-group.md) — wine
   packaging by box types; each bottle size in one group, unlisted sizes → next larger size's group
   ("nur für" boxes / 3D box packing rejected).
+- [sanity-backups-github-artifacts.md](sanity-backups-github-artifacts.md) — production dataset backed
+  up weekly as one `age`-encrypted GitHub artifact per customer (free quota); Git LFS rejected.

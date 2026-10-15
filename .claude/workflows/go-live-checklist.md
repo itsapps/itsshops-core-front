@@ -71,6 +71,11 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       notification to the shop inbox; delete the test records in the Studio afterwards.
 - [ ] `npm run check:functions` passed for the core version being deployed.
 
+## Data safety
+
+- [ ] Weekly **production dataset backup** running (own private `sanity-backups` repo) and one
+      restore test done (decrypt + unpack): `workflows/sanity-dataset-backups.md`.
+
 ## Ongoing (after go-live)
 
 - [ ] Payment-methods text re-checked **whenever payment methods change in the Stripe Dashboard**.
