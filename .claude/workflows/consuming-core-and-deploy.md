@@ -110,10 +110,14 @@ plan and asking before anything that pushes.
    loose for a site; customer repos have no `.npmrc`, tags are unprefixed anyway), commit
    `Release <version>` on `main` + push `origin`; `git checkout production && git merge --ff-only
    main`; annotated tag on that commit (`git tag -a <version> -m "core-front <x>, core-back <y>"`);
-   then push `production` + the tag via the **`user`** remote (`git push user production <version>`)
-   → Netlify builds. **Pushes to the `user` remote are the user's:** Claude Code's auto-mode
+   then **push the tag via `origin`** (`git push origin <version>` — own user, a tag triggers no
+   Netlify build; Claude does this right after tagging) and push `production` via the **`user`**
+   remote (`git push user production`) → Netlify builds. Tags used to ride along on the `user`
+   push and were lost when only the branch got pushed (Tinhof had none on GitHub until
+   2026-10-15) — so the tag push is separate and never left to the user. **Pushes to the `user`
+   remote are the user's:** Claude Code's auto-mode
    classifier blocks them as a deploy — `production` *and* `staging` — so Claude prepares
-   everything locally and hands over the `! git -C <repo> push user production <version>` lines
+   everything locally and hands over the `! git -C <repo> push user production` lines
    (unless the user added a permission rule). If another session has uncommitted edits in the
    customer repo, stage the release files explicitly (no `commit -a`) and move a deploy branch
    without checking it out: `git branch -f staging main` (only when it fast-forwards —
