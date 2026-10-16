@@ -9,7 +9,7 @@ import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
 import type { WithdrawalInstructions, WithdrawalRichText } from '../../../shared/withdrawal-instructions'
 
-function AddressBlock({
+export function AddressBlock({
   title,
   address,
   locale,
@@ -35,7 +35,7 @@ function AddressBlock({
   )
 }
 
-function ItemRow({
+export function ItemRow({
   item,
   formatPrice,
   drawSeparator,
@@ -70,7 +70,7 @@ function ItemRow({
 }
 
 /** Order date, payment method and shipping method — part of the contract confirmation (FAGG §4/§7). */
-function OrderDetails({ ctx, order }: Pick<OrderEmailProps, 'ctx' | 'order'>) {
+export function OrderDetails({ ctx, order }: Pick<OrderEmailProps, 'ctx' | 'order'>) {
   const { t, locale } = ctx
   const { fulfillment } = order
   // Older orders have no orderDate snapshot → the first status entry (order creation).
@@ -182,7 +182,7 @@ function SummaryLine({
   )
 }
 
-function TotalsBlock({
+export function TotalsBlock({
   totals,
   ctx,
 }: {

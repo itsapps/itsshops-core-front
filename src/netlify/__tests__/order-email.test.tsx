@@ -5,7 +5,7 @@ vi.mock('../services/email', () => ({ sendMail: vi.fn(async () => ({ id: 'msg-1'
 
 import { fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
 import { sendMail } from '../services/email'
-import { sendOrderNotification } from '../lib/order-notifier'
+import { sendOrderNotification, sendShopOrderNotification } from '../lib/order-notifier'
 import { buildEmailShopSettings } from '../lib/email-settings'
 import type { OrderDocument } from '../types/checkout'
 
@@ -221,5 +221,43 @@ describe('buildEmailShopSettings', () => {
   it('shop inbox falls back to the sender', () => {
     expect(buildEmailShopSettings(rawSettings(), '').shopNotificationEmail).toBe('noreply@shop.example')
     expect(buildEmailShopSettings(rawSettings({ shopNotificationEmail: 'o@x.example' }), '').shopNotificationEmail).toBe('o@x.example')
+  })
+})
+
+describe('shop new-order notification', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings({ shopNotificationEmail: 'orders@shop.example' }))
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('goes to the shop inbox in the shop locale, Reply-To the customer, without customer-only parts', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({
+      customer: { ...order().customer, locale: 'en', billingAddress: { ...address, phone: '+43 660 1234567' } },
+    }))
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    const { to, replyTo, bcc, subject, html, text } = await sent()
+    expect(to).toBe('orders@shop.example')
+    expect(replyTo).toBe('anna@example.com')
+    expect(bcc).toBeUndefined()
+    expect(subject).toBe('Neue Bestellung 000042 – Anna Muster')
+    const visible = textOf(html)
+    expect(visible).toContain('Neue Bestellung 000042')
+    expect(visible).toContain('anna@example.com')
+    expect(visible).toContain('+43 660 1234567')
+    expect(visible).toContain('Sprache: Englisch')
+    expect(visible).toContain('Gesamtsumme')
+    expect(visible).not.toContain('Hallo')
+    expect(visible).not.toContain('widerrufen')
+    expect(html).not.toContain('legal-guarantee-notice')
+    expect(text).toContain('Anna Muster <anna@example.com>')
+  })
+
+  it('falls back to the sender address', async () => {
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    expect((await sent()).to).toBe('noreply@shop.example')
   })
 })

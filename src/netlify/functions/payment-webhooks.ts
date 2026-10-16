@@ -10,10 +10,13 @@ import {
 } from '../services/sanity'
 import { buildOrder, formatOrderNumber } from '../lib/order-builder'
 import { mapPaymentMethodDetails } from '../lib/payment-method'
+import type { ComponentType } from 'react'
 import {
   sendOrderNotification,
+  sendShopOrderNotification,
   type SendOrderNotificationOptions,
 } from '../lib/order-notifier'
+import type { ShopOrderEmailProps } from '../templates/email/types'
 import { log } from '../utils/logger'
 import type { OrderDocument, OrderPaymentMethod } from '../types/checkout'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
@@ -26,7 +29,14 @@ export type WebhookHandlerOptions = ServerConfig & {
    * options passed to `createNotifyHandler`.
    */
   notify?: SendOrderNotificationOptions
+  /**
+   * New-order mail to the shop inbox (own wording, shop's `defaultLocale`, Reply-To the
+   * customer). Default on; `false` turns it off, `{ template }` replaces `ShopOrderEmail`.
+   */
+  shopNotification?: boolean | { template?: ComponentType<ShopOrderEmailProps> }
 }
+
+type ShopNotify = { locale: string; template?: ComponentType<ShopOrderEmailProps> } | null
 
 /**
  * What was actually charged, from the PaymentIntent's latest charge. Never blocks order
@@ -51,6 +61,7 @@ async function handlePaymentSucceeded(
   hasStock: boolean,
   onOrderCreated?: WebhookHandlerOptions['onOrderCreated'],
   notifyOptions?: SendOrderNotificationOptions,
+  shopNotify?: ShopNotify,
 ): Promise<void> {
   const orderMetaId = paymentIntent.metadata?.orderMetaId
   if (!orderMetaId) {
@@ -117,10 +128,7 @@ async function handlePaymentSucceeded(
   // Send the order confirmation email. Failures here must NOT abort the
   // webhook (Stripe would retry and we'd duplicate the order) — log and move on.
   try {
-    const result = await sendOrderNotification(created._id, 'orderConfirmation', {
-      ...notifyOptions,
-      bccSender: true,
-    })
+    const result = await sendOrderNotification(created._id, 'orderConfirmation', notifyOptions)
     log.debug('Order confirmation sent', {
       orderId: created._id,
       messageId: result.messageId,
@@ -130,6 +138,23 @@ async function handlePaymentSucceeded(
       orderId: created._id,
       error: err instanceof Error ? err.message : String(err),
     })
+  }
+
+  // New-order mail to the shop inbox — separate from the customer's confirmation, so a failure
+  // of one doesn't block the other.
+  if (shopNotify) {
+    try {
+      const result = await sendShopOrderNotification(created._id, {
+        ...shopNotify,
+        ...(notifyOptions?.baseUrl && { baseUrl: notifyOptions.baseUrl }),
+      })
+      log.debug('Shop order notification sent', { orderId: created._id, messageId: result.messageId })
+    } catch (err) {
+      log.error('Shop order notification failed', {
+        orderId: created._id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 
   if (onOrderCreated) {
@@ -159,7 +184,16 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
 }
 
 export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
-  const { hasStock } = resolveServerConfig(options)
+  const { hasStock, defaultLocale } = resolveServerConfig(options)
+  const shopNotify: ShopNotify =
+    options.shopNotification === false
+      ? null
+      : {
+          locale: defaultLocale,
+          ...(typeof options.shopNotification === 'object' && options.shopNotification.template && {
+            template: options.shopNotification.template,
+          }),
+        }
 
   return async (request: Request, _context: Context): Promise<Response> => {
     if (request.method !== 'POST') return new Response(null, { status: 405 })
@@ -188,6 +222,7 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
             hasStock,
             options.onOrderCreated,
             options.notify,
+            shopNotify,
           )
           break
         case 'charge.refunded':

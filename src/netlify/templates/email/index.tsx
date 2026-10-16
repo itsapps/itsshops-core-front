@@ -27,6 +27,7 @@ import type { OrderDocument } from '../../types/checkout'
 export { EmailLayout } from './EmailLayout'
 export { OrderEmail } from './OrderEmail'
 export { SimpleEmail } from './SimpleEmail'
+export { ShopOrderEmail } from './ShopOrderEmail'
 export type {
   EmailAddress,
   EmailBankAccount,
@@ -35,6 +36,7 @@ export type {
   EmailShopSettings,
   EmailTranslator,
   OrderEmailProps,
+  ShopOrderEmailProps,
   SimpleEmailProps,
 } from './types'
 

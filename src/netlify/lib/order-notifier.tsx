@@ -5,16 +5,19 @@
  * Used by:
  *   - `functions/order-notify.ts`  — studio-triggered HTTP endpoint
  *   - `functions/payment-webhooks.ts` — Stripe `payment_intent.succeeded`
+ *     (customer confirmation + `sendShopOrderNotification` to the shop inbox)
  *
  * Throws `OrderNotifierError` with a typed code so callers can map failures
  * to HTTP responses (HTTP handler) or just log them (webhook).
  */
 import type { ComponentType } from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
+import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
 import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
 import { renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
+import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
 import type { EmailContext } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
@@ -27,7 +30,7 @@ import {
   missingWithdrawalData,
   type WithdrawalInstructionsInput,
 } from '../../shared/withdrawal-instructions'
-import type { EmailShopSettings } from '../templates/email/types'
+import type { EmailShopSettings, ShopOrderEmailProps } from '../templates/email/types'
 
 const MAIL_TYPES_WITH_INVOICE: ReadonlyArray<MailType> = ['orderInvoice']
 
@@ -40,7 +43,10 @@ export type SendOrderNotificationOptions = {
   baseUrl?: string
   /** Force-attach the invoice PDF regardless of mailType. */
   attachInvoice?: boolean
-  /** BCC the shop inbox (`settings.shopNotificationEmail`, falling back to the sender). */
+  /**
+   * BCC the shop inbox (`settings.shopNotificationEmail`, falling back to the sender) with the
+   * customer's mail. The webhook no longer uses it — it sends `sendShopOrderNotification` instead.
+   */
   bccSender?: boolean
   /**
    * Include the right-of-withdrawal ("Widerruf") section + link to the withdrawal
@@ -56,6 +62,15 @@ export type SendOrderNotificationOptions = {
    * shown below the intro text in the HTML mail and appended to the plain-text part.
    */
   customerMessage?: string
+}
+
+export type SendShopOrderNotificationOptions = {
+  /** Locale of the shop mail — the shop's default locale, not the customer's. */
+  locale: string
+  /** Customer-supplied template replacing `ShopOrderEmail`. */
+  template?: ComponentType<ShopOrderEmailProps>
+  /** Public base URL of the shop (defaults to process.env.URL). */
+  baseUrl?: string
 }
 
 export type SendOrderNotificationResult = {
@@ -110,6 +125,18 @@ export function withdrawalInstructionsFor(
   return instructions
 }
 
+async function loadEmailSettings(locale: string, baseUrl?: string): Promise<EmailShopSettings> {
+  const settingsRaw = await fetchEmailSettings(locale)
+  if (!settingsRaw?.senderEmail || !settingsRaw.senderName || !settingsRaw.shopName) {
+    throw new OrderNotifierError(
+      ErrorCode.INTERNAL_ERROR,
+      'shopSettings.senderEmail / senderName / settings.siteTitle must be set',
+      500,
+    )
+  }
+  return buildEmailShopSettings(settingsRaw, baseUrl ?? process.env.URL ?? '')
+}
+
 export async function sendOrderNotification(
   orderId: string,
   mailType: MailType,
@@ -121,16 +148,7 @@ export async function sendOrderNotification(
   }
 
   const locale = order.customer.locale || 'de'
-  const settingsRaw = await fetchEmailSettings(locale)
-  if (!settingsRaw?.senderEmail || !settingsRaw.senderName || !settingsRaw.shopName) {
-    throw new OrderNotifierError(
-      ErrorCode.INTERNAL_ERROR,
-      'shopSettings.senderEmail / senderName / settings.siteTitle must be set',
-      500,
-    )
-  }
-
-  const settings = buildEmailShopSettings(settingsRaw, options.baseUrl ?? process.env.URL ?? '')
+  const settings = await loadEmailSettings(locale, options.baseUrl)
 
   // Withdrawal page URL for the confirmation's withdrawal section (default on). The slug
   // lives in the shared `urlPaths` translations, resolved via serverT.
@@ -189,4 +207,52 @@ export async function sendOrderNotification(
     to: order.customer.contactEmail,
     mailType,
   }
+}
+
+/**
+ * New-order notification to the shop inbox (`settings.shopNotificationEmail`, falling back to
+ * the sender): order summary + customer contact, in the shop's locale, Reply-To the customer.
+ * No warranty notice, withdrawal instructions or invoice — those are for the customer.
+ */
+export async function sendShopOrderNotification(
+  orderId: string,
+  options: SendShopOrderNotificationOptions,
+): Promise<{ messageId: string; to: string }> {
+  const order = await fetchOrderById(orderId)
+  if (!order) {
+    throw new OrderNotifierError(ErrorCode.ORDER_NOT_FOUND, `Order not found: ${orderId}`, 404)
+  }
+
+  const { locale } = options
+  const settings = await loadEmailSettings(locale, options.baseUrl)
+  const ctx: EmailContext = {
+    locale,
+    t: (key, params) => serverT(locale, key, params),
+    formatPrice: (cents) => fmtPrice(cents, locale),
+    settings,
+  }
+
+  const Template = options.template ?? ShopOrderEmail
+  const html = await render(<Template ctx={ctx} order={order} />)
+  const subject = ctx.t('emails.shopOrderConfirmation.subject', {
+    orderNumber: order.orderNumber,
+    customerName: order.customer.billingAddress.name,
+  })
+  const text = [
+    ctx.t('emails.shopOrderConfirmation.headline', { orderNumber: order.orderNumber }),
+    ctx.t('emails.shopOrderConfirmation.text'),
+    `${ctx.t('emails.shopOrderConfirmation.customer')}: ${order.customer.billingAddress.name} <${order.customer.contactEmail}>`,
+    `${ctx.t('emails.order.summaryTotal')}: ${ctx.formatPrice(order.totals.grandTotal)}`,
+  ].join('\n\n')
+
+  const to = settings.shopNotificationEmail || settings.senderEmail
+  const result = await sendMail({
+    from: `${settings.senderName} <${settings.senderEmail}>`,
+    to,
+    replyTo: order.customer.contactEmail,
+    subject,
+    text,
+    html,
+  })
+  return { messageId: result.id ?? 'unknown', to }
 }

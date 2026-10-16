@@ -118,6 +118,12 @@ export type OrderEmailProps = {
   customerMessage?: string
 }
 
+/** Props of the shop's new-order notification (`ShopOrderEmail`). `ctx.locale` = shop locale. */
+export type ShopOrderEmailProps = {
+  ctx: EmailContext
+  order: OrderDocument
+}
+
 export type SimpleEmailProps = {
   ctx: EmailContext
   /** Heading shown above the body text. Optional — falls back to a generic greeting. */

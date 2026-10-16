@@ -157,6 +157,13 @@ export default {
       preview: "Thanks for shopping with us!",
       text: "Thank you for your order. We are pleased to confirm your order with the number",
     },
+    shopOrderConfirmation: {
+      subject: "New order {{orderNumber}} – {{customerName}}",
+      headline: "New order {{orderNumber}}",
+      text: "A new, paid order has come in. The customer has received the order confirmation. Replies to this email go directly to the customer.",
+      customer: "Customer",
+      language: "Language",
+    },
     orderProcessing: {
       subject: "Order in progress ⚙️",
       preview: "Your order is now being processed.",

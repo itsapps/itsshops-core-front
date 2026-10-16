@@ -241,8 +241,16 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
   (`${baseUrl}/assets/legal/legal-guarantee-notice-<de|en>-1200.png`, served by the shop site) in every
   order confirmation.
 - **Shop inbox:** `settings.shopNotificationEmail` (fallback `senderEmail`, resolved in
-  `buildEmailShopSettings`) receives the order-confirmation BCC and withdrawal notifications. `From:`
+  `buildEmailShopSettings`) receives the new-order mail and withdrawal notifications. `From:`
   stays `senderName <senderEmail>`.
+- **New-order mail to the shop** (`sendShopOrderNotification` in `lib/order-notifier.tsx`, template
+  `ShopOrderEmail.tsx`): sent by the payment webhook right after the customer's confirmation, in its
+  own try/catch (no longer a BCC of the customer mail). Shop's `defaultLocale`, neutral wording
+  (`emails.shopOrderConfirmation.*`, subject "Neue Bestellung <nr> – <name>"), customer contact
+  (email, phone, language) up front, Reply-To = customer; reuses the order summary blocks exported
+  from `OrderEmail.tsx`; no greeting, warranty image, withdrawal text or invoice. Webhook option
+  `shopNotification`: default on, `false` off, `{ template }` override. `bccSender` still works on
+  `sendOrderNotification` but core doesn't use it.
 - **Footer** (`MailFooter.tsx`, all business mails): `settings.company` — name, owner, address,
   phone, email, VAT ID, register number/court — only filled fields; falls back to shop name, billing
   address, sender email. The invoice PDF still uses the shopSettings billing address.

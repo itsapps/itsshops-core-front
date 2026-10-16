@@ -13,6 +13,14 @@ Pairs with **core-back (unreleased)** (studio "message to customer").
   `CUSTOMER_MESSAGE_MAX_LENGTH`) rendered below the intro text in `OrderEmail` and `SimpleEmail`
   (new `customerMessage` prop; `CustomerMessage` email component) and appended to the plain-text
   part. Custom email template overrides can read the new prop.
+- **New-order mail to the shop inbox** (`sendShopOrderNotification`, template `ShopOrderEmail`):
+  own wording in the shop's `defaultLocale`, customer contact (email, phone, language) up front,
+  Reply-To = customer, no warranty image / withdrawal instructions. Webhook option
+  `shopNotification` (default on; `false` off; `{ template }` override). `sendMail` takes `replyTo`.
+
+### Changed
+- The payment webhook no longer BCCs the shop on the customer's order confirmation — the shop gets
+  the new-order mail above instead.
 
 ## 3.1.0
 

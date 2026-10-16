@@ -19,6 +19,7 @@ export async function sendMail(params: SendMailParams): Promise<{ id?: string }>
     from: params.from,
     to: params.to,
     bcc: params.bcc,
+    replyTo: params.replyTo,
     subject: params.subject,
     text: params.text,
     html: params.html,

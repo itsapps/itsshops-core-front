@@ -157,6 +157,13 @@ export default {
       preview: "Danke für Ihren Einkauf!",
       text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen und wird in Kürze bearbeitet.",
     },
+    shopOrderConfirmation: {
+      subject: "Neue Bestellung {{orderNumber}} – {{customerName}}",
+      headline: "Neue Bestellung {{orderNumber}}",
+      text: "Im Shop ist eine neue, bezahlte Bestellung eingegangen. Der Kunde hat die Bestellbestätigung erhalten. Antworten auf diese E-Mail gehen direkt an den Kunden.",
+      customer: "Kunde",
+      language: "Sprache",
+    },
     orderProcessing: {
       subject: "Bestellung in Bearbeitung ⚙️",
       preview: "Ihre Bestellung wird nun bearbeitet.",
