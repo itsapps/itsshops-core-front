@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Column, Img, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
-import { EmailText, EmailHeading, EmailHr } from './components'
+import { EmailText, EmailHeading, EmailHr, CustomerMessage } from './components'
 import type { OrderEmailProps } from './types'
 import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout'
 import { colors } from './tokens'
@@ -209,7 +209,7 @@ function TotalsBlock({
   )
 }
 
-export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
+export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmailProps) {
   const { t, formatPrice, locale } = ctx
   const { customer, totals, fulfillment, orderItems } = order
 
@@ -230,6 +230,7 @@ export function OrderEmail({ ctx, order, mailType }: OrderEmailProps) {
             {line}
           </EmailText>
         ))}
+        <CustomerMessage text={customerMessage} />
       </Section>
 
       <Section style={{margin: "48px 0"}}>

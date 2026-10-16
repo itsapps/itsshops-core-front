@@ -186,6 +186,37 @@ describe('order confirmation email', () => {
   })
 })
 
+describe('customer message', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('shows the message as plain text in the HTML and the plain-text part', async () => {
+    await sendOrderNotification('o1', 'orderShipping', {
+      customerMessage: '  Zwei Pakete.\n<b>Danke</b>  ',
+    })
+    const { html, text } = await sent()
+    expect(textOf(html)).toContain('Zwei Pakete.')
+    expect(html).toContain('&lt;b&gt;Danke&lt;/b&gt;')
+    expect(html).not.toContain('<b>Danke</b>')
+    expect(text).toMatch(/\n\nZwei Pakete\.\n<b>Danke<\/b>$/)
+  })
+
+  it('also works in the refund (simple) mails; blank message renders nothing', async () => {
+    await sendOrderNotification('o1', 'orderRefunded', { customerMessage: 'Jahrgang 2019 ausverkauft.' })
+    expect(textOf((await sent()).html)).toContain('Jahrgang 2019 ausverkauft.')
+
+    await sendOrderNotification('o1', 'orderRefunded', { customerMessage: '   ' })
+    const { html, text } = await sent()
+    expect(html).not.toContain('border-left')
+    expect(text).not.toContain('\n\n')
+  })
+})
+
 describe('buildEmailShopSettings', () => {
   it('shop inbox falls back to the sender', () => {
     expect(buildEmailShopSettings(rawSettings(), '').shopNotificationEmail).toBe('noreply@shop.example')

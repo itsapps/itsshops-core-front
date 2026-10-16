@@ -64,15 +64,22 @@ export async function renderMailFor(
   ctx: EmailContext,
   order: OrderDocument,
   overrides?: EmailTemplateOverrides,
-  /** Refunded amount in cents — interpolated as `{{amount}}` into the refund emails. */
-  refundAmount?: number,
+  extras: {
+    /** Refunded amount in cents — interpolated as `{{amount}}` into the refund emails. */
+    refundAmount?: number
+    /** Personal message from the shop admin (plain text), shown below the intro text. */
+    customerMessage?: string
+  } = {},
 ): Promise<string> {
+  const { refundAmount, customerMessage } = extras
   const isOrderSummary = (ORDER_SUMMARY_MAIL_TYPES as readonly MailType[]).includes(mailType)
 
   if (isOrderSummary) {
     const Component =
       (overrides?.[mailType] as ComponentType<OrderEmailProps> | undefined) ?? OrderEmail
-    return render(<Component ctx={ctx} order={order} mailType={mailType} />)
+    return render(
+      <Component ctx={ctx} order={order} mailType={mailType} customerMessage={customerMessage} />,
+    )
   }
 
   const Component =
@@ -83,7 +90,9 @@ export async function renderMailFor(
   // to the order total (correct for a full refund).
   const amount = ctx.formatPrice(refundAmount ?? order.totals.grandTotal)
   const text = ctx.t(`emails.${mailType}.text`, { amount })
-  return render(<Component ctx={ctx} headline={headline} text={text} />)
+  return render(
+    <Component ctx={ctx} headline={headline} text={text} customerMessage={customerMessage} />,
+  )
 }
 
 /**

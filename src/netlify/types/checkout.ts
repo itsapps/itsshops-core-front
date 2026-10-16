@@ -280,7 +280,10 @@ export type OrderStatusHistoryEntry = {
   status: string
   timestamp: string
   source: string
+  /** Internal admin note (studio only, never sent to the customer). */
   note?: string
+  /** Message sent to the customer with the status mail (studio "message to customer"). */
+  customerMessage?: string
 }
 
 export type OrderMetaDocument = {

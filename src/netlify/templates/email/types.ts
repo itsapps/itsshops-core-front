@@ -114,6 +114,8 @@ export type OrderEmailProps = {
   ctx: EmailContext
   order: OrderDocument
   mailType: MailType
+  /** Optional personal message from the shop admin (plain text), shown below the intro text. */
+  customerMessage?: string
 }
 
 export type SimpleEmailProps = {
@@ -126,4 +128,6 @@ export type SimpleEmailProps = {
   cta?: { url: string; label: string }
   /** Optional small muted link below the CTA (e.g. a newsletter unsubscribe link). */
   footerLink?: { url: string; label: string }
+  /** Optional personal message from the shop admin (plain text), shown below the body text. */
+  customerMessage?: string
 }

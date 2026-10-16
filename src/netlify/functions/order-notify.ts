@@ -6,7 +6,8 @@
  * auth, CORS, JSON parsing, and ErrorCode → HTTP status mapping.
  *
  * Request body:
- *   { orderId: string, mailType: MailType, attachInvoice?: boolean }
+ *   { orderId: string, mailType: MailType, attachInvoice?: boolean, refundAmount?: number,
+ *     customerMessage?: string }
  *
  * Auth: x-server-secret header (must match SERVER_FUNCTIONS_SECRET).
  */
@@ -31,7 +32,12 @@ export type NotifyRequestBody = {
   attachInvoice?: boolean
   /** Refunded amount in cents — interpolated into the refund emails. */
   refundAmount?: number
+  /** Personal message from the shop admin (plain text, max `CUSTOMER_MESSAGE_MAX_LENGTH`). */
+  customerMessage?: string
 }
+
+/** Upper bound for `customerMessage` — the studio textarea uses the same limit. */
+export const CUSTOMER_MESSAGE_MAX_LENGTH = 2000
 
 export type NotifyResponseBody = {
   messageId: string
@@ -71,12 +77,23 @@ export function createNotifyHandler(options: NotifyHandlerOptions = {}) {
     if (!VALID_MAIL_TYPES.has(body.mailType)) {
       return withCors(badRequest(`Invalid mailType: ${body.mailType}`), request)
     }
+    if (body.customerMessage !== undefined && typeof body.customerMessage !== 'string') {
+      return withCors(badRequest('customerMessage must be a string'), request)
+    }
+    const customerMessage = body.customerMessage?.trim()
+    if (customerMessage && customerMessage.length > CUSTOMER_MESSAGE_MAX_LENGTH) {
+      return withCors(
+        badRequest(`customerMessage is longer than ${CUSTOMER_MESSAGE_MAX_LENGTH} characters`),
+        request,
+      )
+    }
 
     try {
       const result = await sendOrderNotification(body.orderId, body.mailType, {
         ...options,
         attachInvoice: body.attachInvoice,
         ...(typeof body.refundAmount === 'number' && { refundAmount: body.refundAmount }),
+        ...(customerMessage && { customerMessage }),
       })
 
       log.debug('Order notification sent', {

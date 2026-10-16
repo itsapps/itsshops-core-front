@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Section, Link } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
-import { EmailText, EmailHeading, EmailButton } from './components'
+import { EmailText, EmailHeading, EmailButton, CustomerMessage } from './components'
 import { colors } from './tokens'
 import type { SimpleEmailProps } from './types'
 
@@ -11,7 +11,7 @@ import type { SimpleEmailProps } from './types'
  * Renders a single headline + paragraph body inside the shared shell, plus an
  * optional CTA button below the text.
  */
-export function SimpleEmail({ ctx, headline, text, cta, footerLink }: SimpleEmailProps) {
+export function SimpleEmail({ ctx, headline, text, cta, footerLink, customerMessage }: SimpleEmailProps) {
   const lines = text.split('\n')
   return (
     <EmailLayout ctx={ctx}>
@@ -22,6 +22,7 @@ export function SimpleEmail({ ctx, headline, text, cta, footerLink }: SimpleEmai
             {line}
           </EmailText>
         ))}
+        <CustomerMessage text={customerMessage} />
         {cta && (
           <Section style={{ padding: '16px 0', textAlign: 'center' }}>
             <EmailButton fullWidth href={cta.url}>{cta.label}</EmailButton>

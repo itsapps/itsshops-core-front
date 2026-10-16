@@ -216,6 +216,13 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
 
 ## Order confirmation content & shop inbox
 
+- **Customer message** (all order mails, from the studio status/mail dialogs): `order-notify` takes an
+  optional `customerMessage` (trimmed, ≤ `CUSTOMER_MESSAGE_MAX_LENGTH` = 2000, else 400) →
+  `sendOrderNotification({ customerMessage })` → `OrderEmail` / `SimpleEmail` render it via
+  `components/CustomerMessage.tsx` below the intro text (plain text, lines → paragraphs, left rule),
+  and it's appended to the plain-text part. The studio's internal `statusHistory[].note` is never
+  mailed.
+
 - **Order details** (`OrderEmail.tsx` → `OrderDetails`): order date (`order.orderDate` = PaymentIntent
   `created`, fallback first status entry), payment method, shipping method, delivery time, pickup
   location — each only when present; statutory warranty sentence on `orderConfirmation`.

@@ -4,6 +4,16 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+Pairs with **core-back (unreleased)** (studio "message to customer").
+
+### Added
+- `order-notify` / `sendOrderNotification`: optional `customerMessage` (plain text, max 2000 chars,
+  `CUSTOMER_MESSAGE_MAX_LENGTH`) rendered below the intro text in `OrderEmail` and `SimpleEmail`
+  (new `customerMessage` prop; `CustomerMessage` email component) and appended to the plain-text
+  part. Custom email template overrides can read the new prop.
+
 ## 3.1.0
 
 Pairs with **core-back 4.1.0** (`privacyPolicyModule`).

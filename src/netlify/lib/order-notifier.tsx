@@ -51,6 +51,11 @@ export type SendOrderNotificationOptions = {
   withdrawalNotice?: boolean
   /** Refunded amount in cents — interpolated into the refund emails. */
   refundAmount?: number
+  /**
+   * Personal message from the shop admin (plain text, studio "message to customer"),
+   * shown below the intro text in the HTML mail and appended to the plain-text part.
+   */
+  customerMessage?: string
 }
 
 export type SendOrderNotificationResult = {
@@ -148,9 +153,14 @@ export async function sendOrderNotification(
     }),
   }
 
-  const html = await renderMailFor(mailType, ctx, order, options.templates, options.refundAmount)
+  const customerMessage = options.customerMessage?.trim() || undefined
+  const html = await renderMailFor(mailType, ctx, order, options.templates, {
+    refundAmount: options.refundAmount,
+    customerMessage,
+  })
   const subject = subjectFor(ctx, mailType)
-  const text = ctx.t(`emails.${mailType}.text`)
+  const intro = ctx.t(`emails.${mailType}.text`)
+  const text = customerMessage ? `${intro}\n\n${customerMessage}` : intro
 
   const wantsInvoice = options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType)
   let attachment: { filename: string; data: Buffer; contentType: string } | undefined
