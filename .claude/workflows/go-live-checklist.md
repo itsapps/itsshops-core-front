@@ -8,8 +8,9 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 
 ## Netlify (site settings)
 
-- [ ] **Paid plan** — the withdrawal function's only abuse guard besides the honeypot is the
-      per-IP `rateLimit` in the customer wrapper, which needs a paid plan.
+- [ ] **Paid plan (Personal or Pro) with auto recharge** — running out of credits pauses the site.
+      The per-IP `rateLimit` wrappers (withdrawal's only abuse guard besides the honeypot) work on
+      every plan, but Free/Personal allow only 2 rules per site. See `netlify-plans.md`.
 - [ ] **`SHOP_FORMALITY`** set for **all scopes** (`formal` default "Sie", `informal` "Du") — before
       the first deploy of a core with the switch; build-only gives a "Du" site with "Sie" mails.
 - [ ] `SHOP_TIMEZONE` only if not `Europe/Vienna`.

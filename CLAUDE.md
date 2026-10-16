@@ -21,6 +21,7 @@ this file stays the always-loaded router.
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches) | `.claude/workflows/consuming-core-and-deploy.md` |
 | **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
+| Which Netlify plan a shop needs (credits, costs, rate-limit rule caps) | `.claude/workflows/netlify-plans.md` |
 | What every shop needs before go-live (env, settings, legal pages, approvals, tests) | `.claude/workflows/go-live-checklist.md` |
 | Backing up a customer's Sanity production dataset (daily docs + weekly full, encrypted GitHub artifacts) / restoring it | `.claude/workflows/sanity-dataset-backups.md` |
 | Why a non-obvious choice was made | `.claude/decisions/` |

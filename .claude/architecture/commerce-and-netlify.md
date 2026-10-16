@@ -79,8 +79,8 @@ Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `conf
 
 Public, unauthenticated endpoints (`order-status`, `order-withdraw`) get a per-IP limit in that
 wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot — no captcha) via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
-`aggregateBy: ['ip', 'domain']`) — not in core. Netlify rate limiting needs a **paid Netlify plan**,
-and over-limit requests are answered by Netlify (429) before the function runs.
+`aggregateBy: ['ip', 'domain']`) — not in core. Code-based rate limits work on every Netlify plan, capped at 2 rules per site on
+Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests are answered by Netlify (429) before the function runs.
 
 > Note: the JS `exports` subpaths are the public API and are in active use across the ecosystem —
 > `.` (~30 files), `./core`, `./scripts`, `./test-utils`, and the `./functions/*` set (all wired by
