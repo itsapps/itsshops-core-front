@@ -10,8 +10,9 @@ import type { ShopOrderEmailProps } from './types'
  * New-order notification for the shop inbox (sent next to the customer's order
  * confirmation). Same order summary, but addressed to the shop: neutral wording,
  * the customer's contact details up front, and none of the customer-only parts
- * (greeting, warranty notice, withdrawal instructions). Rendered in the shop's
- * default locale (`ctx.locale`), not the customer's.
+ * (greeting, warranty notice, withdrawal instructions, and the footer with the
+ * shop's own company details). Rendered in the shop's default locale
+ * (`ctx.locale`), not the customer's.
  */
 export function ShopOrderEmail({ ctx, order }: ShopOrderEmailProps) {
   const { t, formatPrice, locale } = ctx
@@ -28,7 +29,7 @@ export function ShopOrderEmail({ ctx, order }: ShopOrderEmailProps) {
   const linkStyle = { color: colors.text, textDecoration: 'underline' }
 
   return (
-    <EmailLayout ctx={ctx}>
+    <EmailLayout ctx={ctx} footer={null}>
       <Section style={{ padding: '16px 0' }}>
         <EmailHeading style={{ marginBottom: '12px' }}>
           {t('emails.shopOrderConfirmation.headline', { orderNumber: order.orderNumber })}

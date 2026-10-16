@@ -251,6 +251,7 @@ describe('shop new-order notification', () => {
     expect(visible).not.toContain('Hallo')
     expect(visible).not.toContain('widerrufen')
     expect(html).not.toContain('legal-guarantee-notice')
+    expect(visible).not.toContain('Hauptstraße 1') // no footer with the shop's own address
     expect(text).toContain('Anna Muster <anna@example.com>')
   })
 

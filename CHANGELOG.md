@@ -4,6 +4,12 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.2.1
+
+### Fixed
+- Shop new-order mail (`ShopOrderEmail`): no footer — it only repeated the shop's own company
+  details.
+
 ## 3.2.0
 
 Pairs with **core-back 4.2.0** (studio "message to customer"). Release core-front first: an older
