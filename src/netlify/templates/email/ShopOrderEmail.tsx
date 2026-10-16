@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Column, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
-import { EmailText, EmailHeading } from './components'
+import { EmailText, EmailHeading, EmailButton } from './components'
 import { AddressBlock, ItemRow, OrderDetails, TotalsBlock } from './OrderEmail'
 import { colors } from './tokens'
 import type { ShopOrderEmailProps } from './types'
@@ -14,7 +14,7 @@ import type { ShopOrderEmailProps } from './types'
  * shop's own company details). Rendered in the shop's default locale
  * (`ctx.locale`), not the customer's.
  */
-export function ShopOrderEmail({ ctx, order }: ShopOrderEmailProps) {
+export function ShopOrderEmail({ ctx, order, studioOrderUrl }: ShopOrderEmailProps) {
   const { t, formatPrice, locale } = ctx
   const { customer, totals, orderItems } = order
 
@@ -35,6 +35,11 @@ export function ShopOrderEmail({ ctx, order }: ShopOrderEmailProps) {
           {t('emails.shopOrderConfirmation.headline', { orderNumber: order.orderNumber })}
         </EmailHeading>
         <EmailText style={{ marginBottom: '8px' }}>{t('emails.shopOrderConfirmation.text')}</EmailText>
+        {studioOrderUrl && (
+          <Section style={{ paddingTop: '16px' }}>
+            <EmailButton href={studioOrderUrl}>{t('emails.shopOrderConfirmation.openInStudio')}</EmailButton>
+          </Section>
+        )}
       </Section>
 
       <Section style={{ marginBottom: '32px' }}>

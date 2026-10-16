@@ -71,6 +71,8 @@ export type SendShopOrderNotificationOptions = {
   template?: ComponentType<ShopOrderEmailProps>
   /** Public base URL of the shop (defaults to process.env.URL). */
   baseUrl?: string
+  /** Studio base URL for the "open order" button (defaults to process.env.SANITY_STUDIO_URL). */
+  studioUrl?: string
 }
 
 export type SendOrderNotificationResult = {
@@ -210,6 +212,16 @@ export async function sendOrderNotification(
 }
 
 /**
+ * Studio link that opens an order: core-back names each workspace after its UI language and always
+ * has one for the default locale, so `<studio>/<locale>/intent/edit/id=…;type=order` works
+ * regardless of the desk structure. No studio URL → no link.
+ */
+export function studioOrderUrlFor(studioUrl: string | undefined, locale: string, orderId: string) {
+  if (!studioUrl) return undefined
+  return `${studioUrl.replace(/\/+$/, '')}/${locale}/intent/edit/id=${encodeURIComponent(orderId)};type=order`
+}
+
+/**
  * New-order notification to the shop inbox (`settings.shopNotificationEmail`, falling back to
  * the sender): order summary + customer contact, in the shop's locale, Reply-To the customer.
  * No warranty notice, withdrawal instructions or invoice — those are for the customer.
@@ -232,8 +244,9 @@ export async function sendShopOrderNotification(
     settings,
   }
 
+  const studioOrderUrl = studioOrderUrlFor(options.studioUrl ?? process.env.SANITY_STUDIO_URL, locale, orderId)
   const Template = options.template ?? ShopOrderEmail
-  const html = await render(<Template ctx={ctx} order={order} />)
+  const html = await render(<Template ctx={ctx} order={order} studioOrderUrl={studioOrderUrl} />)
   const subject = ctx.t('emails.shopOrderConfirmation.subject', {
     orderNumber: order.orderNumber,
     customerName: order.customer.billingAddress.name,
@@ -243,6 +256,7 @@ export async function sendShopOrderNotification(
     ctx.t('emails.shopOrderConfirmation.text'),
     `${ctx.t('emails.shopOrderConfirmation.customer')}: ${order.customer.billingAddress.name} <${order.customer.contactEmail}>`,
     `${ctx.t('emails.order.summaryTotal')}: ${ctx.formatPrice(order.totals.grandTotal)}`,
+    ...(studioOrderUrl ? [`${ctx.t('emails.shopOrderConfirmation.openInStudio')}: ${studioOrderUrl}`] : []),
   ].join('\n\n')
 
   const to = settings.shopNotificationEmail || settings.senderEmail

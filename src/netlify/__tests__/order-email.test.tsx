@@ -5,7 +5,7 @@ vi.mock('../services/email', () => ({ sendMail: vi.fn(async () => ({ id: 'msg-1'
 
 import { fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
 import { sendMail } from '../services/email'
-import { sendOrderNotification, sendShopOrderNotification } from '../lib/order-notifier'
+import { sendOrderNotification, sendShopOrderNotification, studioOrderUrlFor } from '../lib/order-notifier'
 import { buildEmailShopSettings } from '../lib/email-settings'
 import type { OrderDocument } from '../types/checkout'
 
@@ -253,6 +253,20 @@ describe('shop new-order notification', () => {
     expect(html).not.toContain('legal-guarantee-notice')
     expect(visible).not.toContain('Hauptstraße 1') // no footer with the shop's own address
     expect(text).toContain('Anna Muster <anna@example.com>')
+  })
+
+  it('links the order in the Studio when SANITY_STUDIO_URL is set', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    expect((await sent()).html).not.toContain('intent/edit')
+
+    vi.stubEnv('SANITY_STUDIO_URL', 'https://studio.example/')
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    const { html, text } = await sent()
+    expect(html).toContain('href="https://studio.example/de/intent/edit/id=o1;type=order"')
+    expect(textOf(html)).toContain('Bestellung im Studio öffnen')
+    expect(text).toContain('https://studio.example/de/intent/edit/id=o1;type=order')
+    expect(studioOrderUrlFor(undefined, 'de', 'o1')).toBeUndefined()
   })
 
   it('falls back to the sender address', async () => {

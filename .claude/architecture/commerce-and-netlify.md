@@ -248,7 +248,10 @@ work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/pla
   own try/catch (no longer a BCC of the customer mail). Shop's `defaultLocale`, neutral wording
   (`emails.shopOrderConfirmation.*`, subject "Neue Bestellung <nr> – <name>"), customer contact
   (email, phone, language) up front, Reply-To = customer; reuses the order summary blocks exported
-  from `OrderEmail.tsx`; no greeting, warranty image, withdrawal text or invoice. Webhook option
+  from `OrderEmail.tsx`; no greeting, warranty image, withdrawal text, invoice or footer. Button
+  "Bestellung im Studio öffnen" when `SANITY_STUDIO_URL` is set (needs the functions scope on
+  Netlify): `studioOrderUrlFor` → `<studio>/<defaultLocale>/intent/edit/id=<id>;type=order`
+  (core-back names workspaces after UI languages and always has the default locale's). Webhook option
   `shopNotification`: default on, `false` off, `{ template }` override. `bccSender` still works on
   `sendOrderNotification` but core doesn't use it.
 - **Footer** (`MailFooter.tsx`, all business mails): `settings.company` — name, owner, address,

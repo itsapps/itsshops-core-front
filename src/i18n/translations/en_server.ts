@@ -163,6 +163,7 @@ export default {
       text: "A new, paid order has come in. The customer has received the order confirmation. Replies to this email go directly to the customer.",
       customer: "Customer",
       language: "Language",
+      openInStudio: "Open order in the Studio",
     },
     orderProcessing: {
       subject: "Order in progress ⚙️",

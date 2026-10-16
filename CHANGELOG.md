@@ -4,6 +4,13 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.3.0
+
+### Added
+- Shop new-order mail: button "Bestellung im Studio öffnen" linking to the order
+  (`<SANITY_STUDIO_URL>/<defaultLocale>/intent/edit/id=…;type=order`, also in the plain-text part);
+  omitted when `SANITY_STUDIO_URL` isn't set for the functions. Template prop `studioOrderUrl`.
+
 ## 3.2.1
 
 ### Fixed

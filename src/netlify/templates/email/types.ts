@@ -122,6 +122,8 @@ export type OrderEmailProps = {
 export type ShopOrderEmailProps = {
   ctx: EmailContext
   order: OrderDocument
+  /** Link that opens the order in the Studio (from `SANITY_STUDIO_URL`); absent when unset. */
+  studioOrderUrl?: string
 }
 
 export type SimpleEmailProps = {

@@ -163,6 +163,7 @@ export default {
       text: "Im Shop ist eine neue, bezahlte Bestellung eingegangen. Der Kunde hat die Bestellbestätigung erhalten. Antworten auf diese E-Mail gehen direkt an den Kunden.",
       customer: "Kunde",
       language: "Sprache",
+      openInStudio: "Bestellung im Studio öffnen",
     },
     orderProcessing: {
       subject: "Bestellung in Bearbeitung ⚙️",
