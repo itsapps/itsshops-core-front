@@ -52,3 +52,5 @@ alternative was rejected, a constraint discovered the hard way.
 - [sanity-backups-github-artifacts.md](sanity-backups-github-artifacts.md) — production dataset backed
   up as `age`-encrypted GitHub artifacts per customer (daily documents-only + weekly full, free
   quota); Git LFS rejected.
+- [shop-new-order-mail-not-bcc.md](shop-new-order-mail-not-bcc.md) — shop gets its own new-order mail
+  (shop locale, no customer-only legal parts, Reply-To customer, Studio link) instead of a BCC.

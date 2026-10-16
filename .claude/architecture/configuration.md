@@ -20,7 +20,9 @@ export const projectConfig: Config = { /* … */ }
 - `defaultLocale?: Locale` — default `'de'`.
 - `sanity?: SanityClientConfig` — `{ projectId, dataset, token?, studioUrl?, … }`. `projectId` and
   `dataset` are **required** (hard-fail) and usually come from env (`SANITY_PROJECT_ID`,
-  `SANITY_DATASET`); `token`/`studioUrl` from `SANITY_TOKEN`/`SANITY_STUDIO_URL`.
+  `SANITY_DATASET`); `token`/`studioUrl` from `SANITY_TOKEN`/`SANITY_STUDIO_URL`. The payment
+  webhook also reads `SANITY_STUDIO_URL` at runtime (Studio link in the shop's new-order mail) — so
+  on Netlify it needs the Functions scope, not only Builds.
 
 ### Features (`features?: ItsshopsFeatures`)
 Omitting `shop` disables the shop; sub-flags default to `false`.

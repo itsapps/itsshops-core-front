@@ -14,6 +14,8 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] **`SHOP_FORMALITY`** set for **all scopes** (`formal` default "Sie", `informal` "Du") — before
       the first deploy of a core with the switch; build-only gives a "Du" site with "Sie" mails.
 - [ ] `SHOP_TIMEZONE` only if not `Europe/Vienna`.
+- [ ] `SANITY_STUDIO_URL` = the deployed Studio, scope incl. **Functions** (the shop's new-order mail
+      links the order in the Studio; unset → no button).
 - [ ] Function wrappers wired: `order-withdraw` (+ `rateLimit`), `order-withdraw-notify`,
       `order-status`, `payment-webhooks`; no `notifyEmail` / `captcha` options passed.
 
@@ -67,7 +69,8 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 ## Tests on the live configuration
 
 - [ ] Test orders (card, Apple/Google Pay, EPS; pickup if offered): confirmation shows order date,
-      payment method, shipping method, full withdrawal instructions, warranty notice, company footer.
+      payment method, shipping method, full withdrawal instructions, warranty notice, company footer;
+      the shop inbox gets the separate new-order mail (German, Studio button, Reply-To customer).
 - [ ] Test withdrawal (matched + one with a made-up order number): receipt with date/time, shop
       notification to the shop inbox; delete the test records in the Studio afterwards.
 - [ ] `npm run check:functions` passed for the core version being deployed.

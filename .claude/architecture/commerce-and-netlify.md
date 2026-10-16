@@ -42,9 +42,9 @@ Rules of thumb:
 |---|---|---|
 | `preview` | (default preview handler) | Sanity visual-editing preview render |
 | `payment-create` | `createPaymentHandler` | Create a Stripe payment / checkout intent |
-| `payment-webhooks` | `createWebhookHandler` | Stripe webhook receiver (order fulfilment) |
+| `payment-webhooks` | `createWebhookHandler` | Stripe webhook receiver (order fulfilment, customer confirmation + shop new-order mail) |
 | `payment-refund` | `createRefundHandler` | Refund a payment |
-| `order-notify` | `createNotifyHandler` | Send order confirmation email |
+| `order-notify` | `createNotifyHandler` | Studio-triggered order mails (status change / manual send, optional customer message) |
 | `order-withdraw` | `createOrderWithdrawHandler` | Process a right-of-withdrawal request |
 | `order-status` | `createOrderStatusHandler` | `GET /api/order/status?payment_intent=pi_…` → order number only (thanks page, pending-payment cart cleanup) |
 | `order-withdraw-notify` | `createWithdrawNotifyHandler` | Withdrawal notification email |
