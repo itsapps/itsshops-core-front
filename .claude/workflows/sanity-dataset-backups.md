@@ -46,7 +46,7 @@ repo secrets.
   backup ≥ 500 MB fails outright; measure a new customer with a local export first. More history →
   object storage (Cloudflare R2), **not Git LFS** (LFS storage never shrinks; see the ADR).
 - **Pushing the workflow** needs a token with the **`workflow`** scope (classic) / *Workflows: write*
-  (fine-grained). The macOS-keychain PAT (`dev@itsapps.at`) lacked it → "refusing to allow a
+  (fine-grained). The developer's macOS-keychain PAT lacked it → "refusing to allow a
   Personal Access Token to create or update workflow". Repo admin role doesn't help; the token's
   scopes cap it.
 - Scheduled workflows are only auto-disabled after 60 inactive days in **public** repos — private

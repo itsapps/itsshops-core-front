@@ -153,13 +153,13 @@ customer extension only for customer-specific data. After a core-back change, ru
 
 | Repo | Path | Role |
 |---|---|---|
-| core-front | `/Users/kampfgnu/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
-| core-back | `/Users/kampfgnu/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
-| Jurtschitsch | `/Users/kampfgnu/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine) |
-| Tinhof | `/Users/kampfgnu/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | customer (wine) |
-| itsapps | `/Users/kampfgnu/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | customer (webpage) |
-| grass-art | `/Users/kampfgnu/Documents/programming/web/grass-art/{webshop-backend,webshop-frontend}` | customer |
-| others | `/Users/kampfgnu/Documents/programming/web/{fem_innenarchitektur,yogamax,rosi_schuster,…}` | customers (varying feature sets) |
+| core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
+| core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
+| Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine) |
+| Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | customer (wine) |
+| itsapps | `~/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | customer (webpage) |
+| grass-art | `~/Documents/programming/web/grass-art/{webshop-backend,webshop-frontend}` | customer |
+| others | `~/Documents/programming/web/{fem_innenarchitektur,yogamax,rosi_schuster,…}` | customers (varying feature sets) |
 
 Customers consume core via `npm link`. A customer frontend registers the plugin in
 `eleventy.config.mts` and configures it via `itsshops.config.mts` (type `Config`).

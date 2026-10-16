@@ -146,7 +146,7 @@ Each customer's branch names / Netlify site live in its own CLAUDE.md.
 ### Deploy identity (two push identities, split by branch)
 
 To avoid paying for extra Netlify team seats, **each customer gets its own GitHub + Netlify account
-under the customer's own email** (e.g. `shop@jurtschitsch.com`). Netlify's free auto-rebuild fires
+under the customer's own email** (e.g. `shop@<customer-domain>`). Netlify's free auto-rebuild fires
 only when the **GitHub pusher's identity matches the Netlify account owner**. So pushes are split by
 branch:
 
@@ -158,7 +158,7 @@ branch:
 
 This is about **push authentication**, *not* commit authorship — a separate thing. (The repo's local
 `.git/config` happens to set `user.name`/`user.email` to the customer, e.g. `Admin` /
-`shop@jurtschitsch.com`, so commits read as the customer; but Netlify keys on the pusher, not the
+`shop@<customer-domain>`, so commits read as the customer; but Netlify keys on the pusher, not the
 author.)
 
 Observed in the Jurtschitsch repos (both remotes point at the **same** GitHub repo):
