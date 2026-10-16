@@ -78,10 +78,15 @@ week).
    the `.tar.gz`). Exact commands: the reference repo's `README.md` → Restore.
 3. If deleted: `npx sanity dataset create production` (same name and visibility; tokens, CORS and
    webhooks are project-level and survive). Ideally switch the site to `buildMode: maintenance`.
-4. `sanity dataset import full.tar.gz production`, **then** `sanity dataset import docs.tar.gz
-   production --replace` (order matters: image IDs are content hashes, so the docs references match
-   the full backup's files; images uploaded after the full backup must be re-uploaded). Untested so
-   far whether the import accepts `sanity.imageAsset` docs without files — verify on a test dataset.
+4. `sanity dataset import full.tar.gz --dataset production`, **then** `sanity dataset import
+   docs.tar.gz --dataset production --replace --allow-assets-in-different-dataset` (order matters:
+   image IDs are content hashes, so the docs references match the full backup's files; images
+   uploaded after the full backup must be re-uploaded). The docs (`--raw`) archive keeps the
+   `sanity.imageAsset` docs, whose paths name the source dataset — without the flag the import fails
+   with "references a different dataset than the specified target" (always into another dataset,
+   possibly also into a recreated one). Tested 2026-10-16: Tinhof production full + docs →
+   `development`, images and newer content OK. The same two steps copy production into
+   `development`.
 5. Reconcile what happened after the backup: orders (Stripe, order emails, wineNET/ERP),
    **`shopSettings.lastInvoiceNumber`** (order/invoice number counter — set to the highest number
    already issued *before* taking orders, or numbers repeat), coupon `redemptionCount`, order
