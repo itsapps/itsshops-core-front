@@ -11,6 +11,9 @@ excludeFromSitemap: true
 /maintenance    /maintenance    200
 /*    /maintenance    302!
 {%- else %}
+{%- for _r in coreConfig.redirects %}
+{{ _r.from }}    {{ _r.to }}    {{ _r.status }}{% if _r.force %}!{% endif %}
+{%- endfor %}
 {%- for _locale in coreConfig.locales %}
 /{{ _locale }}*    /{{ _locale }}/404/    404
 {%- endfor %}

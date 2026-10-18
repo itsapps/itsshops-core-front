@@ -2,6 +2,7 @@ import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName
 import type { ClientPerspective } from '@sanity/client'
 import { buildPermalinkTranslations, buildUserPaths } from '../i18n/permalinks'
 import { readFormality } from '../i18n/formality'
+import { resolveRedirects } from './redirects'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
@@ -51,6 +52,7 @@ export function resolveConfig(config: Config): CoreConfig {
         extra: resolveCspDirectives(r.extra),
       })),
     },
+    redirects:     resolveRedirects(config.redirects),
     extensions:    config.extensions    ?? {},
     menu:          { maxDepth: config.menu?.maxDepth ?? 1 },
     units:         { volume: config.units?.volume ?? 'l', price: { currency: config.units?.price?.currency ?? 'EUR', currencyLabel: config.units?.price?.currencyLabel } },

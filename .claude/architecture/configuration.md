@@ -73,6 +73,16 @@ repos' configs aligned.
   `media-src`, `style-src`. Payment CSP is auto-managed when checkout is enabled. Full mechanism +
   when to use which directive (e.g. map tiles): [csp-and-headers.md](csp-and-headers.md).
 
+### Redirects
+- `redirects?: Redirect[]` — `{ from, to, status? (301), force? (false) }`, extra Netlify rules
+  (old URLs after a relaunch, short links). Core owns `_redirects` (`templates/misc/
+  netlify_redirects.njk`, protected) and writes them after the `/` language redirect and **before
+  the 404 catch-alls** — that's why `[[redirects]]` in a customer `netlify.toml` don't work for
+  missing pages (Netlify reads `_redirects` first; `/*` → 404 matches). Netlify syntax: `*` ↔
+  `:splat`, `:placeholder`. Not forced by default: an existing page at `from` wins. Validated in
+  `config/redirects.ts` (build throws on `from` not starting with `/`, `from: '/'`, whitespace,
+  bad `to`/status, duplicate `from`). Skipped in maintenance mode.
+
 ### Env-overridable runtime flags
 Each has an env default; the config value wins when set:
 `baseUrl` (`URL`), `doIndexPages` (`DO_INDEX_PAGES`), `maxProducts` (`MAX_PRODUCTS`),

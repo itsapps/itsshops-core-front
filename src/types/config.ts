@@ -198,6 +198,29 @@ export type HeadersConfig = {
   routes?: Array<{ path: string; extra: CspDirectives }>
 }
 
+// ─── Redirects ────────────────────────────────────────────────────────────────
+
+/**
+ * A Netlify redirect rule, written into `_redirects` before core's 404 catch-alls
+ * (e.g. old URLs after a relaunch). Netlify syntax applies: `*` in `from` ↔ `:splat` in `to`,
+ * `:placeholder` segments.
+ */
+export type Redirect = {
+  /** Path on this site, starting with `/` (not `/` itself — core owns the language redirect). */
+  from: string
+  /** Target path (`/…`) or absolute URL (`https://…`). */
+  to: string
+  /** Default 301 (permanent). */
+  status?: 301 | 302 | 307 | 308
+  /**
+   * Redirect even when a page exists at `from` (Netlify `!`). Default false — an existing page
+   * wins, which is what old relaunch URLs want.
+   */
+  force?: boolean
+}
+
+export type ResolvedRedirect = Required<Redirect>
+
 // ─── CSS / JS ─────────────────────────────────────────────────────────────────
 
 export type Css = {
@@ -370,6 +393,9 @@ export type Config = {
   // headers / CSP
   headers?: HeadersConfig
 
+  /** Extra Netlify redirects (old URLs after a relaunch, short links). */
+  redirects?: Redirect[]
+
   // data extensions
   extensions?: Extensions
 
@@ -475,6 +501,7 @@ export type CoreConfig = {
     extra:  ResolvedCspDirectives
     routes: Array<{ path: string; extra: ResolvedCspDirectives }>
   }
+  redirects: ResolvedRedirect[]
   extensions: Extensions
   menu: { maxDepth: number }
   units: { volume: string; price: { currency: string; currencyLabel?: string } }

@@ -4,6 +4,13 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.4.0
+
+### Added
+- `config.redirects` (`{ from, to, status?, force? }[]`): extra Netlify redirects (e.g. old URLs
+  after a relaunch), written into `_redirects` before the 404 catch-alls; default 301, not forced.
+  Validated at build time.
+
 ## 3.3.0
 
 ### Added
