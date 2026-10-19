@@ -129,8 +129,20 @@ describe('offer', () => {
     expect(g.hasVariant[1]).toEqual({ '@type': 'Product', url: BASE + sib.url })
   })
 
-  it('sku falls back to _id', () => {
+  it('sku falls back to _id without the type prefix, max 50 chars', () => {
     expect(main(productPage(variant({ sku: '' }))).sku).toBe('v1')
+    const uuid = 'ee03765d-4498-4a1f-aba2-c0c3e13aaf10'
+    expect(main(productPage(variant({ sku: '', _id: `productVariant-${uuid}` }))).sku).toBe(uuid)
+    expect(main(productPage(variant({ sku: 'x'.repeat(60) }))).sku).toHaveLength(50)
+  })
+
+  it('carries the return policy (also on the Organization)', () => {
+    expect(main(productPage(variant())).offers.hasMerchantReturnPolicy).toMatchObject({
+      '@type': 'MerchantReturnPolicy',
+      refundType: 'https://schema.org/FullRefund',
+    })
+    expect(main(productPage(variant(), { cfg: config({ checkout: false }) })).offers).not.toHaveProperty('hasMerchantReturnPolicy')
+    expect(main(productPage(variant(), { s: settings({ company: null } as any) })).offers).not.toHaveProperty('hasMerchantReturnPolicy')
   })
 })
 
@@ -297,6 +309,7 @@ describe('return policy', () => {
       merchantReturnDays: 14,
       returnMethod: 'https://schema.org/ReturnByMail',
       returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+      refundType: 'https://schema.org/FullRefund',
       merchantReturnLink: BASE + '/de/widerruf/',
     })
   })
@@ -315,6 +328,13 @@ describe('return policy', () => {
 
   it('no link when the withdrawal page is unset', () => {
     expect(org(settings(), shop({ withdrawalPolicyUrl: '#' })).hasMerchantReturnPolicy).not.toHaveProperty('merchantReturnLink')
+  })
+
+  it('Organization image from the default share image', () => {
+    const s = settings({ defaultShareImage: { asset: {} } } as any)
+    expect(ld(buildWebSiteSchema(s, config(), 'de', shop(), imageUrl)).find(o => o['@type'] === 'Organization').image)
+      .toBe('https://img.example/x.jpg')
+    expect(org()).not.toHaveProperty('image')
   })
 
   it('none without company.name or checkout', () => {

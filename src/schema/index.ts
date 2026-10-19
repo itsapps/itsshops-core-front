@@ -21,6 +21,9 @@ interface SchemaContext {
   products: ResolvedVariant[]
   /** Set only with the checkout feature on — offers then carry `shippingDetails`. */
   shipping: ShippingContext | null
+  /** Shop-wide return policy, repeated on each offer (Google's offer-level check doesn't pick up
+   *  the Organization's). Null without checkout / `company.name`. */
+  returnPolicy: object | null
 }
 
 /** Shop data for the merchant-listing parts (shipping, return policy). */
@@ -66,11 +69,19 @@ function buildReturnPolicy(settings: ResolvedSettings, shop: SchemaShopData, bas
     returnFees:           borneBy === 'merchant'
       ? 'https://schema.org/FreeReturn'
       : 'https://schema.org/ReturnFeesCustomerResponsibility',
+    // Statutory withdrawal: the full price is refunded
+    refundType:           'https://schema.org/FullRefund',
     ...(link && { merchantReturnLink: link }),
   }
 }
 
-function buildOrganizationFull(settings: ResolvedSettings, baseUrl: string, returnPolicy?: object): object {
+/** Return policy when the shop sells online and the Organization exists (it needs `company.name`). */
+function shopReturnPolicy(settings: ResolvedSettings | null, config: CoreConfig, shop?: SchemaShopData): object | undefined {
+  if (!settings?.company?.name || !shop || !config.features.shop.checkout || !config.baseUrl) return undefined
+  return buildReturnPolicy(settings, shop, config.baseUrl)
+}
+
+function buildOrganizationFull(settings: ResolvedSettings, baseUrl: string, returnPolicy?: object, image?: string): object {
   const { company } = settings
   if (!company?.name) return orgRef(baseUrl)
 
@@ -89,6 +100,7 @@ function buildOrganizationFull(settings: ResolvedSettings, baseUrl: string, retu
     ...(addr             && { address:   addr }),
     ...(company.email    && { email:     company.email }),
     ...(company.phone    && { telephone: company.phone }),
+    ...(image            && { image }),
     ...(returnPolicy     && { hasMerchantReturnPolicy: returnPolicy }),
   }
 }
@@ -110,6 +122,12 @@ function buildBreadcrumb(items: Array<{ name: string; url: string }>): object {
  *  vintages / sizes apart. */
 function variantName(variant: ResolvedVariant): string {
   return variant.label && variant.label !== variant.title ? `${variant.title} ${variant.label}` : variant.title
+}
+
+/** Google allows 1–50 characters. Without an own SKU the variant's id without its type prefix
+ *  (`productVariant-<uuid>` is 51). */
+function variantSku(variant: ResolvedVariant): string {
+  return (variant.sku || variant._id.replace(/^productVariant-/, '')).slice(0, 50)
 }
 
 /** Brand: first manufacturer, else the site title (the shop's brand name), else the company name.
@@ -137,6 +155,7 @@ function buildOffer(variant: ResolvedVariant, url: string, seller: object | unde
     itemCondition:     'https://schema.org/NewCondition',
     ...(seller                      && { seller }),
     ...(shippingDetails.length > 0  && { shippingDetails }),
+    ...(ctx.returnPolicy            && { hasMerchantReturnPolicy: ctx.returnPolicy }),
   }
 }
 
@@ -207,7 +226,7 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
       '@type':    'Product',
       name:       variant.title,
       url:        pageUrl,
-      sku:        variant.sku || variant._id,
+      sku:        variantSku(variant),
       ...(desc                           && { description: desc }),
       ...(image                          && { image }),
       ...(brand                          && { brand }),
@@ -239,7 +258,7 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
         '@type':              'Product',
         name:                 variantName(variant),
         url:                  pageUrl,
-        sku:                  variant.sku || variant._id,
+        sku:                  variantSku(variant),
         inProductGroupWithID: groupId,
         ...(desc                           && { description: desc }),
         ...(image                          && { image }),
@@ -354,13 +373,13 @@ export function buildWebSiteSchema(
   config: CoreConfig,
   locale: string,
   shop?: SchemaShopData,
+  imageUrl?: ImageUrlFn,
 ): string {
   if (!settings || !config.baseUrl) return ''
   const baseUrl  = config.baseUrl
   const hasOrg   = !!settings.company?.name
-  const returnPolicy = hasOrg && shop && config.features.shop.checkout
-    ? buildReturnPolicy(settings, shop, baseUrl)
-    : undefined
+  const returnPolicy = shopReturnPolicy(settings, config, shop)
+  const image = settings.defaultShareImage && imageUrl ? imageUrl(settings.defaultShareImage, 1200) : undefined
 
   const website = schemaScript({
     '@context':  'https://schema.org',
@@ -374,7 +393,7 @@ export function buildWebSiteSchema(
   })
 
   const organization = hasOrg
-    ? schemaScript({ '@context': 'https://schema.org', ...buildOrganizationFull(settings, baseUrl, returnPolicy) })
+    ? schemaScript({ '@context': 'https://schema.org', ...buildOrganizationFull(settings, baseUrl, returnPolicy, image) })
     : ''
 
   return website + '\n' + organization
@@ -397,7 +416,8 @@ export function buildPageDocSchema(
         freeShippingCalculation: shop.shopSettings?.freeShippingCalculation ?? 'afterDiscount',
       }
     : null
-  const ctx: SchemaContext = { locale, settings, config, imageUrl, products, shipping }
+  const returnPolicy = shopReturnPolicy(settings, config, shop) ?? null
+  const ctx: SchemaContext = { locale, settings, config, imageUrl, products, shipping, returnPolicy }
 
   switch (pageDoc._type) {
     case 'productVariant': return buildProductSchema(pageDoc, ctx)

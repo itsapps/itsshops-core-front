@@ -426,7 +426,7 @@ export const createFilters = (ctx: CoreContext) => {
   })
   eleventyConfig.addFilter('webSiteSchema', function (settings: any) {
     const locale = this.page?.lang || config.defaultLocale
-    return buildWebSiteSchema(settings, config, locale, schemaShopData((this as any).ctx?.cms?.[locale]))
+    return buildWebSiteSchema(settings, config, locale, schemaShopData((this as any).ctx?.cms?.[locale]), (img, w, h) => imageUrl(ctx.imageBuilder, img, w, h))
   })
   eleventyConfig.addFilter('map', map as any)
   eleventyConfig.addFilter('truncate', truncate as any)

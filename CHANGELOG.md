@@ -4,6 +4,18 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+### Fixed
+- schema.org `sku` fallback was `productVariant-<uuid>` (51 chars, Google allows 1–50) — now the
+  bare id, capped at 50.
+
+### Changed
+- Return policy also on each offer (`offers.hasMerchantReturnPolicy`): Google's Rich Results Test
+  doesn't apply the Organization's policy to offers. It gets `refundType: FullRefund` (statutory
+  withdrawal refunds the price).
+- `Organization` gets `image` from `settings.defaultShareImage` (Google's local-business check).
+
 ## 3.5.1
 
 ### Changed
