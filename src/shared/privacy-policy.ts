@@ -40,6 +40,8 @@ export type PrivacyPolicyInput = {
     /** vinofact bottle images are fetched (`'bottleImage'` in `vinofact.fields`) → loaded from i.vinofact.com. */
     vinofact: boolean
     ageGate: boolean
+    /** Site search configured (`extensions.search`) → recent searches kept in localStorage. */
+    search: boolean
   }
   /** At least one shipping method delivers (not pickup only) → carrier paragraph. */
   hasDelivery: boolean
@@ -167,12 +169,18 @@ export function buildPrivacyPolicy(input: PrivacyPolicyInput, t: PrivacyT): Priv
     f.checkout && 'pendingPayment',
     f.checkout && 'orderSnapshot',
     f.ageGate && 'ageGate',
-    'search',
+    f.search && 'search',
   ].filter((v): v is string => !!v).map((item) => t(`privacyPolicy.storage.items.${item}`))
-  add('storage', ['intro'], {}, storageItems)
-  // The outro follows the list.
-  sections[sections.length - 1].paragraphs.push(
-    rich(t(`privacyPolicy.storage.${f.checkout || f.users ? 'outroCookies' : 'outro'}`)))
+    // The list reads as one sentence: commas between items, a full stop after the last.
+    .map((item, i, all) => item.replace(/[,.]$/, '') + (i < all.length - 1 ? ',' : '.'))
+  if (storageItems.length) {
+    add('storage', ['intro'], {}, storageItems)
+    // The outro follows the list.
+    sections[sections.length - 1].paragraphs.push(
+      rich(t(`privacyPolicy.storage.${f.checkout || f.users ? 'outroCookies' : 'outro'}`)))
+  } else {
+    add('storage', [f.users ? 'noneCookies' : 'none'])
+  }
 
   if (f.checkout) add('required', ['text'])
   add('automated', ['text', f.checkout && 'stripe'])

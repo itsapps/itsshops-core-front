@@ -164,6 +164,7 @@ export default {
       },
       outro: "Du kannst diese Daten jederzeit in den Einstellungen Deines Browsers löschen.",
       outroCookies: "Du kannst diese Daten jederzeit in den Einstellungen Deines Browsers löschen. Cookies für Zahlung und Kundenkonto sind in den jeweiligen Abschnitten beschrieben.",
+      none: "Wir setzen keine Cookies und speichern keine Daten in Deinem Browser.",
     },
     required: {
       text: "Für eine Bestellung benötigen wir Name, Rechnungs- und Lieferadresse sowie Deine E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",

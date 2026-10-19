@@ -367,6 +367,7 @@ export const createFilters = (ctx: CoreContext) => {
         // Only bottle images load from i.vinofact.com; other vinofact data is fetched at build time.
         vinofact: shop.vinofact.enabled && !!shop.vinofact.fields?.includes('bottleImage'),
         ageGate: config.ageGate.enabled,
+        search: !!config.extensions.search,
       },
       hasDelivery: (localeData?.shippingMethods ?? []).some((m) => m.methodType !== 'pickup'),
       hasWithdrawal: !!localeData?.orderWithdrawUrl && localeData.orderWithdrawUrl !== '#',

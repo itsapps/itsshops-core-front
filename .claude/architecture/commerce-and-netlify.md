@@ -316,7 +316,7 @@ Each section has a condition, so the text follows the features:
 | captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it) |
 | vinofact | vinofact on **and** `'bottleImage'` in `vinofact.fields` (only bottle images load from `i.vinofact.com`) |
 | `module.extraSections` (editor: map, embeds …) | after vinofact, before storage |
-| storage (list: cart/coupon, pending payment, order snapshot, age gate, recent searches) | always, items filtered |
+| storage (list: cart/coupon, pending payment, order snapshot, age gate, recent searches — the last only with `extensions.search`; nothing stored → one "no cookies, no browser storage" sentence) | always, items filtered |
 | required data, automated decisions (+ Stripe fraud screening) | checkout / always |
 | rights, complaint (DSB), "Stand" line | always |
 

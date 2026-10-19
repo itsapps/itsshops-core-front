@@ -618,6 +618,8 @@ export default {
       },
       outro: "Sie können diese Daten jederzeit in den Einstellungen Ihres Browsers löschen.",
       outroCookies: "Sie können diese Daten jederzeit in den Einstellungen Ihres Browsers löschen. Cookies für Zahlung und Kundenkonto sind in den jeweiligen Abschnitten beschrieben.",
+      none: "Wir setzen keine Cookies und speichern keine Daten in Ihrem Browser.",
+      noneCookies: "Wir setzen keine Cookies zu Analyse- oder Werbezwecken. Cookies und Browserdaten für das Kundenkonto sind im jeweiligen Abschnitt beschrieben.",
     },
     required: {
       heading: "Pflichtangaben",

@@ -618,6 +618,8 @@ export default {
       },
       outro: "You can delete this data at any time in your browser settings.",
       outroCookies: "You can delete this data at any time in your browser settings. Cookies for payment and the customer account are described in the respective sections.",
+      none: "We do not set any cookies or store any data in your browser.",
+      noneCookies: "We do not use cookies for analytics or advertising. Cookies and browser data for the customer account are described in the respective section.",
     },
     required: {
       heading: "Required data",

@@ -27,7 +27,7 @@ const input = (over: Partial<PrivacyPolicyInput> = {}): PrivacyPolicyInput => ({
     email: 'shop@weingut.example',
   },
   // Tinhof-like: checkout + vinofact, Resend, wineNET, withdrawal function, delivery
-  features: { checkout: true, users: false, newsletter: false, vinofact: true, ageGate: false },
+  features: { checkout: true, users: false, newsletter: false, vinofact: true, ageGate: false, search: true },
   hasDelivery: true,
   hasWithdrawal: true,
   services: { emailProvider: 'resend', mailgunEu: true, wcApi: true },
@@ -52,7 +52,7 @@ describe('privacy policy', () => {
 
   it('adds account, newsletter and spam protection for a full config', () => {
     const p = buildPrivacyPolicy(input({
-      features: { checkout: true, users: true, newsletter: true, vinofact: false, ageGate: true },
+      features: { checkout: true, users: true, newsletter: true, vinofact: false, ageGate: true, search: true },
       captcha: true,
     }), tDe)
     expect(ids(p)).toEqual(expect.arrayContaining(['account', 'newsletter', 'captcha']))
@@ -62,12 +62,28 @@ describe('privacy policy', () => {
 
   it('leaves out shop sections on a site without checkout', () => {
     const p = buildPrivacyPolicy(input({
-      features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: false },
+      features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: false, search: true },
       services: { emailProvider: 'resend', mailgunEu: true, wcApi: true },
     }), tDe)
     expect(ids(p)).toEqual(['controller', 'overview', 'hosting', 'content', 'storage', 'automated', 'rights', 'complaint'])
     expect(text(p, 'overview')).not.toContain('bestellen')
     expect(section(p, 'storage').items).toEqual(['Ihre letzten Suchbegriffe.'])
+  })
+
+  it('lists recent searches only with site search, and says so when nothing is stored', () => {
+    const noSearch = buildPrivacyPolicy(input({
+      features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: true, search: false },
+    }), tDe)
+    expect(section(noSearch, 'storage').items).toEqual(['Ihre Bestätigung des Mindestalters.'])
+    const nothing = buildPrivacyPolicy(input({
+      features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: false, search: false },
+    }), tDe)
+    expect(section(nothing, 'storage').items).toBeUndefined()
+    expect(text(nothing, 'storage')).toBe('Wir setzen keine Cookies und speichern keine Daten in Ihrem Browser.')
+    const account = buildPrivacyPolicy(input({
+      features: { checkout: false, users: true, newsletter: false, vinofact: false, ageGate: false, search: false },
+    }), tEn)
+    expect(text(account, 'storage')).toContain('customer account')
   })
 
   it('returns null and lists missing company data', () => {
@@ -122,7 +138,7 @@ describe('privacy policy', () => {
 
   it('has every key it uses in all languages', () => {
     const full = input({
-      features: { checkout: true, users: true, newsletter: true, vinofact: true, ageGate: true },
+      features: { checkout: true, users: true, newsletter: true, vinofact: true, ageGate: true, search: true },
       captcha: true,
       dpoContact: 'x',
     })

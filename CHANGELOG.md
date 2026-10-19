@@ -4,6 +4,13 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.4.1
+
+### Fixed
+- `privacyPolicyModule`: "recent searches" is listed under browser storage only when site search
+  is configured (`extensions.search`); a site that stores nothing gets one sentence ("no cookies,
+  no browser storage") instead of an empty list. The last list item always ends with a full stop.
+
 ## 3.4.0
 
 ### Added
