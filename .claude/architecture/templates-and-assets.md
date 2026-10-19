@@ -319,3 +319,38 @@ put only the fonts needed above the fold there.
 `createFilters(ctx)` / `createShortcodes(ctx)` register the Nunjucks template API — including the
 image shortcodes/filters that wrap `src/image/`, and `src/schema/` schema.org output. Full catalog:
 [filters-and-shortcodes.md](filters-and-shortcodes.md).
+
+### schema.org (JSON-LD, `src/schema/`)
+
+`core/head/schemas.njk` emits, on every non-noindex page, `WebSite` + `Organization` (only when
+`company.name` is set) via `webSiteSchema`, and the page's own schema via `pageSchema`:
+
+| Page | Output |
+|---|---|
+| Product (variant) without sibling pages | `Product` + one `Offer` + `BreadcrumbList` |
+| Product with sibling variants (vintages, sizes) | Google's multi-page `ProductGroup` (`productGroupID` = product `_id`, no group `url`): this page's variant in full (`name` = title + label, `sku` or `_id`, `inProductGroupWithID`), siblings as URL-only `Product` stubs; `variesBy` size only when volumes differ |
+| Product with price 0 / unset | breadcrumb only — a `Product` without offers is an invalid item for Google |
+| Category | `ItemList` of plain `ListItem`s (no `Product` — product markup belongs on product pages) |
+| Page / post | `WebPage` / `BlogPosting` |
+
+Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only with
+`features.shop.checkout`):
+- **brand:** first manufacturer, else `settings.siteTitle`, else `company.name` (brand instead of
+  GTIN). No `priceValidUntil` (no real end date).
+- **availability** mirrors checkout (`cart-validator.ts`): non-active → `OutOfStock`; stock counts
+  only with `features.shop.stock`.
+- **`shippingDetails`** on in-stock offers: one `OfferShippingDetails` per delivery method with
+  countries — the cost of this item alone, priced by **checkout's** `resolveShippingMethods`
+  (packaging groups / weight rates / free-shipping threshold, so markup = checkout), all the
+  method's countries, and `deliveryTime.transitTime` parsed from the method's delivery-time text
+  (numbers: "2 – 5 Werktage"; unparseable → omitted, and Google ignores the entry). Weight: the
+  variant's or product's `weight`, wines estimated from the volume (`resolveVariantWeight` /
+  `resolveBundleWeight` in `netlify/lib/shipping.ts`, shared with checkout). Rates without
+  `maxWeight` aren't published.
+- **`hasMerchantReturnPolicy`** once on the `Organization` (Google's default for all offers): 14 days
+  by mail to the union of the delivery methods' countries, `returnPolicyCountry` = return address
+  (else company) country, fees from `returnShippingBorneBy` (`customer` →
+  `ReturnFeesCustomerResponsibility`, `merchant` → `FreeReturn`), link = withdrawal-policy page.
+  Statutory exceptions aren't expressible. Without `company.name` there's no policy at all.
+- Not generated: reviews/ratings (none exist; the Search Console warning is harmless), `validFrom`.
+- Verify with Google's Rich Results Test on a product page (go-live checklist).

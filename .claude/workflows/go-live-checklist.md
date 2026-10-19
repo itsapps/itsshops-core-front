@@ -75,6 +75,10 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] Test withdrawal (matched + one with a made-up order number): receipt with date/time, shop
       notification to the shop inbox; delete the test records in the Studio afterwards.
 - [ ] `npm run check:functions` passed for the core version being deployed.
+- [ ] **Rich Results Test** (<https://search.google.com/test/rich-results>) on a product page with
+      sibling variants and one without: product/merchant listing valid, shipping details and return
+      policy recognised. Needs `company.name`, shipping methods with a delivery time in days ("2 – 5
+      Werktage") and the return settings (`templates-and-assets.md` → "schema.org").
 
 ## Data safety
 

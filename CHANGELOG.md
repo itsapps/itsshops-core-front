@@ -4,6 +4,34 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.5.0
+
+### Added
+- schema.org for Google merchant listings: `shippingDetails` per offer (one per delivery method,
+  priced by checkout's shipping calculation, delivery time parsed from the method's text) and a
+  shop-wide `hasMerchantReturnPolicy` on the `Organization` (14 days, by mail, fees from
+  `returnShippingBorneBy`). Only with `features.shop.checkout`.
+- Product brand falls back to `settings.siteTitle`, then `company.name` (fixes "no global
+  identifier").
+- Products with sibling variants are marked up as a `ProductGroup` (multi-page variants).
+- `weight` on `ResolvedVariant` and `ResolvedBundleItem.variant`; `product.description` on
+  `ResolvedVariant`.
+
+### Changed
+- No `priceValidUntil` on offers. Availability follows checkout (sold out / coming soon →
+  `OutOfStock`; stock only with the stock feature). Variants without a price get no product markup.
+- Category pages list plain `ListItem`s instead of `Product`s with offers.
+- Checkout: weight rules moved into `resolveVariantWeight` / `resolveBundleWeight`
+  (`netlify/lib/shipping.ts`), behaviour unchanged; shipping functions take a narrower
+  `ShippingCartItem`.
+
+### Upgrading
+- Check per shop before release — the markup publishes them to Google: shipping methods (countries,
+  rates), the delivery time on each delivery method (must contain the days as numbers, e.g.
+  "2 – 5 Werktage" — otherwise Google ignores the shipping details), `company.name`, return
+  address and `returnShippingBorneBy`.
+- After going live: Rich Results Test on a product page, then "Validate fix" in Search Console.
+
 ## 3.4.1
 
 ### Fixed

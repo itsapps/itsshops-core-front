@@ -5,7 +5,7 @@ import type { CoreContext, TranslatorParams } from "../types";
 import { imageUrl, imageSizeUrl, image, imageSrcsetData, vinofactImageUrl, vinofactSrcset } from "../image"
 import { renderPortableText } from "../data/portableText"
 import type { PortableTextOptions } from "../data/portableText"
-import { buildPageDocSchema, buildWebSiteSchema } from "../schema"
+import { buildPageDocSchema, buildWebSiteSchema, type SchemaShopData } from "../schema"
 import { buildWithdrawalInstructions, missingWithdrawalData, type WithdrawalInstructionsInput } from "../shared/withdrawal-instructions"
 import { buildPrivacyPolicy, missingPrivacyData, type PrivacyPolicyInput } from "../shared/privacy-policy"
 import { ORDER_META_RETENTION_DAYS } from "../config/constants"
@@ -413,14 +413,20 @@ export const createFilters = (ctx: CoreContext) => {
     const locale = this.page?.lang || config.defaultLocale
     return (this as any).ctx?.cms?.[locale]?.docMap?.[id] ?? null
   })
+  const schemaShopData = (cmsLocale: any): SchemaShopData => ({
+    shopSettings:        cmsLocale?.shopSettings ?? null,
+    shippingMethods:     cmsLocale?.shippingMethods ?? [],
+    withdrawalPolicyUrl: cmsLocale?.withdrawalPolicyUrl ?? '#',
+  })
   eleventyConfig.addFilter('pageSchema', function (pageDoc: any, settings: any) {
     const locale = this.page?.lang || config.defaultLocale
-    const products = (this as any).ctx?.cms?.[locale]?.products ?? []
-    return buildPageDocSchema(pageDoc, locale, settings, config, (img, w, h) => imageUrl(ctx.imageBuilder, img, w, h), products)
+    const cmsLocale = (this as any).ctx?.cms?.[locale]
+    const products = cmsLocale?.products ?? []
+    return buildPageDocSchema(pageDoc, locale, settings, config, (img, w, h) => imageUrl(ctx.imageBuilder, img, w, h), products, schemaShopData(cmsLocale))
   })
   eleventyConfig.addFilter('webSiteSchema', function (settings: any) {
     const locale = this.page?.lang || config.defaultLocale
-    return buildWebSiteSchema(settings, config, locale)
+    return buildWebSiteSchema(settings, config, locale, schemaShopData((this as any).ctx?.cms?.[locale]))
   })
   eleventyConfig.addFilter('map', map as any)
   eleventyConfig.addFilter('truncate', truncate as any)

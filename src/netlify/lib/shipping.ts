@@ -9,6 +9,10 @@ import type {
 } from '../types/checkout'
 import { log } from '../utils/logger'
 
+/** What the shipping calculation reads from a cart line — checkout passes full `ValidatedCartItem`s,
+ *  the schema.org markup builds these from resolved variants (`src/schema/shipping.ts`). */
+export type ShippingCartItem = Pick<ValidatedCartItem, 'kind' | 'quantity' | 'weight' | 'wine' | 'bundleItems'>
+
 /**
  * Resolve a localized string array to a single string for the given locale.
  */
@@ -41,6 +45,51 @@ export function estimateWineBottleWeight(volumeMl: number): number {
   return Math.round(volumeMl + glass)
 }
 
+type WeightKind = 'wine' | 'physical' | 'digital' | 'bundle'
+
+/**
+ * Shipping weight (grams) of a single physical or wine variant: explicit weight on the variant or
+ * its product; wines without one are estimated from the bottle volume. Other kinds → null.
+ */
+export function resolveVariantWeight(v: {
+  kind: WeightKind
+  weight?: number | null
+  productWeight?: number | null
+  wine?: { volume?: number | null } | null
+}): number | null {
+  if (v.kind === 'physical') return v.weight ?? v.productWeight ?? null
+  if (v.kind === 'wine') {
+    return v.weight ?? v.productWeight
+      ?? (v.wine?.volume ? estimateWineBottleWeight(v.wine.volume) : null)
+  }
+  return null
+}
+
+/**
+ * Total shipping weight (grams) of a bundle: children's weights × child quantity, null when 0.
+ * A wine child is always estimated from its volume (its explicit weight is ignored — unlike
+ * `resolveVariantWeight`; kept as is, see the plan's "Separate, later").
+ */
+export function resolveBundleWeight(children: Array<{
+  kind: WeightKind
+  quantity: number
+  weight?: number | null
+  productWeight?: number | null
+  wine?: { volume?: number | null } | null
+}>): number | null {
+  let total = 0
+  for (const child of children) {
+    let grams = 0
+    if (child.kind === 'physical') {
+      grams = child.weight ?? child.productWeight ?? 0
+    } else if (child.kind === 'wine' && child.wine?.volume) {
+      grams = estimateWineBottleWeight(child.wine.volume)
+    }
+    total += grams * child.quantity
+  }
+  return total > 0 ? total : null
+}
+
 /**
  * Calculate total weight of cart items in kilograms.
  *
@@ -53,7 +102,7 @@ export function estimateWineBottleWeight(volumeMl: number): number {
  *
  * This function just sums the pre-resolved grams.
  */
-export function calculateCartWeight(items: ValidatedCartItem[]): number {
+export function calculateCartWeight(items: ShippingCartItem[]): number {
   let totalGrams = 0
   for (const item of items) {
     if (item.weight) totalGrams += item.weight * item.quantity
@@ -151,8 +200,9 @@ const lcm = (a: number, b: number): number => (a / gcd(a, b)) * b
  * returns null (method not applicable). Non-wine items are returned as grams for the weight rates.
  */
 export function calcWinePackagingCost(
-  items: ValidatedCartItem[],
+  items: ShippingCartItem[],
   groups: SanityPackagingGroupResult[],
+  options: { quiet?: boolean } = {},
 ): { packagingCost: number; nonWineWeightGrams: number; packagingLines: PackagingLine[] } | null {
   const bottlesByVolume = new Map<number, number>()
   let nonWineWeightGrams = 0
@@ -199,7 +249,7 @@ export function calcWinePackagingCost(
     if (!target) {
       const larger = listedVolumes.find(v => v >= volume)
       if (larger === undefined) return null
-      log.warn('Packaging: bottle size not in any packaging group, using the next larger size', { volume, larger })
+      if (!options.quiet) log.warn('Packaging: bottle size not in any packaging group, using the next larger size', { volume, larger })
       target = { group: listed.get(larger)!.group, perPlace: 1 }
     }
     const entry = perGroup.get(target.group) ?? { counts: [], volumes: new Set<number>() }
@@ -249,15 +299,17 @@ export function isFreeShipping(
 
 /**
  * Resolve available shipping methods for a given country and cart.
- * Returns methods with their calculated prices.
+ * Returns methods with their calculated prices. `quiet` silences the per-call packaging warning
+ * (the schema.org markup prices every product page × method × locale at build time).
  */
 export function resolveShippingMethods(
   methods: SanityShippingMethodResult[],
-  items: ValidatedCartItem[],
+  items: ShippingCartItem[],
   subtotal: number,
   discount: number,
   freeShippingCalculation: 'beforeDiscount' | 'afterDiscount',
   locale: string,
+  options: { quiet?: boolean } = {},
 ): AvailableShippingMethod[] {
   const cartWeightKg = calculateCartWeight(items)
   const available: AvailableShippingMethod[] = []
@@ -284,7 +336,7 @@ export function resolveShippingMethods(
     let packagingLines: PackagingLine[] | undefined
 
     if (method.packagingGroups?.length) {
-      const packaging = calcWinePackagingCost(items, method.packagingGroups)
+      const packaging = calcWinePackagingCost(items, method.packagingGroups, options)
       if (!packaging) continue // bottle size not covered — method not applicable
       packagingLines = packaging.packagingLines
 

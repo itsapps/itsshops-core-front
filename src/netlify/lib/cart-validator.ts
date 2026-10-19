@@ -6,7 +6,7 @@ import type {
 } from '../types/checkout'
 import type { CheckoutCartItem } from '../types/api'
 import { findTaxRate, extractVat } from './tax'
-import { resolveLocalizedTitle, estimateWineBottleWeight } from './shipping'
+import { resolveLocalizedTitle, resolveVariantWeight, resolveBundleWeight } from './shipping'
 import { composeSubtitle } from './order-item-display'
 
 const MAX_DISPLAY_LEN = 300
@@ -76,30 +76,12 @@ export function validateCart(
       || resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)
 
     // Resolve shipping weight (grams).
-    // - physical: explicit weight on variant or parent product
-    // - wine:     estimated from bottle volume (no schema weight field)
-    // - bundle:   sum of children's resolved weights × child quantity
-    // - digital:  null (skipped by shipping calculator)
-    let weight: number | null = null
-    if (variant.kind === 'physical') {
-      weight = variant.weight ?? variant.productWeight ?? null
-    } else if (variant.kind === 'wine') {
-      weight = variant.weight ?? variant.productWeight
-        ?? (variant.wine?.volume ? estimateWineBottleWeight(variant.wine.volume) : null)
-    } else if (variant.kind === 'bundle' && variant.bundleItems) {
-      let total = 0
-      for (const bi of variant.bundleItems) {
-        const child = bi.variant
-        let childGrams = 0
-        if (child.kind === 'physical') {
-          childGrams = child.weight ?? child.productWeight ?? 0
-        } else if (child.kind === 'wine' && child.wine?.volume) {
-          childGrams = estimateWineBottleWeight(child.wine.volume)
-        }
-        total += childGrams * bi.quantity
-      }
-      weight = total > 0 ? total : null
-    }
+    // - physical / wine: see `resolveVariantWeight` (wine falls back to the bottle-volume estimate)
+    // - bundle:          sum of children's weights × child quantity (`resolveBundleWeight`)
+    // - digital:         null (skipped by shipping calculator)
+    const weight = variant.kind === 'bundle'
+      ? (variant.bundleItems ? resolveBundleWeight(variant.bundleItems.map(bi => ({ ...bi.variant, quantity: bi.quantity }))) : null)
+      : resolveVariantWeight(variant)
 
     const options = variant.options?.map(o => ({
       groupTitle: resolveLocalizedTitle(o.groupTitle, locale, defaultLocale),
@@ -108,13 +90,7 @@ export function validateCart(
 
     const bundleItems = variant.bundleItems?.map(bi => {
       const childKind = bi.variant.kind
-      let childWeight: number | null = null
-      if (childKind === 'physical') {
-        childWeight = bi.variant.weight ?? bi.variant.productWeight ?? null
-      } else if (childKind === 'wine') {
-        childWeight = bi.variant.weight ?? bi.variant.productWeight
-          ?? (bi.variant.wine?.volume ? estimateWineBottleWeight(bi.variant.wine.volume) : null)
-      }
+      const childWeight = resolveVariantWeight(bi.variant)
       return {
         variantId: bi.variant._id,
         quantity: bi.quantity,

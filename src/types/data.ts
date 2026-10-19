@@ -149,6 +149,8 @@ export type ResolvedBundleItem = {
     kind: string
     volume: number | null
     vintage: string | null
+    /** Explicit shipping weight (grams) of the child variant, else its product's; null when unset. */
+    weight: number | null
     options: { _id: string; name: string }[]
   }
 }
@@ -299,6 +301,9 @@ export type ResolvedVariant = {
   manufacturers: ResolvedManufacturer[]
   taxCategoryId: string | null
   stock: number | null
+  /** Explicit shipping weight (grams) — the variant's, else the product's; null when unset (wines
+   *  are then estimated from the volume, see `resolveVariantWeight`). */
+  weight: number | null
   wine: ResolvedWine | null
   options: ResolvedOption[]
   /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
@@ -309,7 +314,8 @@ export type ResolvedVariant = {
   description: string | null
   /** Label/value lines ("Material: 100% Baumwolle") — the variant's own list, else the product's. */
   specifications: ResolvedSpecification[]
-  product: { _id: string; title: string }
+  /** The parent product; `description` is the product's own (not the variant's) plain text. */
+  product: { _id: string; title: string; description: string | null }
   siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string; price: number | null; volume: number | null; vintage: string | null }>
   /** URL-safe filter attributes for client-side filtering. Key = filter group key, value = slugified values. */
   filterAttributes: Record<string, string[]>

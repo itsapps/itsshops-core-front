@@ -375,6 +375,7 @@ export function resolveVariants(
       })),
       taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
       stock: variant.stock ?? null,
+      weight: variant.weight ?? product.weight ?? null,
       wine,
       options: (variant.options ?? [])
         // guard against an option with an unset/dangling group ref (group is
@@ -403,6 +404,7 @@ export function resolveVariants(
             kind:    rawV.kind ?? rawP?.kind ?? 'physical',
             volume:  rawV.wine?.volume  ?? null,
             vintage: rawV.wine?.vintage ?? null,
+            weight:  rawV.weight ?? rawP?.weight ?? null,
             options: (rawV.options ?? []).map((o: any) => ({
               _id:  o._id,
               name: ctx.resolveString(o.name),
@@ -418,6 +420,7 @@ export function resolveVariants(
       product: {
         _id:   product._id,
         title: ctx.resolveString(product.title),
+        description: ctx.resolveString(product.description) || null,
       },
       siblings,
       filterAttributes,
