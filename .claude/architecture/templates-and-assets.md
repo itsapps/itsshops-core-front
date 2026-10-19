@@ -347,10 +347,15 @@ Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only
   variant's or product's `weight`, wines estimated from the volume (`resolveVariantWeight` /
   `resolveBundleWeight` in `netlify/lib/shipping.ts`, shared with checkout). Rates without
   `maxWeight` aren't published.
-- **`hasMerchantReturnPolicy`** once on the `Organization` (Google's default for all offers): 14 days
+- **`hasMerchantReturnPolicy`** on the `Organization` **and on each offer** (Google's Rich Results
+  Test doesn't apply the Organization's policy to offers — checked live 2026-10-19): 14 days
   by mail to the union of the delivery methods' countries, `returnPolicyCountry` = return address
   (else company) country, fees from `returnShippingBorneBy` (`customer` →
-  `ReturnFeesCustomerResponsibility`, `merchant` → `FreeReturn`), link = withdrawal-policy page.
+  `ReturnFeesCustomerResponsibility`, `merchant` → `FreeReturn`), link = withdrawal-policy page, `refundType` `FullRefund`.
   Statutory exceptions aren't expressible. Without `company.name` there's no policy at all.
-- Not generated: reviews/ratings (none exist; the Search Console warning is harmless), `validFrom`.
+- **`sku`:** own SKU, else the variant id without `productVariant-` (Google allows 1–50 chars).
+  `Organization.image` = `settings.defaultShareImage`.
+- Not generated: reviews/ratings (none exist; the Search Console warning is harmless), `validFrom`,
+  `handlingTime` (unknown — the delivery-time text is the total, published as `transitTime`;
+  optional warning).
 - Verify with Google's Rich Results Test on a product page (go-live checklist).
