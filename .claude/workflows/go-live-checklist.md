@@ -80,6 +80,18 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] Weekly **production dataset backup** running (own private `sanity-backups` repo) and one
       restore test done (decrypt + unpack): `workflows/sanity-dataset-backups.md`.
 
+## Relaunch & search engines (right after go-live)
+
+- [ ] **Relaunch: old URLs redirected** via `config.redirects` (`configuration.md` → "Redirects";
+      `netlify.toml` rules don't work — core's 404 catch-alls match first). Old URL sources: the old
+      `sitemap.xml`; Search Console → Performance → Pages (16 months, data predates verification)
+      and Indexing → "Not found (404)" (keeps filling as Google re-crawls); Wayback
+      `web.archive.org/cdx/search/cdx?url=<domain>/*&collapse=urlkey`; the old host/agency.
+- [ ] **Google Search Console** domain property (DNS TXT on the root — host field empty or `@`,
+      next to the existing SPF record, never replacing it; keep it after verifying), submit
+      `sitemap.xml`. **Bing Webmaster Tools**: "Import from GSC" (also feeds DuckDuckGo, Yahoo,
+      Ecosia, Copilot/ChatGPT search).
+
 ## Ongoing (after go-live)
 
 - [ ] Payment-methods text re-checked **whenever payment methods change in the Stripe Dashboard**.

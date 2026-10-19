@@ -31,7 +31,7 @@ src/templates/
 ├── macros/        # reusable Nunjucks macros
 ├── core/          # NON-overridable core: components/ · head/ · modules/ · partials/
 ├── overridable/   # customer-overridable: category/ · gallery/ · modules/ · page/ · post/ · product/ · partials/
-└── misc/          # utility templates (Netlify redirects etc.) — PROTECTED: build throws on override conflict
+└── misc/          # utility templates (Netlify `_redirects` incl. `config.redirects`, `_headers`, sitemaps, robots…) — PROTECTED: build throws on override conflict
 ```
 
 Rule of thumb: `core/`, `misc/`, and `layouts/` are internal/protected (see above); `overridable/`
