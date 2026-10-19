@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 3.5.2
 
 ### Fixed
 - schema.org `sku` fallback was `productVariant-<uuid>` (51 chars, Google allows 1–50) — now the
