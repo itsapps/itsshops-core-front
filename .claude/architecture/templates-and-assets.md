@@ -73,7 +73,10 @@ og/twitter tags or WebSite/Organization JSON-LD (only the page's own flag counts
 - `<title>` = `seo.metaTitle` → doc `title` → `titleKey | trans`, then `" - " + settings.siteTitle`
   (omitted if equal to the site title). The suffix counts toward the ~60-char limit, so a meta
   title should only be set when it says something different from the page title — a copy of the
-  title goes stale when the page is renamed.
+  title goes stale when the page is renamed. **`settings.siteTitle` must be the brand name**
+  (e.g. "FEM Innenarchitektur"), never a keyword title: it is the suffix on every page, and also
+  `og:site_name` and the WebSite JSON-LD `name`. Keyword titles belong in the home page's
+  `seo.metaTitle`.
 - meta description = `seo.metaDescription` → doc `description` → `settings.siteShortDescription`.
   Pages have no `description` field, so a page without a meta description gets the site-wide
   slogan (duplicate across pages; default-language text on other locales unless translated).

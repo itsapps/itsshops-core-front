@@ -54,7 +54,8 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] **SEO texts** (every locale): each page has a meta description (an empty one falls back to
       `settings.siteShortDescription` — the same text on every page, and in the default language on
       other locales unless that field is translated); meta titles only where they should differ
-      from the page title. Fallback chain: `architecture/templates-and-assets.md` → "SEO head".
+      from the page title; `settings.siteTitle` is the brand name (it suffixes every title).
+      Fallback chain: `architecture/templates-and-assets.md` → "SEO head".
 - [ ] Customer page `modules` array (backend `schema/extensions.ts`) includes
       `withdrawalPolicyModule`, `shippingInfoModule` and `privacyPolicyModule`; the site's CSS lays
       them out like its text modules.

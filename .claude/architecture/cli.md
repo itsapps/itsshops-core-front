@@ -85,6 +85,11 @@ SANITY_DATASET=development itsshops sanity count order
   with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by
   `language` (append new ones with a fresh `_key`), `set` the whole field in one transaction, and
   dry-run + guard the dataset name first.
+  **Claude Code auto mode** may block running such a script ("Modify Shared Resources") — reliably
+  so when it *can* write `production`, even if the run targets `development`. Keep each run a single
+  write (no bundled reads/builds), guard dev scripts to `development` only, and hand production
+  runs to the user as a one-line `! cd <frontend> && SANITY_DATASET=production node <script> --production`
+  (short path — a long scratchpad path tends to get cut off when pasted).
 - The CLI **bypasses studio guards.** E.g. the studio only lets editors delete *unmatched*
   withdrawals (matched ones are the legal proof a declaration was received —
   core-back `src/schemas/documents/orders/orderWithdrawal.ts`); `delete orderWithdrawal` removes all
