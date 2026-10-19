@@ -106,6 +106,12 @@ function buildBreadcrumb(items: Array<{ name: string; url: string }>): object {
   }
 }
 
+/** Variant titles are often just the product title — add the label ("0,75 l · 2022") to tell
+ *  vintages / sizes apart. */
+function variantName(variant: ResolvedVariant): string {
+  return variant.label && variant.label !== variant.title ? `${variant.title} ${variant.label}` : variant.title
+}
+
 /** Brand: first manufacturer, else the site title (the shop's brand name), else the company name.
  *  Wineries sell their own brand, so Google gets brand instead of a GTIN. */
 function buildBrand(variant: ResolvedVariant, settings: ResolvedSettings | null): object | undefined {
@@ -217,8 +223,6 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
   const variesBySize = variant.wine?.volume != null
     && siblingPages.some(p => p.wine?.volume != null && p.wine.volume !== variant.wine!.volume)
   const groupDesc = variant.product.description?.replace(/\s+/g, ' ').trim() || desc
-  // Variant titles are often just the product title — add the label ("0,75 l · 2022") to tell them apart
-  const variantName = variant.label && variant.label !== variant.title ? `${variant.title} ${variant.label}` : variant.title
 
   return schemaScript({
     '@context':     'https://schema.org',
@@ -233,7 +237,7 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
     hasVariant: [
       {
         '@type':              'Product',
-        name:                 variantName,
+        name:                 variantName(variant),
         url:                  pageUrl,
         sku:                  variant.sku || variant._id,
         inProductGroupWithID: groupId,
@@ -267,7 +271,7 @@ function buildCategorySchema(category: ResolvedCategory, ctx: SchemaContext): st
     '@type':  'ListItem',
     position: i + 1,
     url:      baseUrl + p.url,
-    name:     p.title,
+    name:     variantName(p),
   }))
 
   const breadcrumbItems = [

@@ -274,8 +274,12 @@ describe('category ItemList', () => {
   it('lists plain ListItems, no Product', () => {
     const cat = { _id: 'c1', _type: 'category', url: '/de/weiss/', title: 'Weiß', seo: {} } as unknown as ResolvedCategory
     const v = variant({ categories: [cat] })
-    const [list] = ld(buildPageDocSchema(cat, 'de', settings(), config(), imageUrl, [v], shop()))
-    expect(list.itemListElement).toEqual([{ '@type': 'ListItem', position: 1, url: BASE + v.url, name: 'Wein 2022' }])
+    const labelled = variant({ _id: 'v2', url: '/de/produkt/wein-2021/', title: 'Wein', label: '0,75 l · 2021', categories: [cat] } as any)
+    const [list] = ld(buildPageDocSchema(cat, 'de', settings(), config(), imageUrl, [v, labelled], shop()))
+    expect(list.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, url: BASE + v.url, name: 'Wein 2022' },
+      { '@type': 'ListItem', position: 2, url: BASE + labelled.url, name: 'Wein 0,75 l · 2021' },
+    ])
   })
 })
 

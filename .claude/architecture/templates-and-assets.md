@@ -330,7 +330,7 @@ image shortcodes/filters that wrap `src/image/`, and `src/schema/` schema.org ou
 | Product (variant) without sibling pages | `Product` + one `Offer` + `BreadcrumbList` |
 | Product with sibling variants (vintages, sizes) | Google's multi-page `ProductGroup` (`productGroupID` = product `_id`, no group `url`): this page's variant in full (`name` = title + label, `sku` or `_id`, `inProductGroupWithID`), siblings as URL-only `Product` stubs; `variesBy` size only when volumes differ |
 | Product with price 0 / unset | breadcrumb only — a `Product` without offers is an invalid item for Google |
-| Category | `ItemList` of plain `ListItem`s (no `Product` — product markup belongs on product pages) |
+| Category | `ItemList` of plain `ListItem`s (`name` = title + label; no `Product` — product markup belongs on product pages) |
 | Page / post | `WebPage` / `BlogPosting` |
 
 Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only with
