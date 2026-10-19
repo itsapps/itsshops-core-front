@@ -11,7 +11,7 @@ this file stays the always-loaded router.
 | Translations (UI strings + URL segments, "Sie"/"Du" via `SHOP_FORMALITY`) and how to override them / add a locale | `.claude/architecture/i18n.md` |
 | Extending for custom schemas/fields/modules — `config.extensions`, resolve hooks, portable text, search | `.claude/architecture/extending.md` |
 | GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
-| Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS | `.claude/architecture/templates-and-assets.md` |
+| Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS, schema.org JSON-LD (merchant listings) | `.claude/architecture/templates-and-assets.md` |
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |

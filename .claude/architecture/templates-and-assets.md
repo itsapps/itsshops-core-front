@@ -358,4 +358,5 @@ Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only
 - Not generated: reviews/ratings (none exist; the Search Console warning is harmless), `validFrom`,
   `handlingTime` (unknown — the delivery-time text is the total, published as `transitTime`;
   optional warning).
-- Verify with Google's Rich Results Test on a product page (go-live checklist).
+- Verify with Google's Rich Results Test on a product page (go-live checklist). Why it's shaped this
+  way: ADR `schema-org-merchant-listings.md`.

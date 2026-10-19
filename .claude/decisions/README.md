@@ -54,3 +54,6 @@ alternative was rejected, a constraint discovered the hard way.
   quota); Git LFS rejected.
 - [shop-new-order-mail-not-bcc.md](shop-new-order-mail-not-bcc.md) — shop gets its own new-order mail
   (shop locale, no customer-only legal parts, Reply-To customer, Studio link) instead of a BCC.
+- [schema-org-merchant-listings.md](schema-org-merchant-listings.md) — shipping per offer priced by
+  checkout (Organization `ShippingService` rejected), return policy on Organization + each offer,
+  never a `Product` without offers, no invented dates / handling time.

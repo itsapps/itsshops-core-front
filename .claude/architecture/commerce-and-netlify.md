@@ -126,6 +126,18 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   sizes (`formatVolumeList`) plus a note per shared size. Studio enforces each size in one group per
   method. A size in several box types (e.g. half-bottle-only boxes, 2 × 750 in a magnum box) is not
   supported — it would need boxes that accept only certain sizes and a split search.
+- **Shipping weight** (grams): `resolveVariantWeight` (physical: variant/product `weight`; wine: the
+  same, else estimated from the volume) and `resolveBundleWeight` in `shipping.ts`, used by
+  `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the
+  same. The shipping functions take `ShippingCartItem` (the fields they read), not the full
+  `ValidatedCartItem`; `resolveShippingMethods(…, { quiet: true })` silences the packaging warning
+  (the build prices every product page). Known inconsistency, kept on purpose so markup = checkout:
+  a bundle's **total** weight always estimates a wine child from its volume (explicit weight
+  ignored), while `bundleItems[].weight` uses the explicit weight first — matters only for
+  weight-rate methods; fix both together (explicit first everywhere) if ever needed.
+- **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
+  as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
+  pass the same value as `itsshops.config` (Tinhof passes `stock: false` explicitly).
 - `order-builder.ts`, `order-item-display.ts` — order construction
 - `*-notifier.tsx` — React-email templates (auth, order, newsletter, withdraw)
 - `payment-method.ts` — Stripe charge → `order.payment` snapshot + readable label
