@@ -27,8 +27,8 @@ this file stays the always-loaded router.
 | Why a non-obvious choice was made | `.claude/decisions/` |
 | A multi-step feature still in progress (scope, decisions, remaining steps) | `.claude/plans/` |
 
-Keep these docs current: run `/update-docs` after any change that moves a path, adds a subsystem,
-or establishes a rule. See `~/.claude/commands/update-docs.md`.
+Keep these docs current: run `/itsshops-update-docs` after any change that moves a path, adds a subsystem,
+or establishes a rule. See `~/.claude/commands/itsshops-update-docs.md`.
 
 ---
 
