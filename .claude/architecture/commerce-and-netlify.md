@@ -343,6 +343,12 @@ Each section has a condition, so the text follows the features:
   from `checkout.ts`, which `scripts/index.ts` imports only with `[data-checkout]`), hCaptcha only
   where a captcha form is shown, no analytics. A shop adding an external service (CSP
   `headers.extra` host) adds an extra section.
+- No section covers enquiries by email/phone (a shop's contact runs through orders/accounts). A
+  site that invites contact (content sites) adds it as an `extraSections` entry.
+- Customers may override `privacyPolicy.*` via `config.translations` (e.g. first person "ich" for
+  a one-person business — itsapps webpage). Such overrides are a frozen copy: they don't follow a
+  core wording change or a `PRIVACY_POLICY_UPDATED` bump, and a section that starts rendering
+  later (feature switched on) comes in core's wording.
 
 ## WooCommerce API bridge (`wc-api`, read by Winenet)
 
