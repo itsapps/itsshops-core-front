@@ -79,6 +79,11 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       sibling variants and one without: product/merchant listing valid, shipping details and return
       policy recognised. Needs `company.name`, shipping methods with a delivery time in days ("2 – 5
       Werktage") and the return settings (`templates-and-assets.md` → "schema.org").
+- [ ] **Lighthouse accessibility on every page type**, not only the home page: home, shop/category,
+      a product page, checkout, a text page (e.g. AGB). The home page can score 100 while shop
+      controls and inline links fail contrast (Tinhof, 2026-10-19: muted text tokens and the brand
+      colour as link colour). PageSpeed Insights' anonymous quota runs out quickly — run it locally:
+      `npx lighthouse@12.8.2 <url> --only-categories=accessibility --chrome-flags="--headless=new"`.
 
 ## Data safety
 

@@ -117,6 +117,13 @@ it). After compiling the entry, `css.ts` *writes* the result there so `core/head
 on every build; edit the entry and its imports (`src/assets/css/global/**`) instead. When grepping a
 customer repo for CSS, exclude it — it's a compiled copy of everything.
 
+**Finding unused customer CSS:** only files the entry reaches via `@import` / `@import-glob` are
+compiled (a folder that no glob covers is dead as a whole). Utility classes (`wrapper`, `region`,
+`flow`, …) are mostly consumed through Tailwind **`@apply`** in other CSS — e.g. `.static-page {
+@apply region wrapper; }`, the class core's checkout/withdrawal/user templates render — so a search
+of templates and scripts alone reports them as unused. Search `@apply`, core's `src/templates/` and
+`src/**/*.ts` (HTML built in code) before deleting; `@apply` of a removed class fails the build.
+
 ### Importable core CSS files
 
 Core ships ready-made stylesheets that customers `@import` into their `global.css` entry (resolved by
