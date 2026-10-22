@@ -73,3 +73,21 @@ exactly 2 — the Personal limit. A third rate-limited endpoint needs Pro.
 |---|---|---|
 | Tinhof | paid (2026-10-08); Personal considered 2026-10-16 | 2 (`order_status`, `order_withdraw`) |
 | Jurtschitsch | paid (2026-10-08) | 2 (`order_status`, `order_withdraw`) |
+
+## Sanity plan (and other running costs)
+
+(Owner's rule, 2026-10-22; re-check <https://www.sanity.io/pricing> before advising.)
+
+- **Free** works while the dataset only holds content that is public anyway: a Free project's
+  datasets are **public** (readable without a token). Fine for a pure content site.
+- As soon as the dataset stores **personal data** — orders, customer names/addresses, i.e.
+  **every shop** — the dataset must be **private**, which needs the paid plan (**15 $/month**).
+- Netlify for a content site: Free while traffic and publishing stay low (each production
+  deploy = 15 credits); Personal (9 $) beyond that. A live shop: Personal at least (see above),
+  Pro (20 $) for a busy one.
+- Transactional email (Resend): free tier ~2,000 mails/month (owner's figure) covers a small
+  shop's order confirmations; check the daily limit too.
+- Domain + email hosting stay with the customer's registrar (~30–40 €/year) — not part of our
+  stack's cost.
+
+Typical totals: content site 0 € (≈ 8 € busy), shop ≈ 22 € (15 $ + 9 $), busy shop ≈ 32 €.
