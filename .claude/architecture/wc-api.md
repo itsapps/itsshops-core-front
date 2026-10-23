@@ -14,12 +14,14 @@ import type { Config } from '@netlify/functions'
 import { createWcApiHandler } from '@itsapps/itsshops-core-front/functions/wc-api'
 
 export const config: Config = { path: '/wp-json/wc/v3/*' }
-export default createWcApiHandler({ timezone: 'Europe/Vienna', notify: {} })
+export default createWcApiHandler({ timezone: 'Europe/Vienna' })
 ```
 
 - **Options:** `timezone` (→ `WC_TIMEZONE` → `Europe/Vienna`; for `date_*` fields and
   `system_status`), `version` (reported WC version, default `9.0.0`), `notify` (if set, a PUT to
-  shipped sends the `orderShipping` mail via `sendOrderNotification`; omit it for no mail).
+  shipped sends the `orderShipping` mail via `sendOrderNotification`; omit it for no mail — **omit
+  it for wineNET**, see "wineNET behaviour"). `notify: {}` = on with defaults; the object takes
+  `SendOrderNotificationOptions` (`src/netlify/lib/order-notifier.tsx`).
 - **Env:** `WC_CONSUMER_KEY` + `WC_CONSUMER_SECRET` (Netlify env, functions scope — the values given
   to the ERP), plus the usual `SANITY_PROJECT_ID` / `SANITY_DATASET` / `SANITY_TOKEN` (read+write).
 - **Auth:** `consumer_key`/`consumer_secret` as query params (wineNET does this) **or** a Basic auth
@@ -160,6 +162,11 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 
 - Every request logs `Request` (debug): method, path, query-param **names**, `dp`, user agent —
   never param values (`consumer_key`/`consumer_secret` may be among them).
+- A PUT logs `Update order` (debug): `orderId`, `wcStatus` (raw, as the ERP sent it),
+  `internalStatus`; refused/invalid PUTs log warn/error (`Shipping notification failed` if the mail
+  throws). The debug lines only appear with `LOG_LEVEL=debug` (default `info`) — the durable record
+  is the order's `statusHistory` entry (`source: 'wc-api'`). Only `status` is read from the body; other
+  body fields are never logged.
 - Unit tests: `src/netlify/__tests__/wc-api.test.ts` (`mapOrder` on fixed + randomized orders, paid
   shipping, coupon; the request log).
 - Integration: customer repos have `tests/integration/wc-api.test.ts` (Tinhof), hitting a running
