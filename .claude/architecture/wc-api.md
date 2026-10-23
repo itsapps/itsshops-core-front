@@ -137,6 +137,12 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   values (`subtotal_tax` rounded per line, `taxes[]` formatted to `dp` = 2), so this also hits
   wineNET on real WC shops — a wineNET bug. Reported to wineNET; don't work around it by sending
   more tax decimals (breaks WC parity).
+- **Status PUT on Auftrag:** turning a Vormerkung into an Auftrag in wineNET immediately sends
+  `PUT orders/:id {status: completed}` — automatic, the shop can't choose a status (Tinhof,
+  2026-10-23; user agent = the operator's browser). So `completed` means "accepted", not shipped:
+  with `notify` set the customer gets the shipping mail before dispatch and without tracking code.
+  Don't pass `notify` for wineNET shops; send the shipping mail from the Studio. Open (asked
+  wineNET): a configurable status, or an option here mapping `completed` → `processing`.
 - **Does not send `dp`** (request log, checked 2026-10-14), so supporting `dp` alone changes nothing
   for wineNET.
 - **Coupons** (per wineNET, 2026-10-21): it distinguishes *Rabatt-Gutscheine* — a discount on the
