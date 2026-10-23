@@ -143,6 +143,17 @@ Branch-based:
 
 Each customer's branch names / Netlify site live in its own CLAUDE.md.
 
+### Node.js version
+
+Not pinned in the repos (no `NODE_VERSION`, no `.nvmrc`; `engines` only says `>=22`). It is a
+**Netlify project setting** (Project configuration → Dependency management → Node.js version, a
+major like `22.x`); read it with `netlify api getSite` → `versions.node.active`. Builds use the
+latest patch of that major (the deploy log shows `Now using node v…`) — after a Node security
+release, **trigger a redeploy** of production and staging so the build picks up the patch.
+Functions run on AWS Lambda's managed runtime; its patch level can't be set from here. Switching
+the major is no fix for an advisory that covers every supported major. Stripe sees the functions'
+Node version (the `stripe` library reports it) and emails about outdated ones (e.g. 2026-10-22).
+
 ### Deploy identity (two push identities, split by branch)
 
 To avoid paying for extra Netlify team seats, **each customer gets its own GitHub + Netlify account

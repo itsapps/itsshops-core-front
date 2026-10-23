@@ -122,6 +122,8 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 - The **`dp`** query param (decimal places) is ignored; values are always 2 dp. (WC formats the
   money strings *and* `taxes[].total`/`subtotal` with `dp`, default 2 — so at default `dp` our
   `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)
+- No **`coupon_lines`** (WC lists code + net/tax discount per coupon there). The discount is only
+  in the line amounts and `discount_total`/`discount_tax` — enough for wineNET (see below).
 
 ## wineNET behaviour (observed)
 
@@ -137,6 +139,16 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   more tax decimals (breaks WC parity).
 - **Does not send `dp`** (request log, checked 2026-10-14), so supporting `dp` alone changes nothing
   for wineNET.
+- **Coupons** (per wineNET, 2026-10-21): it distinguishes *Rabatt-Gutscheine* — a discount on the
+  item lines, not listed separately on the wineNET invoice, standard process — from
+  *Wert-Gutscheine* (gift vouchers: a negative-quantity item line with a VAT rate, or a means of
+  payment without VAT; the latter needs a separate talk with wineNET). Core's coupons (`percent`,
+  `fixed`, `freeShipping`) are all Rabatt-Gutscheine; core sells no vouchers and takes none as
+  payment. wineNET skips orders whose status is `completed`.
+- **Open:** whether its rate derivation works on discounted lines — `price` is after the discount,
+  `subtotal_tax` before it, so `subtotal_tax ÷ price` gives no valid rate (13 % line: 14.5 %);
+  `total_tax ÷ total` or `subtotal_tax ÷ subtotal` would. Being checked by wineNET on Tinhof
+  staging orders.
 
 ## Logging and testing
 
