@@ -104,7 +104,9 @@ HTTP entry points, one file per endpoint:
 
 Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 
-- `cart-validator.ts` — re-validates the client cart server-side (never trust client prices)
+- `cart-validator.ts` — re-validates the client cart server-side (never trust client prices).
+  Known gap: a bundle is checked only as a variant (own status/price/stock) — its items' status and
+  stock aren't checked, and paid orders don't reduce item stock. Plan: `.claude/plans/bundle-checkout.md`.
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
