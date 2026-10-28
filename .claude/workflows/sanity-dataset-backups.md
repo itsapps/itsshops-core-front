@@ -12,11 +12,12 @@ Why it's shaped this way: `decisions/sanity-backups-github-artifacts.md`.
 One **private** GitHub repo per customer, next to its frontend/backend:
 `web/<customer>/sanity-backups` (reference: `web/tinhof/sanity-backups` — copy it; its `README.md`
 has the customer-facing setup + restore steps). The repo holds only `.github/workflows/backup.yml`,
-`README.md` and a `.gitignore` (`*.tar.gz`, `*.age`, `*.zip`, `*.key`).
+`package.json` + `package-lock.json` (pin `@sanity/cli` and its whole tree), `README.md` and a
+`.gitignore` (`*.tar.gz`, `*.age`, `*.zip`, `*.key`, `node_modules/`).
 
 The workflow (daily cron `0 3 * * *` + `workflow_dispatch` with a `docs`/`full` choice):
 1. Mode: Mondays (UTC) **full**, other days **docs**.
-   `npx -y @sanity/cli@<pinned> dataset export production backup.tar.gz --project-id <id>` with
+   `npm ci`, then `npx --no-install sanity dataset export production backup.tar.gz --project-id <id>` with
    secret `SANITY_AUTH_TOKEN` (Sanity API token, role **Viewer**); `docs` adds **`--raw`**
    (documents incl. image references and `sanity.imageAsset` docs, no binaries — Tinhof ≈ 0.3 MB),
    `full` exports documents + all assets.
@@ -27,7 +28,8 @@ The workflow (daily cron `0 3 * * *` + `workflow_dispatch` with a `docs`/`full` 
 4. **Then** prunes (`gh api`, needs `permissions: actions: write`), only the kind just uploaded:
    `full` deletes every other non-`docs-` artifact (older full + legacy `production-<run_id>`),
    `docs` keeps the newest 7 (`KEEP_DOCS`). A failed run never deletes anything.
-Actions: `actions/setup-node@v7`, `actions/upload-artifact@v7` (Node 24; v4 warns about Node 20).
+Actions: `actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7` (Node 24; v4
+warns about Node 20).
 
 Per customer change only `SANITY_PROJECT_ID` (in the workflow `env`), plus a new key pair, token and
 repo secrets.
@@ -35,8 +37,11 @@ repo secrets.
 ## Gotchas
 
 - **Standalone CLI needs `--project-id`.** Outside a studio project a `sanity.cli.*` file with only
-  `api.projectId` is *not* picked up (`PROJECT_ROOT_NOT_FOUND` in CI). Pin the CLI version
-  (tested: `@sanity/cli` 8.17.1).
+  `api.projectId` is *not* picked up (`PROJECT_ROOT_NOT_FOUND` in CI).
+- **Pin the CLI with a lockfile, not `npx @sanity/cli@<version>`.** npx pins only the CLI; its
+  caret dependencies float. On 2026-10-27 `@sanity/cli-core` 3.14.0 made `@sanity/cli` 8.17.1 ignore
+  `--project-id` (`PROJECT_ROOT_NOT_FOUND` … `NON_INTERACTIVE`) with no change on our side. Tested
+  working: 8.25.0 from the lockfile. To upgrade: bump `package.json`, `npm install`, commit both.
 - **`--no-assets` is not a documents backup.** It *removes every image field* from the documents
   (and the `sanity.imageAsset` docs); importing it over a full backup with `--replace` wipes all
   images. Use `--raw`, which keeps the references.
