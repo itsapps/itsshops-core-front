@@ -41,7 +41,8 @@ repo secrets.
 - **Pin the CLI with a lockfile, not `npx @sanity/cli@<version>`.** npx pins only the CLI; its
   caret dependencies float. On 2026-10-27 `@sanity/cli-core` 3.14.0 made `@sanity/cli` 8.17.1 ignore
   `--project-id` (`PROJECT_ROOT_NOT_FOUND` … `NON_INTERACTIVE`) with no change on our side. Tested
-  working: 8.25.0 from the lockfile. To upgrade: bump `package.json`, `npm install`, commit both.
+  working: 8.25.0 from the lockfile (Tinhof CI docs run, 2026-10-28). To upgrade: bump
+  `package.json`, `npm install`, commit both.
 - **`--no-assets` is not a documents backup.** It *removes every image field* from the documents
   (and the `sanity.imageAsset` docs); importing it over a full backup with `--replace` wipes all
   images. Use `--raw`, which keeps the references.
