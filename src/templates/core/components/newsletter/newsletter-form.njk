@@ -22,7 +22,7 @@
       <span class="form-field__error" data-field-error="email"></span>
     </div>
 
-    {%- if coreConfig.captchaSiteKey %}
+    {%- if coreConfig.captchaSiteKey and coreConfig.features.newsletter.captcha %}
     <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
     {%- endif %}
 

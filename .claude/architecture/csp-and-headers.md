@@ -41,7 +41,7 @@ there (least privilege) via `securityHeaders(allowPayment)`. If express pay is e
 ## Per-route CSP
 
 `_headers` gets multiple route blocks, most specific wins:
-1. **`/*`** — base CSP (+ hCaptcha site-wide when `newsletter` and `captchaSiteKey` are both set,
+1. **`/*`** — base CSP (+ hCaptcha site-wide when `newsletter` (with `captcha`, the default) and `captchaSiteKey` are set,
    because the newsletter widget is usually in the footer).
 2. **Checkout routes** `/<locale>/<checkout>/*` (when `shop.checkout`) — adds Stripe origins to
    `script-src`/`connect-src`/`style-src`/`frame-src`.

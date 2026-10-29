@@ -32,6 +32,7 @@ const input = (over: Partial<PrivacyPolicyInput> = {}): PrivacyPolicyInput => ({
   hasWithdrawal: true,
   services: { emailProvider: 'resend', mailgunEu: true, wcApi: true },
   captcha: false,
+  newsletterCaptcha: true,
   orderMetaRetentionDays: 30,
   countryName: (c) => (c === 'AT' ? 'Österreich' : c),
   formatUpdated: () => 'Oktober 2026',
@@ -57,6 +58,12 @@ describe('privacy policy', () => {
     }), tDe)
     expect(ids(p)).toEqual(expect.arrayContaining(['account', 'newsletter', 'captcha']))
     expect(text(p, 'captcha')).toContain('(Registrierung, Passwort vergessen, Newsletter)')
+    const noNewsletterCaptcha = buildPrivacyPolicy(input({
+      features: { checkout: true, users: true, newsletter: true, vinofact: false, ageGate: true, search: true },
+      captcha: true,
+      newsletterCaptcha: false,
+    }), tDe)
+    expect(text(noNewsletterCaptcha, 'captcha')).toContain('(Registrierung, Passwort vergessen)')
     expect(section(p, 'storage').items).toContain('Ihre Bestätigung des Mindestalters,')
   })
 

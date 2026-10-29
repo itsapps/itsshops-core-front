@@ -4,6 +4,23 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+### Added
+- `features.newsletter: { captcha: false }` — newsletter form without hCaptcha (no widget, no
+  site-wide hCaptcha CSP, privacy policy lists only register/recover); user forms keep it.
+  `createNewsletterSubscribeHandler({ captcha: false })` skips the server check.
+
+### Fixed
+- User URLs in `cms[locale]` (`loginUrl`, `registerUrl`, …) are `'#'` again when `users` is off
+  (the check read the always-truthy `features.users` object).
+
+### Upgrading
+- Nothing to change (`newsletter: true` keeps the captcha). To drop it: set both flags above and
+  add a per-IP `rateLimit` to the `newsletter-subscribe` wrapper. Code reading
+  `coreConfig.features.newsletter` as a boolean must use `.enabled` (resolved shape is now
+  `{ enabled, captcha }`).
+
 ## 3.5.4
 
 ### Fixed

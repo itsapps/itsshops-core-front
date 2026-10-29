@@ -77,7 +77,8 @@ package without an `exports` map (e.g. `lodash/merge` — it broke every functio
 Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `config.path`,
 `export default create<Name>Handler()`).
 
-Public, unauthenticated endpoints (`order-status`, `order-withdraw`) get a per-IP limit in that
+Public, unauthenticated endpoints (`order-status`, `order-withdraw`, and `newsletter-subscribe` when
+it runs without captcha) get a per-IP limit in that
 wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot — no captcha) via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
 `aggregateBy: ['ip', 'domain']`) — not in core. Code-based rate limits work on every Netlify plan, capped at 2 rules per site on
 Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests are answered by Netlify (429) before the function runs.
@@ -330,7 +331,7 @@ Each section has a condition, so the text follows the features:
 | withdrawal | checkout + `orderWithdrawUrl` |
 | orderSystem (wineNET, hardcoded) | checkout + `services.wcApi` (`WC_CONSUMER_KEY` set) |
 | account (Supabase), newsletter | `users` / `newsletter`; account without checkout `account.textNoShop` (no "orders are kept") |
-| captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it) |
+| captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it; newsletter only with `features.newsletter.captcha`) |
 | vinofact | vinofact on **and** `'bottleImage'` in `vinofact.fields` (only bottle images load from `i.vinofact.com`) |
 | `module.extraSections` (editor: map, embeds …) | after vinofact, before storage |
 | storage (list: cart/coupon, pending payment, order snapshot, age gate, recent searches — the last only with `extensions.search`; nothing stored → one "no cookies, no browser storage" sentence) | always, items filtered |

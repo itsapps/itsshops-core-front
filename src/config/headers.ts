@@ -168,7 +168,8 @@ function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
       'frame-src':   captcha,
     })
 
-  const newsletterCaptchaSiteWide = config.features.newsletter && !!config.captchaSiteKey
+  const newsletterCaptchaSiteWide =
+    config.features.newsletter.enabled && config.features.newsletter.captcha && !!config.captchaSiteKey
   const rootSources = newsletterCaptchaSiteWide ? withCaptcha(merged) : merged
   const routes: string[] = [buildRoute('/*', buildCsp(rootSources), security)]
 

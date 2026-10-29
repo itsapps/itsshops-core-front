@@ -45,14 +45,14 @@ shop: { enabled, checkout, manufacturer, stock, category, coupons, checkoutAgeCo
         vinofact: { enabled, fields, integration } }
 blog
 users: { enabled, registrationFields }
-newsletter
+newsletter: { enabled, captcha }
 ```
 
 - `shop.enabled` = truthiness of `config.features.shop`; sub-flags default `false`.
 - `shop.vinofact.integration` falls back to env (`VINOFACT_API_URL` + `_TOKEN` + `PROFILE_SLUG`) when
   not given in config — all three must be present or it's `undefined`.
-- `users` and `shop` accept either a boolean or an object (object form carries extra fields like
-  `registrationFields`).
+- `users`, `newsletter` and `shop` accept either a boolean or an object (object form carries extra
+  fields like `registrationFields`, `captcha`).
 
 The backend (`itsshops-core-back`) has a **superset** of these flags — keep the two in mind when a
 feature spans both repos.

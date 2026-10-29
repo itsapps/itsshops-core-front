@@ -226,6 +226,9 @@ function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<ty
           ? (input.users.registrationFields ?? [])
           : [],
     },
-    newsletter: input?.newsletter ?? false,
+    newsletter: {
+      enabled: !!input?.newsletter,
+      captcha: typeof input?.newsletter === 'object' ? (input.newsletter.captcha ?? true) : true,
+    },
   }
 }

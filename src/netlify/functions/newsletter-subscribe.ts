@@ -20,6 +20,11 @@ export type NewsletterSubscribeConfig = {
   defaultLocale?: string
   /** Public base URL of the shop (defaults to PUBLIC_URL ?? URL). */
   baseUrl?: string
+  /**
+   * Require a captcha token (default `true`). Set `false` together with the frontend's
+   * `features.newsletter.captcha: false`, and rate-limit the function in its wrapper instead.
+   */
+  captcha?: boolean
 }
 
 export function createNewsletterSubscribeHandler(config: NewsletterSubscribeConfig = {}) {
@@ -27,6 +32,7 @@ export function createNewsletterSubscribeHandler(config: NewsletterSubscribeConf
     newsletterPaths = buildNewsletterPaths(),
     defaultLocale = 'de',
     baseUrl,
+    captcha = true,
   } = config
 
   return async (request: Request, _context: Context): Promise<Response> => {
@@ -48,8 +54,10 @@ export function createNewsletterSubscribeHandler(config: NewsletterSubscribeConf
       return errorResponse(ErrorCode.INVALID_INPUT, t('api.errors.validation.email'), undefined, 400)
     }
 
-    const captchaError = await enforceCaptcha(captchaToken, t)
-    if (captchaError) return captchaError
+    if (captcha) {
+      const captchaError = await enforceCaptcha(captchaToken, t)
+      if (captchaError) return captchaError
+    }
 
     // Always return a generic success — never reveal whether the address was
     // new, pending, or already confirmed (prevents subscriber enumeration).

@@ -32,9 +32,13 @@ features: {
            vinofact?: { enabled, fields?, integration? } },
   blog?: boolean,
   users?: boolean | { registrationFields?: UserRegistrationField[] },
-  newsletter?: boolean,
+  newsletter?: boolean | { captcha?: boolean },   // captcha default true
 }
 ```
+`newsletter: { captcha: false }` drops hCaptcha from the newsletter form only (no widget, no
+site-wide hCaptcha CSP, privacy policy lists only the user forms); register/recover keep it. Pass
+`captcha: false` to `createNewsletterSubscribeHandler` too and rate-limit that wrapper
+(`commerce-and-netlify.md` → per-IP limits).
 `checkout` gates the Stripe flow, the order pages and the withdrawal form (+ its menu link and legal
 texts); core-back's `features.shop.checkout` must match (it hides the checkout-only shop settings). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`; an
 unknown name — e.g. the old `normClassifications`, now `qualityGrades` — is dropped silently, and

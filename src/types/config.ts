@@ -145,7 +145,11 @@ export type Features = {
     enabled: boolean
     registrationFields: UserRegistrationField[]
   }
-  newsletter: boolean
+  newsletter: {
+    enabled: boolean
+    /** Newsletter form shows the hCaptcha widget (needs `captchaSiteKey`). */
+    captcha: boolean
+  }
 }
 
 /** Customer-facing input — omitting shop = shop disabled, omitting sub-flags = default off */
@@ -163,7 +167,15 @@ export type ItsshopsFeatures = {
   users?: boolean | {
     registrationFields?: UserRegistrationField[]
   }
-  newsletter?: boolean
+  /**
+   * `true` or an object enables the newsletter. `captcha: false` drops hCaptcha from the newsletter
+   * form only (user forms keep it) — then also pass `captcha: false` to
+   * `createNewsletterSubscribeHandler` and rate-limit that function in its wrapper.
+   */
+  newsletter?: boolean | {
+    /** Default `true`. */
+    captcha?: boolean
+  }
 }
 
 // ─── Sanity ───────────────────────────────────────────────────────────────────

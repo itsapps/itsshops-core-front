@@ -50,6 +50,8 @@ export type PrivacyPolicyInput = {
   services: { emailProvider: 'resend' | 'mailgun'; mailgunEu: boolean; wcApi: boolean }
   /** hCaptcha site key configured. */
   captcha: boolean
+  /** Newsletter form shows the captcha (`features.newsletter.captcha`). */
+  newsletterCaptcha: boolean
   /** Days an unpaid checkout snapshot is kept (`ORDER_META_RETENTION_DAYS`). */
   orderMetaRetentionDays: number
   dpoContact?: string | null
@@ -148,7 +150,7 @@ export function buildPrivacyPolicy(input: PrivacyPolicyInput, t: PrivacyT): Priv
   if (f.newsletter) add('newsletter', ['text'], { provider: provider('sanity') })
 
   const captchaForms = input.captcha
-    ? [f.users && 'register', f.users && 'recover', f.newsletter && 'newsletter'].filter((v): v is string => !!v)
+    ? [f.users && 'register', f.users && 'recover', f.newsletter && input.newsletterCaptcha && 'newsletter'].filter((v): v is string => !!v)
     : []
   if (captchaForms.length) {
     add('captcha', ['text'], {

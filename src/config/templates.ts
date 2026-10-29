@@ -209,7 +209,7 @@ function shouldIgnoreTemplate({
 
   if (dir === 'standard') {
     if (file.startsWith('user-') && !features.users.enabled) return true
-    if (file.startsWith('newsletter-') && !features.newsletter) return true
+    if (file.startsWith('newsletter-') && !features.newsletter.enabled) return true
     if (file.startsWith('blog-') && !features.blog) return true
     if (file === 'posts.njk' && !features.blog) return true
     if (file === 'products.njk' && !features.shop.enabled) return true

@@ -363,7 +363,7 @@ export const createFilters = (ctx: CoreContext) => {
       features: {
         checkout: shop.enabled && shop.checkout,
         users: config.features.users.enabled,
-        newsletter: config.features.newsletter,
+        newsletter: config.features.newsletter.enabled,
         // Only bottle images load from i.vinofact.com; other vinofact data is fetched at build time.
         vinofact: shop.vinofact.enabled && !!shop.vinofact.fields?.includes('bottleImage'),
         ageGate: config.ageGate.enabled,
@@ -373,6 +373,7 @@ export const createFilters = (ctx: CoreContext) => {
       hasWithdrawal: !!localeData?.orderWithdrawUrl && localeData.orderWithdrawUrl !== '#',
       services: config.services,
       captcha: !!config.captchaSiteKey,
+      newsletterCaptcha: config.features.newsletter.captcha,
       orderMetaRetentionDays: ORDER_META_RETENTION_DAYS,
       dpoContact: module?.dpoContact,
       extraSections: module?.extraSections ?? [],
