@@ -35,7 +35,10 @@ features: {
   newsletter?: boolean,
 }
 ```
-`checkout` is frontend-only (Stripe flow). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`);
+`checkout` gates the Stripe flow, the order pages and the withdrawal form (+ its menu link and legal
+texts); core-back's `features.shop.checkout` must match (it hides the checkout-only shop settings). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`; an
+unknown name — e.g. the old `normClassifications`, now `qualityGrades` — is dropped silently, and
+the Eleventy build doesn't typecheck the config, so run `tsc` in the customer repo);
 `integration` falls back to `VINOFACT_API_*` env. Backend feature flags are a superset — keep both
 repos' configs aligned.
 

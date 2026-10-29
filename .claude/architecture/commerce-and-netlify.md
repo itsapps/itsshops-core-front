@@ -200,7 +200,10 @@ Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; i
 
 `order-withdraw` never cancels or refunds. The form (`core/components/order/order-withdraw.njk`,
 `scripts/order-withdraw.ts`) asks for **name**, order number, email, optional reason. Labels are fixed
-by law: page/links "Vertrag widerrufen", button "Widerruf bestätigen". Always available (no date
+by law: page/links "Vertrag widerrufen", button "Widerruf bestätigen". Only with
+`shop.checkout` — pages, `orderWithdrawUrl` and the guaranteed menu link; without checkout the URL is
+`'#'` (nothing bought online, nothing to withdraw from; see
+[withdrawal-link-as-menu-system-link](../decisions/withdrawal-link-as-menu-system-link.md)). Always available (no date
 check), **no captcha** — the customer wrapper's Netlify `rateLimit` (429 → translated "try again
 later" in the client) plus a hidden **honeypot** field (`website`; filled → same success, nothing
 stored/sent). Name and order number are capped and URL-like input is rejected
@@ -323,10 +326,10 @@ Each section has a condition, so the text follows the features:
 |---|---|
 | controller (+ DPO from `module.dpoContact`), overview, hosting (Netlify), content (Sanity CDN) | always |
 | orders (+ carrier paragraph if a non-pickup shipping method exists), payment (Stripe, Apple/Google Pay) | `shop.checkout` |
-| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services` |
+| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services`; without checkout `email.textNoShop` (no order/shipping mails) |
 | withdrawal | checkout + `orderWithdrawUrl` |
 | orderSystem (wineNET, hardcoded) | checkout + `services.wcApi` (`WC_CONSUMER_KEY` set) |
-| account (Supabase), newsletter | `users` / `newsletter` |
+| account (Supabase), newsletter | `users` / `newsletter`; account without checkout `account.textNoShop` (no "orders are kept") |
 | captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it) |
 | vinofact | vinofact on **and** `'bottleImage'` in `vinofact.fields` (only bottle images load from `i.vinofact.com`) |
 | `module.extraSections` (editor: map, embeds …) | after vinofact, before storage |
