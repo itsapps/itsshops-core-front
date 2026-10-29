@@ -5,6 +5,7 @@ import { createWebhookHandler, type WebhookHandlerOptions } from '../netlify/fun
 import type { ServerConfig } from '../netlify/types/config'
 import type { CreatePaymentResponse } from '../shared/checkout-api'
 import { TestCleanup } from './cleanup'
+import { describeLive } from './live'
 
 type TestConfig = ServerConfig & {
   getVariantIds: () => Promise<string[]>
@@ -85,22 +86,52 @@ function createPaymentAndGetIntent(
 
 export function paymentWebhookTests(config: TestConfig) {
   const paymentHandler = createPaymentHandler(config)
-  const webhookHandler = createWebhookHandler(config)
+  // No new-order mail to the shop inbox for test orders; the customer's confirmation goes to
+  // the test address (example.com, undeliverable).
+  const webhookHandler = createWebhookHandler({ ...config, shopNotification: false })
   const dummyContext = {} as any
   const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET!
   const stripe = new Stripe(process.env.STRIPE_SECRET_API_KEY!)
   const cleanup = new TestCleanup()
 
-  beforeAll(async () => {
-    await cleanup.saveInvoiceCounter()
+  describe('payment-webhooks: request checks', () => {
+    it('rejects invalid signature', async () => {
+      await webhookHandler(
+        buildWebhookRequest(JSON.stringify({ type: 'payment_intent.succeeded' }), 'invalid_signature'),
+        dummyContext,
+      )
+    })
+
+    it('skips when missing stripe-signature header', async () => {
+      const request = new Request('http://localhost/api/payment/webhooks', {
+        method: 'POST',
+        body: 'test',
+      })
+
+      await webhookHandler(request, dummyContext)
+    })
+
+    it('skips non-POST requests', async () => {
+      const request = new Request('http://localhost/api/payment/webhooks', {
+        method: 'GET',
+      })
+
+      await webhookHandler(request, dummyContext)
+    })
   })
 
-  afterAll(async () => {
-    await cleanup.cleanup()
-  })
-
-  describe('payment-webhooks: payment_intent.succeeded', () => {
+  // Creates Stripe test payments and real orders in the dataset (deleted afterwards) and sends
+  // the order confirmation to the test address — TEST_LIVE only.
+  describeLive('payment-webhooks: payment_intent.succeeded', () => {
     let paymentIntent: Stripe.PaymentIntent
+
+    beforeAll(async () => {
+      await cleanup.saveInvoiceCounter()
+    })
+
+    afterAll(async () => {
+      await cleanup.cleanup()
+    })
 
     beforeAll(async () => {
       const getIntent = createPaymentAndGetIntent(paymentHandler, stripe, config, cleanup)
@@ -132,40 +163,23 @@ export function paymentWebhookTests(config: TestConfig) {
         dummyContext,
       )
     })
-
-    it('rejects invalid signature', async () => {
-      const eventBody = buildPaymentIntentEvent(paymentIntent)
-
-      await webhookHandler(
-        buildWebhookRequest(eventBody, 'invalid_signature'),
-        dummyContext,
-      )
-    })
-
-    it('skips when missing stripe-signature header', async () => {
-      const request = new Request('http://localhost/api/payment/webhooks', {
-        method: 'POST',
-        body: 'test',
-      })
-
-      await webhookHandler(request, dummyContext)
-    })
-
-    it('skips non-POST requests', async () => {
-      const request = new Request('http://localhost/api/payment/webhooks', {
-        method: 'GET',
-      })
-
-      await webhookHandler(request, dummyContext)
-    })
   })
 
-  describe('payment-webhooks: onOrderCreated callback', () => {
+  describeLive('payment-webhooks: onOrderCreated callback', () => {
+    beforeAll(async () => {
+      await cleanup.saveInvoiceCounter()
+    })
+
+    afterAll(async () => {
+      await cleanup.cleanup()
+    })
+
     it('calls onOrderCreated when provided', async () => {
       let callbackOrder: any = null
 
       const handlerWithCallback = createWebhookHandler({
         ...config,
+        shopNotification: false,
         onOrderCreated: async (order) => {
           callbackOrder = order
         },

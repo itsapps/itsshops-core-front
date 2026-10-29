@@ -17,6 +17,12 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   `findByProductId` returns whichever variant the query returned first (an old vintage, without a
   newer vintage's variant title).
 
+### Changed
+- `test-utils`: tests with side effects (real mails, Stripe test payments, orders / withdrawals /
+  users written to the dataset) only run with `TEST_LIVE=1`; a plain `npm test` skips them.
+  `orderNotifyTests({ getOrderId })` is optional and defaults to `TEST_ORDER_ID`. The webhook tests
+  send no shop new-order mail.
+
 ### Fixed
 - User URLs in `cms[locale]` (`loginUrl`, `registerUrl`, …) are `'#'` again when `users` is off
   (the check read the always-truthy `features.users` object).
@@ -28,6 +34,9 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   `{ enabled, captcha }`).
 - Customers with their own `sortByVintage` in `src/_config/filters.mts` (Tinhof, grass-art) can drop
   it and use core's (same behaviour); a customer filter of the same name still overrides core's.
+- Integration tests: set `TEST_LIVE=1` for the full run (e.g. before a release). In
+  `tests/integration/order-notify.test.ts` drop a "newest order" `getOrderId` (Tinhof, grass-art)
+  and set `TEST_ORDER_ID` in `.env` to a test order with your own address instead.
 
 ## 3.5.4
 

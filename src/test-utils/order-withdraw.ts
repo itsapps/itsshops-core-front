@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createOrderWithdrawHandler } from '../netlify/functions/order-withdraw'
 import type { OrderWithdrawConfig } from '../netlify/functions/order-withdraw'
+import { describeLive } from './live'
 
 type TestConfig = OrderWithdrawConfig & {
   /** Returns a real order number + its matching contact email from the dataset. */
@@ -18,8 +19,8 @@ function buildRequest(body: unknown, locale: string): Request {
 }
 
 /**
- * Integration tests for the order-withdraw function, including a live test that
- * records an `orderWithdrawal` document and sends the confirmation + shop emails.
+ * Integration tests for the order-withdraw function, including a live test (`TEST_LIVE=1`
+ * only) that records an `orderWithdrawal` document and sends the confirmation + shop emails.
  *
  * Set `SKIP_AUTH_EMAILS=true` to record without sending. Re-runs hit the per-order
  * dedupe: 200, no second record, the receipt is sent again.
@@ -81,7 +82,7 @@ export function orderWithdrawTests(config: TestConfig) {
     })
   })
 
-  describe('order-withdraw: send', () => {
+  describeLive('order-withdraw: send', () => {
     let order: { orderNumber: string; email: string }
 
     beforeAll(async () => {

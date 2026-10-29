@@ -1,10 +1,21 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createNotifyHandler } from '../netlify/functions/order-notify'
 import type { NotifyHandlerOptions, NotifyResponseBody } from '../netlify/functions/order-notify'
+import { describeLive } from './live'
 
 type TestConfig = NotifyHandlerOptions & {
-  /** Return a real Sanity order ID from the customer's dataset */
-  getOrderId: () => Promise<string>
+  /**
+   * Sanity `_id` of the order the live "send" tests mail (confirmation, invoice, shipping — to
+   * its contact email). Defaults to `TEST_ORDER_ID`. Use a fixed test order with your own
+   * address, never "the newest order" (in a dataset with real orders that's a customer's).
+   */
+  getOrderId?: () => Promise<string>
+}
+
+async function orderIdFromEnv(): Promise<string> {
+  const id = process.env.TEST_ORDER_ID
+  if (!id) throw new Error('TEST_ORDER_ID is not set — the Sanity _id of a test order with your own address')
+  return id
 }
 
 function buildRequest(body: unknown, secret?: string): Request {
@@ -23,7 +34,7 @@ async function parseResponse<T>(res: Response): Promise<{ status: number; body: 
 }
 
 export function orderNotifyTests(config: TestConfig) {
-  const { getOrderId, ...handlerOptions } = config
+  const { getOrderId = orderIdFromEnv, ...handlerOptions } = config
   const handler = createNotifyHandler(handlerOptions)
   const dummyContext = {} as any
 
@@ -78,9 +89,18 @@ export function orderNotifyTests(config: TestConfig) {
       )
       expect(res.status).toBe(400)
     })
+
+    it('rejects non-POST methods', async () => {
+      const res = await handler(
+        new Request('http://localhost/api/order/notify', { method: 'GET' }),
+        dummyContext,
+      )
+      expect(res.status).toBe(405)
+    })
   })
 
-  describe('order-notify: send', () => {
+  // Sends real mails to the order's contact email — TEST_LIVE only.
+  describeLive('order-notify: send', () => {
     let orderId: string
 
     beforeAll(async () => {
@@ -109,14 +129,6 @@ export function orderNotifyTests(config: TestConfig) {
       const res = await handler(authedRequest({ orderId, mailType: 'orderShipping' }), dummyContext)
       const { status } = await parseResponse<NotifyResponseBody>(res)
       expect(status).toBe(200)
-    })
-
-    it('rejects non-POST methods', async () => {
-      const res = await handler(
-        new Request('http://localhost/api/order/notify', { method: 'GET' }),
-        dummyContext,
-      )
-      expect(res.status).toBe(405)
     })
   })
 }

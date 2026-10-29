@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createUserRegisterHandler } from '../netlify/functions/user-register'
 import type { UserRegisterConfig } from '../netlify/functions/user-register'
+import { describeLive } from './live'
 
 type TestConfig = UserRegisterConfig & {
   /**
@@ -24,7 +25,7 @@ function buildRequest(body: unknown, locale: string): Request {
 
 /**
  * Integration tests for the user-register function, including a live "send"
- * test that actually dispatches the signup auth mail (via Supabase
+ * test (`TEST_LIVE=1` only) that creates the user and actually dispatches the signup auth mail (via Supabase
  * `admin.generateLink` + Mailgun) to `recipient`.
  *
  * Requires the same env as production (Supabase service role, Mailgun, Sanity).
@@ -80,7 +81,7 @@ export function userRegisterTests(config: TestConfig) {
     })
   })
 
-  describe('user-register: send', () => {
+  describeLive('user-register: send', () => {
     it('registers and dispatches the signup auth mail', async () => {
       const res = await handler(buildRequest(fullProfile, locale), dummyContext)
       expect(res.status).toBe(200)

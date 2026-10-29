@@ -89,6 +89,22 @@ Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests 
 > included — it's a valid endpoint a customer may wire. Only the **CSS** export subpaths were unused
 > (removed 2026-10-02); CSS ships via `dist/` + the `onSuccess` copy instead.
 
+### Integration test helpers (`./test-utils`)
+
+`orderNotifyTests`, `paymentCreateTests`, `paymentWebhookTests`, `orderWithdrawTests`,
+`userRegisterTests` — customers call them from `tests/integration/*.test.ts` (Tinhof, grass-art,
+yogamax). They run the real handlers against the services in the customer's `.env` (Sanity
+dataset, Stripe test key, mail provider, Supabase). Everything with a side effect outside the test
+run sits in a `describeLive` block (`src/test-utils/live.ts`) and **only runs with
+`TEST_LIVE=1`**: mails (order confirmation/invoice/shipping, withdrawal receipt, signup), Stripe
+test payments, and orders / `orderMeta` / withdrawals / users written to the dataset (payment tests
+delete theirs and reset `lastInvoiceNumber`). A plain `npm test` only does read-only checks and
+requests rejected before any write. `orderNotifyTests` mails the order from `getOrderId`, default
+`TEST_ORDER_ID` — a fixed test order with your own address, never "the newest order" (a real
+customer's in any dataset with real orders). The webhook tests send no shop new-order mail
+(`shopNotification: false`); the customer confirmation goes to `test@example.com`. Before 3.6.0
+these ran on every `npm test` — on 2026-10-29 that sent ~12 mails for Tinhof staging order 000008.
+
 ## Functions (`src/netlify/functions/`)
 
 HTTP entry points, one file per endpoint:

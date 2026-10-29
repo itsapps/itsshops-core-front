@@ -3,6 +3,7 @@ import { createPaymentHandler } from '../netlify/functions/payment-create'
 import type { ServerConfig } from '../netlify/types/config'
 import type { CalculateResponse, CreatePaymentResponse, ErrorResponse } from '../shared/checkout-api'
 import { TestCleanup } from './cleanup'
+import { describeLive } from './live'
 
 type TestConfig = ServerConfig & {
   /** Return at least 2 active variant IDs from the customer's Sanity dataset */
@@ -25,14 +26,6 @@ export function paymentCreateTests(config: TestConfig) {
   const handler = createPaymentHandler(config)
   const dummyContext = {} as any
   const cleanup = new TestCleanup()
-
-  beforeAll(async () => {
-    await cleanup.saveInvoiceCounter()
-  })
-
-  afterAll(async () => {
-    await cleanup.cleanup()
-  })
 
   describe('payment-create: calculate', () => {
     let variantIds: string[]
@@ -147,8 +140,17 @@ export function paymentCreateTests(config: TestConfig) {
     })
   })
 
-  describe('payment-create: create payment', () => {
+  // Creates Stripe test PaymentIntents + orderMeta docs (deleted afterwards) — TEST_LIVE only.
+  describeLive('payment-create: create payment', () => {
     let variantIds: string[]
+
+    beforeAll(async () => {
+      await cleanup.saveInvoiceCounter()
+    })
+
+    afterAll(async () => {
+      await cleanup.cleanup()
+    })
 
     beforeAll(async () => {
       variantIds = await config.getVariantIds()
