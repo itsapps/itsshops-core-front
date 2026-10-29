@@ -11,7 +11,7 @@ export type { PortableTextHtmlComponents } from '@portabletext/to-html'
 export { image, preload, staticImage, staticPreload, preGenerateStaticImages, imageUrl, imageSizeUrl, imageSizes, imageSrcsetData, vinofactImageUrl, vinofactSrcset, vinofactImage } from './image'
 export { createSanityClient, createImageBuilder } from './core'
 export { stegaClean } from '@sanity/client/stega'
-export { formatVolumeMl } from './filters'
+export { formatVolumeMl, sortByVintage, representativeVariant } from './filters'
 export type { PictureSize, PictureOptions } from './image'
 
 import type { EleventyConfig } from '11ty.ts'

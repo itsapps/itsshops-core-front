@@ -124,6 +124,37 @@ function findByProductId(arr: any[], id: string): any {
   return (arr ?? []).find((item: any) => item.product?._id === id) ?? null
 }
 
+/**
+ * Sort variants by vintage descending (newest first), 0.75 l bottles first within
+ * a vintage; variants without a vintage sink to the end. Stable, so non-wine
+ * variants keep their order.
+ * Usage: {% set listProducts = cms[_locale].products | sortByVintage %}
+ */
+export function sortByVintage(variants: any[]): any[] {
+  if (!Array.isArray(variants)) return variants
+  return [...variants].sort((a, b) => {
+    const av = a?.wine?.vintage ?? ''
+    const bv = b?.wine?.vintage ?? ''
+    if (!av && bv) return 1
+    if (av && !bv) return -1
+    const vintageOrder = bv.localeCompare(av)
+    if (vintageOrder !== 0) return vintageOrder
+    return (a?.wine?.volume === 750 ? 0 : 1) - (b?.wine?.volume === 750 ? 0 : 1)
+  })
+}
+
+/**
+ * The variant that stands for a whole product (one card or search entry per
+ * product): its newest vintage, 0.75 l first — the same one a `sortByVintage`
+ * list shows first. `findByProductId` instead returns whichever variant the
+ * query happened to return first.
+ * Usage: {% set variant = cms[_locale].products | representativeVariant(productId) %}
+ */
+export function representativeVariant(variants: any[], productId: string): any {
+  const own = (variants ?? []).filter((v: any) => v?.product?._id === productId)
+  return sortByVintage(own)[0] ?? null
+}
+
 function formatDate(
   date: string,
   locale: string,
@@ -268,6 +299,8 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("resolveProductRefs", resolveProductRefs as any);
   eleventyConfig.addFilter("findById", findById as any);
   eleventyConfig.addFilter("findByProductId", findByProductId as any);
+  eleventyConfig.addFilter("sortByVintage", sortByVintage as any);
+  eleventyConfig.addFilter("representativeVariant", representativeVariant as any);
   eleventyConfig.addFilter("imageUrl", (image, width, height, format, fit, bg) =>
     imageUrl(ctx.imageBuilder, image, width, height, format, fit, bg)
   );

@@ -43,7 +43,9 @@ Usage: `{{ value | filterName(args) }}`.
 | Filter | Purpose |
 |---|---|
 | `pageUrl(id)` / `docById(id)` / `findById` | Resolve a Sanity `_id` to its URL / resolved doc (via `cms[locale].urlMap` / `docMap`). |
-| `findByProductId` | Find variant(s) by product id. |
+| `findByProductId` | First variant of a product id, in query order (arbitrary — not for a card that stands for the product). |
+| `representativeVariant(productId)` | The variant that stands for a whole product (cards, grids): its newest vintage, 0.75 l first. Also a JS export for `extensions`. |
+| `sortByVintage` | Sort variants newest vintage first, 0.75 l first within a vintage, no vintage last; stable otherwise. Also a JS export. |
 | `resolveProductRefs` | Resolve an array of product references to resolved variants. |
 | `filterByCategory` / `filterGroupsForProducts` | Category filtering + which filter groups apply to a product set. |
 | `hasModule(type)` | Does a `modules[]` array contain a module of `type`. |

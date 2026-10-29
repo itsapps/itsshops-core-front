@@ -10,6 +10,12 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 - `features.newsletter: { captcha: false }` — newsletter form without hCaptcha (no widget, no
   site-wide hCaptcha CSP, privacy policy lists only register/recover); user forms keep it.
   `createNewsletterSubscribeHandler({ captcha: false })` skips the server check.
+- Filters `sortByVintage` (newest vintage first, 0.75 l first, no vintage last) and
+  `representativeVariant(productId)` (the variant that stands for a whole product: its first in
+  `sortByVintage` order), also exported for `extensions` (e.g. `search.buildProductEntry`). Use
+  `representativeVariant` instead of `findByProductId` where one card stands for a product —
+  `findByProductId` returns whichever variant the query returned first (an old vintage, without a
+  newer vintage's variant title).
 
 ### Fixed
 - User URLs in `cms[locale]` (`loginUrl`, `registerUrl`, …) are `'#'` again when `users` is off
@@ -20,6 +26,8 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   add a per-IP `rateLimit` to the `newsletter-subscribe` wrapper. Code reading
   `coreConfig.features.newsletter` as a boolean must use `.enabled` (resolved shape is now
   `{ enabled, captcha }`).
+- Customers with their own `sortByVintage` in `src/_config/filters.mts` (Tinhof, grass-art) can drop
+  it and use core's (same behaviour); a customer filter of the same name still overrides core's.
 
 ## 3.5.4
 
