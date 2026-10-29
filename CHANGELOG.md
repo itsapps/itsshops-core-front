@@ -4,6 +4,22 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.5.3
+
+Pairs with **core-back 4.3.0** (`features.shop.checkout` hides checkout-only shop settings).
+
+### Changed
+- Withdrawal form (`order-withdraw` pages, `orderWithdrawUrl`, the guaranteed "Vertrag widerrufen"
+  menu link) only with `features.shop.checkout` — was `shop.enabled`. Without checkout nothing is
+  bought online, so there is nothing to withdraw from. Shops with checkout are unchanged.
+- `privacyPolicyModule` without checkout: the email section no longer names order confirmations /
+  shipping updates, the account section drops "orders are kept for the statutory retention period"
+  (new keys `privacyPolicy.email.textNoShop`, `privacyPolicy.account.textNoShop`; de, de informal, en).
+
+### Upgrading
+- Shop without checkout: the `/de/widerruf` page disappears — remove menu links to it. Customer
+  translation overrides of `privacyPolicy.email.text` / `account.text` need the `textNoShop` variant.
+
 ## 3.5.2
 
 ### Fixed

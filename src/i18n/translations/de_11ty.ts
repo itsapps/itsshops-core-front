@@ -577,6 +577,7 @@ export default {
     email: {
       heading: "E-Mail-Versand",
       text: "E-Mails wie Bestellbestätigungen, Versandinformationen und – soweit genutzt – Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Ihre E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Ihre Einwilligung beim Newsletter.",
+      textNoShop: "E-Mails wie Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Ihre E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Ihre Einwilligung beim Newsletter.",
       resend: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in den USA verarbeitet (EU-US Data Privacy Framework). Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
       mailgunEu: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in der EU verarbeitet. Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
       mailgunUs: "Der Dienst ist unser Auftragsverarbeiter; die Daten werden in den USA verarbeitet (EU-Standardvertragsklauseln). Versandprotokolle werden beim Dienst nur für begrenzte Zeit gespeichert.",
@@ -592,6 +593,7 @@ export default {
     account: {
       heading: "Kundenkonto",
       text: "Wenn Sie ein Kundenkonto anlegen, speichern wir Ihre E-Mail-Adresse, Ihren Namen und die Angaben aus dem Registrierungsformular, damit Sie sich anmelden und Ihre Daten verwalten können (Art. 6 Abs. 1 lit. b DSGVO). Anmeldung und Konten verwalten wir über {{provider}} (Auftragsverarbeiter; Übermittlungen in die USA auf Grundlage der EU-Standardvertragsklauseln). Für die Anmeldung setzen wir die Cookies sb_access_token und sb_refresh_token; sie sind dafür unbedingt erforderlich. Ihr Konto und diese Daten löschen wir, wenn Sie das Konto löschen lassen; Bestellungen bleiben für die gesetzliche Aufbewahrungsfrist erhalten.",
+      textNoShop: "Wenn Sie ein Kundenkonto anlegen, speichern wir Ihre E-Mail-Adresse, Ihren Namen und die Angaben aus dem Registrierungsformular, damit Sie sich anmelden und Ihre Daten verwalten können (Art. 6 Abs. 1 lit. b DSGVO). Anmeldung und Konten verwalten wir über {{provider}} (Auftragsverarbeiter; Übermittlungen in die USA auf Grundlage der EU-Standardvertragsklauseln). Für die Anmeldung setzen wir die Cookies sb_access_token und sb_refresh_token; sie sind dafür unbedingt erforderlich. Ihr Konto und diese Daten löschen wir, wenn Sie das Konto löschen lassen.",
     },
     newsletter: {
       heading: "Newsletter",

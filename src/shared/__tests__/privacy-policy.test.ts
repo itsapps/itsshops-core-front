@@ -70,6 +70,14 @@ describe('privacy policy', () => {
     expect(section(p, 'storage').items).toEqual(['Ihre letzten Suchbegriffe.'])
   })
 
+  it('mentions no orders in email and account texts of a registration-only shop', () => {
+    const features = { checkout: false, users: true, newsletter: true, vinofact: false, ageGate: false, search: false }
+    for (const t of [tDe, tDu, tEn]) {
+      const p = buildPrivacyPolicy(input({ features }), t)
+      expect(text(p, 'email') + text(p, 'account')).not.toMatch(/Bestell|\border/i)
+    }
+  })
+
   it('lists recent searches only with site search, and says so when nothing is stored', () => {
     const noSearch = buildPrivacyPolicy(input({
       features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: true, search: false },
@@ -142,8 +150,10 @@ describe('privacy policy', () => {
       captcha: true,
       dpoContact: 'x',
     })
+    const noCheckout = { ...full, features: { ...full.features, checkout: false } }
     for (const t of [tDe, tEn, tDu]) {
       expect(JSON.stringify(buildPrivacyPolicy(full, t))).not.toMatch(/"privacyPolicy\./)
+      expect(JSON.stringify(buildPrivacyPolicy(noCheckout, t))).not.toMatch(/"privacyPolicy\./)
     }
   })
 })

@@ -24,6 +24,10 @@ so editors must not be able to remove the link by accident.
   footer menu at data level, so it also works with customer footer overrides.
 - Gated on `shop.enabled`, as the page/CSP/URL already were (not `shop.checkout`; core-back has no
   checkout flag anyway).
+- **Update 2026-10-29:** gated on `shop.enabled && shop.checkout` (page, URL, menu link, legal
+  texts). Without checkout nothing is bought online, so there is no contract to withdraw from
+  (Rosi Schuster: shop for registration only). core-back still offers the `orderWithdraw` system
+  link with `shop`; the frontend drops it (`#`).
 - **Update 2026-10-08 (FAGG §13a, in force 2026-10-01):** the link label is fixed by law ("Vertrag
   widerrufen"), so an editor title on the `orderWithdraw` system link is ignored. The form no longer
   has a captcha, so the per-route hCaptcha CSP for it is gone.

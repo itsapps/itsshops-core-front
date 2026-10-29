@@ -138,13 +138,13 @@ export function buildPrivacyPolicy(input: PrivacyPolicyInput, t: PrivacyT): Priv
   }
   if (f.checkout || f.users || f.newsletter) {
     const mailgunKey = services.mailgunEu ? 'mailgunEu' : 'mailgunUs'
-    add('email', ['text', services.emailProvider === 'resend' ? 'resend' : mailgunKey], {
+    add('email', [f.checkout ? 'text' : 'textNoShop', services.emailProvider === 'resend' ? 'resend' : mailgunKey], {
       provider: provider(services.emailProvider),
     })
   }
   if (f.checkout && input.hasWithdrawal) add('withdrawal', ['text'])
   if (f.checkout && services.wcApi) add('orderSystem', ['text'], { provider: provider('winenet') })
-  if (f.users) add('account', ['text'], { provider: provider('supabase') })
+  if (f.users) add('account', [f.checkout ? 'text' : 'textNoShop'], { provider: provider('supabase') })
   if (f.newsletter) add('newsletter', ['text'], { provider: provider('sanity') })
 
   const captchaForms = input.captcha

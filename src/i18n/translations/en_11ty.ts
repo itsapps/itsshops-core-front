@@ -577,6 +577,7 @@ export default {
     email: {
       heading: "Email delivery",
       text: "We send emails such as order confirmations, shipping updates and – where used – account or newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR) or, for the newsletter, your consent.",
+      textNoShop: "We send emails such as account or newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR) or, for the newsletter, your consent.",
       resend: "The service is our processor; data is processed in the USA (EU-US Data Privacy Framework). Delivery logs are kept by the service for a limited time only.",
       mailgunEu: "The service is our processor; data is processed in the EU. Delivery logs are kept by the service for a limited time only.",
       mailgunUs: "The service is our processor; data is processed in the USA (EU Standard Contractual Clauses). Delivery logs are kept by the service for a limited time only.",
@@ -592,6 +593,7 @@ export default {
     account: {
       heading: "Customer account",
       text: "If you create a customer account, we store your email address, your name and the details from the registration form so that you can sign in and manage your data (Art. 6(1)(b) GDPR). Sign-in and accounts are managed with {{provider}} (processor; transfers to the USA based on the EU Standard Contractual Clauses). For signing in we set the cookies sb_access_token and sb_refresh_token; they are strictly necessary for this. We delete your account and this data when you ask us to delete the account; orders are kept for the statutory retention period.",
+      textNoShop: "If you create a customer account, we store your email address, your name and the details from the registration form so that you can sign in and manage your data (Art. 6(1)(b) GDPR). Sign-in and accounts are managed with {{provider}} (processor; transfers to the USA based on the EU Standard Contractual Clauses). For signing in we set the cookies sb_access_token and sb_refresh_token; they are strictly necessary for this. We delete your account and this data when you ask us to delete the account.",
     },
     newsletter: {
       heading: "Newsletter",

@@ -149,7 +149,10 @@ export async function buildCmsData(
       ? resolvePosts(rawPosts, ctx, permalinks, resolve.module, resolve.post)
       : []
 
-    const orderWithdrawUrl = features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/` : '#'
+    // Withdrawal form only with online purchases (checkout) — '#' drops it from menus, legal texts
+    const orderWithdrawUrl = features.shop.enabled && features.shop.checkout
+      ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/`
+      : '#'
     const systemUrls = { orderWithdraw: orderWithdrawUrl }
 
     const menus = resolveMenus(rawMenus, ctx, resolve.menuItem, systemUrls)
@@ -204,7 +207,7 @@ export async function buildCmsData(
       newsletterUnsubscribeUrl:        features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribe}/` : '#',
       newsletterUnsubscribeSuccessUrl: features.newsletter ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribeSuccess}/` : '#',
       orderWithdrawUrl,
-      orderWithdrawSuccessUrl: features.shop.enabled ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
+      orderWithdrawSuccessUrl: orderWithdrawUrl !== '#' ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
       searchIndex: extensions.search
         ? buildSearchIndex(products, extensions.search, locale, {
             imageUrl: (img, width) => buildImageUrl(imageBuilder, img, width),

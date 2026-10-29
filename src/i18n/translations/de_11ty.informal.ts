@@ -139,12 +139,14 @@ export default {
     },
     email: {
       text: "E-Mails wie Bestellbestätigungen, Versandinformationen und – soweit genutzt – Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Deine E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Deine Einwilligung beim Newsletter.",
+      textNoShop: "E-Mails wie Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Deine E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Deine Einwilligung beim Newsletter.",
     },
     withdrawal: {
       text: "Wenn Du über unser Formular vom Vertrag zurücktrittst, verarbeiten wir Bestellnummer, E-Mail-Adresse, Deine Erklärung und deren Zeitpunkt, um den Widerruf zu bearbeiten und Dir den Eingang zu bestätigen (Art. 6 Abs. 1 lit. c DSGVO in Verbindung mit dem FAGG). Wir speichern diese Daten zusammen mit der Bestellung.",
     },
     account: {
       text: "Wenn Du ein Kundenkonto anlegst, speichern wir Deine E-Mail-Adresse, Deinen Namen und die Angaben aus dem Registrierungsformular, damit Du Dich anmelden und Deine Daten verwalten kannst (Art. 6 Abs. 1 lit. b DSGVO). Anmeldung und Konten verwalten wir über {{provider}} (Auftragsverarbeiter; Übermittlungen in die USA auf Grundlage der EU-Standardvertragsklauseln). Für die Anmeldung setzen wir die Cookies sb_access_token und sb_refresh_token; sie sind dafür unbedingt erforderlich. Dein Konto und diese Daten löschen wir, wenn Du das Konto löschen lässt; Bestellungen bleiben für die gesetzliche Aufbewahrungsfrist erhalten.",
+      textNoShop: "Wenn Du ein Kundenkonto anlegst, speichern wir Deine E-Mail-Adresse, Deinen Namen und die Angaben aus dem Registrierungsformular, damit Du Dich anmelden und Deine Daten verwalten kannst (Art. 6 Abs. 1 lit. b DSGVO). Anmeldung und Konten verwalten wir über {{provider}} (Auftragsverarbeiter; Übermittlungen in die USA auf Grundlage der EU-Standardvertragsklauseln). Für die Anmeldung setzen wir die Cookies sb_access_token und sb_refresh_token; sie sind dafür unbedingt erforderlich. Dein Konto und diese Daten löschen wir, wenn Du das Konto löschen lässt.",
     },
     newsletter: {
       text: "Wenn Du unseren Newsletter abonnierst, speichern wir Deine E-Mail-Adresse auf Grundlage Deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Die Anmeldung wird erst wirksam, wenn Du den Link in unserer Bestätigungs-E-Mail anklickst (Double-Opt-in); dafür speichern wir einen Bestätigungscode und den Zeitpunkt. Du kannst die Einwilligung jederzeit widerrufen – über den Abmeldelink in jedem Newsletter oder per E-Mail an uns. Danach löschen wir Deine Adresse aus dem Verteiler. Die Daten liegen bei {{provider}}, der Versand erfolgt über den unter „E-Mail-Versand“ genannten Dienst.",
