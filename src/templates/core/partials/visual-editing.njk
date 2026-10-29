@@ -1,26 +1,2 @@
-<script type="module">
-  import { enableVisualEditing } from "https://esm.sh/@sanity/visual-editing@3.2.4?bundle";
-
-  enableVisualEditing({
-    history: {
-      subscribe: function (navigate) {
-        function handler() {
-          navigate({ type: "push", url: location.pathname + location.search });
-        }
-        window.addEventListener("popstate", handler);
-        return function () { window.removeEventListener("popstate", handler); };
-      },
-      update: function (update) {
-        if (update.type === "push") window.history.pushState(null, "", update.url);
-        else if (update.type === "pop") window.history.back();
-        else if (update.type === "replace") window.history.replaceState(null, "", update.url);
-      }
-    },
-    refresh: function (payload) {
-      if (payload.source === "mutation") {
-        setTimeout(function () { window.location.reload(); }, 300);
-      }
-      return false;
-    }
-  });
-</script>
+<link rel="stylesheet" href="/assets/visual-editing/visual-editing.css">
+<script type="module" src="/assets/visual-editing/visual-editing.js"></script>

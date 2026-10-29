@@ -63,5 +63,17 @@ export default defineConfig({
       target: 'es2017',
       minify: true,
     })
+
+    // Sanity Presentation overlay, self-contained (no CDN) — served by setupAssets at
+    // /assets/visual-editing/ (JS + the @sanity/ui CSS it imports) and loaded only in preview renders.
+    await esbuild.build({
+      entryPoints: ['src/preview/visual-editing.ts'],
+      outfile: 'dist/assets/visual-editing/visual-editing.js',
+      bundle: true,
+      format: 'esm',
+      target: 'es2022',
+      minify: true,
+      define: { 'process.env.NODE_ENV': '"production"' },
+    })
   },
 });

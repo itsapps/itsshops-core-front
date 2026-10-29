@@ -396,7 +396,7 @@ export const createFilters = (ctx: CoreContext) => {
     image: (img: any, size: any, options?: any) => image(ctx.imageBuilder, img, size, options),
     imageUrl: (image: any, width?: number, height?: number, format?: any) => imageUrl(ctx.imageBuilder, image, width, height, format),
     escapeHTML,
-    stegaClean,
+    stegaClean: stegaClean as <T>(value: T) => T,
   }
 
   eleventyConfig.addFilter('portableText', function (blocks: any[], name?: string, options?: PortableTextOptions) {

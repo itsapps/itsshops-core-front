@@ -19,6 +19,11 @@ export const setupAssets = (ctx: CoreContext) => {
   eleventyConfig.addPassthroughCopy({
     [path.join(input, 'assets/images/favicon/*')]: '/'
   })
+  // Sanity Presentation overlay — the preview function renders pages that load it from the deployed
+  // site, so every normal build ships it.
+  eleventyConfig.addPassthroughCopy({
+    [path.join(coreDist, 'assets/visual-editing')]: '/assets/visual-editing'
+  })
   // Core-shipped legal graphics (harmonised warranty notice) — used by the checkout, the shipping
   // info module and the order email, so only shops get them.
   if (config.features.shop.enabled) {
