@@ -120,6 +120,7 @@ src/
 ├── i18n/                # permalinks + translations (de/en, 11ty/server/shared)
 ├── image/ · gallery/    # responsive image URLs/srcset + lightbox render
 ├── filters/ · shortcodes/ · schema/ · shared/   # Eleventy filters, shortcodes, schema.org, shared validation/API clients
+├── preview/             # Presentation overlay entry (visual-editing.ts) — bundled self-contained, not via eleventy
 ├── scripts/             # client-side JS (cart, checkout, user auth, newsletter, filters, search); scripts/inline/ = head-inlined
 ├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
 ├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
@@ -136,6 +137,7 @@ src/
 | `src/bin/itsshops.ts` | `dist/itsshops.js` | CLI binary |
 | `src/config/tailwind/tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
 | `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function |
+| `src/preview/visual-editing.ts` | `dist/assets/visual-editing/` | Presentation overlay (JS + CSS, esbuild in `onSuccess`), shipped at `/assets/visual-editing/` |
 
 `src/templates/` and `src/assets/` are copied to `dist/` post-build.
 

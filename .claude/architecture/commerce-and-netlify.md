@@ -40,7 +40,7 @@ Rules of thumb:
 
 | Subpath `@itsapps/itsshops-core-front/functions/…` | Factory | Purpose |
 |---|---|---|
-| `preview` | (default preview handler) | Sanity visual-editing preview render |
+| `preview` | (default preview handler) | Sanity visual-editing preview render (overlay script: `templates-and-assets.md` → "Static assets") |
 | `payment-create` | `createPaymentHandler` | Create a Stripe payment / checkout intent |
 | `payment-webhooks` | `createWebhookHandler` | Stripe webhook receiver (order fulfilment, customer confirmation + shop new-order mail) |
 | `payment-refund` | `createRefundHandler` | Refund a payment |

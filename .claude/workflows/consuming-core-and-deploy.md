@@ -51,7 +51,8 @@ This is the intended workflow while developing and deploying to test — it's qu
 npm offers:
 
 1. In the customer `package-lock.json`, change the core `#<commit>` to the latest core commit.
-2. **If core's `package.json` changed** (deps added/removed), reinstall so the dependency tree is
+2. **If core's `package.json` changed** (deps added/removed — **devDependencies too**: core's
+   `prepare` runs `npm run build` on a git install, so its build tools are installed), reinstall so the dependency tree is
    picked up — a bare `#hash` swap only updates the pinned commit, not the rest of the lockfile
    (dependency tree + integrity), so it's sufficient only when core's deps didn't change.
 
