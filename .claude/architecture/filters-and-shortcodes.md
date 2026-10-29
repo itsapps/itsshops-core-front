@@ -114,6 +114,14 @@ Do **not** strip it for plain visible output (`{{ title }}`) — leaving stega i
 click-to-edit in the Studio preview. (`stegaClean` comes from `@sanity/client/stega`, re-exported
 from the package root and registered as the `stegaClean` filter.)
 
+- **Layout gotcha — letter-spacing:** the stega tail is ~100+ zero-width characters, and
+  `letter-spacing` applies to each of them. Negative tracking makes the string measure far narrower
+  than it looks (or wider with positive tracking), so in preview only, shrink-to-fit/centred text
+  (e.g. a flex item with `align-items: center`) wraps or sits off-centre. Don't clean it (that
+  loses click-to-edit). Put the tracking on a span around the cleaned text and leave the raw tail
+  in the parent:
+  `<span class="tracked">{{ value | stegaClean }}</span>{{ value | replace(value | stegaClean, "") }}`,
+  with the parent at `letter-spacing: 0`.
 - **Clean at the source** in customer extensions: a resolver that passes a raw Sanity string later
   used in an attribute should `stegaClean` it there (`url: stegaClean(link.url)`), so templates
   don't have to remember.
