@@ -142,6 +142,9 @@ Branch-based:
    that same customer account — sees the matching pusher and rebuilds (`npm run build`, publish
    `dist/`). Deploy done.
 
+After a deploy the checkout is often left on `staging` — check `git branch --show-current` before
+the next commit (see Release flow step 3).
+
 Each customer's branch names / Netlify site live in its own CLAUDE.md.
 
 ### Node.js version

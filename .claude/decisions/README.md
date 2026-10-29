@@ -18,6 +18,8 @@ alternative was rejected, a constraint discovered the hard way.
   (for cross-ref resolution) but renders only the previewed one.
 - [visual-editing-bundled-not-cdn.md](visual-editing-bundled-not-cdn.md) — Presentation overlay
   bundled into core's `dist/` and shipped by every build, not loaded from esm.sh.
+- [newsletter-captcha-optional.md](newsletter-captcha-optional.md) — newsletter may run without
+  hCaptcha (`features.newsletter.captcha: false` + rate limit); user forms keep it.
 - [withdrawal-link-as-menu-system-link.md](withdrawal-link-as-menu-system-link.md) — Widerruf link is
   a `system` menu link + guaranteed footer fallback, not a page module (fixed route, CSP, legal).
 - [noindex-pages-minimal-head.md](noindex-pages-minimal-head.md) — page-level `noindex` pages skip
