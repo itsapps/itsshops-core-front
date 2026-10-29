@@ -4,6 +4,18 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.5.4
+
+### Fixed
+- Sanity Presentation: the visual-editing overlay never connected ("Unable to connect to visual
+  editing"). The esm.sh build of `@sanity/visual-editing@3.2.4` imports `@sanity/icons/<Icon>`
+  subpaths that esm.sh returns 404 for. Core now bundles `@sanity/visual-editing` 6 itself; every
+  build ships it at `/assets/visual-editing/` (JS + CSS), and preview renders load it from there.
+
+### Upgrading
+- Nothing to change. Studios should be on `sanity` v6 (overlay and Presentation tool talk over a
+  versioned protocol; tested with 6.9.2).
+
 ## 3.5.3
 
 Pairs with **core-back 4.3.0** (`features.shop.checkout` hides checkout-only shop settings).

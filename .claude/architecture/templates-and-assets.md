@@ -317,6 +317,15 @@ deferred bundle. `src/shared/` holds code shared between client scripts and Netl
 `setupAssets` passthrough-copies (skipped in preview): `src/assets/fonts/` → `/assets/fonts/`,
 `src/assets/images/static/*` → `/assets/images/`, and `src/assets/images/favicon/*` → `/`.
 
+**Presentation overlay (visual editing):** core's `dist/assets/visual-editing/` → `/assets/visual-editing/`
+on every normal build. `src/preview/visual-editing.ts` (`enableVisualEditing` from
+`@sanity/visual-editing` 6, a devDependency) is bundled with esbuild in tsup `onSuccess` into one self-contained JS
+file (React, styled-components, `@sanity/ui`) plus the `@sanity/ui` CSS it imports. Preview renders load
+both through `core/partials/visual-editing.njk`. The preview function's HTML loads them from the deployed site.
+**No CDN:** the esm.sh build (`@sanity/visual-editing@3.2.4?bundle`) broke on 404s for `@sanity/icons/<Icon>`
+subpaths (Firefox reports them as CORS / MIME errors) → "Unable to connect to visual editing" (fixed in 3.5.4).
+Keep `@sanity/visual-editing` on the same major as the studios' `sanity`.
+
 **Font preload:** every `.woff2` under the customer's `src/assets/fonts/preload/` (recursive) becomes
 the global `preloadFonts` (`src/config/plugins.ts`) → `<link rel="preload">` in the head. No config —
 put only the fonts needed above the fold there.
