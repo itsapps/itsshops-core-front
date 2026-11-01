@@ -102,8 +102,8 @@ delete theirs and reset `lastInvoiceNumber`). A plain `npm test` only does read-
 requests rejected before any write. `orderNotifyTests` mails the order from `getOrderId`, default
 `TEST_ORDER_ID` — a fixed test order with your own address, never "the newest order" (a real
 customer's in any dataset with real orders). The webhook tests send no shop new-order mail
-(`shopNotification: false`); the customer confirmation goes to `test@example.com`. Before 3.6.0
-these ran on every `npm test` — on 2026-10-29 that sent ~12 mails for Tinhof staging order 000008.
+(`shopNotification: false`); the customer confirmation goes to `test@example.com`. Why opt-in:
+[../decisions/integration-tests-side-effects-opt-in.md](../decisions/integration-tests-side-effects-opt-in.md).
 
 ## Functions (`src/netlify/functions/`)
 

@@ -15,7 +15,7 @@ this file stays the always-loaded router.
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |
-| Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy) | `.claude/architecture/commerce-and-netlify.md` |
+| Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches, Node.js version) | `.claude/workflows/consuming-core-and-deploy.md` |
@@ -125,6 +125,7 @@ src/
 ├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
 ├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
 ├── types/               # Config, data shapes, netlify, vinofact, generated sanity.types
+├── test-utils/          # integration-test suites customers run (`./test-utils`); side effects only with TEST_LIVE=1
 └── bin/                 # itsshops CLI (see .claude/architecture/cli.md)
 ```
 
@@ -137,6 +138,8 @@ src/
 | `src/bin/itsshops.ts` | `dist/itsshops.js` | CLI binary |
 | `src/config/tailwind/tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
 | `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function |
+| `src/netlify/functions/<name>.ts` | `dist/<name>.js` | Function factories (`./functions/*`; catalog in `commerce-and-netlify.md`) |
+| `src/test-utils/index.ts` | `dist/test-utils.js` | Integration-test suites for customers (`./test-utils`) |
 | `src/preview/visual-editing.ts` | `dist/assets/visual-editing/` | Presentation overlay (JS + CSS, esbuild in `onSuccess`), shipped at `/assets/visual-editing/` |
 
 `src/templates/` and `src/assets/` are copied to `dist/` post-build.

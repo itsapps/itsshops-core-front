@@ -61,3 +61,6 @@ alternative was rejected, a constraint discovered the hard way.
 - [schema-org-merchant-listings.md](schema-org-merchant-listings.md) — shipping per offer priced by
   checkout (Organization `ShippingService` rejected), return policy on Organization + each offer,
   never a `Product` without offers, no invented dates / handling time.
+- [integration-tests-side-effects-opt-in.md](integration-tests-side-effects-opt-in.md) — `test-utils`
+  tests that mail, pay or write data only run with `TEST_LIVE=1` (kept, not deleted: only
+  end-to-end check of the order path); order mails go to a fixed `TEST_ORDER_ID`.
