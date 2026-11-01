@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 3.6.0
 
 ### Added
 - `features.newsletter: { captcha: false }` — newsletter form without hCaptcha (no widget, no
