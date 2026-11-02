@@ -4,6 +4,17 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.6.2
+
+### Fixed
+- Image preloads (`{% preload %}`, `{% staticPreload %}`) carry `fetchpriority="high"`. The `<img>`
+  reuses the preload request, so its own `fetchpriority="high"` never applied and the hero preload
+  ran at Low — behind lazy images near the viewport (Tinhof mobile: hero finished at ~4.5 s, Speed
+  Index 3.9 s).
+
+### Upgrading
+- Nothing to change.
+
 ## 3.6.1
 
 ### Changed

@@ -198,7 +198,10 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
   images" ignores `object-fit: cover`, so it over-reports waste on such images.
 - **LCP:** `fetchpriority: 'high'` on the image, and/or `{% preload img, size %}` with the **same
   preset** — it builds the identical srcset, so the browser reuses the preloaded file (a mismatched
-  URL/format downloads twice).
+  URL/format downloads twice). The preload `<link>` itself carries `fetchpriority="high"`: the
+  `<img>` reuses the preload request, so the img's own priority never applies, and an unprioritised
+  image preload runs at Low — on Tinhof it finished after seven lazy carousel images (Speed Index
+  3.9 s on mobile).
 - `{% staticImage %}` is for local files (eleventy-img writes them to disk); `imageUrl` filter for
   plain URLs (og:image, JSON-LD, CSS/JS). Catalog: [filters-and-shortcodes.md](filters-and-shortcodes.md).
 

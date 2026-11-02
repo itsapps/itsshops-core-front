@@ -101,7 +101,9 @@ export function preload(
   if (!image) return ''
   
   const { quality } = options
-  return `<link rel="preload" as="image" imagesrcset="${buildSanitySrcset(builder, image, size, quality ?? size.quality)}" imagesizes="${size.widths}">`
+  // fetchpriority: the <img> reuses this request, so its own fetchpriority="high" never applies —
+  // without it the preload runs at Low and loses to lazy images near the viewport.
+  return `<link rel="preload" as="image" fetchpriority="high" imagesrcset="${buildSanitySrcset(builder, image, size, quality ?? size.quality)}" imagesizes="${size.widths}">`
 }
 
 export function image(
@@ -306,7 +308,7 @@ export function staticPreload(src: string, size: PictureSize): string {
   const metadata = Image.statsSync(src, { widths, formats, urlPath: STATIC_URL_PATH, outputDir: STATIC_OUTPUT_DIR })
   const primaryFormat = (Object.values(metadata) as any[][])[0]
   const srcset = primaryFormat.map((entry: any) => `${entry.url} ${entry.width}w`).join(', ')
-  return `<link rel="preload" as="image" imagesrcset="${srcset}" imagesizes="${size.widths}">`
+  return `<link rel="preload" as="image" fetchpriority="high" imagesrcset="${srcset}" imagesizes="${size.widths}">`
 }
 
 /** Pre-generates all static images so statsSync URLs resolve to real files. */

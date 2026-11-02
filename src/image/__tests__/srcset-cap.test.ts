@@ -72,6 +72,10 @@ describe('srcset is capped at the source width', () => {
     expect(candidate(srcset, 800)).toContain('q=40')
   })
 
+  it('preloads at high priority (the img reuses the preload request)', () => {
+    expect(preload(builder, img(1599), natural)).toContain('fetchpriority="high"')
+  })
+
   it('gives the preload and the img the identical srcset', () => {
     const source = img(1599)
     const fromPreload = preload(builder, source, natural).match(/imagesrcset="([^"]*)"/)![1]
