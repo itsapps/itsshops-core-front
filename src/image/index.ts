@@ -62,12 +62,33 @@ function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: numbe
 
 // ─── Sanity image ─────────────────────────────────────────────────────────────
 
+type SrcsetEntry = { w: number; hSpec: number | null; quality: number | undefined }
+
+/**
+ * Sanity upscales on request, so widths above the source add bytes but no detail. Drops them and
+ * offers the source width instead, keeping the ratio and quality of the nearest dropped entry.
+ * SVGs (nominal dimensions only) and images without known dimensions keep every entry.
+ */
+function capToSourceWidth(image: ResolvedImage, entries: SrcsetEntry[]): SrcsetEntry[] {
+  const sourceWidth = image.asset.dimensions?.width
+  if (!sourceWidth || image.asset._ref.endsWith('-svg')) return entries
+
+  const kept = entries.filter(e => e.w <= sourceWidth)
+  const dropped = entries.filter(e => e.w > sourceWidth)
+  if (!dropped.length || kept.some(e => e.w === sourceWidth)) return kept
+
+  const nearest = dropped.reduce((a, b) => (b.w < a.w ? b : a))
+  const hSpec = nearest.hSpec === null ? null : Math.round(nearest.hSpec * sourceWidth / nearest.w)
+  return [{ w: sourceWidth, hSpec, quality: nearest.quality }, ...kept]
+}
+
 function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size: PictureSize, quality?: number | (number | null)[]): string {
   const fmt = size.format ?? 'webp'
   const q = quality ?? size.quality
-  return size.sizes.map(([w, hSpec], i) => {
+  const entries = size.sizes.map(([w, hSpec], i) => ({ w, hSpec, quality: resolveQuality(q, i) }))
+  return capToSourceWidth(image, entries).map(({ w, hSpec, quality: entryQuality }) => {
     const h = resolveHeight(hSpec, w, image) ?? null
-    return `${buildSanityUrl(builder, image, w, h, fmt, resolveQuality(q, i), size.fit)} ${w}w`
+    return `${buildSanityUrl(builder, image, w, h, fmt, entryQuality, size.fit)} ${w}w`
   }).join(', ')
 }
 

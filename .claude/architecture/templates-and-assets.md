@@ -185,6 +185,17 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
   3:2, `card` 3:2, `thumb` 1:1. Customer `imageSizes` are merged over them (override a key or add
   new ones). `PictureSize` = `{ sizes: [w, h | null][], widths, format?, quality?, fit? }` — `null`
   height keeps the natural aspect ratio; fixed heights keep layouts stable.
+- **`srcset` stops at the source width:** Sanity upscales on request, so widths above
+  `asset.dimensions.width` are dropped and the source width is offered instead (same ratio and quality
+  as the nearest dropped entry). SVGs and images without dimensions keep every entry. A preset's large
+  widths only pay off with a large enough upload. The limit uses the full asset width, so an image
+  with an editor crop (`rect=`) can still be upscaled.
+- **`widths` (the `sizes` attribute) must describe the rendered box, not the container.** A
+  full-viewport `object-fit: cover` image is height-driven on portrait screens: for 3:2 images use
+  `'(max-aspect-ratio: 3/2) 150vh, 100vw'`, not `100vw` (phones would pick a file ~2.5× too small).
+  **Don't use `max()`/`min()` in `sizes`** — WebKit on phones treated `max(100vw, 150vh)` as `100vw`
+  (Chromium was fine); a media query is equivalent and works in both. Lighthouse's "properly size
+  images" ignores `object-fit: cover`, so it over-reports waste on such images.
 - **LCP:** `fetchpriority: 'high'` on the image, and/or `{% preload img, size %}` with the **same
   preset** — it builds the identical srcset, so the browser reuses the preloaded file (a mismatched
   URL/format downloads twice).
