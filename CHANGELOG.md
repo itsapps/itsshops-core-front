@@ -4,6 +4,19 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.6.1
+
+### Changed
+- Sanity image `srcset` (`image`, `preload`, `imageSrcsetData`) stops at the source width: Sanity
+  upscales on request, so preset widths above `asset.dimensions.width` are dropped and the source
+  width is offered instead (same ratio and quality as the nearest dropped entry). Small uploads no
+  longer download upscaled files. SVGs and images without dimensions keep every entry.
+
+### Upgrading
+- Nothing to change. Presets can now list large widths (e.g. up to 3000 for full-viewport heroes)
+  without penalising small uploads. For `object-fit: cover` images, write `widths` as a media query
+  (`'(max-aspect-ratio: 3/2) 150vh, 100vw'`), not `max()` — see `templates-and-assets.md` → Images.
+
 ## 3.6.0
 
 ### Added
