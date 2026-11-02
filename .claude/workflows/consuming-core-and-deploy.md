@@ -105,7 +105,11 @@ plan and asking before anything that pushes.
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
    in the frontend and/or backend; build locally (`npm run build`) to check; commit on `main`, push
    `origin`. This replaces an existing `npm link` — re-run `npm link @itsapps/itsshops-core-…` for
-   dev afterwards (the tag pin in `package.json`/lockfile stays).
+   dev afterwards (the tag pin in `package.json`/lockfile stays). **If that `npm install` is
+   interrupted** it can leave the link renamed to `node_modules/@itsapps/.itsshops-core-<x>-<random>`
+   next to a near-empty `itsshops-core-<x>/` (only a nested `node_modules`): the build then fails
+   with `Cannot find package …/itsshops-core-<x>/index.js`. Delete that folder, rename the
+   `.itsshops-core-…` link back (or re-run `npm link`); `package.json`/lockfile are untouched.
 3. **Customer — release:** bump the customer version without a tag
    (`npm version <minor|patch> --no-git-tag-version`, minor for features, patch for fixes — semver is
    loose for a site; customer repos have no `.npmrc`, tags are unprefixed anyway), commit
