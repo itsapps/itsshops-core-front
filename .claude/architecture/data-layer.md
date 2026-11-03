@@ -177,5 +177,9 @@ the customer's named `imageSizes`), and `formatVolume`. Also generates a per-loc
 ## Vinofact (`src/data/vinofact.ts`)
 
 When `shop.vinofact.integration` is configured, `fetchVinofactWines` pulls wine data from the
-VinoFact API and merges it onto variants. Image helpers (`vinofactImageUrl`, `vinofactSrcset`,
+VinoFact API (one GraphQL request for all IDs) and merges it onto variants. **A failed request
+fails the build** — a shop without wine data must not be published; the last good deploy stays
+live. Transient failures (network, 30 s timeout, 429, 5xx, bad JSON) are retried once after 3 s;
+401/4xx/GraphQL errors throw immediately. IDs the API doesn't return only warn. Tests:
+`src/data/__tests__/vinofact.test.ts`. Image helpers (`vinofactImageUrl`, `vinofactSrcset`,
 `vinofactImage`) are in `src/image` and re-exported.

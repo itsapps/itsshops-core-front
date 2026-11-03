@@ -49,16 +49,69 @@ function buildFieldsSelection(fields: VinofactField[] | undefined, locales: stri
   return fields.map(f => selections[f]).join('\n        ')
 }
 
+/** Per-attempt timeout — a hanging VinoFact request must not stall the build forever. */
+const REQUEST_TIMEOUT_MS = 30_000
+
+/** A failure worth one more try: network error, timeout, 429 or 5xx. */
+class TransientVinofactError extends Error {}
+
+function describeFetchError(err: unknown): string {
+  const e = err as any
+  const cause = e?.cause?.message ?? e?.cause
+  return [e?.message ?? String(e), e?.code && `code ${e.code}`, cause && `cause: ${cause}`]
+    .filter(Boolean).join(', ')
+}
+
+async function requestWines(endpoint: string, accessToken: string, body: string): Promise<any[]> {
+  let response: Response
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Token ${accessToken}`,
+      },
+      body,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    })
+  } catch (err) {
+    throw new TransientVinofactError(`request failed (${describeFetchError(err)})`)
+  }
+
+  if (response.status === 429 || response.status >= 500) {
+    throw new TransientVinofactError(`API responded with status ${response.status}`)
+  }
+  if (response.status === 401) throw new Error('invalid or missing API token (status 401)')
+  if (!response.ok) throw new Error(`API responded with status ${response.status}`)
+
+  let json: any
+  try {
+    json = await response.json()
+  } catch (err) {
+    throw new TransientVinofactError(`invalid JSON response (${describeFetchError(err)})`)
+  }
+  if (json?.errors?.length) throw new Error(`GraphQL error: ${json.errors[0]?.message ?? 'unknown'}`)
+  if (!Array.isArray(json?.data?.wines)) throw new Error('response has no `data.wines` list')
+  return json.data.wines
+}
+
 /**
  * Fetch specific wines from the Vinofact GraphQL API.
  * One request with all required IDs and locales — locale-keyed fields are
  * resolved per-locale in the variant resolver using ctx.resolveString.
  * Returns a Map keyed by wine ID for O(1) lookups when enriching variants.
+ *
+ * A failed request **fails the build** — publishing a shop without its wine data
+ * is worse than a red deploy (the last good deploy stays live). Transient
+ * failures (network error, timeout, 429, 5xx, unparsable body) are retried once
+ * after `retryDelayMs`; auth/4xx/GraphQL errors fail immediately. Wine IDs the
+ * API doesn't return (deleted/unpublished in VinoFact) only warn.
  */
 export async function fetchVinofactWines(
   config: VinofactConfig,
   wineIds: string[],
   locales: string[],
+  { retryDelayMs = 3000 }: { retryDelayMs?: number } = {},
 ): Promise<Map<string, any>> {
   if (!config.integration || wineIds.length === 0) return new Map()
 
@@ -71,39 +124,33 @@ export async function fetchVinofactWines(
       }
     }
   `
+  const body = JSON.stringify({ query, variables: { profileSlug, ids: wineIds } })
 
-  let response: Response
+  const fail = (err: unknown, attempts: number) => new Error([
+    `[itsshops] VinoFact request failed${attempts > 1 ? ` after ${attempts} attempts` : ''} — aborting the build so the shop isn't published without wine data.`,
+    `  Endpoint: ${endpoint}`,
+    `  Profile:  ${profileSlug}`,
+    `  Error:    ${(err as Error)?.message ?? String(err)}`,
+  ].join('\n'), { cause: err })
+
+  let wines: any[]
   try {
-    response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Token ${accessToken}`,
-      },
-      body: JSON.stringify({
-        query,
-        variables: { profileSlug, ids: wineIds },
-      }),
-    })
+    wines = await requestWines(endpoint, accessToken, body)
   } catch (err) {
-    const e = err as any
-    console.warn([
-      `[itsshops] Vinofact fetch failed — wine data will be missing.`,
-      `  Endpoint: ${endpoint}`,
-      `  Error:    ${e?.message ?? String(e)}`,
-      `  Code:     ${e?.code ?? 'n/a'}`,
-      `  Cause:    ${e?.cause?.message ?? e?.cause ?? 'n/a'}`,
-    ].join('\n'))
-    return new Map()
+    if (!(err instanceof TransientVinofactError)) throw fail(err, 1)
+    console.warn(`[itsshops] VinoFact ${err.message} — retrying in ${retryDelayMs / 1000}s…`)
+    await new Promise((r) => setTimeout(r, retryDelayMs))
+    try {
+      wines = await requestWines(endpoint, accessToken, body)
+    } catch (err2) {
+      throw fail(err2, 2)
+    }
   }
 
-  if (!response.ok) {
-    if (response.status === 401) throw new Error('[itsshops] Invalid or missing Vinofact API token')
-    throw new Error(`[itsshops] Vinofact API responded with status ${response.status}`)
+  const map = new Map<string, any>(wines.map((w: any) => [String(w.id), w]))
+  const missing = wineIds.filter((id) => !map.has(String(id)))
+  if (missing.length) {
+    console.warn(`[itsshops] VinoFact returned no data for ${missing.length} of ${wineIds.length} wine ID(s): ${missing.join(', ')} — those variants render without VinoFact data.`)
   }
-
-  const { data, errors } = await response.json()
-  if (errors) throw new Error(`[itsshops] Vinofact GraphQL error: ${errors[0]?.message ?? 'unknown'}`)
-
-  return new Map((data?.wines ?? []).map((w: any) => [String(w.id), w]))
+  return map
 }

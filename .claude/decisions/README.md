@@ -64,3 +64,10 @@ alternative was rejected, a constraint discovered the hard way.
 - [integration-tests-side-effects-opt-in.md](integration-tests-side-effects-opt-in.md) — `test-utils`
   tests that mail, pay or write data only run with `TEST_LIVE=1` (kept, not deleted: only
   end-to-end check of the order path); order mails go to a fixed `TEST_ORDER_ID`.
+- [image-sizes-follow-editor-crop.md](image-sizes-follow-editor-crop.md) — `[w, null]` presets use
+  the cropped area's ratio; `fit` presets ignore the crop; uncropped URLs kept byte-identical.
+- [image-functions-accept-raw-assets.md](image-functions-accept-raw-assets.md) — image functions take
+  `SanityImageInput` (`_ref` or `_id`) so raw portable-text image blocks render; not normalised only
+  in the data layer.
+- [vinofact-failure-fails-build.md](vinofact-failure-fails-build.md) — a failed VinoFact request
+  fails the build (one retry for network/timeout/429/5xx); missing wine IDs only warn.

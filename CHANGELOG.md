@@ -4,6 +4,19 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+### Changed
+- A failed VinoFact request now **fails the build** instead of publishing the shop without wine
+  data. Before, a network error only logged a warning and every variant rendered without VinoFact
+  fields. Transient failures (network error, 30 s timeout, 429, 5xx, unparsable body) are retried
+  once after 3 s; 401/other 4xx/GraphQL errors fail right away. Wine IDs VinoFact doesn't return
+  are listed in a warning (the build continues).
+
+### Upgrading
+- Nothing to change. A VinoFact outage during a deploy now shows as a failed Netlify build (the
+  previous deploy stays live) — retry the deploy once VinoFact is reachable.
+
 ## 3.6.3
 
 ### Fixed
