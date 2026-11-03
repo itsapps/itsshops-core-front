@@ -87,6 +87,13 @@ extensions: { portableTexts: { rich: (ctx) => ({ /* PortableTextHtmlComponents *
 {{ content | portableText('rich') | safe }}   {# named set #}
 ```
 
+The factory gets a `PortableTextExtensionContext` (`src/types/config.ts`: `image`, `imageUrl`,
+`imageSizes`, `escapeHTML`, `stegaClean`, …). Image blocks reach a `types.image` serializer
+**raw** — as projected by `portableTextBlocks` (`asset->{ _id, url, dimensions }`, crop, hotspot,
+alt), not through a resolver — and can go straight to `image(value, size)`: the image functions
+take `SanityImageInput` (asset with `_ref` or `_id`). Pick the preset from a block field (e.g.
+Jurtschitsch maps `size: small|medium|large` to `content*` presets).
+
 ## Search (`extensions.search`)
 
 `SearchConfig` builds the per-locale `search-<locale>.json` index: `searchFields` (MiniSearch fields),

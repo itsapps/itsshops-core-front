@@ -83,6 +83,13 @@ Each customer opts in separately — a new core version changes nothing in a cus
 pinned there. Because `production` is merged from `main`, the tag pin lands on `main` first; the
 next dev cycle may swap back to a hash.
 
+**Back from a tag to floating:** a hash edit only works while `package.json` has **no** committish —
+with `#<tag>` there, a hand-edited lockfile commit contradicts it. Switch once with a real install,
+`npm install 'github:itsapps/itsshops-core-front'` (writes the spec without a tag and pins the
+latest `main` commit), build, commit `package.json` + lockfile, then `npm link` again for dev. A
+customer that isn't live yet (only `staging`) floats like this until go-live and pins a tag only
+for its first production release.
+
 ## Release flow (core version → customer release)
 
 Trigger phrase: **"release <customer>"** (optionally which repos, e.g. "release tinhof frontend",
