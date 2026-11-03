@@ -1,7 +1,8 @@
 # Plan — bundles at checkout (missing checks, stock, packaging)
 
-Status: **planned** (2026-10-25), nothing implemented. All decisions made (end of file). Origin:
-review of how checkout handles `kind: 'bundle'` variants.
+Status: **planned** (2026-10-25, reviewed 2026-11-02), nothing implemented. One decision open
+(E, end of file — blocks phase 2 only). Origin: review of how checkout handles `kind: 'bundle'`
+variants.
 
 Spans core-front (cart validation, webhook, shipping calc, product page/markup) and, from phase 2/3,
 core-back (order snapshot schema, maybe a bundle packaging field). Read core-back's `CLAUDE.md`
@@ -21,7 +22,15 @@ docs, add `CHANGELOG.md` entries, and delete this file.
   only — the bundle variant, never its items. The order line stores only `bundle: { itemCount }`
   (`order-builder.ts`), so the webhook has no item list to work from.
 - Build: the variant query keeps everything `status != 'archived'`, so a bundle with an inactive item
-  still renders as buyable; `offerAvailability` (`src/schema/shipping.ts`) ignores items.
+  still renders as buyable; `offerAvailability` (`src/schema/shipping.ts`) ignores items. The
+  resolver (`src/data/resolve/variants.ts`, `bundleItems` `flatMap`) silently drops an item whose
+  variant isn't in `rawVariantMap` (archived or dangling), so the resolved bundle can't tell it lost
+  an item.
+- A bundle with empty/`null` `bundleItems` passes validation (weight `null`).
+- `commitOrderTransaction` (`src/netlify/services/sanity.ts`) runs `p.dec({ stock })` on **every**
+  order variant when `hasStock` is on — also on variants whose `stock` is empty (= unlimited). Not
+  verified what Sanity's `dec` does on a missing field; if it creates it negative, the variant turns
+  sold out after one order. Affects loose items too, as soon as a shop enables stock.
 - Packaging (`calcWinePackagingCost`): bundle wine bottles are pooled with loose bottles, then boxed.
   Checked with boxes 1/3/6 places at €8/€10/€12: 1 bundle of 3 → 3-box €10; 2 bundles of 3 → one
   6-box €12; bundle of 3 + 3 loose → one 6-box €12; bundle of 2 wine + 300 g physical item → 3-box
@@ -37,11 +46,14 @@ Phases 1 and 1b ship **before Jurtschitsch's production go-live** (in the core v
 with). Before 1b's error goes live, check the datasets for bundles that already contain
 inactive/archived items (read-only GROQ — not run yet).
 
-1. Guard `null` items: bundle → unavailable instead of a 500.
+1. Guard `null` items: bundle → unavailable instead of a 500. Same for a bundle with no items
+   (empty/`null` `bundleItems`).
 2. Add `status` to the bundle-item projection of the checkout query; any item not `active` → bundle
    unavailable.
 3. Product page agrees with checkout: `offerAvailability` and the product page treat a bundle with an
-   inactive/missing item as unavailable (resolved `bundleItems[].variant` needs `status`).
+   inactive/missing item as unavailable. Adding `status` to the resolved `bundleItems[].variant` is
+   not enough — the resolver drops archived/dangling items (see "Current state"), so it must also
+   record that one is missing (flag on the bundle, or compare ref count vs resolved count).
 4. Tests in `src/netlify/__tests__/cart-validator.test.ts` (+ `src/schema/__tests__/schema.test.ts`).
 
 ### Phase 1b — Studio (core-back, no decisions)
@@ -70,26 +82,37 @@ bundle's item list on the product page while the bundle stays buyable.
 No shop enables stock today (`features.shop.stock` is off in every backend, so `stock` is hidden and
 empty = unlimited). Built anyway (decided 2026-10-25), ready for when a shop turns stock on.
 
+Builds on phase 3.1: the per-item list on the order line snapshot (`orderItemBundle.items`) is what
+the webhook reduces from — one place for the data, not a separate copy in `orderMeta`. Do 3.1 first
+(or together).
+
 1. Total demand per variant across the cart: loose qty + bundle qty × item qty, against each
-   variant's stock. Cap/reject bundles whose items don't fit. The bundle's own `stock` (if set) is
-   checked as well, as today — e.g. a limited number of gift boxes.
+   variant's stock. What happens to lines that don't fit: decision E. The bundle's own `stock` (if
+   set) is checked as well, as today — e.g. a limited number of gift boxes.
 2. Reduce stock on paid orders: the bundle's own stock (as today) **and** each item's stock by
-   bundle qty × item qty. Keep the items (variantId, quantity) in `orderMeta` / the order line so
-   `commitOrderTransaction` reduces them in the same transaction.
+   bundle qty × item qty, from the order line's `bundle.items`, in the same
+   `commitOrderTransaction`. Sum the quantities per variant first (loose + in bundles → one `dec`
+   per doc). Only reduce variants whose `stock` is a number: first check what Sanity's `dec` does on
+   a missing field (see "Current state"); either way skip unlimited variants (carry "has stock"
+   from validation, or filter in the transaction). This also fixes loose items.
 3. Product page: bundle shows out of stock when its own stock or an item's stock can't fill one
    bundle.
-4. Tests: stock across loose and bundle lines; webhook reductions.
+4. Tests: stock across loose and bundle lines; webhook reductions (summed per variant, unlimited
+   variants untouched).
 
 ## Phase 3 — Bundle contents on the order (core-back schema + core-front; decision C)
 
-1. Order snapshot: `orderItemBundle` gets `items[]{ variantRef, title, sku, quantity }`.
+1. Order snapshot: `orderItemBundle` gets `items[]{ variantRef, title, sku, quantity }` (`title`
+   resolved in the order's locale, like the parent line). Phase 2's stock reduction reads it.
 2. Show the items in the order email and the Studio order view (packer needs them).
 3. wc-api: copy WooCommerce Product Bundles' order format (decision C): the bundle line as today
    plus `bundled_items` (ids of its child lines); one child line per item right after it with
    `bundled_by` (parent line id), its own `product_id`/`variation_id`/`sku`, quantity = bundle qty ×
    item qty, price/totals/taxes €0 — VAT and totals stay on the parent, so the rounding and
    tax-line invariants in `wc-api.md` hold. Child line ids: stable hash of order number + bundle
-   line `_key` + item variant id. Document in `wc-api.md`; tests in `wc-api.test.ts`.
+   line `_key` + item variant id (`stableId`, 32-bit djb2 mod 2e9 — more lines per order raise the
+   collision odds, so check ids are unique within the order and nudge on a clash). Document in
+   `wc-api.md`; tests in `wc-api.test.ts` (incl. unique ids).
 
 ## Phase 4 — Packaging (decisions B, D)
 
@@ -99,14 +122,27 @@ empty = unlimited). Built anyway (decided 2026-10-25), ready for when a shop tur
 2. ~~Non-wine items packed with wine ride free~~ — parked (decision D): unchanged for now, non-wine
    weight keeps paying the weight rates on top of the boxes.
 3. `resolveBundleWeight`: use an item's explicit weight first. Checkout and markup share the
-   function, so they stay in sync.
+   function, so they stay in sync. This also removes a mismatch within one cart item: the per-item
+   `bundleItems[].weight` (used for non-wine packaging weight) already uses the explicit weight, the
+   bundle's line weight doesn't. Drop the "see the plan's 'Separate, later'" note in its doc comment
+   (`src/netlify/lib/shipping.ts`).
 
 ## Out of scope
 
 Stock is checked at payment creation but reduced in the webhook, so concurrent payments can still
 oversell — affects all items, not only bundles; separate item.
 
+Mixed VAT rates inside a bundle: the bundle has one tax category, so items at different rates (e.g.
+10 % food + 20 % wine) are taxed at the bundle's rate. Accepted for now; revisit if a shop sells
+such a bundle.
+
 ## Open decisions
+
+Open (raised in the 2026-11-02 review; blocks phase 2 only):
+- **E — Lines that don't fit the stock:** when loose items and bundles compete for one variant's
+  stock, which gives way? Suggested: reject the whole bundle line (→ `unavailableItems`) rather than
+  cap it — no rule needed for which line keeps the stock, a bundle is only ever sold whole, and the
+  customer message stays simple. Loose lines keep today's capping.
 
 Decided 2026-10-25:
 - **A — Stock model:** both — items' stock is checked and reduced, and the bundle's own `stock` (if
