@@ -1,7 +1,7 @@
 # A failed VinoFact request fails the build (one retry), not a degraded shop
 
 Status: accepted
-Date: 2026-11-03 (core-front, unreleased after 3.6.3)
+Date: 2026-11-03 (core-front 3.6.4)
 
 ## Context
 
