@@ -55,6 +55,22 @@ export type ResolvedImage = {
   crop?: SanityImageCrop
 }
 
+/**
+ * What the image functions (`image`, `preload`, `imageSrcsetData`, `imageUrl`, …) accept: a
+ * `ResolvedImage`, or a raw Sanity image straight from a query. Following the asset reference
+ * (`asset->{ _id, … }`) yields the asset document's `_id` instead of the reference's `_ref` — both
+ * hold the same id. Portable-text image blocks reach the image functions in that raw form.
+ */
+export type SanityImageInput = {
+  asset: ({ _ref: string; _id?: string } | { _id: string; _ref?: string }) & {
+    dimensions?: { width: number; height: number; aspectRatio: number }
+    palette?: any
+  }
+  alt?: string | null
+  hotspot?: SanityImageHotspot
+  crop?: SanityImageCrop
+}
+
 export type ResolvedCarousel = {
   autoplay: boolean
   autoplayDelay: number

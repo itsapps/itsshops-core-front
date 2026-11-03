@@ -8,13 +8,13 @@ import type { VinofactField } from './vinofact'
 import type { PortableTextHtmlComponents } from '@portabletext/to-html'
 import type { CmsData, SearchEntry } from './data'
 import type { PictureSize, PictureOptions } from '../image'
-import type { ResolvedImage, ResolvedVariant } from './data'
+import type { ResolvedVariant, SanityImageInput } from './data'
 
 export type PortableTextExtensionContext = {
   imageBuilder: ImageUrlBuilder
   imageSizes: Record<string, PictureSize>
-  image: (img: ResolvedImage | null | undefined, size: PictureSize, options?: PictureOptions) => string
-  imageUrl: (image: ResolvedImage | null | undefined, width?: number, height?: number, format?: 'webp' | 'jpg') => string
+  image: (img: SanityImageInput | null | undefined, size: PictureSize, options?: PictureOptions) => string
+  imageUrl: (image: SanityImageInput | null | undefined, width?: number, height?: number, format?: 'webp' | 'jpg') => string
   escapeHTML: (str: string) => string
   stegaClean: <T>(value: T) => T
 }
@@ -263,13 +263,13 @@ export type SearchImageData = {
 
 export type SearchBuildContext = {
   /** Build a Sanity CDN URL for a resolved image. Returns empty string when image is absent. */
-  imageUrl: (image: ResolvedImage | null | undefined, width?: number) => string
+  imageUrl: (image: SanityImageInput | null | undefined, width?: number) => string
   /**
    * Build srcset/src data for a responsive image using a named size from the customer's imageSizes config.
    * Returns null when image is absent or the size name is not found.
    * Store the result in the search entry and use it in the JS renderer to build an <img> tag.
    */
-  imageSrcset: (image: ResolvedImage | null | undefined, sizeName: string) => SearchImageData | null
+  imageSrcset: (image: SanityImageInput | null | undefined, sizeName: string) => SearchImageData | null
   /** The customer's configured image sizes — use to check what's available. */
   imageSizes: Record<string, PictureSize>
   /** Format a volume in ml using the configured unit (ml, cl, l). */

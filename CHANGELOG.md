@@ -4,6 +4,25 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.6.3
+
+### Fixed
+- Since 3.6.1, `image` / `preload` / `imageSrcsetData` threw (`Cannot read properties of undefined
+  (reading 'endsWith')`) for images that weren't run through a resolver — e.g. portable-text image
+  blocks a customer renders straight from the query (`asset->{ _id, … }`, no `_ref`). The SVG
+  check now accepts `_ref` or `_id` (Jurtschitsch `richContentModule` failed to build).
+  The image functions' types say so too: they take a new `SanityImageInput` (asset with `_ref`
+  or `_id`) instead of `ResolvedImage`, which is still accepted unchanged.
+- Sanity images with an editor crop keep the crop's aspect ratio for `null`-height preset entries
+  (`image`, `preload`, `imageSrcsetData`, incl. the `<img>` `width`/`height`). The ratio came from
+  the uncropped asset, so `h` was wrong and Sanity cut that ratio out of the crop around the
+  hotspot (Rosi Schuster: a landscape crop of a portrait photo rendered as a portrait slice). The
+  source-width cap (3.6.1) now uses the cropped width too. Presets with `fit` still serve the
+  whole image (crop and hotspot ignored) and keep the whole image's ratio.
+
+### Upgrading
+- Nothing to change. Cropped images may now render with a different (the intended) aspect ratio.
+
 ## 3.6.2
 
 ### Fixed

@@ -184,9 +184,13 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
 - **Core presets** (`imageSizes` in `src/image/index.ts`): `hero` 16:9, `content` 4:3, `carousel`
   3:2, `card` 3:2, `thumb` 1:1. Customer `imageSizes` are merged over them (override a key or add
   new ones). `PictureSize` = `{ sizes: [w, h | null][], widths, format?, quality?, fit? }` — `null`
-  height keeps the natural aspect ratio; fixed heights keep layouts stable.
+  height keeps the natural aspect ratio (of the editor crop, if any; with `fit` the whole image, since `fit` ignores crop + hotspot — `sourceDimensions()`); fixed heights keep layouts stable.
+- **Input type:** the image functions take `SanityImageInput` (`src/types/data.ts`) — a
+  `ResolvedImage` or a raw query image whose asset has `_id` instead of `_ref` (dereferenced
+  `asset->{ _id, … }`, e.g. portable-text image blocks passed straight to `image()` in a
+  `portableTexts` extension). Never read `asset._ref` alone in image code.
 - **`srcset` stops at the source width:** Sanity upscales on request, so widths above
-  `asset.dimensions.width` are dropped and the source width is offered instead (same ratio and quality
+  `asset.dimensions.width` (minus the crop) are dropped and the source width is offered instead (same ratio and quality
   as the nearest dropped entry). SVGs and images without dimensions keep every entry. A preset's large
   widths only pay off with a large enough upload. The limit uses the full asset width, so an image
   with an editor crop (`rect=`) can still be upscaled.

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { ImageUrlBuilder } from '@sanity/image-url'
-import type { ResolvedImage } from '../types/data'
+import type { SanityImageInput } from '../types/data'
 import { stegaClean } from '@sanity/client/stega'
 import Image from '@11ty/eleventy-img'
 
@@ -37,10 +37,35 @@ export type PictureOptions = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function resolveHeight(hSpec: number | null, w: number, image: ResolvedImage): number | undefined {
+/**
+ * Pixel size of what Sanity serves before resizing: the asset dimensions minus the editor crop
+ * (Sanity stores it as fractions cut off each side). A preset with `fit` serves the whole image
+ * (`ignoreImageParams()` in buildSanityUrl drops crop + hotspot), so the crop is ignored there.
+ */
+function sourceDimensions(image: SanityImageInput, fit: PictureSize['fit']): { width: number; height: number } | undefined {
+  const d = image.asset.dimensions
+  if (!d) return undefined
+  const c = fit ? undefined : image.crop
+  const width = d.width * (1 - (c?.left ?? 0) - (c?.right ?? 0))
+  const height = d.height * (1 - (c?.top ?? 0) - (c?.bottom ?? 0))
+  return width > 0 && height > 0 ? { width, height } : { width: d.width, height: d.height }
+}
+
+/**
+ * A `null` height keeps the natural aspect ratio — of the *cropped* image (whole image with `fit`). Using the uncropped
+ * ratio would send both w and h, and Sanity would then cut that ratio out of the crop around the
+ * hotspot (e.g. a landscape crop of a portrait photo came back portrait).
+ */
+function resolveHeight(hSpec: number | null, w: number, image: SanityImageInput, fit: PictureSize['fit']): number | undefined {
   if (hSpec !== null) return hSpec
-  const ar = image.asset.dimensions?.aspectRatio
-  return ar ? Math.floor(w / ar) : undefined
+  const d = sourceDimensions(image, fit)
+  if (!d) return undefined
+  // Same arithmetic as before the crop fix (w / aspectRatio), so uncropped images keep their
+  // exact URLs (w * h / w would round some heights 1px differently).
+  const ratio = d.width === image.asset.dimensions!.width && d.height === image.asset.dimensions!.height
+    ? image.asset.dimensions!.aspectRatio
+    : d.width / d.height
+  return Math.floor(w / ratio)
 }
 
 function resolveQuality(quality: number | (number | null)[] | undefined, index: number): number | undefined {
@@ -49,7 +74,7 @@ function resolveQuality(quality: number | (number | null)[] | undefined, index: 
   return q ?? undefined
 }
 
-function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: number, h: number | null, format?: string, quality?: number, fit?: PictureSize['fit']): string {
+function buildSanityUrl(builder: ImageUrlBuilder, image: SanityImageInput, w: number, h: number | null, format?: string, quality?: number, fit?: PictureSize['fit']): string {
   let b = builder.image(image)
   if (fit) b = b.ignoreImageParams()
   b = b.width(w)
@@ -65,13 +90,17 @@ function buildSanityUrl(builder: ImageUrlBuilder, image: ResolvedImage, w: numbe
 type SrcsetEntry = { w: number; hSpec: number | null; quality: number | undefined }
 
 /**
- * Sanity upscales on request, so widths above the source add bytes but no detail. Drops them and
- * offers the source width instead, keeping the ratio and quality of the nearest dropped entry.
+ * Sanity upscales on request, so widths above the source (the cropped width, if cropped) add bytes
+ * but no detail. Drops them and offers the source width instead, keeping the ratio and quality of the nearest dropped entry.
  * SVGs (nominal dimensions only) and images without known dimensions keep every entry.
  */
-function capToSourceWidth(image: ResolvedImage, entries: SrcsetEntry[]): SrcsetEntry[] {
-  const sourceWidth = image.asset.dimensions?.width
-  if (!sourceWidth || image.asset._ref.endsWith('-svg')) return entries
+function capToSourceWidth(image: SanityImageInput, entries: SrcsetEntry[], fit: PictureSize['fit']): SrcsetEntry[] {
+  const cropped = sourceDimensions(image, fit)?.width
+  const sourceWidth = cropped ? Math.floor(cropped) : undefined
+  // Resolved images carry `_ref`; raw ones (e.g. portable-text image blocks rendered straight from
+  // the query, `asset->{ _id, … }`) only `_id`.
+  const ref = image.asset._ref ?? image.asset._id ?? ''
+  if (!sourceWidth || ref.endsWith('-svg')) return entries
 
   const kept = entries.filter(e => e.w <= sourceWidth)
   const dropped = entries.filter(e => e.w > sourceWidth)
@@ -82,19 +111,19 @@ function capToSourceWidth(image: ResolvedImage, entries: SrcsetEntry[]): SrcsetE
   return [{ w: sourceWidth, hSpec, quality: nearest.quality }, ...kept]
 }
 
-function buildSanitySrcset(builder: ImageUrlBuilder, image: ResolvedImage, size: PictureSize, quality?: number | (number | null)[]): string {
+function buildSanitySrcset(builder: ImageUrlBuilder, image: SanityImageInput, size: PictureSize, quality?: number | (number | null)[]): string {
   const fmt = size.format ?? 'webp'
   const q = quality ?? size.quality
   const entries = size.sizes.map(([w, hSpec], i) => ({ w, hSpec, quality: resolveQuality(q, i) }))
-  return capToSourceWidth(image, entries).map(({ w, hSpec, quality: entryQuality }) => {
-    const h = resolveHeight(hSpec, w, image) ?? null
+  return capToSourceWidth(image, entries, size.fit).map(({ w, hSpec, quality: entryQuality }) => {
+    const h = resolveHeight(hSpec, w, image, size.fit) ?? null
     return `${buildSanityUrl(builder, image, w, h, fmt, entryQuality, size.fit)} ${w}w`
   }).join(', ')
 }
 
 export function preload(
   builder: ImageUrlBuilder,
-  image: ResolvedImage | null | undefined,
+  image: SanityImageInput | null | undefined,
   size: PictureSize,
   options: PictureOptions = {},
 ): string {
@@ -108,7 +137,7 @@ export function preload(
 
 export function image(
   builder: ImageUrlBuilder,
-  image: ResolvedImage | null | undefined,
+  image: SanityImageInput | null | undefined,
   size: PictureSize,
   options: PictureOptions = {},
 ): string {
@@ -123,7 +152,7 @@ export function image(
 
   const lastIndex = size.sizes.length - 1
   const [fw, fhSpec] = size.sizes[lastIndex]
-  const fh = resolveHeight(fhSpec, fw, image)
+  const fh = resolveHeight(fhSpec, fw, image, size.fit)
   const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(fQuality, lastIndex), size.fit)
 
   const attrs = [
@@ -148,14 +177,14 @@ export function image(
  */
 export function imageSrcsetData(
   builder: ImageUrlBuilder,
-  image: ResolvedImage | null | undefined,
+  image: SanityImageInput | null | undefined,
   size: PictureSize,
 ): { src: string; srcset: string; sizes: string; width: number; height: number | undefined } | null {
   if (!image || !size.sizes.length) return null
   const fmt = size.format ?? 'webp'
   const lastIndex = size.sizes.length - 1
   const [fw, fhSpec] = size.sizes[lastIndex]
-  const fh = resolveHeight(fhSpec, fw, image)
+  const fh = resolveHeight(fhSpec, fw, image, size.fit)
   const src = buildSanityUrl(builder, image, fw, fhSpec ?? null, fmt, resolveQuality(size.quality, lastIndex), size.fit)
   const srcset = buildSanitySrcset(builder, image, size, size.quality)
   return { src, srcset, sizes: size.widths, width: fw, height: fh }
@@ -164,7 +193,7 @@ export function imageSrcsetData(
 /** Plain URL for a given size — use for og:image, JSON-LD, CSS backgrounds etc. */
 export function imageUrl(
   builder: ImageUrlBuilder,
-  image: ResolvedImage | null | undefined,
+  image: SanityImageInput | null | undefined,
   width?: number,
   height?: number,
   format?: 'webp' | 'jpg',
@@ -275,7 +304,7 @@ export function vinofactImage(
 /** Single URL from a PictureSize preset — uses the largest [w, h] entry for retina sharpness */
 export function imageSizeUrl(
   builder: ImageUrlBuilder,
-  image: ResolvedImage | null | undefined,
+  image: SanityImageInput | null | undefined,
   size: PictureSize,
   format?: 'webp' | 'jpg',
 ): string {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createImageUrlBuilder } from '@sanity/image-url'
 import { image, imageSrcsetData, preload, type PictureSize } from '..'
-import type { ResolvedImage } from '../../types/data'
+import type { ResolvedImage, SanityImageInput } from '../../types/data'
 
 const builder = createImageUrlBuilder({ projectId: 'abc12345', dataset: 'test' })
 
@@ -17,7 +17,7 @@ function img(width: number | null, height = 1066, ext = 'jpg'): ResolvedImage {
   }
 }
 
-const srcsetOf = (source: ResolvedImage, size: PictureSize) => imageSrcsetData(builder, source, size)!.srcset
+const srcsetOf = (source: SanityImageInput, size: PictureSize) => imageSrcsetData(builder, source, size)!.srcset
 const widthsOf = (srcset: string) => srcset.split(', ').map(c => Number(c.match(/ (\d+)w$/)![1]))
 const candidate = (srcset: string, w: number) => srcset.split(', ').find(c => c.endsWith(` ${w}w`))!
 
@@ -82,5 +82,50 @@ describe('srcset is capped at the source width', () => {
     const fromImage = image(builder, source, natural).match(/ srcset="([^"]*)"/)![1]
     expect(fromPreload).toBe(fromImage)
     expect(widthsOf(fromImage)).toEqual([1599, 1200])
+  })
+})
+
+describe('a raw (unresolved) image', () => {
+  it('works with an asset that has `_id` instead of `_ref` (portable-text image blocks)', () => {
+    const raw: SanityImageInput = { asset: { _id: 'image-abc-3939x4971-jpg', dimensions: { width: 3939, height: 4971, aspectRatio: 3939 / 4971 } } }
+    expect(widthsOf(srcsetOf(raw, natural))).toEqual([3000, 2400, 1800, 1200])
+    const svg: SanityImageInput = { asset: { _id: 'image-abc-100x50-svg', dimensions: { width: 100, height: 50, aspectRatio: 2 } } }
+    expect(widthsOf(srcsetOf(svg, natural))).toEqual([3000, 2400, 1800, 1200])
+  })
+})
+
+describe('an editor crop', () => {
+  // The terroir background: a 5333×8000 portrait, cropped to the full width × top 48%.
+  const portrait = (): ResolvedImage => ({
+    ...img(5333, 8000),
+    crop: { _type: 'sanity.imageCrop', top: 0, bottom: 0.52, left: 0, right: 0 },
+    hotspot: { _type: 'sanity.imageHotspot', x: 0.5, y: 0.25, width: 1, height: 0.48 },
+  })
+
+  it('keeps the aspect ratio of the cropped area, not of the whole image', () => {
+    const url = candidate(srcsetOf(portrait(), natural), 3000)
+    expect(url).toContain('w=3000')
+    // 5333 × 3840 → 3000 × 2160 (landscape), not 3000 × 4500
+    expect(url).toContain('h=2160')
+    expect(url).toContain('rect=0,0,5333,3840')
+  })
+
+  it('caps the srcset at the cropped width', () => {
+    const cropped: ResolvedImage = { ...img(4000, 3000), crop: { _type: 'sanity.imageCrop', top: 0, bottom: 0, left: 0.25, right: 0.25 } }
+    expect(widthsOf(srcsetOf(cropped, natural))).toEqual([2000, 1800, 1200])
+  })
+
+  it('ignores the crop for a preset with `fit`, which serves the whole image', () => {
+    const gallery: PictureSize = { ...natural, fit: 'max' }
+    const url = candidate(srcsetOf(portrait(), gallery), 3000)
+    expect(url).not.toContain('rect=')
+    expect(url).toContain('h=4500') // whole 5333×8000 image → 3000×4500
+    const data = imageSrcsetData(builder, portrait(), gallery)!
+    expect(data.height! / data.width).toBeCloseTo(8000 / 5333, 2)
+  })
+
+  it('sets the cropped ratio on the img width/height attributes', () => {
+    const data = imageSrcsetData(builder, portrait(), natural)!
+    expect(data.height! / data.width).toBeCloseTo(3840 / 5333, 2)
   })
 })
