@@ -110,7 +110,11 @@ plan and asking before anything that pushes.
    (`.npmrc` `tag-version-prefix=""` keeps tags unprefixed); then `git push --follow-tags origin main`. Until pushed, the version commit/tag can still be amended
    (`git tag -f -a <tag>`); once pushed, treat a tag as final.
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
-   in the frontend and/or backend; build locally (`npm run build`) to check; commit on `main`, push
+   in the frontend and/or backend; in the **frontend** then also `npx update-browserslist-db@latest`
+   (refreshes `caniuse-lite` in the lockfile — it's frozen there, and autoprefixer/cssnano print
+   "Browserslist: browsers data … is N months old" on every Netlify build once it's > 6 months
+   old; harmless, but doing it per release keeps it fresh without a separate chore; the lockfile
+   change rides in the release commit); build locally (`npm run build`) to check; commit on `main`, push
    `origin`. This replaces an existing `npm link` — re-run `npm link @itsapps/itsshops-core-…` for
    dev afterwards (the tag pin in `package.json`/lockfile stays). **If that `npm install` is
    interrupted** it can leave the link renamed to `node_modules/@itsapps/.itsshops-core-<x>-<random>`
