@@ -144,6 +144,16 @@ src/
 
 `src/templates/` and `src/assets/` are copied to `dist/` post-build.
 
+## What goes into core (and what doesn't)
+
+Core (front **and** back) only gets what more than one shop uses. A feature only one customer
+needs is **customer code** (customer schema, Netlify function wrappers, template overrides,
+`extensions`) until a second shop needs it — then promote it. Core may still gain, for a
+customer-only feature: **exports of existing helpers** (no new behaviour, so the customer copies
+nothing) and a **flag** where core itself builds something the customer can't remove by override
+(e.g. a page core generates). Plans must state which side each part lands on. Owner's rule,
+2026-11-04; example: `.claude/plans/interest-list-and-invites.md`.
+
 ## Features that span frontend and backend
 
 If a feature needs new or changed CMS data, it spans both stacks: the **schema/studio** side in
