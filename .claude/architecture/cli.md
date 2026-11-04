@@ -81,12 +81,16 @@ SANITY_DATASET=development itsshops sanity count order
   - one transaction holds all IDs; for very large deletes (thousands of docs) it may hit Sanity's
     request-size limit — split by type then.
 - There is **no write/patch command.** For bulk content edits use a one-off Node script with
-  `@sanity/client` (resolve it from the customer frontend's `node_modules` via `createRequire`, run
-  with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by
+  `@sanity/client` (a dependency of core-front, not of the customer frontend — resolve it with
+  `createRequire(path.join(process.cwd(), 'node_modules/@itsapps/itsshops-core-front/package.json'))`,
+  which works linked and installed; run from the customer frontend with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by
   `language` (append new ones with a fresh `_key`), `set` the whole field in one transaction, and
   dry-run + guard the dataset name first.
-  **Claude Code auto mode** may block running such a script ("Modify Shared Resources") — reliably
-  so when it *can* write `production`, even if the run targets `development`. Keep each run a single
+  **Claude Code auto mode** may block running such a script ("Modify Shared Resources") — often
+  when it *can* write `production`, even if the run targets `development` (not always: a single
+  dev write and a single user-requested production write ran on 2026-11-04); production
+  **reads** too (blocked as "Production Reads" when looping a dry run over several customers'
+  `.env.production`). Keep each run a single
   write (no bundled reads/builds), guard dev scripts to `development` only, and hand production
   runs to the user as a one-line `! cd <frontend> && SANITY_DATASET=production node <script> --production`
   (short path — a long scratchpad path tends to get cut off when pasted).
