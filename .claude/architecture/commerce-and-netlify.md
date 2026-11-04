@@ -93,6 +93,20 @@ wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot �
 `aggregateBy: ['ip', 'domain']`) — not in core. Code-based rate limits work on every Netlify plan, capped at 2 rules per site on
 Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests are answered by Netlify (429) before the function runs.
 
+**Captcha or not — the rule for public forms** (owner, 2026-11-04):
+- **Forms that only collect something** (newsletter, withdrawal, a customer's interest list):
+  honeypot + per-IP `rateLimit`, a minimum fill time where the form has a script, and double
+  opt-in where the law allows it. **No captcha by default**; add one only when abuse shows up
+  (Resend dashboard, a flood in the Studio). Worst case there is spam mail and an empty mail quota.
+- **Forms that protect accounts** (user recover/register, later login if needed): hCaptcha from
+  the start (`captchaSiteKey`, core's per-path CSP). The stakes are account access and probing
+  which addresses have accounts.
+- **No daily mail cap** on collect forms: under an attack it blocks real sign-ups too, so it
+  doesn't help them. Stop bots before they send instead.
+
+Mail-sending forms all use the shop's provider quota (Resend free: 100/day), so a flood also
+blocks order mails. Parked hardening for the withdrawal form: `.claude/plans/withdrawal-spam-hardening.md`.
+
 > Note: the JS `exports` subpaths are the public API and are in active use across the ecosystem —
 > `.` (~30 files), `./core`, `./scripts`, `./test-utils`, and the `./functions/*` set (all wired by
 > customers except `auth-webhooks`, which is exposed but currently unused). Keep them, `auth-webhooks`
