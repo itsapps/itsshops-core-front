@@ -93,7 +93,7 @@ wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot �
 `aggregateBy: ['ip', 'domain']`) — not in core. Code-based rate limits work on every Netlify plan, capped at 2 rules per site on
 Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests are answered by Netlify (429) before the function runs.
 
-**Captcha or not — the rule for public forms** (owner, 2026-11-04):
+**Captcha or not — the rule for public forms** (owner, 2026-11-04; why: [../decisions/captcha-only-for-account-forms.md](../decisions/captcha-only-for-account-forms.md)):
 - **Forms that only collect something** (newsletter, withdrawal, a customer's interest list):
   honeypot + per-IP `rateLimit`, a minimum fill time where the form has a script, and double
   opt-in where the law allows it. **No captcha by default**; add one only when abuse shows up

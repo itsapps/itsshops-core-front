@@ -35,6 +35,8 @@ alternative was rejected, a constraint discovered the hard way.
   by `SHOP_FORMALITY` (env, both runtimes), not a Sanity toggle.
 - [withdrawal-never-lost-no-captcha.md](withdrawal-never-lost-no-captcha.md) — unmatched withdrawals
   are stored + confirmed + flagged; no captcha, rate limit + honeypot instead.
+- [captcha-only-for-account-forms.md](captcha-only-for-account-forms.md) — captcha only on account
+  forms; collect forms get honeypot + fill time + rate limit, no daily mail cap.
 - [legal-texts-generated-from-settings.md](legal-texts-generated-from-settings.md) — withdrawal
   instructions + model form built from settings by one builder for page and mail; wording verbatim.
 - [privacy-policy-generated.md](privacy-policy-generated.md) — privacy policy built from features,

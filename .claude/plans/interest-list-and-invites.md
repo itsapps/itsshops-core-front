@@ -2,7 +2,7 @@
 
 Status: **Planned** (2026-11-04, revised after review the same day; second and third reviews
 2026-11-04 checked it against the code). All phase 1 decisions made; one phase 2 question open (see "Open
-questions"). **Phase 1 steps 1–4 done** (2026-11-04: core-front exports unreleased; Schuster backend + frontend committed on `main`, not deployed); step 5 (staging verify + deploy) open. Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
+questions"). **Phase 1 steps 1–4 done and deployed to staging** (2026-11-04: core-front unreleased, pinned by lockfile commit; Schuster backend + frontend on `staging`); step 5 checks open (see there). Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
 Supabase account (`users` feature). New flow:
 
 1. **Interest phase:** visitors leave their details (no password, no account). Schuster manages the
@@ -33,7 +33,9 @@ are customer code).
   token (never a GET confirm endpoint — mail link scanners would confirm on their own), and a repeat
   submit re-sends the **same** token (a double submit must not invalidate the first mail's link).
   Gives proof of consent for the later invite mail and keeps typos and foreign addresses out.
-- **Spam: no hCaptcha, per-IP `rateLimit` + double opt-in** — same decision as Schuster's
+- **Spam: no hCaptcha, per-IP `rateLimit` + double opt-in + honeypot + minimum fill time
+  (3 s)**, **no daily mail cap** (it would block real sign-ups under an attack too) — rule for all
+  collect forms: core-front `decisions/captcha-only-for-account-forms.md`. Same as Schuster's
   newsletter. Worst case: confirmation mails to foreign addresses; those entries are deleted
   unconfirmed after 7 days. Why no captcha: the form sits on an editor-chosen page (see placement),
   and `_headers` CSP is keyed by path, so hCaptcha would need either a site-wide CSP widening or new
@@ -280,7 +282,7 @@ browser — step 5.)
     filter for the country select, `autocomplete` attributes, per-field error spans plus an
     `aria-live` status, `aria-busy` on submit and focus moved to the first invalid field.
     WCAG 2.2 AA.
-  - No captcha (see Decided).
+  - No captcha (see Decided); honeypot `website` + `elapsedMs` fill time (as built).
   - Newsletter: an unticked checkbox with its own label and core's note below it, as in the core
     register form (`forms.fields.registerForNewsletter.privacyNotice` with `{url:
     cms[_locale].privacyUrl}`, `core/components/user/user-register.njk`). Above the submit button,
@@ -312,6 +314,11 @@ browser — step 5.)
 
 ### Step 5 — verify and deploy (staging)
 
+Done 2026-11-04: core pushed + lockfile pin, backend and frontend on `staging` (separate Netlify
+site `staging-rosi-schuster-frontend`, `development` dataset), docs. Bot check verified on staging
+(direct API post → success, nothing stored). **Open:** the owner's browser checks below, dataset
+private, Supabase test users, cleanup triggered by hand.
+
 - Check the Sanity dataset is **private** (personal data → paid plan, core-front
   `netlify-plans.md`).
 - Delete the Supabase test users (and optionally the test `customer` docs).
@@ -322,8 +329,10 @@ browser — step 5.)
   follows a slug change; unset → no button),
   newsletter opt-in lands in `newsletterSubscriber`, rate limit, an internal link to the interest
   page from the contact page, keyboard-only + screen-reader pass. (No CSP check: everything is same-origin — core-front `CLAUDE.md` → CSP row.)
-- **Cleanup:** scheduled functions only run on the production deploy, not on the `staging` branch
-  deploy — trigger it by hand (`netlify functions:invoke` locally, or a unit test with a fake clock).
+- **Cleanup:** scheduled functions run only on a site's production deploy. Schuster's staging is a
+  separate Netlify site whose production branch is `staging`, so `interest-cleanup` likely runs
+  there daily — check its function log once; otherwise trigger it by hand (unit tests cover the
+  logic).
 - Core pushed first, then swap the lockfile `#<commit>` (Schuster `CLAUDE.md` → Deploy).
 - Docs: `/itsshops-update-docs` (Schuster frontend + backend `CLAUDE.md`, core-front
   `commerce-and-netlify.md` for the new exports). In the Schuster frontend `CLAUDE.md`, also rewrite
