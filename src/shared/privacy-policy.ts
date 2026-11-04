@@ -11,7 +11,7 @@
 import type { WithdrawalAddress, WithdrawalRichText, WithdrawalSegment } from './withdrawal-instructions'
 
 /** "Stand" of the generated text (YYYY-MM). */
-export const PRIVACY_POLICY_UPDATED = '2026-10'
+export const PRIVACY_POLICY_UPDATED = '2026-11'
 
 export const PRIVACY_PROVIDERS = {
   netlify:  { name: 'Netlify, Inc.', url: 'https://www.netlify.com/privacy/' },
@@ -140,7 +140,7 @@ export function buildPrivacyPolicy(input: PrivacyPolicyInput, t: PrivacyT): Priv
   }
   if (f.checkout || f.users || f.newsletter) {
     const mailgunKey = services.mailgunEu ? 'mailgunEu' : 'mailgunUs'
-    add('email', [f.checkout ? 'text' : 'textNoShop', services.emailProvider === 'resend' ? 'resend' : mailgunKey], {
+    add('email', [f.checkout ? 'text' : f.users ? 'textNoShop' : 'textNewsletterOnly', services.emailProvider === 'resend' ? 'resend' : mailgunKey], {
       provider: provider(services.emailProvider),
     })
   }

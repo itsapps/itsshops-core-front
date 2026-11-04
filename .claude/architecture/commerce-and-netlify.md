@@ -356,7 +356,7 @@ Each section has a condition, so the text follows the features:
 |---|---|
 | controller (+ DPO from `module.dpoContact`), overview, hosting (Netlify), content (Sanity CDN) | always |
 | orders (+ carrier paragraph if a non-pickup shipping method exists), payment (Stripe, Apple/Google Pay) | `shop.checkout` |
-| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services`; without checkout `email.textNoShop` (no order/shipping mails) |
+| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services`; without checkout `email.textNoShop` (no order/shipping mails), with neither checkout nor users `email.textNewsletterOnly` (no account mails, consent only) |
 | withdrawal | checkout + `orderWithdrawUrl` |
 | orderSystem (wineNET, hardcoded) | checkout + `services.wcApi` (`WC_CONSUMER_KEY` set) |
 | account (Supabase), newsletter | `users` / `newsletter`; account without checkout `account.textNoShop` (no "orders are kept") |

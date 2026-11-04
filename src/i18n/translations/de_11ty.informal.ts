@@ -140,6 +140,7 @@ export default {
     email: {
       text: "E-Mails wie Bestellbestätigungen, Versandinformationen und – soweit genutzt – Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Deine E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Deine Einwilligung beim Newsletter.",
       textNoShop: "E-Mails wie Kontobestätigungen oder Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Deine E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist die Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO) bzw. Deine Einwilligung beim Newsletter.",
+      textNewsletterOnly: "E-Mails wie Newsletter-Bestätigungen versenden wir über {{provider}}. Dafür erhält der Dienst Deine E-Mail-Adresse und den Inhalt der E-Mail. Rechtsgrundlage ist Deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).",
     },
     withdrawal: {
       text: "Wenn Du über unser Formular vom Vertrag zurücktrittst, verarbeiten wir Bestellnummer, E-Mail-Adresse, Deine Erklärung und deren Zeitpunkt, um den Widerruf zu bearbeiten und Dir den Eingang zu bestätigen (Art. 6 Abs. 1 lit. c DSGVO in Verbindung mit dem FAGG). Wir speichern diese Daten zusammen mit der Bestellung.",

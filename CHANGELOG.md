@@ -14,6 +14,9 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   `badRequest`, `errorResponse`, `methodNotAllowed`, `ErrorCode`, `log`. No new behaviour.
 
 ### Changed
+- Privacy policy: on a site with newsletter but neither checkout nor `users`, the "E-Mail-Versand"
+  section no longer mentions account confirmations (new key `privacyPolicy.email.textNewsletterOnly`,
+  legal basis consent). `PRIVACY_POLICY_UPDATED` → 2026-11.
 - The functions' `sanityClient` is created on first use instead of at import (like the Supabase
   and Stripe clients). Importing a function or helper no longer needs `SANITY_*` env; a missing
   env var now throws on the first Sanity call. Callers are unchanged.

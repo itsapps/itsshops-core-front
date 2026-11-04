@@ -85,6 +85,16 @@ describe('privacy policy', () => {
     }
   })
 
+  it('mentions no accounts in the email text of a newsletter-only site', () => {
+    const features = { checkout: false, users: false, newsletter: true, vinofact: false, ageGate: false, search: false }
+    for (const t of [tDe, tDu, tEn]) {
+      const p = buildPrivacyPolicy(input({ features }), t)
+      expect(ids(p)).not.toContain('account')
+      expect(text(p, 'email')).toMatch(/Newsletter|newsletter/)
+      expect(text(p, 'email')).not.toMatch(/Konto|account|Bestell|\border/i)
+    }
+  })
+
   it('lists recent searches only with site search, and says so when nothing is stored', () => {
     const noSearch = buildPrivacyPolicy(input({
       features: { checkout: false, users: false, newsletter: false, vinofact: false, ageGate: true, search: false },

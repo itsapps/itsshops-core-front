@@ -578,6 +578,7 @@ export default {
       heading: "Email delivery",
       text: "We send emails such as order confirmations, shipping updates and – where used – account or newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR) or, for the newsletter, your consent.",
       textNoShop: "We send emails such as account or newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is the performance of the contract (Art. 6(1)(b) GDPR) or, for the newsletter, your consent.",
+      textNewsletterOnly: "We send emails such as newsletter confirmations via {{provider}}. The service receives your email address and the content of the email. The legal basis is your consent (Art. 6(1)(a) GDPR).",
       resend: "The service is our processor; data is processed in the USA (EU-US Data Privacy Framework). Delivery logs are kept by the service for a limited time only.",
       mailgunEu: "The service is our processor; data is processed in the EU. Delivery logs are kept by the service for a limited time only.",
       mailgunUs: "The service is our processor; data is processed in the USA (EU Standard Contractual Clauses). Delivery logs are kept by the service for a limited time only.",
