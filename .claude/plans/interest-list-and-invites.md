@@ -321,7 +321,7 @@ browser — step 5.)
   added by hand (no second doc, no mail), the `productList` button (editor link set → renders and
   follows a slug change; unset → no button),
   newsletter opt-in lands in `newsletterSubscriber`, rate limit, an internal link to the interest
-  page from the contact page, keyboard-only + screen-reader pass, CSP has no violations.
+  page from the contact page, keyboard-only + screen-reader pass. (No CSP check: everything is same-origin — core-front `CLAUDE.md` → CSP row.)
 - **Cleanup:** scheduled functions only run on the production deploy, not on the `staging` branch
   deploy — trigger it by hand (`netlify functions:invoke` locally, or a unit test with a fake clock).
 - Core pushed first, then swap the lockfile `#<commit>` (Schuster `CLAUDE.md` → Deploy).

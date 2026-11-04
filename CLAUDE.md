@@ -13,7 +13,7 @@ this file stays the always-loaded router.
 | GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
 | Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS, schema.org JSON-LD (merchant listings) | `.claude/architecture/templates-and-assets.md` |
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
-| CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles) | `.claude/architecture/csp-and-headers.md` |
+| CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles). Same-origin scripts, fetches (`/api/…`) and styles are always allowed; only an **external** host needs `headers.extra` — no external host, no CSP change or check | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |
 | Checkout/Stripe, users/Supabase, newsletter, email, orders/tax/shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
