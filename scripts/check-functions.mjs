@@ -4,8 +4,8 @@
 import { readFileSync } from 'node:fs'
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-// Some modules create clients at import time; dummy values are enough to load them.
-for (const name of ['SANITY_PROJECT_ID', 'SANITY_DATASET', 'SANITY_TOKEN']) process.env[name] ??= 'check'
+// No env is set on purpose: clients (Sanity, Supabase, Stripe) are lazy, so every function must
+// load without credentials — this also proves imports have no client-creating side effects.
 
 let failed = 0
 const subpaths = Object.keys(pkg.exports).filter((key) => key.startsWith('./functions/'))

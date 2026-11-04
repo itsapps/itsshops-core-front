@@ -1,4 +1,4 @@
-import { createClient } from '@sanity/client'
+import { createClient, type SanityClient } from '@sanity/client'
 import { sanityApiVersion } from '../../config/constants'
 import { log } from '../utils/logger'
 import type { WithdrawalPeriodStart } from '../../shared/withdrawal-instructions'
@@ -9,14 +9,17 @@ import type {
   OrderStatusHistoryEntry,
 } from '../types/checkout'
 
-function initSanityClient() {
+let client: SanityClient | null = null
+
+function getClient(): SanityClient {
+  if (client) return client
   const projectId = process.env.SANITY_PROJECT_ID
   const dataset = process.env.SANITY_DATASET
   const token = process.env.SANITY_TOKEN
   if (!projectId || !dataset || !token) {
     throw new Error('SANITY_PROJECT_ID, SANITY_DATASET, and SANITY_TOKEN must be set')
   }
-  return createClient({
+  client = createClient({
     projectId,
     dataset,
     token,
@@ -26,9 +29,21 @@ function initSanityClient() {
     maxRetries: 2,
     retryDelay: (attempt) => 1000 * 2 ** attempt,
   })
+  return client
 }
 
-export const sanityClient = initSanityClient()
+/**
+ * Lazily-initialized Sanity client (like `supabase` in `./supabase`). Construction is deferred
+ * to first use via a proxy, so importing this module — e.g. through `./functions/utils` in a
+ * customer function or test — doesn't throw without `SANITY_*` env; the error fires on first use.
+ */
+export const sanityClient = new Proxy({} as SanityClient, {
+  get(_target, prop) {
+    const c = getClient()
+    const value = Reflect.get(c, prop, c)
+    return typeof value === 'function' ? value.bind(c) : value
+  },
+}) as SanityClient
 
 const CHECKOUT_QUERY = `{
   "variants": *[_type == "productVariant" && _id in $variantIds]{

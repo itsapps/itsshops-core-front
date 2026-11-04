@@ -102,6 +102,10 @@
     "./test-utils": {
       "types": "./dist/test-utils.d.ts",
       "import": "./dist/test-utils.js"
+    },
+    "./functions/utils": {
+      "types": "./dist/functions-utils.d.ts",
+      "import": "./dist/functions-utils.js"
     }
   },
   "files": [

@@ -4,6 +4,20 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (minor)
+
+### Added
+- `@itsapps/itsshops-core-front/functions/utils`: re-exports existing Netlify helpers for
+  customer-only functions — `sanityClient`, `fetchEmailSettings`, `buildEmailShopSettings`,
+  `sendMail` (+ `SendMailParams`, `SendMailResult`), `validateEmail`, `normalizeEmail`,
+  `prepareSubscription`, `confirmSubscription`, `serverT` (core translations only), `success`,
+  `badRequest`, `errorResponse`, `methodNotAllowed`, `ErrorCode`, `log`. No new behaviour.
+
+### Changed
+- The functions' `sanityClient` is created on first use instead of at import (like the Supabase
+  and Stripe clients). Importing a function or helper no longer needs `SANITY_*` env; a missing
+  env var now throws on the first Sanity call. Callers are unchanged.
+
 ## 3.7.0
 
 Pairs with **core-back 5.0.0** (`category.description` becomes `i18nText`).

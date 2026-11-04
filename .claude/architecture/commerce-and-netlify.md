@@ -57,6 +57,16 @@ Rules of thumb:
 
 The full built set is the tsup `entry` map; the exposed set is the `exports` map in `package.json`.
 
+**`./functions/utils`** (`src/netlify/functions/utils.ts` → `dist/functions-utils.js`) is not a
+handler: it re-exports existing helpers for **customer-only** functions (e.g. Rosi Schuster's
+interest list), so customers don't copy core code — `sanityClient`, `fetchEmailSettings`,
+`buildEmailShopSettings`, `sendMail` (+ types), `validateEmail`, `normalizeEmail`,
+`prepareSubscription` / `confirmSubscription`, `serverT` (core's bundled translations only — not
+the customer's `translations` config), `success` / `badRequest` / `errorResponse` /
+`methodNotAllowed`, `ErrorCode`, `log`. **Re-exports only** — new behaviour for one customer stays
+in the customer repo (core `CLAUDE.md` → "What goes into core"). Add a helper here when a customer
+function needs it.
+
 ### Adding a new function — what to update
 
 All four are required (verified against the current wiring); miss one and customers can't consume it:
@@ -168,7 +178,10 @@ the one part of core-front with real coverage, keep it that way.
 ## Services (`src/netlify/services/`)
 
 External integrations: `stripe.ts`, `supabase.ts` (users), `sanity.ts`, `email.ts` dispatching to
-`mailgun.ts` / `resend.ts`. Config/keys come from env (see plugin-and-config doc) — Stripe publishable
+`mailgun.ts` / `resend.ts`. **All clients are lazy** (memoised on first use; `sanityClient` and
+`supabase` are proxies over the real client), so importing a function or helper needs no env and
+has no side effects — `check:functions` loads every function without any env to prove it. A missing
+env var throws on first use. Keep new clients lazy the same way. Config/keys come from env (see plugin-and-config doc) — Stripe publishable
 key is the only one surfaced client-side.
 
 ## Utils & types (`src/netlify/utils/`, `src/netlify/types/`)

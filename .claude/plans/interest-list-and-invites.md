@@ -2,7 +2,7 @@
 
 Status: **Planned** (2026-11-04, revised after review the same day; second and third reviews
 2026-11-04 checked it against the code). All phase 1 decisions made; one phase 2 question open (see "Open
-questions"). Nothing built yet. Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
+questions"). **Phase 1 steps 1–2 done** (2026-11-04: core-front exports unreleased; Schuster backend schema + structure uncommitted); steps 3–5 not started. Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
 Supabase account (`users` feature). New flow:
 
 1. **Interest phase:** visitors leave their details (no password, no account). Schuster manages the
@@ -94,7 +94,7 @@ are customer code).
 
 ## Phase 1 — interest list
 
-### Step 1 — core-front: exports only
+### Step 1 — core-front: exports only ✅ done 2026-11-04
 
 - New file `src/netlify/functions/utils.ts` → tsup entry `'functions-utils'` → package export
   `"./functions/utils": { types: ./dist/functions-utils.d.ts, import: ./dist/functions-utils.js }`.
@@ -129,7 +129,11 @@ are customer code).
   hook, client captcha exports, a `confirmOptIn` helper — all unnecessary without captcha.
 - `npm run build`. CHANGELOG entry (minor).
 
-### Step 2 — Schuster backend: `interestedPerson` document
+### Step 2 — Schuster backend: `interestedPerson` document ✅ done 2026-11-04
+
+(As built: `source`/`status` defaults via field `initialValue`, not `getInitialValue` — core-back
+declares that hook but never reads it. Orderings: newest first + last name.)
+
 
 - `src/schema/documents/interestedPerson.ts` (an `ITSDocumentDefinition`, added to the today empty
   `documents` array in `src/schema/index.ts`), Studio title **"Interessenten"** (de/en field
