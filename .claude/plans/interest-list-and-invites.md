@@ -2,7 +2,7 @@
 
 Status: **Planned** (2026-11-04, revised after review the same day; second and third reviews
 2026-11-04 checked it against the code). All phase 1 decisions made; one phase 2 question open (see "Open
-questions"). **Phase 1 steps 1–3 done** (2026-11-04: core-front exports unreleased; Schuster backend schema + structure and frontend functions committed on `main`); steps 4–5 not started. Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
+questions"). **Phase 1 steps 1–4 done** (2026-11-04: core-front exports unreleased; Schuster backend + frontend committed on `main`, not deployed); step 5 (staging verify + deploy) open. Origin: Rosi Schuster sells by allocation, not online. Today, visitors register a
 Supabase account (`users` feature). New flow:
 
 1. **Interest phase:** visitors leave their details (no password, no account). Schuster manages the
@@ -241,7 +241,13 @@ Sanity's `QueryParams` type. Tests: `tests/unit/interest.test.ts`.)
   `supabase-keep-alive`. Keep the Supabase env vars and Supabase-side hooks (phase 2); note that in
   the Schuster `CLAUDE.md`.
 
-### Step 4 — Schuster frontend: UI
+### Step 4 — Schuster frontend: UI ✅ done 2026-11-04
+
+(As built: scoped `blocks/interest-form.css` instead of core's `form.css` — that one would
+restyle the newsletter dialog; error text darkened for AA; `user.css` deleted with the user
+overrides. Live regions stay in the DOM, emptied instead of `hidden`. Not yet checked in a
+browser — step 5.)
+
 
 - `src/_config/interest.mts`: `INTEREST_CONFIRM_PATHS` (`{ de: 'interesse/bestaetigt', en:
   'interest/confirmed' }`), `INTEREST_PENDING_RETENTION_DAYS = 7`, the mail texts (de formal + en:
