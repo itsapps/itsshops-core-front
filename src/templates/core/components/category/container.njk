@@ -5,7 +5,7 @@
       <h1 class="category-title">{{ category.title }}</h1>
       {% block category_description %}
       {% if category.description %}
-        <p class="category-description">{{ category.description }}</p>
+        <div class="category-description">{{ category.description | paragraphs | safe }}</div>
       {% endif %}
       {% endblock %}
     </header>

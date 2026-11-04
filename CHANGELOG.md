@@ -4,6 +4,22 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.7.0
+
+Pairs with **core-back 5.0.0** (`category.description` becomes `i18nText`).
+
+### Changed
+- The category page renders `category.description` through `paragraphs`: blank lines start a new
+  `<p>`, single line breaks become `<br>`. The wrapper is now `<div class="category-description">`
+  (was `<p class="category-description">`) — paragraph spacing (e.g. `.category-description > * + *`)
+  is up to the customer CSS.
+
+### Upgrading
+- Restyle `.category-description` if your CSS assumed a `<p>`. Overrides that print
+  `category.description` / `cat.description` directly keep working but show one paragraph — use
+  `{{ … | paragraphs | safe }}` in a `<div>` for multiple paragraphs.
+- Existing category descriptions need a data fix in the Studio (see core-back CHANGELOG).
+
 ## 3.6.4
 
 ### Changed
