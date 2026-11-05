@@ -50,7 +50,7 @@ Usage: `{{ value | filterName(args) }}`.
 | `filterByCategory` / `filterGroupsForProducts` | Category filtering + which filter groups apply to a product set. |
 | `hasModule(type)` | Does a `modules[]` array contain a module of `type`. |
 | `limit(n)` / `map(path)` / `sortBy(path, reverse?)` | Array take / pluck / sort by key. |
-| `countryName(code)` / `countryList(locale?)` | Country display name / option list. |
+| `countryName(code)` / `countryList(locale?)` | Country display name / option list (every ISO country, names from `Intl.DisplayNames` — the Studio's `allCountryOptions` in core-back uses the same source). |
 | `linkActiveState(url)` | Active-nav helper for the current page. |
 
 ### Portable text & schema.org

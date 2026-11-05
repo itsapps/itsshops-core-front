@@ -58,6 +58,13 @@ npm offers:
 
 That caveat in step 2 is the one thing to stay aware of; otherwise the hash edit is fine and fast.
 
+**Pinning a commit that isn't on core's `main` yet** (a pushed feature branch) when its deps
+changed: a reinstall without a committish pins `main`'s HEAD, not the branch. Instead edit the
+hash and fix the tree by hand — e.g. a dependency core *removed*: drop it from core's entry
+`dependencies` and drop its `node_modules/<dep>` package entry if nothing else depends on it — then
+check with `npm ci --dry-run --ignore-scripts` (what Netlify runs). An *added* dependency needs a
+real install; merge core to `main` first.
+
 **Local `node_modules` gotcha:** after a hash-only edit, `npm install` in a clone that already has
 core installed (not `npm link`ed) does **not** refetch it. It records the new commit but keeps the
 old files. To actually get the new core locally: `rm -rf node_modules/@itsapps/itsshops-core-*`,
@@ -182,6 +189,10 @@ branch:
 
 - **`main`** (and feature work) → pushed via `origin` as the **developer's own GitHub user** (the dev
   is a collaborator on the customer's repo). `main` is not a Netlify deploy branch → no build.
+- **New features go on a `feature/<slug>` branch** in every repo they touch — core and customer
+  (owner's rule, 2026-11-05) — not straight on `main`. A customer's `staging` may be merged from
+  the feature branch for testing (its lockfile may pin a core commit from core's pushed feature
+  branch); merge to `main` once it's tested, then delete the branch. Docs-only fixes may go to `main`.
 - **`staging` / `production`** → pushed via the **`user`** remote, authenticated with the **customer
   account's Personal Access Token (PAT)**. The pusher then matches the Netlify account → the build
   triggers.
