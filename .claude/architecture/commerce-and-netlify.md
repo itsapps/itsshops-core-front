@@ -60,7 +60,8 @@ The full built set is the tsup `entry` map; the exposed set is the `exports` map
 **`./functions/utils`** (`src/netlify/functions/utils.ts` → `dist/functions-utils.js`) is not a
 handler: it re-exports existing helpers for **customer-only** functions (e.g. Rosi Schuster's
 interest list), so customers don't copy core code — `sanityClient`, `fetchEmailSettings`,
-`buildEmailShopSettings`, `sendMail` (+ types), `validateEmail`, `normalizeEmail`,
+`buildEmailShopSettings`, `sendMail` (+ types), `renderSimpleEmail` (core's `SimpleEmail` in the shop
+layout → HTML, `lib/simple-email.tsx` — use it so customer mails look like core's), `validateEmail`, `normalizeEmail`,
 `prepareSubscription` / `confirmSubscription`, `serverT` (core's bundled translations only — not
 the customer's `translations` config), `success` / `badRequest` / `errorResponse` /
 `methodNotAllowed`, `ErrorCode`, `log`. **Re-exports only** — new behaviour for one customer stays

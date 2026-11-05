@@ -8,6 +8,9 @@
  */
 export { sanityClient, fetchEmailSettings } from '../services/sanity'
 export { buildEmailShopSettings } from '../lib/email-settings'
+export { renderSimpleEmail } from '../lib/simple-email'
+export type { RenderSimpleEmailInput } from '../lib/simple-email'
+export type { EmailShopSettings } from '../templates/email/types'
 export { sendMail } from '../services/email'
 export type { SendMailParams, SendMailResult } from '../services/email'
 export { validateEmail } from '../../shared/validation'

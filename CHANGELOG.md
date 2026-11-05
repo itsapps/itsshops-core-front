@@ -12,6 +12,9 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   `sendMail` (+ `SendMailParams`, `SendMailResult`), `validateEmail`, `normalizeEmail`,
   `prepareSubscription`, `confirmSubscription`, `serverT` (core translations only), `success`,
   `badRequest`, `errorResponse`, `methodNotAllowed`, `ErrorCode`, `log`. No new behaviour.
+- `renderSimpleEmail({ locale, settings, headline?, text, cta?, footerLink? })` in the same export
+  (+ types `RenderSimpleEmailInput`, `EmailShopSettings`): renders core's `SimpleEmail` in the
+  shop's email layout to HTML, so customer mails look like core's own.
 
 ### Changed
 - Privacy policy: on a site with newsletter but neither checkout nor `users`, the "E-Mail-Versand"
