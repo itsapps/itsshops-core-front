@@ -30,6 +30,7 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   A coupon no longer pushes an order back under the free-shipping threshold printed on the
   "Versand & Zahlung" page. The Studio hid the field on coupon-only shops (fixed in core-back),
   so their value was unset.
+- `payment-refund` rejects a non-integer `amount` with 400 (was passed on to Stripe).
 
 ### Upgrading
 - Coupon shops with the field unset (Tinhof was, Jurtschitsch and grass-art likely) switch to

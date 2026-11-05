@@ -49,7 +49,7 @@ export function createRefundHandler() {
     if (!body.paymentIntentId || typeof body.paymentIntentId !== 'string') {
       return withCors(badRequest('paymentIntentId is required'), request)
     }
-    if (body.amount !== undefined && (typeof body.amount !== 'number' || body.amount <= 0)) {
+    if (body.amount !== undefined && (!Number.isInteger(body.amount) || body.amount <= 0)) {
       return withCors(badRequest('amount must be a positive integer (cents)'), request)
     }
 
