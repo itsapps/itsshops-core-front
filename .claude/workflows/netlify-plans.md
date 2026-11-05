@@ -73,7 +73,7 @@ exactly 2 — the Personal limit. A third rate-limited endpoint needs Pro.
 |---|---|---|
 | Tinhof | paid (2026-10-08); Personal considered 2026-10-16 | 2 (`order_status`, `order_withdraw`) |
 | Jurtschitsch | paid (2026-10-08) | 2 (`order_status`, `order_withdraw`) |
-| Rosi Schuster | Pro (2026-10-29) | 1 (`newsletter-subscribe`, no captcha) |
+| Rosi Schuster | Pro (2026-10-29) | 3 (`newsletter-subscribe`, `interest-register`, `interest-confirm` — no captcha) |
 
 ## Sanity plan (and other running costs)
 
