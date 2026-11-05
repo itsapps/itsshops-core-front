@@ -413,7 +413,7 @@ export function buildPageDocSchema(
   const shipping: ShippingContext | null = shop && config.features.shop.checkout
     ? {
         methods: shop.shippingMethods,
-        freeShippingCalculation: shop.shopSettings?.freeShippingCalculation ?? 'afterDiscount',
+        freeShippingCalculation: shop.shopSettings?.freeShippingCalculation ?? 'beforeDiscount',
       }
     : null
   const returnPolicy = shopReturnPolicy(settings, config, shop) ?? null

@@ -24,6 +24,18 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   and Stripe clients). Importing a function or helper no longer needs `SANITY_*` env; a missing
   env var now throws on the first Sanity call. Callers are unchanged.
 
+### Fixed
+- Free shipping: an unset `shopSettings.freeShippingCalculation` now means `beforeDiscount` (was
+  `afterDiscount`) — checkout (`payment-create`), schema.org shipping details and `cms` settings.
+  A coupon no longer pushes an order back under the free-shipping threshold printed on the
+  "Versand & Zahlung" page. The Studio hid the field on coupon-only shops (fixed in core-back),
+  so their value was unset.
+
+### Upgrading
+- Coupon shops with the field unset (Tinhof was, Jurtschitsch and grass-art likely) switch to
+  "free shipping before discount". To keep the old behaviour, set "Gratis-Versand Berechnung" →
+  "Nach Rabatt" in the Studio.
+
 ## 3.7.0
 
 Pairs with **core-back 5.0.0** (`category.description` becomes `i18nText`).

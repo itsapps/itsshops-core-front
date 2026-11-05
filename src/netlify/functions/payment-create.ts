@@ -106,7 +106,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
 
     // ── Calculate shipping ──────────────────────────────────────────────
     const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const freeShippingCalc = data.shopSettings?.freeShippingCalculation ?? 'afterDiscount'
+    const freeShippingCalc = data.shopSettings?.freeShippingCalculation ?? 'beforeDiscount'
 
     // Pass 1: resolve with discount=0 so we have a shipping price to feed the
     // coupon validator (free-shipping coupons need it).

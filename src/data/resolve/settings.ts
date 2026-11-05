@@ -92,7 +92,7 @@ export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShop
     defaultCountry:          raw.defaultCountry
       ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
       : null,
-    freeShippingCalculation: raw.freeShippingCalculation ?? 'afterDiscount',
+    freeShippingCalculation: raw.freeShippingCalculation ?? 'beforeDiscount',
     stockThreshold:          raw.stockThreshold ?? null,
     defaultTaxCategory:      raw.defaultTaxCategory
       ? {
