@@ -3,7 +3,7 @@
 Status: **planned** (2026-11-06), nothing implemented, no decision open (A, B, C decided 2026-11-06). Generic core behaviour, every shop with
 checkout (core-front + core-back). Origin: a partial-refund mail sent from the Studio's "Send mail"
 stated the order total — fixed minimally the same day (the mail now needs `refundAmount`, "Send
-mail" asks for it; core-front `4223cf8` / core-back `c3e9c97` on `feature/bundle-checkout`). This
+mail" asks for it; core-front `4223cf8` / core-back `c3e9c97`, on `main`). This
 plan fixes the cause: the order doesn't know its refunds.
 
 ## Current state (verified 2026-11-06)

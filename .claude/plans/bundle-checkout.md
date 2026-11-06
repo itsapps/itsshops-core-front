@@ -1,15 +1,13 @@
 # Plan — bundles at checkout (missing checks, order contents, packaging) + cart changes at checkout
 
-Status: **implemented, not released** (2026-11-06) — phases 1, 1b, 3, 4.3, 5, 6 on branch
-`feature/bundle-checkout` in core-front and core-back (+ Jurtschitsch frontend `card.njk` /
-`container.njk`, uncommitted on its `main`); durable docs already moved to
+Status: **implemented, not released** (2026-11-06) — phases 1, 1b, 3, 4.3, 5, 6 merged to `main` in core-front and core-back (2026-11-06, untagged) (+ Jurtschitsch frontend `card.njk` /
+`container.njk`, committed on its `main`); durable docs already moved to
 `commerce-and-netlify.md`, `wc-api.md`, core-back `schemas.md`, CHANGELOGs ("Unreleased").
 Step 0 run 2026-11-06: no unpriced active variants (Jurtschitsch, Tinhof, Rosi Schuster, dev +
 production); Jurtschitsch production bundles clean; Jurtschitsch **development** "test paket" has a
 `soldOut` item → now sold out on the page (test data). grass-art not checked (dormant).
-Open before release: manual Stripe test-mode checks (phase 6.5: price changed between calculate
-and click → no charge + notice, second click pays; express sheet closes, focus on the notice;
-VoiceOver reads the notice once), Tinhof's tax advisor confirms decision F, then release
+Manual checks done on Tinhof staging (2026-11-06: price change before paying, Apple Pay, VoiceOver
+notice). Open before release: Tinhof's tax advisor confirms decision F, then release
 core-back 5.2.0 → core-front 3.9.0, pin, and update Jurtschitsch `CLAUDE.md` (wc-api bundle line)
 + Tinhof `CLAUDE.md` (wineNET → bundles); then delete this file.
 Deviations from the text below: express payments are compared with the wallet sheet's last
