@@ -18,7 +18,7 @@ import {
 import type { OrderDocument } from '../../types/checkout'
 import type { EmailContext } from '../email/types'
 import { formatShopDate } from '../../utils/i18n'
-import { bundleItemLines } from '../../lib/order-item-display'
+import { bundleItemLines, lineVatRate } from '../../lib/order-item-display'
 
 const styles = StyleSheet.create({
   page: {
@@ -150,6 +150,11 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
           // A bundle lists its items (units over the whole line, each with its VAT rate) instead
           // of the subtitle, which would repeat them.
           const contents = bundleItemLines(item)
+          const rate = lineVatRate(item)
+          const rateLabel = (r: number) => t('emails.order.vatRateShort', { rate: r })
+          const detail = [contents.length === 0 ? item.subtitle : null, rate !== null ? rateLabel(rate) : null]
+            .filter(Boolean)
+            .join(' · ')
           return (
           <View key={item._key} style={styles.itemRow}>
             <View style={{ flexDirection: 'column', flex: 1 }}>
@@ -158,10 +163,10 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
                 {item.sku ? <Text style={styles.small}>{`[${item.sku}] `}</Text> : null}
                 <Text style={styles.bold}>{item.title}</Text>
               </Text>
-              {item.subtitle && contents.length === 0 && <Text style={styles.small}>{item.subtitle}</Text>}
+              {detail ? <Text style={styles.small}>{detail}</Text> : null}
               {contents.map((line, i) => (
                 <Text key={`b${i}`} style={styles.small}>
-                  {`${line.totalQuantity} × ${line.title}${line.subtitle ? ` – ${line.subtitle}` : ''}${line.vatRate !== null ? `, ${line.vatRate} %` : ''}`}
+                  {`${line.totalQuantity} × ${line.title}${line.subtitle ? ` – ${line.subtitle}` : ''}${line.vatRate !== null ? ` · ${rateLabel(line.vatRate)}` : ''}`}
                 </Text>
               ))}
               {item.options?.map((option, i) => (
@@ -197,6 +202,18 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
             value={formatPrice(order.totals.grandTotal)}
             large
           />
+          {/* VAT per rate (net + VAT; incl. shipping), required on invoices (AT § 11 UStG). */}
+          {[...(order.totals.vatBreakdown ?? [])]
+            .sort((a, b) => a.rate - b.rate)
+            .map((v) => (
+              <Text key={v.rate} style={{ textAlign: 'right', width: '100%', marginTop: 4 }}>
+                {t('emails.order.summaryVatRow', {
+                  rate: v.rate,
+                  net: formatPrice(v.net),
+                  vat: formatPrice(v.vat),
+                })}
+              </Text>
+            ))}
           <Text style={{ textAlign: 'right', width: '100%', marginTop: 4 }}>
             {t('emails.order.summaryTax', { tax: formatPrice(order.totals.totalVat) })}
           </Text>

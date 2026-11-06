@@ -175,7 +175,10 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   recomputed. Mails (`ItemRow`, also the shop's copy) list the contents as a nested `<ul>` (per
   bundle), the invoice PDF one line per item (units over the whole line + rate), both from
   `bundleItemLines()` (`order-item-display.ts`); where the list shows, the bundle's subtitle
-  doesn't. Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
+  doesn't. **Invoice VAT** (`InvoicePdf.tsx`): every line prints its rate (`lineVatRate`: a
+  bundle with items → per item instead), and the summary prints one row per rate from
+  `totals.vatBreakdown` (net + VAT, shipping included) before the VAT total — invoices must state
+  the rate (AT § 11 UStG, DE § 33 UStDV for small invoices). Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest

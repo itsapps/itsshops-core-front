@@ -78,3 +78,12 @@ export function bundleItemLines(item: {
 export function bundleContentsKey(items: { variantId: string; quantity: number }[]): string {
   return items.map(i => `${i.variantId}:${i.quantity}`).sort().join(',')
 }
+
+/**
+ * The VAT rate an invoice prints on an order line: the line's own rate — except a bundle with an
+ * item snapshot, whose rates are printed per item (`bundleItemLines`), so `null` for its line.
+ * Older bundle orders (no items) were taxed at the bundle's single rate, so they show it.
+ */
+export function lineVatRate(item: { vatRate: number; bundle?: { items?: unknown[] | null } | null }): number | null {
+  return item.bundle?.items?.length ? null : item.vatRate
+}

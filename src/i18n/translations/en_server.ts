@@ -135,6 +135,8 @@ export default {
       summaryDiscount: "Discount",
       summaryTotal: "Total",
       summaryTax: "incl. {{tax}} tax",
+      summaryVatRow: "{{rate}}% VAT on {{net}} net: {{vat}}",
+      vatRateShort: "{{rate}}% VAT",
       invoice: "Invoice",
       bankAccount: "Bank details",
       iban: "IBAN",

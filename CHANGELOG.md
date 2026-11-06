@@ -31,6 +31,12 @@ release core-back first.
   erhältlich" / "Currently unavailable") for an active variant without any price (own or the
   product's) and a bundle with an unpriced item; `productPrice` renders nothing without a price.
 
+- **Invoice PDF states VAT per rate:** one row per rate below the total ("13 % MwSt. von 122,81 €
+  netto: 15,96 €", shipping included, from `totals.vatBreakdown`), and every line shows its rate
+  ("0,75l, 2025 · 13 % MwSt."; bundle items each their own). Before, only the VAT total was
+  printed (AT § 11 UStG / DE § 33 UStDV need the rate). New keys `emails.order.summaryVatRow`,
+  `emails.order.vatRateShort`. Customer `invoicePdf` overrides don't get it automatically.
+
 ### Changed
 - A bundle with no items, a missing (archived/unpublished) or non-active item is sold out on the
   page (cards, product page, pickers, search, schema.org) and refused at checkout (was a 500 for
