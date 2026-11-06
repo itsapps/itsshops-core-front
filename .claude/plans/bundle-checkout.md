@@ -23,6 +23,12 @@ variant needs a price) — core-back `schemas.md`. Stock: `stock-tracking.md` (p
   single prices) and that bundles are created only now; give Andi (wineNET) a heads-up that
   bundles arrive as their single wines. Update Tinhof frontend `CLAUDE.md` (wineNET → Bundles:
   released).
+- [ ] Right after core-back 5.2.0 is live in a shop's Studio: unset the removed `packagingConfigs`
+  on its published shipping methods (`patch(id).unset(['packagingConfigs'])`, until then an unknown
+  field in the Studio, nothing breaks). Found 2026-11-06: Tinhof development + production
+  `2cc3b54c-af8b-4d7f-a452-172267acb315` (DPD AT), `f5b31dc6-c055-4d03-8287-17ac09b63250` (DPD DE);
+  Jurtschitsch production `cf397819-9422-4264-b1cc-3b20eb86bc08` (Post AG); Jurtschitsch
+  development none. Re-run `*[_type == "shippingMethod" && defined(packagingConfigs)]._id` first.
 - [ ] Jurtschitsch: its `card.njk` / `container.njk` change (committed on its `main`) needs core-front
   3.9.0 — pin together. Decide `invoices: false` if wineNET issues its invoices.
 - [ ] Move the optional item below into Jurtschitsch's `CLAUDE.md`, then delete this file.

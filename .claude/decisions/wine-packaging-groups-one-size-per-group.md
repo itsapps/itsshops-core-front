@@ -41,5 +41,5 @@ Alternatives discussed:
 - Box types that accept only some sizes, or a size in two box types, are not possible. If that's
   ever needed, extend boxes with an accepted-sizes list and search the splits (the "nur für" idea);
   the group model stays a special case of it.
-- The old `packagingConfigs` field is kept hidden for one core-back release (live frontends on the
-  old core keep pricing while groups are entered), then removed.
+- The old `packagingConfigs` field was kept hidden for a while (live frontends on the old core kept
+  pricing while groups were entered) and removed in core-back 5.2.0.
