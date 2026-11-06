@@ -18,7 +18,10 @@ locale-independent key, not the localized subtitle.
 
 Express (Apple/Google Pay): the customer sees the wallet sheet, not the page, so the payment is
 compared with the sheet's last calculation (total + lines), not the stored cart. Comparing with
-the cart was planned ("blocks once, errs safe") but blocked every price-change test (2026-11-06).
+the cart was planned ("blocks once, errs safe") but blocked every price-change test (2026-11-06). The
+sheet shows the current lines and total before the customer confirms, but no "price changed"
+message; rejecting the sheet when its recalculation differs from the page (so the page notice
+explains it) was rejected as not worth a second wallet attempt for a rare case (owner, 2026-11-06).
 
 ## Consequences
 Editors still deploy by hand. A customer may have to confirm twice after a price change. Fallback
