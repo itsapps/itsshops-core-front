@@ -57,6 +57,9 @@ npm offers:
    (dependency tree + integrity), so it's sufficient only when core's deps didn't change.
 
 That caveat in step 2 is the one thing to stay aware of; otherwise the hash edit is fine and fast.
+`npm ci --dry-run` does **not** fetch git dependencies, so it passes a mistyped or unpushed hash —
+check the pinned commit exists on core's GitHub branch (`git -C <core> rev-parse origin/<branch>`)
+before pushing the customer.
 
 **Pinning a commit that isn't on core's `main` yet** (a pushed feature branch) when its deps
 changed: a reinstall without a committish pins `main`'s HEAD, not the branch. Instead edit the

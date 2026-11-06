@@ -85,8 +85,9 @@ The underlying functions (`image`, `preload`, `imageUrl`, `imageSrcsetData`, …
 from the package root (`src/image/`) for use in JS/extensions — see
 [templates-and-assets.md](templates-and-assets.md).
 
-Some exported helpers double as plain functions: `formatVolumeMl(ml, unit, locale)` and
-`formatNumber(num, locale)` (`src/filters/index.ts`), re-exported from `src/index.ts`.
+Some exported helpers double as plain functions: `formatVolumeMl(ml, unit, locale)` (lives in
+`src/shared/format-volume.ts` so the checkout functions use the same text without the filters
+module) and `formatNumber(num, locale)` (`src/filters/index.ts`), re-exported from `src/index.ts`.
 
 ## `stegaClean` — when and where to strip stega
 

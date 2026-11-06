@@ -73,3 +73,11 @@ alternative was rejected, a constraint discovered the hard way.
   in the data layer.
 - [vinofact-failure-fails-build.md](vinofact-failure-fails-build.md) — a failed VinoFact request
   fails the build (one retry for network/timeout/429/5xx); missing wine IDs only warn.
+- [bundle-vat-split-by-single-prices.md](bundle-vat-split-by-single-prices.md) — a bundle has no
+  tax category; its price is split over its items by single prices, each share at the item's rate.
+- [wc-api-bundles-as-item-lines.md](wc-api-bundles-as-item-lines.md) — the wc-api sends a bundle as
+  its items (loose `product_id`s), not WC Product Bundles' parent + €0 children.
+- [checkout-reports-cart-changes.md](checkout-reports-cart-changes.md) — no auto-deploy on publish;
+  checkout syncs the cart, reports changes and re-asks before paying.
+- [invoices-issued-elsewhere-switch.md](invoices-issued-elsewhere-switch.md) — `invoices: false`
+  (both cores) for shops whose invoices come from an ERP; no second invoice from core.

@@ -85,6 +85,12 @@ The largest resolver. `resolveVariants` does, per variant:
   permalink>/<slug>/`. (Page/post slugs are slugified but keep `/` separators.)
 - **Label**: from option names joined with ` · `, falling back to the title.
 - **Siblings**: other variants of the same product (via `siblingsMap`), for variant switchers.
+- **Status** = `effectiveStatus(raw, rawVariantMap, productMap)` at all three sites (the variant,
+  its siblings, `variantAxes` option targets), so templates and customer overrides that check
+  `status == "active"` agree with checkout: an active variant without own and product price →
+  `unavailable` (resolved-only, not a schema value); an active bundle with no items, an item missing
+  from `rawVariantMap` (archived/dangling) or a non-active item → `soldOut`, with an unpriced item →
+  `unavailable`. Resolved `bundleItems` silently drop missing items — the status is what tells.
 - **Categories**: resolved from `categoryMap`.
 - **Vinofact merge**: when the variant's `wine.vinofactWineId` is in `vinofactMap`, the VinoFact
   fields (locale-resolved) are merged onto the resolved wine.
