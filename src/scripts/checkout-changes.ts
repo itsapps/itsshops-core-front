@@ -1,4 +1,5 @@
 import { hasCartChanges, type CartChanges } from './cart-store'
+import type { CalculateResponse } from '../shared/checkout-api'
 
 export type ChangeLabels = {
   intro: string
@@ -19,6 +20,27 @@ export type ChangeLabels = {
  */
 export function mustReconfirm(changes: CartChanges, shownGrandTotal: number | null, newGrandTotal: number): boolean {
   return hasCartChanges(changes) || shownGrandTotal === null || shownGrandTotal !== newGrandTotal
+}
+
+/** What the customer sees of a calculation: total and lines (id, quantity, price, subtitle). */
+function calculationSignature(calc: Pick<CalculateResponse, 'items' | 'totals'>): string {
+  const lines = calc.items
+    .map(i => `${i.variantId}:${i.quantity}:${i.price}:${i.subtitle ?? ''}`)
+    .sort()
+  return `${calc.totals.grandTotal}|${lines.join(',')}`
+}
+
+/**
+ * Express checkout: the customer saw the wallet sheet's calculation, not the page — so a payment
+ * must not be confirmed only when the payment response differs from what the sheet showed
+ * (total or lines). `null` (no calculation seen) counts as differing. A difference to the stored
+ * cart alone (e.g. a price changed before the sheet opened, shown correctly there) doesn't block.
+ */
+export function expressMustReconfirm(
+  shown: Pick<CalculateResponse, 'items' | 'totals'> | null,
+  response: Pick<CalculateResponse, 'items' | 'totals'>,
+): boolean {
+  return shown === null || calculationSignature(shown) !== calculationSignature(response)
 }
 
 function fill(template: string, values: Record<string, string>): string {

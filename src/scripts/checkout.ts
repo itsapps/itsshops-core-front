@@ -12,7 +12,7 @@ import {
   type CartItem,
   type CartChanges,
 } from './cart-store'
-import { mustReconfirm, renderChanges, changeMessages, type ChangeLabels } from './checkout-changes'
+import { mustReconfirm, expressMustReconfirm, renderChanges, changeMessages, type ChangeLabels } from './checkout-changes'
 import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
@@ -402,7 +402,11 @@ export async function initCheckout(): Promise<void> {
         if (orDividerEl) orDividerEl.hidden = false
       },
       onError: (message) => showValidationError(message),
-      onCreatePayment: async ({ address, email, shippingMethodId, shownGrandTotal }) => {
+      // The sheet changed the Elements amount to its own total; back to the page's.
+      onCancel: () => {
+        if (lastResponse) stripeCheckout.updateAmount(lastResponse.totals.grandTotal)
+      },
+      onCreatePayment: async ({ address, email, shippingMethodId, shownCalculation }) => {
         try {
           const response = await createPayment(
             apiUrl,
@@ -416,12 +420,12 @@ export async function initCheckout(): Promise<void> {
             },
           )
           orderMetaId = response.orderMetaId
-          // Something changed since the wallet sheet's calculation → don't pay; tell the customer
-          // on the page. The response is priced for the wallet's address/rate, so recalculate the
-          // page instead of rendering it.
+          // The cart takes the server's data either way. Pay only if the response is what the
+          // wallet sheet showed — else tell the customer on the page. The response is priced for
+          // the wallet's address/rate, so recalculate the page instead of rendering it.
           const changes = syncFromResponse(response)
           if (!changes) return { error: changeLabels.intro }
-          if (mustReconfirm(changes, shownGrandTotal, response.totals.grandTotal)) {
+          if (expressMustReconfirm(shownCalculation, response)) {
             showChanges(changes, { reconfirm: true, focus: true })
             const message = [...changeMessages(changes, changeLabels, summary.formatPrice.bind(summary)), changeLabels.reconfirm].join(' ')
             void calculate({ country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: shipping.getSelectedId() }, { keepNotice: true })

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { syncCartFromServer, removeItems, getCart, emptyCartChanges, type CartItem } from '../cart-store'
-import { mustReconfirm, renderChanges, type ChangeLabels } from '../checkout-changes'
+import { mustReconfirm, expressMustReconfirm, renderChanges, type ChangeLabels } from '../checkout-changes'
 
 const CART_KEY = `itsshops_cart_${location.host}`
 const item = (id: string, over: Partial<CartItem> = {}): CartItem => ({
@@ -118,15 +118,31 @@ describe('renderChanges', () => {
   })
 })
 
-describe('CheckoutExpress shownGrandTotal', () => {
-  it('passes the address-change calculation total to onCreatePayment, null after cancel', async () => {
+describe('expressMustReconfirm', () => {
+  const calc = (total: number, price = 1000, subtitle: string | null = null) => ({
+    totals: { grandTotal: total } as never,
+    items: [{ variantId: 'a', quantity: 1, price, subtitle } as never],
+  })
+  it('only a difference to what the sheet showed blocks', () => {
+    expect(expressMustReconfirm(calc(1500), calc(1500))).toBe(false)
+    expect(expressMustReconfirm(calc(1500), calc(1600))).toBe(true)
+    expect(expressMustReconfirm(calc(1500, 1000), calc(1500, 900))).toBe(true)
+    expect(expressMustReconfirm(calc(1500, 1000, '2× A'), calc(1500, 1000, '3× A'))).toBe(true)
+    expect(expressMustReconfirm(null, calc(1500))).toBe(true)
+  })
+})
+
+describe('CheckoutExpress', () => {
+  async function setup(over: Record<string, unknown> = {}) {
     const { CheckoutExpress } = await import('../checkout-express')
     const handlers: Record<string, (e: any) => any> = {}
     const element = { mount: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
     const calc = { totals: { grandTotal: 4321 }, shippingMethods: [], selectedShippingMethodId: null, items: [], appliedCoupons: [] }
+    const updateAmount = vi.fn()
     const onCreatePayment = vi.fn(async () => ({ error: 'stop' }))
+    const onCancel = vi.fn()
     const express = new CheckoutExpress({
-      stripe: { createExpressCheckoutElement: () => element } as never,
+      stripe: { createExpressCheckoutElement: () => element, updateAmount } as never,
       container: document.createElement('div'),
       returnUrl: '/thanks',
       allowedCountries: ['AT'],
@@ -135,6 +151,8 @@ describe('CheckoutExpress shownGrandTotal', () => {
       onAddressChange: async () => calc as never,
       onRateChange: async () => calc as never,
       onCreatePayment,
+      onCancel,
+      ...over,
     })
     express.mount()
     const confirmEvent = {
@@ -143,11 +161,35 @@ describe('CheckoutExpress shownGrandTotal', () => {
       shippingRate: { id: 'sm1' },
       paymentFailed: vi.fn(),
     }
-    await handlers.shippingaddresschange({ address: { country: 'AT', city: 'C', postal_code: '1010' }, resolve: vi.fn(), reject: vi.fn() })
+    const addressEvent = () => ({ address: { country: 'AT', city: 'C', postal_code: '1010' }, resolve: vi.fn(), reject: vi.fn() })
+    return { handlers, calc, updateAmount, onCreatePayment, onCancel, confirmEvent, addressEvent }
+  }
+
+  it('sets the Elements amount to the sheet\'s total before answering it', async () => {
+    const { handlers, updateAmount, addressEvent } = await setup()
+    const ev = addressEvent()
+    ev.resolve.mockImplementation(() => expect(updateAmount).toHaveBeenCalledWith(4321))
+    await handlers.shippingaddresschange(ev)
+    expect(ev.resolve).toHaveBeenCalled()
+  })
+
+  it('rejects instead of hanging when the answer fails', async () => {
+    const { handlers, addressEvent } = await setup()
+    const ev = addressEvent()
+    ev.resolve.mockImplementation(() => { throw new Error('IntegrationError') })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await handlers.shippingaddresschange(ev)
+    expect(ev.reject).toHaveBeenCalled()
+  })
+
+  it('passes the shown calculation to onCreatePayment, null after cancel (+ onCancel)', async () => {
+    const { handlers, calc, onCreatePayment, onCancel, confirmEvent, addressEvent } = await setup()
+    await handlers.shippingaddresschange(addressEvent())
     await handlers.confirm(confirmEvent)
-    expect(onCreatePayment).toHaveBeenLastCalledWith(expect.objectContaining({ shownGrandTotal: 4321 }))
+    expect(onCreatePayment).toHaveBeenLastCalledWith(expect.objectContaining({ shownCalculation: calc }))
     handlers.cancel({})
+    expect(onCancel).toHaveBeenCalled()
     await handlers.confirm(confirmEvent)
-    expect(onCreatePayment).toHaveBeenLastCalledWith(expect.objectContaining({ shownGrandTotal: null }))
+    expect(onCreatePayment).toHaveBeenLastCalledWith(expect.objectContaining({ shownCalculation: null }))
   })
 })

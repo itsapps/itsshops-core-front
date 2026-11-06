@@ -12,7 +12,9 @@ and click → no charge + notice, second click pays; express sheet closes, focus
 VoiceOver reads the notice once), Tinhof's tax advisor confirms decision F, then release
 core-back 5.2.0 → core-front 3.9.0, pin, and update Jurtschitsch `CLAUDE.md` (wc-api bundle line)
 + Tinhof `CLAUDE.md` (wineNET → bundles); then delete this file.
-Deviations from the text below: shares other than the last are rounded **down** (never a
+Deviations from the text below: express payments are compared with the wallet sheet's last
+calculation (total + lines, `expressMustReconfirm`), not with the stored cart — phase 6.4's
+"blocks once" was hit in every price-change test (owner, 2026-11-06); shares other than the last are rounded **down** (never a
 negative remainder); bundle-item errors use one key per cause (`duplicateItem`, `inactiveItem`,
 `unpricedItem`); the "VAT is taken from the items" hint is only in the Product Manager (a Studio
 field description can't depend on the document); a bundle's display `vatRate` ties go to the

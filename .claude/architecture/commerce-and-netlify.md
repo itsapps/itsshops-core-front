@@ -286,12 +286,17 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    `<li>` per change (`scripts/checkout-changes.ts`, labels `checkout.changes.*`); event
    `checkout:cart-changed`. A `CART_EMPTY` error (all items gone) removes its ids
    (`details.unavailable`, `', '`-joined), shows the notice, then the empty cart. Overlapping
-   calculates: only the latest (`calcSeq`) writes the cart and renders. **Before paying**
-   (`mustReconfirm`): if the create response changed the cart or its total differs from the one
-   shown (manual: `lastResponse`; express: the wallet sheet's last calculation, tracked in
-   `CheckoutExpress.shownGrandTotal`, `null` after cancel → counts as changed), no
-   `confirmPayment` and no snapshot/pending marker — the page shows the new totals + "please
-   confirm again" and focuses the notice; express returns an error and recalculates the page.
+   calculates: only the latest (`calcSeq`) writes the cart and renders. **Before paying**, no
+   `confirmPayment` and no snapshot/pending marker when the customer didn't see what would be
+   charged — manual (`mustReconfirm`): the create response changed the stored cart or its total
+   differs from `lastResponse`; express (`expressMustReconfirm`): the response's total or lines
+   differ from the wallet sheet's last calculation (`CheckoutExpress.shownCalculation`, `null`
+   after cancel → blocks) — a price changed before the sheet opened, shown there, doesn't block.
+   The page then shows the new totals + "please confirm again" and focuses the notice; express
+   returns an error and recalculates the page. **Express amount:** each address/rate change sets
+   the Elements amount to the sheet's total before answering (Stripe refuses line items above the
+   amount — the sheet hung on "IntegrationError: The amount … is less than the total amount of the
+   line items"), any failure rejects the event; cancel restores the page's amount (`onCancel`).
    Re-submitting reuses `orderMetaId` (same PaymentIntent).
 7. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
    never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
@@ -319,8 +324,10 @@ refund — and calls `stripe.refunds.create`. The Studio then patches `paymentSt
 (`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
 entry (`source: 'stripe'`) — both idempotent. A full refund of an undispatched order also sets
 `canceled`; a partial one leaves fulfillment alone (the order still ships). Refund mails
-(`orderRefunded` / `orderRefundedPartially`) show the passed `refundAmount`, else the grand total.
-Partial refunds don't reach ERPs via `wc-api` (`wc-api.md` → known gaps).
+(`orderRefunded` / `orderRefundedPartially`) show the passed `refundAmount`, else the grand total
+— the order stores no refund amounts, so `orderRefundedPartially` without `refundAmount` is refused
+(400; the Studio's "Send mail" asks for it). Partial refunds don't reach ERPs via `wc-api`
+(`wc-api.md` → known gaps). Storing refunds on the order: `.claude/plans/refund-history.md`.
 
 ## Withdrawal (Widerruf) — declaration only (FAGG §13a)
 

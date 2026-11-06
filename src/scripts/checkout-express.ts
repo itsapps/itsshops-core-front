@@ -41,9 +41,11 @@ export type ExpressCheckoutConfig = {
     email: string
     phone?: string
     shippingMethodId: string
-    /** Grand total of the last calculation the wallet sheet showed; `null` = none seen. */
-    shownGrandTotal: number | null
+    /** The last calculation the wallet sheet showed (lines + total); `null` = none seen. */
+    shownCalculation: CalculateResponse | null
   }) => Promise<{ clientSecret: string } | { error: string }>
+  /** The wallet sheet was closed without paying (the page restores its own amount). */
+  onCancel?: () => void
   /** Fired once when Stripe reports the express element has rendered at least one payment method. */
   onReady?: (event: { availablePaymentMethods?: Record<string, boolean> }) => void
   /** Fired when confirmPayment returns an error (e.g. card declined) so the page can show a message. */
@@ -103,8 +105,8 @@ export class CheckoutExpress {
   private element: StripeExpressCheckoutElement | null = null
   private config: ExpressCheckoutConfig
   private lastAddress: { country: string; city?: string; zip?: string; state?: string } | null = null
-  /** Grand total the wallet sheet last showed (from an address or rate change); reset on cancel. */
-  private shownGrandTotal: number | null = null
+  /** The calculation the wallet sheet last showed (address or rate change); reset on cancel. */
+  private shownCalculation: CalculateResponse | null = null
 
   constructor(config: ExpressCheckoutConfig) {
     this.config = config
@@ -137,7 +139,8 @@ export class CheckoutExpress {
     element.on('confirm', e => this.handleConfirm(e))
     element.on('cancel', () => {
       this.lastAddress = null
-      this.shownGrandTotal = null
+      this.shownCalculation = null
+      this.config.onCancel?.()
     })
   }
 
@@ -177,24 +180,38 @@ export class CheckoutExpress {
     this.lastAddress = partial
 
     const calc = await this.config.onAddressChange(partial)
-    if (!calc) {
-      event.reject()
-      return
-    }
-    event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
-    this.shownGrandTotal = calc.totals.grandTotal
+    this.showCalculation(event, calc)
   }
 
   private async handleShippingRateChange(
     event: StripeExpressCheckoutElementShippingRateChangeEvent,
   ): Promise<void> {
     const calc = await this.config.onRateChange(event.shippingRate.id)
+    this.showCalculation(event, calc)
+  }
+
+  /**
+   * Answer an address/rate change with a recalculation. The Elements amount must match the line
+   * items Stripe gets (it refuses line items above the amount), so it is updated first — the
+   * wallet's total can differ from the page's (another country's shipping, a price changed since
+   * the page calculated). Any failure rejects the event, so the sheet never hangs.
+   */
+  private showCalculation(
+    event: { resolve: (payload: ResolvedClickPayload) => void; reject: () => void },
+    calc: CalculateResponse | null,
+  ): void {
     if (!calc) {
       event.reject()
       return
     }
-    event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
-    this.shownGrandTotal = calc.totals.grandTotal
+    try {
+      this.config.stripe.updateAmount(calc.totals.grandTotal)
+      event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
+      this.shownCalculation = calc
+    } catch (err) {
+      console.error('[checkout] express calculation could not be shown', err)
+      event.reject()
+    }
   }
 
   private async handleConfirm(event: StripeExpressCheckoutElementConfirmEvent): Promise<void> {
@@ -226,7 +243,7 @@ export class CheckoutExpress {
       email,
       phone: event.billingDetails?.phone,
       shippingMethodId: shippingRateId,
-      shownGrandTotal: this.shownGrandTotal,
+      shownCalculation: this.shownCalculation,
     })
 
     if ('error' in result) {

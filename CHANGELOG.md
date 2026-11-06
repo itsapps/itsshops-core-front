@@ -58,6 +58,10 @@ release core-back first.
   `src/netlify/types/checkout.ts`, `src/shared/checkout-api.ts`).
 
 ### Fixed
+- Apple Pay / Google Pay hung ("IntegrationError: The amount … is less than the total amount of
+  the line items") when the wallet's calculation differed from the page's — another country's
+  shipping or a price changed since the page calculated: the Elements amount now follows the
+  sheet's total (restored on cancel), and a failing answer rejects the sheet instead of hanging.
 - The partial-refund mail ("Teilbetrag von …") sent without `refundAmount` (e.g. from the Studio's
   "Send mail" action) stated the order total. It is now refused with 400 without an amount; core-back
   5.2.0's "Send mail" asks for it. The status dialog's refund flow always passed it.
