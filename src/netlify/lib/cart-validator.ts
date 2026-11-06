@@ -9,7 +9,7 @@ import type {
 import type { CheckoutCartItem } from '../types/api'
 import { findTaxRate, extractVat, splitBundlePrice } from './tax'
 import { resolveLocalizedTitle, resolveVariantWeight, resolveBundleWeight } from './shipping'
-import { composeSubtitle } from './order-item-display'
+import { composeSubtitle, type SubtitleFormat } from './order-item-display'
 
 const MAX_DISPLAY_LEN = 300
 
@@ -41,7 +41,9 @@ export function validateCart(
   defaultLocale = 'de',
   hasStockFeature = true,
   defaultTaxCategoryCode?: string | null,
+  volumeUnit = 'l',
 ): CartValidationResult {
+  const format = { volumeUnit, locale }
   const variantMap = new Map(variants.map(v => [v._id, v]))
   const validatedItems: ValidatedCartItem[] = []
   const unavailableItems: string[] = []
@@ -89,7 +91,7 @@ export function validateCart(
       // A bundle is taxed by its items: its price is split over them by their single sale
       // prices, each share at the item's own rate. Unavailable when it has no items, an item is
       // missing (dangling reference) or not active, or an item has no price (no ratio possible).
-      bundleItems = validateBundleItems(variant.bundleItems, price, quantity, taxRules, locale, defaultLocale, defaultTaxCategoryCode)
+      bundleItems = validateBundleItems(variant.bundleItems, price, quantity, taxRules, locale, defaultLocale, defaultTaxCategoryCode, format)
       if (!bundleItems) {
         unavailableItems.push(cartItem.variantId)
         continue
@@ -100,7 +102,7 @@ export function validateCart(
       vatRate = bundleItems.reduce((best, bi) => (bi.price > best.price ? bi : best)).vatRate
       weight = resolveBundleWeight(variant.bundleItems!.map(bi => ({ ...bi.variant!, quantity: bi.quantity })))
       // Always from the current items — the cart's subtitle was frozen at add-to-cart time.
-      subtitle = composeSubtitle('bundle', null, null, bundleItems)
+      subtitle = composeSubtitle('bundle', null, null, bundleItems, format)
     } else {
       taxCategoryCode = variant.taxCategoryCode ?? variant.productTaxCategoryCode ?? ''
       vatRate = findTaxRate(taxRules, taxCategoryCode, defaultTaxCategoryCode)
@@ -109,7 +111,7 @@ export function validateCart(
       // estimate); digital: null (skipped by the shipping calculator).
       weight = resolveVariantWeight(variant)
       // Client-supplied subtitle is canonical; composed default as a fallback.
-      subtitle = sanitize(cartItem.subtitle) ?? composeSubtitle(variant.kind, wine, options)
+      subtitle = sanitize(cartItem.subtitle) ?? composeSubtitle(variant.kind, wine, options, null, format)
     }
 
     const item: ValidatedCartItem = {
@@ -160,6 +162,7 @@ function validateBundleItems(
   locale: string,
   defaultLocale: string,
   defaultTaxCategoryCode: string | null | undefined,
+  format: SubtitleFormat,
 ): ValidatedBundleItem[] | null {
   if (!raw?.length) return null
   const weights: number[] = []
@@ -184,7 +187,7 @@ function validateBundleItems(
       variantId: v._id,
       productId: v.productId ?? '',
       title,
-      subtitle: composeSubtitle(v.kind, wine, localizeOptions(v.options, locale, defaultLocale)),
+      subtitle: composeSubtitle(v.kind, wine, localizeOptions(v.options, locale, defaultLocale), null, format),
       sku: v.sku ?? null,
       quantity: bi.quantity,
       kind: v.kind,

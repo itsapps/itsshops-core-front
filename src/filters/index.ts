@@ -9,6 +9,7 @@ import { buildPageDocSchema, buildWebSiteSchema, type SchemaShopData } from "../
 import { buildWithdrawalInstructions, missingWithdrawalData, type WithdrawalInstructionsInput } from "../shared/withdrawal-instructions"
 import { buildPrivacyPolicy, missingPrivacyData, type PrivacyPolicyInput } from "../shared/privacy-policy"
 import { ORDER_META_RETENTION_DAYS } from "../config/constants"
+import { formatVolumeMl } from "../shared/format-volume"
 import type { CmsLocaleData } from "../types/data"
 
 function toIsoString(text: string) {
@@ -45,15 +46,7 @@ function formatPrice(cents: number, locale = 'de', currency = 'EUR', currencyLab
  * Format a volume stored in ml to a locale-aware display string using the configured unit.
  * Usage: {{ wine.volume | formatVolume }}
  */
-export function formatVolumeMl(ml: number, unit: string, locale = 'de'): string {
-  let value: number
-  switch (unit) {
-    case 'l':  value = ml / 1000; break
-    case 'cl': value = ml / 10;   break
-    default:   value = ml
-  }
-  return `${new Intl.NumberFormat(locale).format(value)}${unit}`
-}
+export { formatVolumeMl }
 
 /**
  * Format several volumes (ml) as a locale-aware list: "0,75l, 0,5l und 0,375l".

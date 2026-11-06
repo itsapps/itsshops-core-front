@@ -38,6 +38,11 @@ release core-back first.
 - A bundle's subtitle is always composed from its current items at checkout (the cart's is
   ignored). `addToCartButton` writes `data-bundle-key` for bundles.
 - `resolveBundleWeight` uses an item's explicit weight first (like `resolveVariantWeight`).
+- Subtitles composed by checkout (bundle items; loose lines without a client subtitle) use
+  `addToCartButton`'s default format: wine "0,75l, 2025" (was "2025 · 750 ml"), options "Rot, L"
+  (was "Farbe: Rot · Größe: L"). The volume unit comes from the new optional function config
+  `units.volume` (default `l`) — set it in the payment wrapper when `itsshops.config` sets another
+  unit. `formatVolumeMl` moved to `src/shared/format-volume.ts` (still exported from the package).
 - `ValidatedCartItem.bundleItems[]` / `ValidatedCartItemResponse.bundleKey`: new fields (see
   `src/netlify/types/checkout.ts`, `src/shared/checkout-api.ts`).
 

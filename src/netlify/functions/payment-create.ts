@@ -25,7 +25,7 @@ import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
 
 export function createPaymentHandler(config: ServerConfig = {}) {
-  const { defaultLocale, hasStock, hasCoupons } = resolveServerConfig(config)
+  const { defaultLocale, hasStock, hasCoupons, volumeUnit } = resolveServerConfig(config)
 
   return async (request: Request, _context: Context): Promise<Response> => {
   if (request.method === 'OPTIONS') {
@@ -97,6 +97,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       defaultLocale,
       hasStock,
       defaultTaxCategoryCode,
+      volumeUnit,
     )
 
     if (validatedItems.length === 0) {

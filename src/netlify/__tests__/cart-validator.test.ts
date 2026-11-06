@@ -79,7 +79,7 @@ describe('validateCart', () => {
     expect(item.quantity).toBe(2)
     expect(item.vatRate).toBe(20)
     expect(item.title).toBe('Blaufränkisch 2023')
-    expect(item.subtitle).toBe('2023 · 750 ml')
+    expect(item.subtitle).toBe('0,75l, 2023')
     expect(item.wine).toEqual({ vintage: '2023', volume: 750 })
   })
 
@@ -321,7 +321,7 @@ describe('validateCart', () => {
         'de',
       ).items
       expect(item.subtitle).toBe('2× Item a, 1× Item b')
-      expect(item.bundleItems![0].subtitle).toBe('2023 · 750 ml')
+      expect(item.bundleItems![0].subtitle).toBe('0,75l, 2023')
     })
 
     it('falls back to the product title of an item variant without its own title', () => {
@@ -332,6 +332,15 @@ describe('validateCart', () => {
         'de',
       ).items
       expect(item.subtitle).toBe('1× Product a')
+    })
+
+    it('bundle items use the shop\'s volume unit', () => {
+      const [item] = validateCart(
+        [{ variantId: 'v1', quantity: 1 }],
+        [makeVariant({ kind: 'bundle', wine: null, bundleItems: [bundleItem('a', 1)] })],
+        taxRules, 'de', 'de', true, null, 'ml',
+      ).items
+      expect(item.bundleItems![0].subtitle).toBe('750ml, 2023')
     })
 
     it('keeps the client subtitle for other kinds', () => {

@@ -28,8 +28,17 @@ describe('composeSubtitle', () => {
     expect(composeSubtitle('bundle', null, null, [])).toBeNull()
   })
 
-  it('wine and options unchanged', () => {
-    expect(composeSubtitle('wine', { vintage: '2022', volume: 1500 }, null)).toBe('2022 · 1,5 l')
-    expect(composeSubtitle('physical', null, [{ groupTitle: 'Farbe', optionTitle: 'Rot' }])).toBe('Farbe: Rot')
+  it('wine and options in addToCartButton\'s default format', () => {
+    expect(composeSubtitle('wine', { vintage: '2022', volume: 1500 }, null)).toBe('1,5l, 2022')
+    expect(composeSubtitle('wine', { vintage: null, volume: 750 }, null)).toBe('0,75l')
+    expect(composeSubtitle('physical', null, [
+      { groupTitle: 'Farbe', optionTitle: 'Rot' }, { groupTitle: 'Größe', optionTitle: 'L' },
+    ])).toBe('Rot, L')
+  })
+
+  it('volume in the shop\'s unit and the order locale', () => {
+    const wine = { vintage: '2022', volume: 750 }
+    expect(composeSubtitle('wine', wine, null, null, { volumeUnit: 'cl', locale: 'de' })).toBe('75cl, 2022')
+    expect(composeSubtitle('wine', wine, null, null, { volumeUnit: 'l', locale: 'en' })).toBe('0.75l, 2022')
   })
 })

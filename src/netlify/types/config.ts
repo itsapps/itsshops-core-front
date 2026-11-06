@@ -4,6 +4,8 @@
  */
 export type ServerConfig = {
   defaultLocale?: string
+  /** Same as `units.volume` in `itsshops.config` (default `l`) — composed order subtitles use it. */
+  units?: { volume?: string }
   features?: {
     shop?: {
       stock?: boolean
@@ -17,5 +19,6 @@ export function resolveServerConfig(config: ServerConfig = {}) {
     defaultLocale: config.defaultLocale ?? 'de',
     hasStock: config.features?.shop?.stock !== false,
     hasCoupons: !!config.features?.shop?.coupons,
+    volumeUnit: config.units?.volume ?? 'l',
   }
 }

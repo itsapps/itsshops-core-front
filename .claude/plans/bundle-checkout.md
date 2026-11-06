@@ -18,6 +18,12 @@ negative remainder); bundle-item errors use one key per cause (`duplicateItem`, 
 field description can't depend on the document); a bundle's display `vatRate` ties go to the
 first item.
 
+Optional, only if a shop asks: bundle items use core's subtitle format, not a shop's own frontend
+wording (Jurtschitsch's `wineSubtitle` adds Vinofact varietals the checkout doesn't have). Fix
+then: `addToCartButton` also writes each item's display title/subtitle; the server uses them only
+while the cart's `bundleKey` matches the current contents, else core's format (display text stays
+client-canonical, as on loose lines).
+
 History: planned 2026-10-25, reviewed 2026-11-02, refined against the code 2026-11-06 (eight
 times); F, G, H, I decided 2026-11-06. Origin: review of how checkout handles `kind: 'bundle'`
 variants. **Stock** was split off on 2026-11-06 into `stock-tracking.md` (parked).

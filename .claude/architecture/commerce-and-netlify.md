@@ -153,7 +153,12 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   item) or `unavailable` (unpriced item; also any variant with no own and no product price —
   resolved-only status, label `product.states.unavailable`, price macro renders nothing). The
   bundle's subtitle is always composed from its current items ("2× A, 1× B", `composeSubtitle`) —
-  the client's is ignored; other kinds keep the client subtitle. Item stock isn't checked and paid
+  the client's is ignored; other kinds keep the client subtitle. Composed subtitles (bundle
+  items, loose lines without one) use `addToCartButton`'s default format — wine "0,75l, 2025"
+  (`formatVolumeMl`, `src/shared/format-volume.ts`; unit from the function config `units.volume`,
+  default `l`), options "Rot, L". A shop's own frontend wording (e.g. Jurtschitsch's
+  `wineSubtitle` with Vinofact varietals) reaches loose lines only, not bundle items — sending
+  the items' display text from the page is an open option in `.claude/plans/bundle-checkout.md`. Item stock isn't checked and paid
   orders don't reduce it: `.claude/plans/stock-tracking.md` (parked).
 - **Bundle VAT** (`validateBundleItems` in `cart-validator.ts`, `splitBundlePrice` + `vatParts` in
   `tax.ts`): a bundle has no own tax category (hidden in the Studio). Its unit price is split over
