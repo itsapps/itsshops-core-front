@@ -44,6 +44,13 @@ export type SendOrderNotificationOptions = {
   /** Force-attach the invoice PDF regardless of mailType. */
   attachInvoice?: boolean
   /**
+   * Core issues invoices (default `true`). `false` for a shop whose invoices come from another
+   * system (e.g. wineNET): the `orderInvoice` mail and `attachInvoice` are refused (400), so the
+   * customer never gets a second invoice with core's numbering. Pair with core-back
+   * `features.shop.invoices: false`, which hides both in the Studio.
+   */
+  invoices?: boolean
+  /**
    * BCC the shop inbox (`settings.shopNotificationEmail`, falling back to the sender) with the
    * customer's mail. The webhook no longer uses it — it sends `sendShopOrderNotification` instead.
    */
@@ -144,6 +151,13 @@ export async function sendOrderNotification(
   mailType: MailType,
   options: SendOrderNotificationOptions = {},
 ): Promise<SendOrderNotificationResult> {
+  if (options.invoices === false && (options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType))) {
+    throw new OrderNotifierError(
+      ErrorCode.INVALID_INPUT,
+      'This shop issues its invoices elsewhere — no invoice mail or PDF from the shop',
+      400,
+    )
+  }
   const order = await fetchOrderById(orderId)
   if (!order) {
     throw new OrderNotifierError(ErrorCode.ORDER_NOT_FOUND, `Order not found: ${orderId}`, 404)

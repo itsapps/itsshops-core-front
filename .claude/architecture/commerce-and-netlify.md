@@ -178,7 +178,11 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   doesn't. **Invoice VAT** (`InvoicePdf.tsx`): every line prints its rate (`lineVatRate`: a
   bundle with items → per item instead), and the summary prints one row per rate from
   `totals.vatBreakdown` (net + VAT, shipping included) before the VAT total — invoices must state
-  the rate (AT § 11 UStG, DE § 33 UStDV for small invoices). Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
+  the rate (AT § 11 UStG, DE § 33 UStDV for small invoices).
+- **Invoices issued elsewhere:** notify option `invoices: false` (the customer's `order-notify`
+  wrapper) refuses `orderInvoice` and `attachInvoice` with 400 before anything is fetched; core-back
+  `features.shop.invoices: false` hides both in the Studio's "Send mail" action. Core still assigns
+  an `invoiceNumber` to every order (the mails don't print it). Tinhof: wineNET issues invoices. Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest

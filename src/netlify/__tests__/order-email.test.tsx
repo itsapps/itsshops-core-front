@@ -225,6 +225,27 @@ describe('bundle contents in the mail', () => {
   })
 })
 
+describe('invoices: false (invoices issued elsewhere)', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('refuses the invoice mail and an attached invoice, sends nothing', async () => {
+    await expect(sendOrderNotification('o1', 'orderInvoice', { invoices: false })).rejects.toMatchObject({ httpStatus: 400 })
+    await expect(sendOrderNotification('o1', 'orderShipping', { invoices: false, attachInvoice: true })).rejects.toMatchObject({ httpStatus: 400 })
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('other mails go out as before', async () => {
+    await sendOrderNotification('o1', 'orderShipping', { invoices: false })
+    expect(vi.mocked(sendMail).mock.calls.at(-1)![0].attachment).toBeUndefined()
+  })
+})
+
 describe('customer message', () => {
   beforeEach(() => {
     vi.stubEnv('URL', 'https://shop.example')

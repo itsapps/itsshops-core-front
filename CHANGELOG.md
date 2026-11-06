@@ -37,6 +37,11 @@ release core-back first.
   printed (AT § 11 UStG / DE § 33 UStDV need the rate). New keys `emails.order.summaryVatRow`,
   `emails.order.vatRateShort`. Customer `invoicePdf` overrides don't get it automatically.
 
+- Notify option `invoices: false` (`createNotifyHandler`, also `notify` of the webhook): for a
+  shop whose invoices come from another system (e.g. wineNET) — the `orderInvoice` mail and
+  `attachInvoice` are refused with 400, so no second invoice with core's numbering goes out. Pair
+  with core-back `features.shop.invoices: false`.
+
 ### Changed
 - A bundle with no items, a missing (archived/unpublished) or non-active item is sold out on the
   page (cards, product page, pickers, search, schema.org) and refused at checkout (was a 500 for
