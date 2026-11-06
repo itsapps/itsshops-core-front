@@ -158,6 +158,15 @@ export async function sendOrderNotification(
       400,
     )
   }
+  // The order doesn't store refunded amounts, and the refund mails fall back to the order total —
+  // right for a full refund, wrong for a partial one. So a partial-refund mail needs the amount.
+  if (mailType === 'orderRefundedPartially' && !(typeof options.refundAmount === 'number' && options.refundAmount > 0)) {
+    throw new OrderNotifierError(
+      ErrorCode.INVALID_INPUT,
+      'refundAmount (cents) is required for the partial-refund mail',
+      400,
+    )
+  }
   const order = await fetchOrderById(orderId)
   if (!order) {
     throw new OrderNotifierError(ErrorCode.ORDER_NOT_FOUND, `Order not found: ${orderId}`, 404)

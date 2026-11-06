@@ -246,6 +246,28 @@ describe('invoices: false (invoices issued elsewhere)', () => {
   })
 })
 
+describe('partial-refund mail', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('states the refunded amount, never the order total', async () => {
+    await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
+    const { html } = await sent()
+    expect(textOf(html)).toContain('12,50')
+    expect(textOf(html)).not.toContain('30,00')
+  })
+
+  it('is refused without an amount (would otherwise state the total)', async () => {
+    await expect(sendOrderNotification('o1', 'orderRefundedPartially')).rejects.toMatchObject({ httpStatus: 400 })
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+})
+
 describe('customer message', () => {
   beforeEach(() => {
     vi.stubEnv('URL', 'https://shop.example')

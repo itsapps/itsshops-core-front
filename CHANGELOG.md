@@ -57,6 +57,11 @@ release core-back first.
 - `ValidatedCartItem.bundleItems[]` / `ValidatedCartItemResponse.bundleKey`: new fields (see
   `src/netlify/types/checkout.ts`, `src/shared/checkout-api.ts`).
 
+### Fixed
+- The partial-refund mail ("Teilbetrag von …") sent without `refundAmount` (e.g. from the Studio's
+  "Send mail" action) stated the order total. It is now refused with 400 without an amount; core-back
+  5.2.0's "Send mail" asks for it. The status dialog's refund flow always passed it.
+
 ### Removed
 - Translation key `checkout.itemsUnavailable` and the checkout's `data-t-items-unavailable`
   (replaced by the change notice). `cart-store`'s `syncPricesFromServer` → `syncCartFromServer`.
