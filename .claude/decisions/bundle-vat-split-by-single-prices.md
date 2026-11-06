@@ -12,7 +12,9 @@ A bundle has no tax category (hidden in core-back). At checkout its unit price i
 items in the ratio of their single gross prices (item price ?? product price, × item qty), whole
 cents, shares rounded down, the last item takes the remainder; each share is taxed at the item's
 own rate. The split is stored on the order (`bundle.items[]`), never recomputed. An item without
-any price makes the bundle unavailable (no ratio). Coupons stay order-wide, bundles included.
+any price makes the bundle unavailable (no ratio). Coupons stay order-wide, bundles included —
+even an already discounted bundle (decision G); a "not on bundles" coupon option would be a new
+coupon feature, built only if an owner asks.
 Rejected: the bundle's own rate (wrong for mixed bundles); a price derived from the items' sum
 (owners want to see and set what customers pay).
 

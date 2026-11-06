@@ -198,6 +198,10 @@ branch:
   (owner's rule, 2026-11-05) — not straight on `main`. A customer's `staging` may be merged from
   the feature branch for testing (its lockfile may pin a core commit from core's pushed feature
   branch); merge to `main` once it's tested, then delete the branch. Docs-only fixes may go to `main`.
+  Merge a core branch that customers pin by **fast-forward or merge commit, never squash/rebase**:
+  the pinned commits must stay reachable from `main`, or deleting the branch orphans them and a
+  customer install of that hash can fail. Check first: `git merge-base --is-ancestor <pinned sha>
+  origin/main`.
 - **`staging` / `production`** → pushed via the **`user`** remote, authenticated with the **customer
   account's Personal Access Token (PAT)**. The pusher then matches the Netlify account → the build
   triggers.

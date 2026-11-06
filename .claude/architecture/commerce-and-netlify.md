@@ -158,7 +158,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   (`formatVolumeMl`, `src/shared/format-volume.ts`; unit from the function config `units.volume`,
   default `l`), options "Rot, L". A shop's own frontend wording (e.g. Jurtschitsch's
   `wineSubtitle` with Vinofact varietals) reaches loose lines only, not bundle items — sending
-  the items' display text from the page is an open option in `.claude/plans/bundle-checkout.md`. Item stock isn't checked and paid
+  the items' display text from the page is an open option (Jurtschitsch `CLAUDE.md`; core plan `bundle-checkout.md` until the release). Item stock isn't checked and paid
   orders don't reduce it: `.claude/plans/stock-tracking.md` (parked).
 - **Bundle VAT** (`validateBundleItems` in `cart-validator.ts`, `splitBundlePrice` + `vatParts` in
   `tax.ts`): a bundle has no own tax category (hidden in the Studio). Its unit price is split over

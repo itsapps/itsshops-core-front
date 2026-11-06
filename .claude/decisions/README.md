@@ -81,3 +81,5 @@ alternative was rejected, a constraint discovered the hard way.
   checkout syncs the cart, reports changes and re-asks before paying.
 - [invoices-issued-elsewhere-switch.md](invoices-issued-elsewhere-switch.md) — `invoices: false`
   (both cores) for shops whose invoices come from an ERP; no second invoice from core.
+- [bundle-packaging-with-the-cart.md](bundle-packaging-with-the-cart.md) — bundle bottles are boxed
+  with the cart; non-wine items pay weight rates on top (revisit with a mixed bundle).

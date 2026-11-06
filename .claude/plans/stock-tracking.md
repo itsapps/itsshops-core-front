@@ -3,8 +3,8 @@
 Status: **parked** (2026-11-06), nothing implemented. No shop enables stock today
 (`features.shop.stock` is off in every backend, so `stock` is hidden and empty = unlimited). Pick it
 up when the first shop wants to turn stock on. One decision open (E, end of file). Split off from
-`bundle-checkout.md` on 2026-11-06; its bundle parts depend on that plan's phase 3.1
-(`orderItemBundle.items`).
+`bundle-checkout.md` on 2026-11-06; its bundle parts build on the order snapshot
+`orderItemBundle.items` (shipped with the bundle work, `commerce-and-netlify.md` → Order snapshot).
 
 Spans core-back (`stock` field) and core-front (cart validation, webhook, resolver/schema.org).
 Read core-back's `CLAUDE.md` before touching it. When this ships, move the durable parts into
@@ -40,8 +40,8 @@ delete this file.
    variant's stock. What happens to lines that don't fit: decision E. The bundle's own `stock` (if
    set) is checked as well, as today — e.g. a limited number of gift boxes.
 2. Reduce stock on paid orders: the bundle's own stock (as today) **and** each item's stock by
-   bundle qty × item qty, from the order line's `bundle.items` (`bundle-checkout.md` phase 3.1 —
-   do that first), in the same `commitOrderTransaction`. Sum the quantities per variant first
+   bundle qty × item qty, from the order line's `bundle.items` (exists since the bundle work),
+   in the same `commitOrderTransaction`. Sum the quantities per variant first
    (loose + in bundles → one `dec` per doc). Only reduce variants whose `stock` is a number: in
    `handlePaymentSucceeded`, before `commitOrderTransaction`, fetch
    `*[_id in $ids && defined(stock)]._id` for the summed ids and drop the rest (`dec` is then never
@@ -53,7 +53,7 @@ delete this file.
    `offerAvailability` follows unchanged.
 4. Product page: a variant (loose or bundle) whose effective stock is ≤ 0 shows as sold out — pass
    `features.shop.stock` into the resolver (`ResolveContext` or a `resolveVariants` argument) and
-   fold it into `bundle-checkout.md`'s `effectiveStatus` helper (→ `soldOut`), so cards, page and
+   fold it into the `effectiveStatus` helper (`src/data/resolve/variants.ts`, `data-layer.md`) (→ `soldOut`), so cards, page and
    pickers follow with no template change.
 5. Tests: stock across loose and bundle lines (`cart-validator.test.ts`); webhook reductions
    (summed per variant, unlimited variants untouched); effective stock/status in the resolver.
