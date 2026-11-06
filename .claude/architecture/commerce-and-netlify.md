@@ -147,9 +147,30 @@ HTTP entry points, one file per endpoint:
 Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 
 - `cart-validator.ts` — re-validates the client cart server-side (never trust client prices).
-  Known gap: a bundle is checked only as a variant (own status/price/stock) — its items' status and
-  stock aren't checked, and paid orders don't reduce item stock. Plans: `.claude/plans/bundle-checkout.md`
-  (status, order contents), `.claude/plans/stock-tracking.md` (stock, parked).
+  **Bundles:** unavailable when they have no items, an item reference dangles, an item isn't
+  `active`, or an item has no price (own or its product's). The page agrees: the build resolver's
+  `effectiveStatus` (`src/data/resolve/variants.ts`) shows such a bundle `soldOut` (missing/inactive
+  item) or `unavailable` (unpriced item; also any variant with no own and no product price —
+  resolved-only status, label `product.states.unavailable`, price macro renders nothing). The
+  bundle's subtitle is always composed from its current items ("2× A, 1× B", `composeSubtitle`) —
+  the client's is ignored; other kinds keep the client subtitle. Item stock isn't checked and paid
+  orders don't reduce it: `.claude/plans/stock-tracking.md` (parked).
+- **Bundle VAT** (`validateBundleItems` in `cart-validator.ts`, `splitBundlePrice` + `vatParts` in
+  `tax.ts`): a bundle has no own tax category (hidden in the Studio). Its unit price is split over
+  its items in the ratio of their single gross prices (item price ?? product price, × item qty),
+  whole cents, the last item takes the remainder (works when the bundle is cheaper). Each share is
+  taxed at the item's own rate (variant category ?? product category ?? shop default — same as a
+  loose line). `calculateTotals` (discount factor, `buildVatBreakdown`) and `dominantItemVatRate`
+  run over `vatParts` (a bundle's parts × line qty, else the line). The parent line keeps the
+  required fields: `vatAmount` = sum of the parts, `vatRate` = rate of the largest part (display
+  only). Decision F (Tinhof's tax advisor to confirm the split by single prices).
+- **Order snapshot** (`order-builder.ts`): `orderItem.bundle.items[]` (`orderItemBundleItem`:
+  `variantId, productId, title, subtitle, sku, quantity` per bundle, `price` = gross share of
+  **one** bundle for all its units, `vatRate`, `vatAmount` = VAT in share × line qty). Stored, never
+  recomputed. Mails (`ItemRow`, also the shop's copy) list the contents as a nested `<ul>` (per
+  bundle), the invoice PDF one line per item (units over the whole line + rate), both from
+  `bundleItemLines()` (`order-item-display.ts`); where the list shows, the bundle's subtitle
+  doesn't. Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
@@ -185,10 +206,9 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the
   same. The shipping functions take `ShippingCartItem` (the fields they read), not the full
   `ValidatedCartItem`; `resolveShippingMethods(…, { quiet: true })` silences the packaging warning
-  (the build prices every product page). Known inconsistency, kept on purpose so markup = checkout:
-  a bundle's **total** weight always estimates a wine child from its volume (explicit weight
-  ignored), while `bundleItems[].weight` uses the explicit weight first — matters only for
-  weight-rate methods; fix both together (explicit first everywhere) if ever needed.
+  (the build prices every product page). A bundle's weight = its items' `resolveVariantWeight`
+  (explicit weight first, wine estimated) × item qty — the same per-item weight as
+  `bundleItems[].weight`, so markup = checkout.
 - **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
   as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
   pass the same value as `itsshops.config` (Tinhof passes `stock: false` explicitly).
@@ -242,7 +262,26 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    + cart signature): written before confirm, removed by the thanks page. If the customer never got
    there (tab closed during 3DS, returned in another browser), opening the cart or the checkout asks
    `order-status` once per page; order exists + cart unchanged → cart cleared. Expires after 7 days.
-6. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
+6. **Cart changes at checkout** (every kind): the site only changes on a deploy, so the cart can
+   hold stale prices/contents. After every calculate **and** create, `syncCartFromServer`
+   (`scripts/cart-store.ts`) writes the server's answer into the stored cart — removes
+   `unavailableItems`, takes prices, capped quantities (only while the stored quantity is still the
+   one sent) and, for bundles, `subtitle` + `bundleKey` — and returns the changes. "Contents
+   changed" is decided by the locale-independent `bundleKey` ("variantId:qty" sorted, `,`-joined;
+   `data-bundle-key` from `addToCartButton`, server `bundleContentsKey`), not by the subtitle;
+   carts without a key never report it. The notice is `[data-checkout-changes]` (`role="status"`,
+   `tabindex="-1"`, always in the DOM, empty when nothing changed) above the summary items, one
+   `<li>` per change (`scripts/checkout-changes.ts`, labels `checkout.changes.*`); event
+   `checkout:cart-changed`. A `CART_EMPTY` error (all items gone) removes its ids
+   (`details.unavailable`, `', '`-joined), shows the notice, then the empty cart. Overlapping
+   calculates: only the latest (`calcSeq`) writes the cart and renders. **Before paying**
+   (`mustReconfirm`): if the create response changed the cart or its total differs from the one
+   shown (manual: `lastResponse`; express: the wallet sheet's last calculation, tracked in
+   `CheckoutExpress.shownGrandTotal`, `null` after cancel → counts as changed), no
+   `confirmPayment` and no snapshot/pending marker — the page shows the new totals + "please
+   confirm again" and focuses the notice; express returns an error and recalculates the page.
+   Re-submitting reuses `orderMetaId` (same PaymentIntent).
+7. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
    never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
    visitor's view and cart). Delayed methods (SEPA, `processing`) have no order/email/stock
    reservation until they succeed and no failure handling; core doesn't restrict payment methods —

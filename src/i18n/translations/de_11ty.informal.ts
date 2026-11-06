@@ -8,6 +8,10 @@ export default {
     cartEmpty: "Dein Warenkorb ist leer.",
     error: "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
     serviceError: "Ein technischer Fehler ist aufgetreten. Bitte versuche es später erneut oder kontaktiere den Support.",
+    changes: {
+      intro: "Dein Warenkorb wurde aktualisiert:",
+      reconfirm: "Bitte prüfe die Bestellung und bestätige erneut.",
+    },
   },
   ageGate: {
     title: "Bist du mindestens {{age}} Jahre alt?",

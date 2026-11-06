@@ -126,10 +126,15 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)
 - No **`coupon_lines`** (WC lists code + net/tax discount per coupon there). The discount is only
   in the line amounts and `discount_total`/`discount_tax` — enough for wineNET (see below).
-- **Bundles** are one plain line (the bundle variant); their items aren't sent (the order only stores
-  `bundle.itemCount`). WC's Product Bundles extension adds €0 child lines linked by
-  `bundled_by`/`bundled_items`; we won't copy that — planned instead: a bundle is sent as its items,
-  as ordinary lines at their price shares (`.claude/plans/bundle-checkout.md`, phase 5.2).
+- **Bundles** are sent as **their items, as ordinary line items** (`expandOrderLines` in
+  `wc-api.ts`; decision C): no parent line, no €0 lines, no `bundled_by`/`bundled_items`. Per item:
+  `product_id`/`variation_id` = `stableId` of the item's own product/variant (same as bought loose,
+  so the ERP's learned mapping applies), `sku`, `name` = `title - subtitle`, `quantity` = bundle qty
+  × item qty, gross = stored share × bundle qty (`lineGross`, which the coupon allocation and all
+  amounts use), its own `taxes`; `meta_data` adds `_bundle_title`, `_bundle_sku`,
+  `_bundle_variant_id`. Line id = `stableId(orderNumber:lineKey:bundleItemKey)`; ids are unique per
+  order (on a hash clash re-hashed with `:1`, `:2`, … — deterministic). Older bundle orders without
+  `bundle.items` stay one line.
 
 ## wineNET behaviour (observed)
 

@@ -102,6 +102,82 @@ type SanityOrderItem = {
   vatRate: number
   vatAmount: number
   weight: number | null
+  /** Bundle contents snapshot (orders from 2026-11 on); `price` = share of one bundle. */
+  bundle?: { items?: SanityOrderBundleItem[] | null } | null
+}
+
+type SanityOrderBundleItem = {
+  _key: string
+  variantId: string
+  productId: string
+  title: string
+  subtitle: string | null
+  sku: string | null
+  quantity: number
+  price: number
+  vatRate: number
+}
+
+/**
+ * One WooCommerce line item before the amounts are computed. A bundle with a stored contents
+ * snapshot becomes one line per item (same `product_id` as the item bought loose; the bundle only
+ * in `meta_data`), so the ERP never sees a bundle article and each line has one VAT rate.
+ */
+type WcLine = {
+  idSource: string
+  productId: string
+  variantId: string
+  sku: string | null
+  name: string
+  quantity: number
+  vatRate: number
+  /** Gross of the whole line, cents (an expanded item: its share × the bundle quantity). */
+  lineGross: number
+  meta: Array<{ key: string; value: string }>
+}
+
+function lineName(title: string, subtitle: string | null | undefined): string {
+  return subtitle ? `${title} - ${subtitle}` : title
+}
+
+export function expandOrderLines(order: Pick<SanityOrder, 'orderNumber' | 'orderItems'>): WcLine[] {
+  return order.orderItems.flatMap((item): WcLine[] => {
+    const base = [
+      { key: '_sanity_product_id', value: item.productId },
+      { key: '_sanity_variant_id', value: item.variantId },
+    ]
+    const items = item.bundle?.items
+    if (item.kind === 'bundle' && items?.length) {
+      return items.map(bi => ({
+        idSource: `${order.orderNumber}:${item._key}:${bi._key}`,
+        productId: bi.productId,
+        variantId: bi.variantId,
+        sku: bi.sku,
+        name: lineName(bi.title, bi.subtitle),
+        quantity: bi.quantity * item.quantity,
+        vatRate: bi.vatRate,
+        lineGross: bi.price * item.quantity,
+        meta: [
+          { key: '_sanity_product_id', value: bi.productId },
+          { key: '_sanity_variant_id', value: bi.variantId },
+          { key: '_bundle_title', value: item.title },
+          { key: '_bundle_sku', value: item.sku ?? '' },
+          { key: '_bundle_variant_id', value: item.variantId },
+        ],
+      }))
+    }
+    return [{
+      idSource: `${order.orderNumber}:${item._key}`,
+      productId: item.productId,
+      variantId: item.variantId,
+      sku: item.sku,
+      name: lineName(item.title, item.subtitle),
+      quantity: item.quantity,
+      vatRate: item.vatRate,
+      lineGross: item.price * item.quantity,
+      meta: base,
+    }]
+  })
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -275,8 +351,11 @@ export function mapOrder(order: SanityOrder, tz: string) {
 
   // Pre-compute discounted gross per line item, then absorb the rounding remainder
   // in the last item so that sum(discountedGross) + shippingCost == grandTotal exactly.
-  const discountedGrossPerItem = order.orderItems.map(item =>
-    Math.round(item.price * item.quantity * (1 - discountFactor))
+  // Bundles are sent as their items (see `expandOrderLines`); everything below runs over the
+  // expanded lines.
+  const wcLines = expandOrderLines(order)
+  const discountedGrossPerItem = wcLines.map(line =>
+    Math.round(line.lineGross * (1 - discountFactor))
   )
   const expectedLineTotal = t.grandTotal - (f ? f.shippingCost : 0)
   const roundingRemainder = expectedLineTotal - discountedGrossPerItem.reduce((s, v) => s + v, 0)
@@ -285,8 +364,8 @@ export function mapOrder(order: SanityOrder, tz: string) {
 
   // Per line, in cents: exact (unrounded) net and per-line rounded tax, before (subtotal)
   // and after (total) the discount.
-  const lines = order.orderItems.map((item, i) => {
-    const gross = item.price * item.quantity
+  const lines = wcLines.map((item, i) => {
+    const gross = item.lineGross
     const discountedGross = discountedGrossPerItem[i]
     return {
       item,
@@ -304,7 +383,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
   const taxCountry = (order.customer?.shippingAddress?.country
     ?? order.customer?.billingAddress?.country ?? '').toUpperCase()
   const rateId = (rate: number) => stableId(`tax-rate:${taxCountry}:${rate}`)
-  const rates = [...new Set(order.orderItems.map(item => item.vatRate))]
+  const rates = [...new Set(wcLines.map(line => line.vatRate))]
   if (shippingRate && !rates.includes(shippingRate)) rates.push(shippingRate)
   const taxLines = rates.map((rate, i) => ({
     id: i + 1,
@@ -316,6 +395,16 @@ export function mapOrder(order: SanityOrder, tz: string) {
     tax_total: price(lines.filter(l => l.item.vatRate === rate).reduce((s, l) => s + l.totalTax, 0)),
     shipping_tax_total: price(rate === shippingRate ? shippingTax : 0),
   }))
+
+  // Line ids must be unique within the order (the 32-bit hash can clash): on a clash, re-hash
+  // with `:1`, `:2`, … appended — deterministic, so an order always gets the same ids.
+  const usedIds = new Set<number>()
+  const uniqueId = (source: string): number => {
+    let id = stableId(source)
+    for (let n = 1; usedIds.has(id); n++) id = stableId(`${source}:${n}`)
+    usedIds.add(id)
+    return id
+  }
 
   const itemsTax = lines.reduce((s, l) => s + l.totalTax, 0)
   // Discount split as WooCommerce reports it: net and tax difference of the line amounts.
@@ -354,8 +443,8 @@ export function mapOrder(order: SanityOrder, tz: string) {
     transaction_id: order.paymentIntentId ?? '',
     meta_data: [],
     line_items: lines.map(({ item, subtotalNet, subtotalTax, totalNet, totalTax }) => ({
-      id: stableId(`${order.orderNumber}:${item._key}`),
-      name: item.subtitle ? `${item.title} - ${item.subtitle}` : item.title,
+      id: uniqueId(item.idSource),
+      name: item.name,
       product_id: stableId(item.productId),
       variation_id: stableId(item.variantId),
       quantity: item.quantity,
@@ -368,10 +457,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
       total: price(Math.round(totalNet)),
       total_tax: price(totalTax),
       taxes: [{ id: rateId(item.vatRate), subtotal: price(subtotalTax), total: price(totalTax) }],
-      meta_data: [
-        { key: '_sanity_product_id', value: item.productId },
-        { key: '_sanity_variant_id', value: item.variantId },
-      ],
+      meta_data: item.meta,
     })),
     tax_lines: taxLines,
     shipping_lines: f ? [{
@@ -399,7 +485,10 @@ const ORDER_PROJECTION = `{
   "hasOpenWithdrawal": count(*[_type == "orderWithdrawal" && orderRef._ref == ^._id && status in ["received", "processing"]]) > 0,
   customer { contactEmail, locale, billingAddress, shippingAddress },
   totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },
-  orderItems[] { _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight },
+  orderItems[] {
+    _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight,
+    bundle { items[] { _key, variantId, productId, sku, subtitle, title, quantity, price, vatRate } }
+  },
   fulfillment { methodTitle, methodType, shippingCost, taxSnapshot, trackingCode, packagingLines }
 }`
 

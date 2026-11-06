@@ -29,7 +29,12 @@
     data-t-cart-empty="{{ 'checkout.cartEmpty' | trans }}"
     data-t-error="{{ 'checkout.error' | trans }}"
     data-t-service-error="{{ 'checkout.serviceError' | trans }}"
-    data-t-items-unavailable="{{ 'checkout.itemsUnavailable' | trans }}"
+    data-t-changes-intro="{{ 'checkout.changes.intro' | trans }}"
+    data-t-changes-removed="{{ 'checkout.changes.removed' | trans }}"
+    data-t-changes-price="{{ 'checkout.changes.price' | trans }}"
+    data-t-changes-quantity="{{ 'checkout.changes.quantity' | trans }}"
+    data-t-changes-contents="{{ 'checkout.changes.contents' | trans }}"
+    data-t-changes-reconfirm="{{ 'checkout.changes.reconfirm' | trans }}"
     data-t-available="{{ 'checkout.available' | trans }}"
     data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
     data-t-error-prename="{{ 'forms.fields.prename.errorMessage' | trans }}"
@@ -192,6 +197,10 @@
         <aside class="checkout__summary">
           <fieldset class="checkout__section">
             <legend>{{ 'checkout.sections.summary' | trans }}</legend>
+            {#- Cart changes found by checkout (price, availability, stock, bundle contents).
+              Always in the DOM and not hidden — a polite live region is only announced reliably
+              when it exists before it's filled. Empty = nothing to report. -#}
+            <div data-checkout-changes class="checkout__changes" role="status" tabindex="-1"></div>
             <div data-checkout-items class="checkout-items"></div>
             <dl data-checkout-totals class="checkout-totals"></dl>
           </fieldset>

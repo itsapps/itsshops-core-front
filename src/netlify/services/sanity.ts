@@ -57,10 +57,16 @@ const CHECKOUT_QUERY = `{
     wine,
     options[]->{ title, "groupTitle": group->title },
     bundleItems[]{
-      quantity,
+      _key, quantity,
       "variant": product->{
-        _id, kind, title, weight, stock, wine,
-        "productWeight": product->weight
+        _id, status, kind, title, sku, price, weight, stock, wine,
+        "productId": product._ref,
+        "productTitle": product->title,
+        "productWeight": product->weight,
+        "productPrice": product->price,
+        "taxCategoryCode": taxCategory->code.current,
+        "productTaxCategoryCode": product->taxCategory->code.current,
+        options[]->{ title, "groupTitle": group->title }
       }
     }
   },

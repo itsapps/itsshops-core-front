@@ -186,6 +186,45 @@ describe('order confirmation email', () => {
   })
 })
 
+describe('bundle contents in the mail', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  const bundleLine = (items?: boolean) => ({
+    _key: 'l1', _type: 'orderItem' as const, kind: 'bundle' as const, variantId: 'b', productId: 'pb',
+    title: 'Weinbox', subtitle: '2× Blaufränkisch, 1× Traubensaft', quantity: 2, price: 3000,
+    vatRate: 13, vatAmount: 750, packed: false,
+    bundle: {
+      _type: 'orderItemBundle' as const,
+      itemCount: 3,
+      ...(items && { items: [
+        { _key: 'a', _type: 'orderItemBundleItem' as const, variantId: 'w', productId: 'pw', title: 'Blaufränkisch', subtitle: '2023 · 750 ml', quantity: 2, price: 2400, vatRate: 13, vatAmount: 552 },
+        { _key: 'b', _type: 'orderItemBundleItem' as const, variantId: 'j', productId: 'pj', title: 'Traubensaft', quantity: 1, price: 600, vatRate: 20, vatAmount: 200 },
+      ] }),
+    },
+  })
+
+  it('lists the items (per bundle) as a nested list, without the subtitle', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({ orderItems: [bundleLine(true)] }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const { html } = await sent()
+    expect(html).toMatch(/<ul[^>]*>\s*<li[^>]*>2 × Blaufränkisch – 2023 · 750 ml<\/li>\s*<li[^>]*>1 × Traubensaft<\/li>/)
+    expect(textOf(html)).not.toContain('2× Blaufränkisch, 1× Traubensaft')
+  })
+
+  it('older bundle orders without items keep their subtitle', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({ orderItems: [bundleLine(false)] }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const { html } = await sent()
+    expect(textOf(html)).toContain('2× Blaufränkisch, 1× Traubensaft')
+    expect(html).not.toContain('<ul')
+  })
+})
+
 describe('customer message', () => {
   beforeEach(() => {
     vi.stubEnv('URL', 'https://shop.example')

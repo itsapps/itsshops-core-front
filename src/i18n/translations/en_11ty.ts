@@ -70,6 +70,7 @@ export default {
       active:  "Available",
       comingSoon: "Coming soon",
       soldOut:   "Sold out",
+      unavailable: "Currently unavailable",
       archived:  "Unavailable",
     },
     price: {
@@ -224,7 +225,14 @@ export default {
     error: "An error occurred. Please try again.",
     serviceError: "A technical error occurred. Please try again later or contact support.",
     serviceErrorContact: "Contact support",
-    itemsUnavailable: "Some items are no longer available and have been removed.",
+    changes: {
+      intro: "Your cart has been updated:",
+      removed: "{title} is no longer available and has been removed from your cart.",
+      price: "The price of {title} has changed: {from} → {to}.",
+      quantity: "Only {quantity} of {title} are available.",
+      contents: "The contents of {title} have changed: {contents}.",
+      reconfirm: "Please review your order and confirm again.",
+    },
     available: "available",
     orDivider: "or",
     discount: "Discount",

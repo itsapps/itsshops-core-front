@@ -176,6 +176,30 @@ describe('buildOrderMeta', () => {
   })
 })
 
+describe('buildOrderMeta — bundle contents', () => {
+  it('stores the items with per-bundle quantity and the VAT split', () => {
+    const meta = buildOrderMeta(makeInput({
+      items: [{
+        variantId: 'b1', productId: 'pb', kind: 'bundle', title: 'Box', subtitle: '2× Wein, 1× Saft',
+        sku: 'BOX', price: 3000, weight: 3500, quantity: 2, taxCategoryCode: '', vatRate: 13,
+        vatAmount: 552 + 200, wine: null, options: null,
+        bundleItems: [
+          { key: 'ka', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: '2023 · 750 ml', sku: 'W', quantity: 2, kind: 'wine', weight: 1250, wine: { volume: 750 }, price: 2400, vatRate: 13, vatAmount: 552 },
+          { key: 'kb', variantId: 'j', productId: 'pj', title: 'Saft', subtitle: null, sku: null, quantity: 1, kind: 'physical', weight: 1000, wine: null, price: 600, vatRate: 20, vatAmount: 200 },
+        ],
+      }],
+    }))
+    expect(meta.orderItems[0].bundle).toEqual({
+      _type: 'orderItemBundle',
+      itemCount: 3,
+      items: [
+        { _key: 'ka', _type: 'orderItemBundleItem', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: '2023 · 750 ml', sku: 'W', quantity: 2, price: 2400, vatRate: 13, vatAmount: 552 },
+        { _key: 'kb', _type: 'orderItemBundleItem', variantId: 'j', productId: 'pj', title: 'Saft', quantity: 1, price: 600, vatRate: 20, vatAmount: 200 },
+      ],
+    })
+  })
+})
+
 describe('buildOrder', () => {
   it('builds from orderMeta with order-specific fields', () => {
     const meta = buildOrderMeta(makeInput())

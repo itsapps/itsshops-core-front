@@ -79,6 +79,20 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
       orderItem.bundle = {
         _type: 'orderItemBundle',
         itemCount: item.bundleItems.reduce((sum, bi) => sum + bi.quantity, 0),
+        // Snapshot of the contents and the VAT split (stored, never recomputed).
+        items: item.bundleItems.map(bi => ({
+          _key: bi.key,
+          _type: 'orderItemBundleItem' as const,
+          variantId: bi.variantId,
+          productId: bi.productId,
+          title: bi.title,
+          ...(bi.subtitle && { subtitle: bi.subtitle }),
+          ...(bi.sku && { sku: bi.sku }),
+          quantity: bi.quantity,
+          price: bi.price,
+          vatRate: bi.vatRate,
+          vatAmount: bi.vatAmount,
+        })),
       }
     }
 

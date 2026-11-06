@@ -9,12 +9,17 @@ import {
 } from '../lib/shipping'
 import type {
   ValidatedCartItem,
+  ValidatedBundleItem,
   SanityShippingMethodResult,
   SanityPackagingGroupResult,
   AvailableShippingMethod,
 } from '../types/checkout'
 
-function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem {
+type ItemOverrides = Omit<Partial<ValidatedCartItem>, 'bundleItems'> & {
+  bundleItems?: Pick<ValidatedBundleItem, 'variantId' | 'quantity' | 'kind' | 'weight' | 'wine'>[] | null
+}
+
+function makeItem({ bundleItems, ...overrides }: ItemOverrides = {}): ValidatedCartItem {
   return {
     variantId: 'v1',
     productId: 'p1',
@@ -30,7 +35,10 @@ function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem
     vatAmount: 167,
     wine: null,
     options: null,
-    bundleItems: null,
+    bundleItems: bundleItems?.map((bi, i) => ({
+      key: `k${i}`, productId: 'p', title: 'T', subtitle: null, sku: null,
+      price: 0, vatRate: 20, vatAmount: 0, ...bi,
+    })) ?? null,
     ...overrides,
   }
 }

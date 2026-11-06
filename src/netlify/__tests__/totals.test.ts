@@ -182,3 +182,42 @@ describe('calculateTotals', () => {
     })
   })
 })
+
+describe('calculateTotals with a mixed bundle', () => {
+  // €30 box = 2 × €12 wine (13 %) + €6 juice (20 %), plus a loose €10 juice (20 %)
+  const bundle = makeItem({
+    kind: 'bundle', price: 3000, quantity: 1, vatRate: 13,
+    bundleItems: [
+      { key: 'a', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: null, sku: null, quantity: 2, kind: 'wine', weight: null, wine: null, price: 2400, vatRate: 13, vatAmount: 276 },
+      { key: 'b', variantId: 'j', productId: 'pj', title: 'Saft', subtitle: null, sku: null, quantity: 1, kind: 'physical', weight: null, wine: null, price: 600, vatRate: 20, vatAmount: 100 },
+    ],
+  })
+  const loose = makeItem({ variantId: 'v2', price: 1000, vatRate: 20 })
+
+  it('VAT per rate from the parts, no coupon', () => {
+    const t = calculateTotals([bundle, loose], null, 0)
+    expect(t.vatBreakdown).toEqual([
+      { rate: 13, net: 2400 - 276, vat: 276 },
+      { rate: 20, net: 1600 - 267, vat: 267 },
+    ])
+    expect(t.grandTotal).toBe(4000)
+  })
+
+  it('percent coupon (10 %): VAT per rate after discount, grand total to the cent', () => {
+    const t = calculateTotals([bundle, loose], shipping, 20, { discountAmount: 400, zeroShipping: false })
+    // 13 %: 2160 gross; 20 %: 1440 + 500 shipping = 1940
+    expect(t.vatBreakdown).toEqual([
+      { rate: 13, net: 2160 - 248, vat: 248 },
+      { rate: 20, net: 1940 - 323, vat: 323 },
+    ])
+    expect(t.grandTotal).toBe(4000 - 400 + 500)
+    expect(t.tax).toBe(248 + 323)
+  })
+
+  it('fixed coupon (€5) spread by gross over the parts', () => {
+    const t = calculateTotals([bundle, loose], null, 0, { discountAmount: 500, zeroShipping: false })
+    // factor 1/8: 13 % 2400 → 2100; 20 % 1600 → 1400
+    expect(t.vatBreakdown.map(v => [v.rate, v.net + v.vat])).toEqual([[13, 2100], [20, 1400]])
+    expect(t.grandTotal).toBe(3500)
+  })
+})

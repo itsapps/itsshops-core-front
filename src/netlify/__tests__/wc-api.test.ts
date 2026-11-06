@@ -144,6 +144,98 @@ describe('wc-api mapOrder (WooCommerce-compatible amounts)', () => {
   })
 })
 
+describe('wc-api bundles → their items as ordinary lines', () => {
+  type BI = { key: string; variant: string; product: string; quantity: number; price: number; vatRate: number }
+  // €30 box = 2 × €12 wine (13 %) + €6 juice (20 %), split by single prices: 2400 + 600.
+  const boxItems: BI[] = [
+    { key: 'a', variant: 'wine-v', product: 'wine-p', quantity: 2, price: 2400, vatRate: 13 },
+    { key: 'b', variant: 'juice-v', product: 'juice-p', quantity: 1, price: 600, vatRate: 20 },
+  ]
+
+  /** An order with one bundle line (+ optional loose lines), totals as checkout builds them. */
+  function bundleOrder(bundleQty: number, items: BI[], { loose = [] as Item[], discount = 0, shipping = 0, withItems = true } = {}) {
+    const unit = items.reduce((sum, bi) => sum + bi.price, 0)
+    const bundleItems = items.map(bi => ({ ...bi, vatAmount: 0 }))
+    const totals = calculateTotals(
+      [{ price: unit, quantity: bundleQty, vatRate: 13, bundleItems }, ...loose] as never,
+      shipping ? { price: shipping } as never : null,
+      13,
+      discount ? { discountAmount: discount, zeroShipping: false } : null,
+    )
+    const o = order(loose, { shipping, discount })
+    o.totals = { ...totals, totalVat: totals.tax, currency: 'EUR' }
+    o.orderItems = [{
+      _key: 'box', kind: 'bundle', variantId: 'box-v', productId: 'box-p', title: 'Weinbox',
+      subtitle: '2× Wein, 1× Saft', sku: 'BOX', weight: null, quantity: bundleQty, price: unit, vatRate: 13,
+      vatAmount: 0,
+      bundle: withItems ? { items: items.map(bi => ({
+        _key: bi.key, variantId: bi.variant, productId: bi.product, title: `T ${bi.variant}`,
+        subtitle: '2023 · 750 ml', sku: `S-${bi.variant}`, quantity: bi.quantity, price: bi.price, vatRate: bi.vatRate,
+      })) } : null,
+    }, ...o.orderItems]
+    return o
+  }
+
+  it('no parent line; item lines carry the loose product/variant ids, sku, name and bundle meta', () => {
+    const wc = map(bundleOrder(1, boxItems))
+    expect(wc.line_items).toHaveLength(2)
+    const wine = wc.line_items[0]
+    // Same ids as the wine bought loose
+    const looseOrder = order([{ price: 1200, quantity: 1, vatRate: 13 }])
+    looseOrder.orderItems[0] = { ...looseOrder.orderItems[0], productId: 'wine-p', variantId: 'wine-v' }
+    const [looseWine] = map(looseOrder).line_items
+    expect([wine.product_id, wine.variation_id]).toEqual([looseWine.product_id, looseWine.variation_id])
+    expect(wine).toMatchObject({ name: 'T wine-v - 2023 · 750 ml', sku: 'S-wine-v', quantity: 2 })
+    expect(wine.meta_data).toEqual([
+      { key: '_sanity_product_id', value: 'wine-p' },
+      { key: '_sanity_variant_id', value: 'wine-v' },
+      { key: '_bundle_title', value: 'Weinbox' },
+      { key: '_bundle_sku', value: 'BOX' },
+      { key: '_bundle_variant_id', value: 'box-v' },
+    ])
+    expect(wc.tax_lines.map(tl => tl.rate_percent).sort()).toEqual(['13.00', '20.00'])
+  })
+
+  it('item qty 3 in a bundle of qty 2 → quantity 6, subtotal = share × 2 exactly', () => {
+    const wc = map(bundleOrder(2, [{ key: 'a', variant: 'w', product: 'p', quantity: 3, price: 2500, vatRate: 13 }]))
+    const [line] = wc.line_items
+    expect(line.quantity).toBe(6)
+    expect(cents(line.subtotal) + cents(line.subtotal_tax)).toBe(5000)
+  })
+
+  it('10 % coupon on the box: lines + shipping = grand total, tax_lines match', () => {
+    const wc = map(bundleOrder(1, boxItems, { discount: 300, shipping: 790 }))
+    const [wine, juice] = wc.line_items
+    expect([wine.total, wine.total_tax]).toEqual(['19.12', '2.48'])
+    expect([juice.total, juice.total_tax]).toEqual(['4.50', '0.90'])
+    expect(wine.price).toBeCloseTo(2160 / 1.13 / 2 / 100, 10)
+    const lineSum = wc.line_items.reduce((sum, li) => sum + cents(li.total) + cents(li.total_tax), 0)
+    expect(lineSum + cents(wc.shipping_total) + cents(wc.shipping_tax)).toBe(cents(wc.total))
+    for (const tl of wc.tax_lines) {
+      const id = tl.rate_id
+      const fromLines = wc.line_items.flatMap(li => li.taxes).filter(t => t.id === id).reduce((s, t) => s + cents(t.total), 0)
+      expect(cents(tl.tax_total)).toBe(fromLines)
+    }
+  })
+
+  it('unique line ids, also with the same variant twice in one bundle', () => {
+    const twice: BI[] = [
+      { key: 'a', variant: 'w', product: 'p', quantity: 1, price: 1000, vatRate: 13 },
+      { key: 'b', variant: 'w', product: 'p', quantity: 1, price: 1000, vatRate: 13 },
+    ]
+    const wc = map(bundleOrder(1, twice, { loose: [{ price: 500, quantity: 1, vatRate: 20 }] }))
+    const ids = wc.line_items.map(li => li.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(map(bundleOrder(1, twice)).line_items.map(li => li.id)).toEqual(map(bundleOrder(1, twice)).line_items.map(li => li.id))
+  })
+
+  it('older bundle orders without items stay one line', () => {
+    const wc = map(bundleOrder(1, boxItems, { withItems: false }))
+    expect(wc.line_items).toHaveLength(1)
+    expect(wc.line_items[0].name).toBe('Weinbox - 2× Wein, 1× Saft')
+  })
+})
+
 describe('wc-api request logging', () => {
   it('logs param names and dp, never the credentials', async () => {
     process.env.WC_CONSUMER_KEY = 'ck_secret'

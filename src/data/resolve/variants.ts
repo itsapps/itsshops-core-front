@@ -165,6 +165,44 @@ function resolveWine(
 }
 
 // ---------------------------------------------------------------------------
+// Effective status
+// ---------------------------------------------------------------------------
+
+const hasPrice = (p: unknown) => p !== null && p !== undefined
+
+/**
+ * The status the page shows, agreeing with what checkout (`validateCart`) accepts. Only an
+ * `active` raw variant can change:
+ * - no price of its own and none on its product → `unavailable` (resolved-only status);
+ * - a bundle with no items, an item missing from `rawVariantMap` (archived/dangling) or an item
+ *   that isn't `active` → `soldOut`;
+ * - a bundle with an item that has no price (own or its product's) → `unavailable` (checkout
+ *   can't split the bundle's VAT over its items).
+ * Everything else keeps its status.
+ */
+export function effectiveStatus(
+  raw: any,
+  rawVariantMap: Map<string, any>,
+  productMap: Map<string, any>,
+): ResolvedVariant['status'] {
+  const status = stegaClean(raw.status ?? 'active') as ResolvedVariant['status']
+  if (status !== 'active') return status
+  if (!hasPrice(raw.price) && !hasPrice(productMap.get(raw.productId)?.price)) return 'unavailable'
+  const kind = stegaClean(raw.kind ?? productMap.get(raw.productId)?.kind)
+  if (kind !== 'bundle') return status
+
+  const items: any[] = raw.bundleItems ?? []
+  if (items.length === 0) return 'soldOut'
+  let unpriced = false
+  for (const b of items) {
+    const item = rawVariantMap.get(b.variantId)
+    if (!item || stegaClean(item.status ?? 'active') !== 'active') return 'soldOut'
+    if (!hasPrice(item.price) && !hasPrice(productMap.get(item.productId)?.price)) unpriced = true
+  }
+  return unpriced ? 'unavailable' : status
+}
+
+// ---------------------------------------------------------------------------
 // Resolver
 // ---------------------------------------------------------------------------
 
@@ -215,7 +253,7 @@ export function resolveVariants(
           title:  sTitle,
           ...buildVariantLabel(sTitle, sKind, s, ctx),
           url:    variantUrlMap.get(s._id) ?? '',
-          status: s.status ?? 'active',
+          status: effectiveStatus(s, rawVariantMap, productMap),
           kind:   sKind,
           price:   s.price ?? null,
           volume:  s.wine?.volume ?? null,
@@ -248,7 +286,7 @@ export function resolveVariants(
     const productVariants = (siblingsMap.get(product._id) ?? [variant]).map((v: any) => ({
       combo:  comboOf(v),
       url:    variantUrlMap.get(v._id) ?? '',
-      status: stegaClean(v.status ?? 'active'),
+      status: effectiveStatus(v, rawVariantMap, productMap),
     }))
     const currentCombo = comboOf(variant)
 
@@ -353,7 +391,7 @@ export function resolveVariants(
       slug,
       url,
       locale:         locale,
-      status:         stegaClean(variant.status ?? 'active') as ResolvedVariant['status'],
+      status:         effectiveStatus(variant, rawVariantMap, productMap),
       title,
       ...buildVariantLabel(
         title,

@@ -1,14 +1,26 @@
 # Plan — bundles at checkout (missing checks, order contents, packaging) + cart changes at checkout
 
-Status: **planned** (2026-10-25, reviewed 2026-11-02, refined against the code 2026-11-06, eight
-times — 7th: phase 6 locale-independent bundle contents key, stale-response guard, notice placement;
-8th: phases 1–5 code re-read in full — Jurtschitsch `unavailable` branch, bundle item `price`
-semantics, no duplicate subtitle under the item list),
-nothing implemented, no decision open (F, G, H, I decided 2026-11-06; Tinhof's tax advisor confirms F
-before phase 5 ships). Phase 6 (checkout reports cart changes, every product kind) added
-2026-11-06 — owner: ship it together with the bundle work. Origin: review of how checkout handles `kind: 'bundle'`
-variants. **Stock** (bundle items' stock, the `stock` field, webhook reductions) was split off on
-2026-11-06 into `stock-tracking.md` (parked — no shop uses stock).
+Status: **implemented, not released** (2026-11-06) — phases 1, 1b, 3, 4.3, 5, 6 on branch
+`feature/bundle-checkout` in core-front and core-back (+ Jurtschitsch frontend `card.njk` /
+`container.njk`, uncommitted on its `main`); durable docs already moved to
+`commerce-and-netlify.md`, `wc-api.md`, core-back `schemas.md`, CHANGELOGs ("Unreleased").
+Step 0 run 2026-11-06: no unpriced active variants (Jurtschitsch, Tinhof, Rosi Schuster, dev +
+production); Jurtschitsch production bundles clean; Jurtschitsch **development** "test paket" has a
+`soldOut` item → now sold out on the page (test data). grass-art not checked (dormant).
+Open before release: manual Stripe test-mode checks (phase 6.5: price changed between calculate
+and click → no charge + notice, second click pays; express sheet closes, focus on the notice;
+VoiceOver reads the notice once), Tinhof's tax advisor confirms decision F, then release
+core-back 5.2.0 → core-front 3.9.0, pin, and update Jurtschitsch `CLAUDE.md` (wc-api bundle line)
++ Tinhof `CLAUDE.md` (wineNET → bundles); then delete this file.
+Deviations from the text below: shares other than the last are rounded **down** (never a
+negative remainder); bundle-item errors use one key per cause (`duplicateItem`, `inactiveItem`,
+`unpricedItem`); the "VAT is taken from the items" hint is only in the Product Manager (a Studio
+field description can't depend on the document); a bundle's display `vatRate` ties go to the
+first item.
+
+History: planned 2026-10-25, reviewed 2026-11-02, refined against the code 2026-11-06 (eight
+times); F, G, H, I decided 2026-11-06. Origin: review of how checkout handles `kind: 'bundle'`
+variants. **Stock** was split off on 2026-11-06 into `stock-tracking.md` (parked).
 
 Spans core-front (cart validation, order builder, mails, wc-api, shipping calc, product page/markup)
 and core-back (Studio validation, order snapshot schema). Phase 5 (VAT from the items) is needed

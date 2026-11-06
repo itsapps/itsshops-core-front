@@ -1,5 +1,5 @@
 import type { ValidatedCartItem, AvailableShippingMethod, CalculatedTotals } from '../types/checkout'
-import { buildVatBreakdown } from './tax'
+import { buildVatBreakdown, vatParts } from './tax'
 
 export type CouponDiscount = {
   /** Total cents to subtract from subtotal (before VAT calculation). */
@@ -29,11 +29,11 @@ export function calculateTotals(
   // Each item contributes (item.gross * discountAmount / subtotal).
   const discountFactor = subtotal > 0 ? discountAmount / subtotal : 0
 
-  const vatLineItems = items.map(item => {
-    const itemGross = item.price * item.quantity
-    const discountedGross = itemGross - itemGross * discountFactor
-    return { grossTotal: discountedGross, vatRate: item.vatRate }
-  })
+  // A bundle contributes one line per item (its price share at the item's rate, see `vatParts`).
+  const vatLineItems = items.flatMap(vatParts).map(part => ({
+    grossTotal: part.gross - part.gross * discountFactor,
+    vatRate: part.vatRate,
+  }))
 
   // Add shipping as a VAT line item if it has a cost
   if (shippingCost > 0) {

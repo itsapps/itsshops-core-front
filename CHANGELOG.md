@@ -4,6 +4,59 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (bundles at checkout — planned 3.9.0)
+
+Pairs with **core-back 5.2.0** (order snapshot type `orderItemBundleItem`, bundle validation) —
+release core-back first.
+
+### Added
+- **Bundle VAT from its items:** a bundle's price is split over its items by their single sale
+  prices (whole cents, last item takes the remainder) and each share is taxed at the item's own
+  rate (variant → product → shop default). The bundle's own tax category is no longer used. VAT
+  breakdown, shipping VAT (`dominantItemVatRate`) and coupons run over the parts (`vatParts`).
+- **Bundle contents on the order:** `orderItem.bundle.items[]` (`variantId, productId, title,
+  subtitle, sku, quantity` per bundle, `price` share of one bundle, `vatRate`, `vatAmount`). Mails
+  list them under the bundle line (nested list), the invoice PDF one line per item with its VAT
+  rate; the bundle's subtitle isn't repeated there. Older orders render as before.
+- **wc-api:** a bundle is sent as its items, as ordinary line items with the same
+  `product_id`/`variation_id` as when bought loose (bundle in `meta_data`: `_bundle_title`,
+  `_bundle_sku`, `_bundle_variant_id`). Line ids are unique per order. Older orders unchanged.
+- **Checkout reports cart changes** (every kind): after each calculation the stored cart takes the
+  server's prices, capped quantities and bundle contents and drops unavailable items; a notice
+  above the summary says what changed (`checkout.changes.*`, `role="status"`, event
+  `checkout:cart-changed`). If something changed — or the total differs from the one shown —
+  when paying (manual or Apple/Google Pay), the payment isn't confirmed and the customer is asked
+  to confirm again.
+- Resolved-only variant status `unavailable` (label `product.states.unavailable`, "Derzeit nicht
+  erhältlich" / "Currently unavailable") for an active variant without any price (own or the
+  product's) and a bundle with an unpriced item; `productPrice` renders nothing without a price.
+
+### Changed
+- A bundle with no items, a missing (archived/unpublished) or non-active item is sold out on the
+  page (cards, product page, pickers, search, schema.org) and refused at checkout (was a 500 for
+  a dangling item).
+- A bundle's subtitle is always composed from its current items at checkout (the cart's is
+  ignored). `addToCartButton` writes `data-bundle-key` for bundles.
+- `resolveBundleWeight` uses an item's explicit weight first (like `resolveVariantWeight`).
+- `ValidatedCartItem.bundleItems[]` / `ValidatedCartItemResponse.bundleKey`: new fields (see
+  `src/netlify/types/checkout.ts`, `src/shared/checkout-api.ts`).
+
+### Removed
+- Translation key `checkout.itemsUnavailable` and the checkout's `data-t-items-unavailable`
+  (replaced by the change notice). `cart-store`'s `syncPricesFromServer` → `syncCartFromServer`.
+
+### Upgrading
+- Template overrides that branch on `product.status` and show nothing for other values must also
+  handle `unavailable` (label `('product.states.' + product.status) | trans`), and a price printed
+  without `productPrice` should be guarded with `{% if product.price %}`. Jurtschitsch: done in its
+  `product/card.njk` + `container.njk`.
+- Don't pass a custom `subtitle` to `addToCartButton` for a bundle — checkout composes it and would
+  report a custom one as "contents changed".
+- A custom checkout template that replaces `core/components/checkout.njk` needs the
+  `[data-checkout-changes]` region and the `data-t-changes-*` labels (extending it is enough).
+- Shops with bundles: every bundle item needs a price (own or its product's), or the bundle shows
+  "Derzeit nicht erhältlich" and checkout refuses it.
+
 ## 3.8.0
 
 Pairs with **core-back 5.1.1** (shows "Gratis-Versand Berechnung" on coupon shops).

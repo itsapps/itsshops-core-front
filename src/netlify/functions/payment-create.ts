@@ -20,6 +20,7 @@ import { calculateTotals, type CouponDiscount } from '../lib/totals'
 import { dominantItemVatRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
 import { validateCoupon, buildAppliedCouponSnapshot } from '../lib/coupon'
+import { bundleContentsKey } from '../lib/order-item-display'
 import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
 
@@ -203,6 +204,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         stock: null,
         imageUrl: null,
         weight: item.weight,
+        bundleKey: item.bundleItems ? bundleContentsKey(item.bundleItems) : null,
       }
     })
 

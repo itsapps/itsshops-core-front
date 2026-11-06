@@ -236,7 +236,7 @@ bundle** by providing its own `assets/scripts/index.ts` (typically re-exporting/
 The browser modules in `src/scripts/`, grouped by feature:
 
 - **cart**: `cart-store.ts`, `cart-ui.ts`, `variant-select.ts`
-- **checkout**: `checkout*.ts` (api, coupon, express, form, shipping, stripe, summary)
+- **checkout**: `checkout*.ts` (api, changes, coupon, express, form, shipping, stripe, summary)
 - **users**: `user-*.ts` (login, register, recover, reset, confirm, withdraw), `user-store.ts`
 - **newsletter**: `newsletter-*.ts`
 - **browse**: `product-filter.ts`, `search.ts`, `carousel.ts`, `menu.ts`, `gallery.ts`,

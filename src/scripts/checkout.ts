@@ -2,12 +2,17 @@ import {
   getCart,
   updateQuantity,
   removeItem,
-  syncPricesFromServer,
+  removeItems,
+  syncCartFromServer,
+  emptyCartChanges,
+  hasCartChanges,
   getAppliedCouponCode,
   setAppliedCouponCode,
   clearAppliedCouponCode,
   type CartItem,
+  type CartChanges,
 } from './cart-store'
+import { mustReconfirm, renderChanges, changeMessages, type ChangeLabels } from './checkout-changes'
 import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
@@ -44,7 +49,6 @@ export async function initCheckout(): Promise<void> {
     cartEmpty: container.dataset.tCartEmpty ?? 'Cart is empty',
     error: container.dataset.tError ?? 'An error occurred. Please try again.',
     serviceError: container.dataset.tServiceError ?? 'A technical error occurred. Please try again later.',
-    itemsUnavailable: container.dataset.tItemsUnavailable ?? 'Some items are no longer available.',
     available: container.dataset.tAvailable ?? 'available',
     errorEmail: container.dataset.tErrorEmail ?? 'Valid email required',
     errorPrename: container.dataset.tErrorPrename ?? 'First name is required',
@@ -67,6 +71,15 @@ export async function initCheckout(): Promise<void> {
     couponErrorBelowMinimum: container.dataset.tCouponBelowMinimum ?? 'Cart total is below the coupon minimum',
   }
 
+  const changeLabels: ChangeLabels = {
+    intro: container.dataset.tChangesIntro ?? 'Your cart has been updated:',
+    removed: container.dataset.tChangesRemoved ?? '{title} is no longer available and has been removed from your cart.',
+    price: container.dataset.tChangesPrice ?? 'The price of {title} has changed: {from} → {to}.',
+    quantity: container.dataset.tChangesQuantity ?? 'Only {quantity} of {title} are available.',
+    contents: container.dataset.tChangesContents ?? 'The contents of {title} have changed: {contents}.',
+    reconfirm: container.dataset.tChangesReconfirm ?? 'Please review your order and confirm again.',
+  }
+
   if (!stripeKey) {
     console.error('[checkout] Missing data-stripe-key attribute')
     return
@@ -87,6 +100,7 @@ export async function initCheckout(): Promise<void> {
   const countrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-country]')
   const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
   const couponEl = container.querySelector<HTMLElement>('[data-checkout-coupon]')
+  const changesEl = container.querySelector<HTMLElement>('[data-checkout-changes]')
 
   if (!formEl || !itemsEl || !totalsEl || !shippingEl || !paymentEl || !submitBtn) {
     console.error('[checkout] Missing required DOM elements')
@@ -152,17 +166,60 @@ export async function initCheckout(): Promise<void> {
     return
   }
 
-  let cartItems: CheckoutCartItem[] = cart.map(item => ({
+  const toRequestItems = (items: CartItem[]): CheckoutCartItem[] => items.map(item => ({
     variantId: item.id,
     quantity: item.quantity,
     title: item.title,
     ...(item.subtitle && { subtitle: item.subtitle }),
   }))
+  let cartItems: CheckoutCartItem[] = toRequestItems(cart)
 
   summary.renderCartItems(cart)
   // Live snapshot of local cart entries by id — used by renderItems to keep titles
   // consistent with the product page / cart sidebar even after server recalculation.
   const localCartMap = new Map<string, CartItem>(cart.map(item => [item.id, item]))
+
+  /** Re-read the stored cart (after a server sync) into the request items and the local map. */
+  function refreshFromStore(): CartItem[] {
+    const stored = getCart()
+    cartItems = toRequestItems(stored)
+    localCartMap.clear()
+    for (const item of stored) localCartMap.set(item.id, item)
+    return stored
+  }
+
+  /** The cart is empty: the empty message, keeping the change notice (focused, so it's read). */
+  function showEmptyCart(changes: CartChanges = emptyCartChanges()): void {
+    const empty = document.createElement('p')
+    empty.setAttribute('data-checkout-empty', '')
+    empty.textContent = t.cartEmpty
+    if (changesEl && hasCartChanges(changes)) {
+      container.replaceChildren(changesEl, empty)
+      changesEl.focus()
+    } else {
+      container.replaceChildren(empty)
+    }
+  }
+
+  /** Show (or clear) the change notice; report non-empty change lists to listeners. */
+  function showChanges(changes: CartChanges, options: { reconfirm?: boolean; focus?: boolean } = {}): void {
+    if (changesEl) {
+      renderChanges(changesEl, changes, changeLabels, summary.formatPrice.bind(summary), { reconfirm: options.reconfirm })
+      if (options.focus) changesEl.focus()
+    }
+    if (hasCartChanges(changes)) dispatch('checkout:cart-changed', changes)
+  }
+
+  /** Sync the stored cart with a server answer; `null` when it emptied the cart (already shown). */
+  function syncFromResponse(response: CalculateResponse): CartChanges | null {
+    const changes = syncCartFromServer(response)
+    if (refreshFromStore().length === 0) {
+      showChanges(changes)
+      showEmptyCart(changes)
+      return null
+    }
+    return changes
+  }
 
   // Wire qty changes and removals from summary to cart store + recalculate
   summary.setEvents({
@@ -175,8 +232,9 @@ export async function initCheckout(): Promise<void> {
     onRemove(variantId) {
       removeItem(variantId)
       cartItems = cartItems.filter(i => i.variantId !== variantId)
+      localCartMap.delete(variantId)
       if (cartItems.length === 0) {
-        container.innerHTML = `<p data-checkout-empty>${t.cartEmpty}</p>`
+        showEmptyCart()
         return
       }
       debouncedRecalculate()
@@ -264,6 +322,16 @@ export async function initCheckout(): Promise<void> {
   }
 
   function handleError(err: unknown): void {
+    // All items unavailable: the server answers CART_EMPTY with the ids (joined ', ') instead of
+    // a calculation — remove them from the cart, say which, then the empty-cart path.
+    if (err instanceof CheckoutValidationError && err.code === 'CART_EMPTY') {
+      const ids = (err.details?.unavailable ?? '').split(', ').filter(Boolean)
+      const changes = { ...emptyCartChanges(), removed: removeItems(ids) }
+      refreshFromStore()
+      showChanges(changes)
+      showEmptyCart(changes)
+      return
+    }
     if (err instanceof CheckoutValidationError) {
       showValidationError(err.message)
       if (err.details) {
@@ -334,7 +402,7 @@ export async function initCheckout(): Promise<void> {
         if (orDividerEl) orDividerEl.hidden = false
       },
       onError: (message) => showValidationError(message),
-      onCreatePayment: async ({ address, email, shippingMethodId }) => {
+      onCreatePayment: async ({ address, email, shippingMethodId, shownGrandTotal }) => {
         try {
           const response = await createPayment(
             apiUrl,
@@ -348,11 +416,25 @@ export async function initCheckout(): Promise<void> {
             },
           )
           orderMetaId = response.orderMetaId
+          // Something changed since the wallet sheet's calculation → don't pay; tell the customer
+          // on the page. The response is priced for the wallet's address/rate, so recalculate the
+          // page instead of rendering it.
+          const changes = syncFromResponse(response)
+          if (!changes) return { error: changeLabels.intro }
+          if (mustReconfirm(changes, shownGrandTotal, response.totals.grandTotal)) {
+            showChanges(changes, { reconfirm: true, focus: true })
+            const message = [...changeMessages(changes, changeLabels, summary.formatPrice.bind(summary)), changeLabels.reconfirm].join(' ')
+            void calculate({ country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: shipping.getSelectedId() }, { keepNotice: true })
+            return { error: message }
+          }
           // Order summary for the thanks page (read back after the Stripe redirect).
           saveOrderSnapshot(buildOrderSnapshot({ response, localCart: localCartMap, email, address, shippingMethodId }))
           savePendingPayment(paymentIntentIdFromSecret(response.clientSecret))
           return { clientSecret: response.clientSecret }
         } catch (err) {
+          // All items gone: same handling as on the page (other errors keep only the wallet
+          // message — their field details belong to the wallet address, not the page form).
+          if (err instanceof CheckoutValidationError && err.code === 'CART_EMPTY') handleError(err)
           return { error: err instanceof Error ? err.message : 'Payment creation failed' }
         }
       },
@@ -361,7 +443,15 @@ export async function initCheckout(): Promise<void> {
   }
 
   // ── Calculate ─────────────────────────────────────────────────────────
-  async function calculate(options: { country?: string; shippingMethodId?: string } = {}): Promise<void> {
+  // Only the latest calculate may write the cart and the page: requests can overlap (country,
+  // shipping, debounced quantity, coupon) and arrive out of order.
+  let calcSeq = 0
+
+  async function calculate(
+    options: { country?: string; shippingMethodId?: string } = {},
+    { keepNotice = false } = {},
+  ): Promise<void> {
+    const seq = ++calcSeq
     setLoading(true)
     hideErrors()
     coupon?.setBusy(true)
@@ -371,6 +461,13 @@ export async function initCheckout(): Promise<void> {
         ...options,
         appliedCouponCode: getAppliedCouponCode() ?? undefined,
       })
+      if (seq !== calcSeq) return
+
+      // Server data wins: remove unavailable items, take prices, capped quantities and bundle
+      // contents into the stored cart, and say what changed.
+      const changes = syncFromResponse(response)
+      if (!changes) return
+      if (!keepNotice || hasCartChanges(changes)) showChanges(changes, { reconfirm: keepNotice })
       lastResponse = response
 
       // If the server rejected the stored coupon, drop it from the store so it
@@ -380,10 +477,6 @@ export async function initCheckout(): Promise<void> {
       }
 
       coupon?.render(response.appliedCoupons, response.couponError)
-
-      // Sync authoritative server prices into local cart so the cart sidebar / badge
-      // and any future visit reflect the true price (silent — no UI alert).
-      syncPricesFromServer(response.items.map(i => ({ id: i.variantId, price: i.price })))
 
       summary.renderItems(response.items, localCartMap)
       summary.renderTotals(response)
@@ -398,16 +491,14 @@ export async function initCheckout(): Promise<void> {
         stripeCheckout.updateAmount(response.totals.grandTotal)
       }
 
-      if (response.unavailableItems.length > 0) {
-        showValidationError(t.itemsUnavailable)
-      }
-
       dispatch('checkout:calculated', response)
     } catch (err) {
-      handleError(err)
+      if (seq === calcSeq) handleError(err)
     } finally {
-      setLoading(false)
-      coupon?.setBusy(false)
+      if (seq === calcSeq) {
+        setLoading(false)
+        coupon?.setBusy(false)
+      }
     }
   }
 
@@ -464,6 +555,22 @@ export async function initCheckout(): Promise<void> {
       )
 
       orderMetaId = response.orderMetaId
+
+      // Stop before paying when something changed since the customer last saw the order (AT/DE:
+      // the final price must be visible before ordering). Checked before the snapshot / pending
+      // payment, so a blocked attempt leaves nothing behind; re-submitting updates the same
+      // PaymentIntent + orderMeta (orderMetaId kept).
+      const changes = syncFromResponse(response)
+      if (!changes) return
+      if (mustReconfirm(changes, lastResponse.totals.grandTotal, response.totals.grandTotal)) {
+        lastResponse = response
+        summary.renderItems(response.items, localCartMap)
+        summary.renderTotals(response)
+        shipping.render(response.shippingMethods, response.selectedShippingMethodId, summary.formatPrice.bind(summary))
+        stripeCheckout.updateAmount(response.totals.grandTotal)
+        showChanges(changes, { reconfirm: true, focus: true })
+        return
+      }
       summary.renderTotals(response)
 
       // Order summary for the thanks page (read back after the Stripe redirect).

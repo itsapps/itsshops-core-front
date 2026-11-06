@@ -70,6 +70,7 @@ export default {
       active:  "Verfügbar",
       comingSoon: "Demnächst",
       soldOut:   "Ausverkauft",
+      unavailable: "Derzeit nicht erhältlich",
       archived:  "Nicht verfügbar",
     },
     price: {
@@ -224,7 +225,14 @@ export default {
     error: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
     serviceError: "Ein technischer Fehler ist aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.",
     serviceErrorContact: "Support kontaktieren",
-    itemsUnavailable: "Einige Artikel sind nicht mehr verfügbar und wurden entfernt.",
+    changes: {
+      intro: "Ihr Warenkorb wurde aktualisiert:",
+      removed: "{title} ist nicht mehr erhältlich und wurde aus dem Warenkorb entfernt.",
+      price: "Der Preis von {title} hat sich geändert: {from} → {to}.",
+      quantity: "Von {title} sind nur noch {quantity} verfügbar.",
+      contents: "Der Inhalt von {title} hat sich geändert: {contents}.",
+      reconfirm: "Bitte prüfen Sie die Bestellung und bestätigen Sie erneut.",
+    },
     available: "verfügbar",
     orDivider: "oder",
     discount: "Rabatt",

@@ -145,7 +145,7 @@ export type ResolvedVariantAxis = {
     /** True if this is the current variant's value on this axis. */
     selected: boolean
     /** Status of the target variant — anything other than 'active' should render greyed with its label. */
-    status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
+    status: 'active' | 'comingSoon' | 'soldOut' | 'archived' | 'unavailable'
   }[]
 }
 
@@ -303,7 +303,12 @@ export type ResolvedVariant = {
   slug: string
   url: string
   locale: string
-  status: 'active' | 'comingSoon' | 'soldOut' | 'archived'
+  /**
+   * Effective status (`effectiveStatus` in `resolve/variants.ts`): a bundle with a missing or
+   * inactive item is `soldOut`; `unavailable` (resolved only, not a schema value) = no price to
+   * sell at (the variant's, its product's, or a bundle item's).
+   */
+  status: 'active' | 'comingSoon' | 'soldOut' | 'archived' | 'unavailable'
   title: string
   label: string
   sku: string

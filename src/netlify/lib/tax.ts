@@ -56,9 +56,9 @@ export function extractNet(grossCents: number, ratePercent: number): number {
  */
 export function dominantItemVatRate(items: ValidatedCartItem[]): number {
   const grossByRate = new Map<number, number>()
-  for (const item of items) {
-    if (item.vatRate <= 0) continue
-    grossByRate.set(item.vatRate, (grossByRate.get(item.vatRate) ?? 0) + item.price * item.quantity)
+  for (const part of items.flatMap(vatParts)) {
+    if (part.vatRate <= 0) continue
+    grossByRate.set(part.vatRate, (grossByRate.get(part.vatRate) ?? 0) + part.gross)
   }
   let bestRate = 0
   let bestGross = -1
@@ -69,6 +69,35 @@ export function dominantItemVatRate(items: ValidatedCartItem[]): number {
     }
   }
   return bestRate
+}
+
+/**
+ * The gross amounts (cents, × line quantity) and VAT rates a cart line is taxed by. A bundle is
+ * taxed by its items: one part per item (its price share × the line quantity, its own rate). Any
+ * other line — and a bundle without split items — is one part at its own rate.
+ */
+export function vatParts(
+  item: Pick<ValidatedCartItem, 'price' | 'quantity' | 'vatRate' | 'bundleItems'>,
+): { gross: number; vatRate: number }[] {
+  if (item.bundleItems?.length) {
+    return item.bundleItems.map(bi => ({ gross: bi.price * item.quantity, vatRate: bi.vatRate }))
+  }
+  return [{ gross: item.price * item.quantity, vatRate: item.vatRate }]
+}
+
+/**
+ * Split a bundle's unit price (cents) over its items in the ratio of `weights` (each item's
+ * single gross price × its quantity in the bundle). Whole cents; every share but the last is
+ * rounded down, the last item takes the remainder, so the shares add up to `price` exactly and
+ * none is negative. Returns `null` when no ratio is possible (no items, or all weights ≤ 0).
+ */
+export function splitBundlePrice(price: number, weights: number[]): number[] | null {
+  const total = weights.reduce((sum, w) => sum + w, 0)
+  if (weights.length === 0 || total <= 0 || weights.some(w => w < 0)) return null
+  const shares = weights.map(w => Math.floor((price * w) / total))
+  const rest = price - shares.slice(0, -1).reduce((sum, s) => sum + s, 0)
+  shares[shares.length - 1] = rest
+  return shares
 }
 
 type VatLineItem = {

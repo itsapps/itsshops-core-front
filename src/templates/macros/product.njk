@@ -19,6 +19,8 @@
  # @param perLiter  append the per-liter base price for wine variants (default: false)
  #}
 {% macro productPrice(product, class="product__price", perLiter=false) %}
+{#- No price (status `unavailable`) → nothing, never "€0,00". -#}
+{%- if product.price %}
 <div class="{{ class }}">
   {%- if product.compareAtPrice %}
     <s class="{{ class }}-compare">
@@ -30,6 +32,7 @@
     <span class="{{ class }}-per-liter">({{ (product.price / product.wine.volume * 1000) | round | formatPrice(product.locale) }}/l)</span>
   {%- endif %}
 </div>
+{%- endif %}
 {% endmacro %}
 
 
@@ -290,7 +293,9 @@
  # @param product   ResolvedVariant
  # @param class     optional CSS class (default: "add-to-cart")
  # @param label     optional button label (default: translation key)
- # @param subtitle  optional explicit subtitle (overrides auto-generated wine subtitle)
+ # @param subtitle  optional explicit subtitle (overrides auto-generated wine subtitle). Don't pass
+ #                  one for a bundle: checkout composes a bundle's subtitle from its current items
+ #                  and would report a custom one as "contents changed".
  # @param imageSize image size preset for thumb (required — pass imageSizes.thumb or similar)
  #}
 {% macro addToCartButton(product, class="add-to-cart", label="", subtitle="", imageSize=null, locale="") %}
@@ -321,6 +326,12 @@
   data-price="{{ product.price }}"
   data-title="{{ product.title }}"
   {%- if _subtitle %} data-subtitle="{{ _subtitle }}"{% endif %}
+  {%- if product.kind == "bundle" and product.bundleItems and product.bundleItems.length %}
+    {#- Locale-independent contents key ("id:qty" entries, sorted, joined ","): checkout reports
+      "contents changed" when the server's key differs (same format: `bundleContentsKey`). -#}
+    {%- set _keyParts = [] -%}
+    {%- for item in product.bundleItems %}{%- set _keyParts = _keyParts.concat([item.variant._id + ':' + item.quantity]) %}{% endfor %} data-bundle-key="{{ _keyParts | sort(false, true) | join(',') }}"
+  {%- endif %}
   data-url="{{ product.url }}"
   data-added-to-cart="{{ 'product.cartButton.addedToCart' | trans({ lng: _locale }) }}"
   {%- if product.image and _imageSize %} data-image="{{ product.image | imageSizeUrl(_imageSize) }}"{% endif %}

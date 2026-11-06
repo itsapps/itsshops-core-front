@@ -18,6 +18,7 @@ import {
 import type { OrderDocument } from '../../types/checkout'
 import type { EmailContext } from '../email/types'
 import { formatShopDate } from '../../utils/i18n'
+import { bundleItemLines } from '../../lib/order-item-display'
 
 const styles = StyleSheet.create({
   page: {
@@ -145,7 +146,11 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
 
         <Text style={styles.invoiceTitle}>{t('emails.order.invoice')}</Text>
 
-        {order.orderItems.map((item) => (
+        {order.orderItems.map((item) => {
+          // A bundle lists its items (units over the whole line, each with its VAT rate) instead
+          // of the subtitle, which would repeat them.
+          const contents = bundleItemLines(item)
+          return (
           <View key={item._key} style={styles.itemRow}>
             <View style={{ flexDirection: 'column', flex: 1 }}>
               <Text>
@@ -153,7 +158,12 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
                 {item.sku ? <Text style={styles.small}>{`[${item.sku}] `}</Text> : null}
                 <Text style={styles.bold}>{item.title}</Text>
               </Text>
-              {item.subtitle && <Text style={styles.small}>{item.subtitle}</Text>}
+              {item.subtitle && contents.length === 0 && <Text style={styles.small}>{item.subtitle}</Text>}
+              {contents.map((line, i) => (
+                <Text key={`b${i}`} style={styles.small}>
+                  {`${line.totalQuantity} × ${line.title}${line.subtitle ? ` – ${line.subtitle}` : ''}${line.vatRate !== null ? `, ${line.vatRate} %` : ''}`}
+                </Text>
+              ))}
               {item.options?.map((option, i) => (
                 <Text key={i} style={styles.small}>
                   {option.groupTitle}: {option.optionTitle}
@@ -164,7 +174,8 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
               <Text>{formatPrice(item.price * item.quantity)}</Text>
             </View>
           </View>
-        ))}
+          )
+        })}
 
         <View style={{ marginTop: 24 }} />
 

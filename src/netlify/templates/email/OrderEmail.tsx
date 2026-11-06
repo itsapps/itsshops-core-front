@@ -7,6 +7,7 @@ import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout
 import { colors } from './tokens'
 import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
+import { bundleItemLines } from '../../lib/order-item-display'
 import type { WithdrawalInstructions, WithdrawalRichText } from '../../../shared/withdrawal-instructions'
 
 export function AddressBlock({
@@ -44,6 +45,8 @@ export function ItemRow({
   formatPrice: (cents: number) => string
   drawSeparator: boolean
 }) {
+  // A bundle's contents as a nested list; its subtitle ("2× A, 1× B") would repeat them.
+  const contents = bundleItemLines(item)
   return (
     <>
       <Section>
@@ -51,7 +54,16 @@ export function ItemRow({
           <Column>
             <EmailText>{item.quantity}x</EmailText>
             <EmailText bold>{item.title}</EmailText>
-            {item.subtitle && <EmailText>{item.subtitle}</EmailText>}
+            {item.subtitle && contents.length === 0 && <EmailText>{item.subtitle}</EmailText>}
+            {contents.length > 0 && (
+              <ul style={{ margin: '4px 0 0', padding: '0 0 0 20px' }}>
+                {contents.map((line, i) => (
+                  <li key={i} style={{ fontSize: '14px', lineHeight: '20px' }}>
+                    {`${line.quantity} × ${line.title}${line.subtitle ? ` – ${line.subtitle}` : ''}`}
+                  </li>
+                ))}
+              </ul>
+            )}
             {item.sku && <EmailText>{`[${item.sku}]`}</EmailText>}
             {item.options?.map((option, i) => (
               <EmailText key={i}>

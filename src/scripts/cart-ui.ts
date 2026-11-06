@@ -178,6 +178,7 @@ export function initCart(): void {
       const price    = Number(btn.dataset.price)
       const imageUrl = btn.dataset.image ?? ''
       const url      = btn.dataset.url ?? '#'
+      const bundleKey = btn.dataset.bundleKey
 
       if (!id || !title || !price) return
 
@@ -185,7 +186,7 @@ export function initCart(): void {
       const qtyEl     = actionsEl?.querySelector<HTMLElement>('[data-qty-value]')
       const qty        = qtyEl ? Math.max(1, parseInt(qtyEl.textContent || '1', 10)) : 1
 
-      addItem({ id, title, subtitle, price, imageUrl, url }, qty)
+      addItem({ id, title, subtitle, price, imageUrl, url, ...(bundleKey && { bundleKey }) }, qty)
       lastCartTrigger = btn
 
       if (qtyEl) qtyEl.textContent = '1'

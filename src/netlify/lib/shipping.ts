@@ -5,13 +5,16 @@ import type {
   SanityPackagingGroupPackageResult,
   AvailableShippingMethod,
   ValidatedCartItem,
+  ValidatedBundleItem,
   LocaleString,
 } from '../types/checkout'
 import { log } from '../utils/logger'
 
 /** What the shipping calculation reads from a cart line — checkout passes full `ValidatedCartItem`s,
  *  the schema.org markup builds these from resolved variants (`src/schema/shipping.ts`). */
-export type ShippingCartItem = Pick<ValidatedCartItem, 'kind' | 'quantity' | 'weight' | 'wine' | 'bundleItems'>
+export type ShippingCartItem = Pick<ValidatedCartItem, 'kind' | 'quantity' | 'weight' | 'wine'> & {
+  bundleItems: Pick<ValidatedBundleItem, 'variantId' | 'quantity' | 'kind' | 'weight' | 'wine'>[] | null
+}
 
 /**
  * Resolve a localized string array to a single string for the given locale.
@@ -67,8 +70,8 @@ export function resolveVariantWeight(v: {
 
 /**
  * Total shipping weight (grams) of a bundle: children's weights × child quantity, null when 0.
- * A wine child is always estimated from its volume (its explicit weight is ignored — unlike
- * `resolveVariantWeight`; kept as is, see the plan's "Separate, later").
+ * Each child's weight is resolved like a loose variant's (`resolveVariantWeight`: explicit weight
+ * first, a wine estimated from its volume).
  */
 export function resolveBundleWeight(children: Array<{
   kind: WeightKind
@@ -79,13 +82,7 @@ export function resolveBundleWeight(children: Array<{
 }>): number | null {
   let total = 0
   for (const child of children) {
-    let grams = 0
-    if (child.kind === 'physical') {
-      grams = child.weight ?? child.productWeight ?? 0
-    } else if (child.kind === 'wine' && child.wine?.volume) {
-      grams = estimateWineBottleWeight(child.wine.volume)
-    }
-    total += grams * child.quantity
+    total += (resolveVariantWeight(child) ?? 0) * child.quantity
   }
   return total > 0 ? total : null
 }

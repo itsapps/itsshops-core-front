@@ -36,20 +36,34 @@ export type SanityOptionResult = {
   groupTitle: LocaleString[] | null
 }
 
+/**
+ * One entry of a bundle's `bundleItems` in the checkout query. `variant` is the item variant
+ * (`null` when the reference dangles, e.g. the variant was unpublished).
+ */
 export type SanityBundleItemResult = {
+  _key?: string
   quantity: number
   variant: {
     _id: string
+    status?: 'active' | 'comingSoon' | 'soldOut' | 'archived'
     kind: 'wine' | 'physical' | 'digital' | 'bundle'
     title: LocaleString[] | null
+    sku?: string | null
+    price?: number | null
     weight: number | null
+    productId?: string | null
+    productTitle?: LocaleString[] | null
     productWeight: number | null
+    productPrice?: number | null
+    taxCategoryCode?: string | null
+    productTaxCategoryCode?: string | null
     stock: number | null
     wine: {
       vintage: string | null
       volume: number | null
     } | null
-  }
+    options?: SanityOptionResult[] | null
+  } | null
 }
 
 export type SanityTaxCountryResult = {
@@ -147,7 +161,29 @@ export type ValidatedCartItem = {
   vatAmount: number
   wine: { vintage: string | null; volume: number | null } | null
   options: { groupTitle: string; optionTitle: string }[] | null
-  bundleItems: { variantId: string; quantity: number; kind: 'wine' | 'physical' | 'digital' | 'bundle'; weight: number | null; wine: { volume: number | null } | null }[] | null
+  bundleItems: ValidatedBundleItem[] | null
+}
+
+/**
+ * One item of a validated bundle. `quantity` is per bundle. `price` is the item's gross share of
+ * **one** bundle for all its `quantity` units together (the bundle's unit price split by the
+ * items' single sale prices; the shares add up to the bundle price exactly). `vatAmount` is the
+ * VAT in that share × the bundle line's quantity.
+ */
+export type ValidatedBundleItem = {
+  key: string
+  variantId: string
+  productId: string
+  title: string
+  subtitle: string | null
+  sku: string | null
+  quantity: number
+  kind: 'wine' | 'physical' | 'digital' | 'bundle'
+  weight: number | null
+  wine: { volume: number | null } | null
+  price: number
+  vatRate: number
+  vatAmount: number
 }
 
 export type CalculatedTotals = {
@@ -200,7 +236,26 @@ export type OrderItem = {
   packed: boolean
   wine?: { _type: 'orderItemWine'; vintage?: string; volume?: number }
   options?: { _type: 'orderItemOption'; _key: string; groupTitle: string; optionTitle: string }[]
-  bundle?: { _type: 'orderItemBundle'; itemCount: number }
+  bundle?: { _type: 'orderItemBundle'; itemCount: number; items?: OrderItemBundleItem[] }
+}
+
+/**
+ * Snapshot of one bundle item on an order line. `quantity` is per bundle; `price` is the item's
+ * gross share of one bundle (all its units together, not per unit — unlike `OrderItem.price`);
+ * `vatAmount` covers share × the line's quantity. Absent on orders from before 2026-11.
+ */
+export type OrderItemBundleItem = {
+  _key: string
+  _type: 'orderItemBundleItem'
+  variantId: string
+  productId: string
+  title: string
+  subtitle?: string
+  sku?: string
+  quantity: number
+  price: number
+  vatRate: number
+  vatAmount: number
 }
 
 export type AddressStrict = {

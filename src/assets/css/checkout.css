@@ -112,6 +112,28 @@
   margin-bottom: 1rem;
 }
 
+/* Cart changes notice (role="status"): no box while empty */
+.checkout__changes:not(:empty) {
+  padding: 0.75rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.checkout__changes:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.checkout__changes p {
+  margin: 0;
+}
+
+.checkout__changes ul {
+  margin: 0.25rem 0 0;
+  padding-inline-start: 1.25rem;
+}
+
 /* checkout field spacing (chrome itself comes from form.css) */
 .form--checkout .form-field,
 .form--checkout .form__row {

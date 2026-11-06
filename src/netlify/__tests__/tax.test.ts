@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findTaxRate, extractVat, extractNet, buildVatBreakdown, dominantItemVatRate } from '../lib/tax'
+import { findTaxRate, extractVat, extractNet, buildVatBreakdown, dominantItemVatRate, vatParts, splitBundlePrice } from '../lib/tax'
 import type { SanityTaxRuleResult, ValidatedCartItem } from '../types/checkout'
 
 function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem {
@@ -186,5 +186,34 @@ describe('dominantItemVatRate', () => {
   it('returns 0 when all items are exempt', () => {
     const items = [makeItem({ vatRate: 0, price: 1000, quantity: 1 })]
     expect(dominantItemVatRate(items)).toBe(0)
+  })
+})
+
+describe('vatParts / splitBundlePrice', () => {
+  const part = (price: number, vatRate: number) => ({
+    key: `k${price}`, variantId: 'i', productId: 'p', title: 'T', subtitle: null, sku: null,
+    quantity: 1, kind: 'wine' as const, weight: null, wine: null, price, vatRate, vatAmount: 0,
+  })
+
+  it('a bundle is taxed by its parts × the line quantity', () => {
+    const bundle = makeItem({ kind: 'bundle', price: 3000, quantity: 2, vatRate: 13, bundleItems: [part(2400, 13), part(600, 20)] })
+    expect(vatParts(bundle)).toEqual([{ gross: 4800, vatRate: 13 }, { gross: 1200, vatRate: 20 }])
+    expect(vatParts(makeItem({ price: 500, quantity: 3 }))).toEqual([{ gross: 1500, vatRate: 20 }])
+  })
+
+  it('dominantItemVatRate looks at a bundle\'s parts, not its display rate', () => {
+    // Bundle shown at 13 %, but its 20 % part (€25) + a loose €10 at 20 % outweigh €30 at 13 %.
+    const items = [
+      makeItem({ kind: 'bundle', price: 5500, vatRate: 13, bundleItems: [part(3000, 13), part(2500, 20)] }),
+      makeItem({ variantId: 'v2', price: 1000, vatRate: 20 }),
+    ]
+    expect(dominantItemVatRate(items)).toBe(20)
+  })
+
+  it('splitBundlePrice keeps the sum exact and refuses an impossible ratio', () => {
+    expect(splitBundlePrice(1000, [1, 1, 1])).toEqual([333, 333, 334])
+    expect(splitBundlePrice(1, [1000, 1])).toEqual([0, 1])
+    expect(splitBundlePrice(1000, [])).toBeNull()
+    expect(splitBundlePrice(1000, [0, 0])).toBeNull()
   })
 })

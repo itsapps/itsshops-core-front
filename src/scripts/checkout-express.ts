@@ -41,6 +41,8 @@ export type ExpressCheckoutConfig = {
     email: string
     phone?: string
     shippingMethodId: string
+    /** Grand total of the last calculation the wallet sheet showed; `null` = none seen. */
+    shownGrandTotal: number | null
   }) => Promise<{ clientSecret: string } | { error: string }>
   /** Fired once when Stripe reports the express element has rendered at least one payment method. */
   onReady?: (event: { availablePaymentMethods?: Record<string, boolean> }) => void
@@ -101,6 +103,8 @@ export class CheckoutExpress {
   private element: StripeExpressCheckoutElement | null = null
   private config: ExpressCheckoutConfig
   private lastAddress: { country: string; city?: string; zip?: string; state?: string } | null = null
+  /** Grand total the wallet sheet last showed (from an address or rate change); reset on cancel. */
+  private shownGrandTotal: number | null = null
 
   constructor(config: ExpressCheckoutConfig) {
     this.config = config
@@ -133,6 +137,7 @@ export class CheckoutExpress {
     element.on('confirm', e => this.handleConfirm(e))
     element.on('cancel', () => {
       this.lastAddress = null
+      this.shownGrandTotal = null
     })
   }
 
@@ -177,6 +182,7 @@ export class CheckoutExpress {
       return
     }
     event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
+    this.shownGrandTotal = calc.totals.grandTotal
   }
 
   private async handleShippingRateChange(
@@ -188,6 +194,7 @@ export class CheckoutExpress {
       return
     }
     event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
+    this.shownGrandTotal = calc.totals.grandTotal
   }
 
   private async handleConfirm(event: StripeExpressCheckoutElementConfirmEvent): Promise<void> {
@@ -219,6 +226,7 @@ export class CheckoutExpress {
       email,
       phone: event.billingDetails?.phone,
       shippingMethodId: shippingRateId,
+      shownGrandTotal: this.shownGrandTotal,
     })
 
     if ('error' in result) {

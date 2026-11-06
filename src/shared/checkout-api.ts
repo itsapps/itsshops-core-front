@@ -37,6 +37,8 @@ export type ValidatedCartItemResponse = {
   stock: number | null
   imageUrl: string | null
   weight: number | null
+  /** Bundles: contents key ("variantId:qty" per item, sorted, joined ","), else null. */
+  bundleKey: string | null
 }
 
 export type ShippingMethodResponse = {

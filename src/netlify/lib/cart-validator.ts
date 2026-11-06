@@ -1,11 +1,13 @@
 import type {
   SanityVariantResult,
+  SanityBundleItemResult,
+  SanityOptionResult,
   SanityTaxRuleResult,
   ValidatedCartItem,
-  LocaleString,
+  ValidatedBundleItem,
 } from '../types/checkout'
 import type { CheckoutCartItem } from '../types/api'
-import { findTaxRate, extractVat } from './tax'
+import { findTaxRate, extractVat, splitBundlePrice } from './tax'
 import { resolveLocalizedTitle, resolveVariantWeight, resolveBundleWeight } from './shipping'
 import { composeSubtitle } from './order-item-display'
 
@@ -68,51 +70,54 @@ export function validateCart(
       }
     }
 
-    const taxCategoryCode = variant.taxCategoryCode ?? variant.productTaxCategoryCode ?? ''
-    const vatRate = findTaxRate(taxRules, taxCategoryCode, defaultTaxCategoryCode)
-    const vatAmount = extractVat(price * quantity, vatRate)
-
     const title = resolveLocalizedTitle(variant.title, locale, defaultLocale)
       || resolveLocalizedTitle(variant.productTitle, locale, defaultLocale)
+    const options = localizeOptions(variant.options, locale, defaultLocale)
+    const wine = variant.wine ? {
+      vintage: variant.wine.vintage ?? null,
+      volume: variant.wine.volume ?? null,
+    } : null
 
-    // Resolve shipping weight (grams).
-    // - physical / wine: see `resolveVariantWeight` (wine falls back to the bottle-volume estimate)
-    // - bundle:          sum of children's weights × child quantity (`resolveBundleWeight`)
-    // - digital:         null (skipped by shipping calculator)
-    const weight = variant.kind === 'bundle'
-      ? (variant.bundleItems ? resolveBundleWeight(variant.bundleItems.map(bi => ({ ...bi.variant, quantity: bi.quantity }))) : null)
-      : resolveVariantWeight(variant)
+    let taxCategoryCode: string
+    let vatRate: number
+    let vatAmount: number
+    let weight: number | null
+    let bundleItems: ValidatedBundleItem[] | null = null
+    let subtitle: string | null
 
-    const options = variant.options?.map(o => ({
-      groupTitle: resolveLocalizedTitle(o.groupTitle, locale, defaultLocale),
-      optionTitle: resolveLocalizedTitle(o.title, locale, defaultLocale),
-    })) ?? null
-
-    const bundleItems = variant.bundleItems?.map(bi => {
-      const childKind = bi.variant.kind
-      const childWeight = resolveVariantWeight(bi.variant)
-      return {
-        variantId: bi.variant._id,
-        quantity: bi.quantity,
-        kind: childKind,
-        weight: childWeight,
-        wine: bi.variant.wine ? { volume: bi.variant.wine.volume ?? null } : null,
+    if (variant.kind === 'bundle') {
+      // A bundle is taxed by its items: its price is split over them by their single sale
+      // prices, each share at the item's own rate. Unavailable when it has no items, an item is
+      // missing (dangling reference) or not active, or an item has no price (no ratio possible).
+      bundleItems = validateBundleItems(variant.bundleItems, price, quantity, taxRules, locale, defaultLocale, defaultTaxCategoryCode)
+      if (!bundleItems) {
+        unavailableItems.push(cartItem.variantId)
+        continue
       }
-    }) ?? null
-
-    // Client-supplied subtitle is canonical. Fall back to a composed default
-    // from structural data if the client didn't provide one.
-    const clientSubtitle = sanitize(cartItem.subtitle)
+      taxCategoryCode = ''
+      vatAmount = bundleItems.reduce((sum, bi) => sum + bi.vatAmount, 0)
+      // Display only: the rate of the largest part.
+      vatRate = bundleItems.reduce((best, bi) => (bi.price > best.price ? bi : best)).vatRate
+      weight = resolveBundleWeight(variant.bundleItems!.map(bi => ({ ...bi.variant!, quantity: bi.quantity })))
+      // Always from the current items — the cart's subtitle was frozen at add-to-cart time.
+      subtitle = composeSubtitle('bundle', null, null, bundleItems)
+    } else {
+      taxCategoryCode = variant.taxCategoryCode ?? variant.productTaxCategoryCode ?? ''
+      vatRate = findTaxRate(taxRules, taxCategoryCode, defaultTaxCategoryCode)
+      vatAmount = extractVat(price * quantity, vatRate)
+      // physical / wine: see `resolveVariantWeight` (wine falls back to the bottle-volume
+      // estimate); digital: null (skipped by the shipping calculator).
+      weight = resolveVariantWeight(variant)
+      // Client-supplied subtitle is canonical; composed default as a fallback.
+      subtitle = sanitize(cartItem.subtitle) ?? composeSubtitle(variant.kind, wine, options)
+    }
 
     const item: ValidatedCartItem = {
       variantId: variant._id,
       productId: variant.productId ?? '',
       kind: variant.kind,
       title: sanitize(cartItem.title) || title,
-      subtitle: clientSubtitle ?? composeSubtitle(variant.kind, variant.wine ? {
-        vintage: variant.wine.vintage ?? null,
-        volume: variant.wine.volume ?? null,
-      } : null, options),
+      subtitle,
       sku: variant.sku,
       price,
       weight,
@@ -120,10 +125,7 @@ export function validateCart(
       taxCategoryCode,
       vatRate,
       vatAmount,
-      wine: variant.wine ? {
-        vintage: variant.wine.vintage ?? null,
-        volume: variant.wine.volume ?? null,
-      } : null,
+      wine,
       options,
       bundleItems,
     }
@@ -132,4 +134,65 @@ export function validateCart(
   }
 
   return { items: validatedItems, unavailableItems }
+}
+
+function localizeOptions(
+  options: SanityOptionResult[] | null | undefined,
+  locale: string,
+  defaultLocale: string,
+): { groupTitle: string; optionTitle: string }[] | null {
+  return options?.map(o => ({
+    groupTitle: resolveLocalizedTitle(o.groupTitle, locale, defaultLocale),
+    optionTitle: resolveLocalizedTitle(o.title, locale, defaultLocale),
+  })) ?? null
+}
+
+/**
+ * Validate a bundle's items and split its unit `price` over them. `null` → the bundle can't be
+ * sold: no items, a dangling item reference, an item that isn't `active`, or no price to split
+ * by (an item without its own and its product's price).
+ */
+function validateBundleItems(
+  raw: SanityBundleItemResult[] | null,
+  price: number,
+  bundleQuantity: number,
+  taxRules: SanityTaxRuleResult[],
+  locale: string,
+  defaultLocale: string,
+  defaultTaxCategoryCode: string | null | undefined,
+): ValidatedBundleItem[] | null {
+  if (!raw?.length) return null
+  const weights: number[] = []
+  for (const bi of raw) {
+    const v = bi.variant
+    if (!v || v.status !== 'active') return null
+    const itemPrice = v.price ?? v.productPrice
+    if (itemPrice === null || itemPrice === undefined) return null
+    weights.push(itemPrice * bi.quantity)
+  }
+  const shares = splitBundlePrice(price, weights)
+  if (!shares) return null
+
+  return raw.map((bi, i) => {
+    const v = bi.variant!
+    const title = resolveLocalizedTitle(v.title, locale, defaultLocale)
+      || resolveLocalizedTitle(v.productTitle ?? null, locale, defaultLocale)
+    const wine = v.wine ? { vintage: v.wine.vintage ?? null, volume: v.wine.volume ?? null } : null
+    const vatRate = findTaxRate(taxRules, v.taxCategoryCode ?? v.productTaxCategoryCode ?? '', defaultTaxCategoryCode)
+    return {
+      key: bi._key ?? `${i}`,
+      variantId: v._id,
+      productId: v.productId ?? '',
+      title,
+      subtitle: composeSubtitle(v.kind, wine, localizeOptions(v.options, locale, defaultLocale)),
+      sku: v.sku ?? null,
+      quantity: bi.quantity,
+      kind: v.kind,
+      weight: resolveVariantWeight(v),
+      wine: v.wine ? { volume: v.wine.volume ?? null } : null,
+      price: shares[i],
+      vatRate,
+      vatAmount: extractVat(shares[i] * bundleQuantity, vatRate),
+    }
+  })
 }
