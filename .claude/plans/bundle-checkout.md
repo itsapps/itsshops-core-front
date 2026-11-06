@@ -49,7 +49,7 @@ docs, add `CHANGELOG.md` entries, and delete this file.
   - a bundle's own carton (gift box / 3-pack) isn't modelled;
   - non-wine items inside a wine bundle add a separate weight-rate parcel;
   - `resolveBundleWeight` ignores a wine item's explicit weight (`resolveVariantWeight` doesn't) —
-    the "Separate, later" note from `wine-packaging-groups.md`.
+    noted in its doc comment (`shipping.ts`); fixed in phase 4.3.
 
 ## Phase 1 — Crash and status bugs (core-front only)
 
@@ -525,7 +525,7 @@ Steps:
   only shows "unknown field" in the Studio, nothing breaks). Each release: build, `CHANGELOG.md`,
   tag, then pin in the customers (core-front `consuming-core-and-deploy.md`).
 - Phases 1/1b go into the core versions Jurtschitsch goes live with (plus its `card.njk` price
-  guard, phase 1.3); Tinhof (no bundles) gets them with its next core bump, no visible change.
+  guard and the `unavailable` branch in `card.njk` + `container.njk`, phase 1.3); Tinhof (no bundles) gets them with its next core bump, no visible change.
 - When it ships: `commerce-and-netlify.md` ("Known gap" on bundles, the weight caveat, bundle VAT),
   `wc-api.md` ("Bundles are one plain line"), core-back schema docs, Jurtschitsch frontend
   `CLAUDE.md` (wc-api bundle line), Tinhof frontend `CLAUDE.md` (wineNET → bundles), then delete
