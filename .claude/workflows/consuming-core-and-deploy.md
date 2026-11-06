@@ -109,7 +109,9 @@ plan and asking before anything that pushes.
    - **minor** (`2.1.0` → `2.2.0`): new features / optional config, nothing breaks
    - **major** (`2.1.0` → `3.0.0`): a customer must change something (config shape, schema/data
      migration, override template contract)
-   Then, in the core repo (own GitHub user): `npm run build` + `npm run test`; add the version's
+   Then, in the core repo (own GitHub user): `npm run build` + `npm run test` — a failing test
+   blocks the tag (check the exit code; piping the output through `grep` hides it), except core-back's
+   `tests/vinofact.test.ts`, which needs a live VinoFact token and always fails without one; add the version's
    entry to **`CHANGELOG.md`** (Upgrading / Added / Changed / Fixed — "Upgrading" is what a customer
    must change) and commit it, or fold it into the version commit; then
    `npm version <patch|minor|major> -m "<message>"` (`%s` in the message = the version; first line

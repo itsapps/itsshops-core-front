@@ -148,7 +148,8 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 
 - `cart-validator.ts` — re-validates the client cart server-side (never trust client prices).
   Known gap: a bundle is checked only as a variant (own status/price/stock) — its items' status and
-  stock aren't checked, and paid orders don't reduce item stock. Plan: `.claude/plans/bundle-checkout.md`.
+  stock aren't checked, and paid orders don't reduce item stock. Plans: `.claude/plans/bundle-checkout.md`
+  (status, order contents), `.claude/plans/stock-tracking.md` (stock, parked).
 - `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
@@ -170,6 +171,15 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   sizes (`formatVolumeList`) plus a note per shared size. Studio enforces each size in one group per
   method. A size in several box types (e.g. half-bottle-only boxes, 2 × 750 in a magnum box) is not
   supported — it would need boxes that accept only certain sizes and a split search.
+- **Free shipping** (`isFreeShipping` in `shipping.ts`): a delivery method's
+  `freeShippingThreshold` (cents, **gross**) is compared with the **gross goods subtotal** —
+  shipping itself never counts — using `>=` ("ab €150"). `shopSettings.freeShippingCalculation`:
+  `beforeDiscount` (also when **unset**, from 3.8.0) compares the subtotal before the coupon;
+  `afterDiscount` re-resolves shipping after the coupon (`payment-create.ts` pass 2, percent/fixed
+  coupons only), so a coupon can push an order back under the threshold. The same default is
+  used by the schema.org shipping details and the `cms` settings. Coupons are gross as well
+  (`coupon.ts`: percent of the gross subtotal, `minSubtotal` against it); the discount is spread
+  proportionally over the items for the VAT breakdown (`totals.ts`).
 - **Shipping weight** (grams): `resolveVariantWeight` (physical: variant/product `weight`; wine: the
   same, else estimated from the volume) and `resolveBundleWeight` in `shipping.ts`, used by
   `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the
@@ -238,8 +248,28 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    reservation until they succeed and no failure handling; core doesn't restrict payment methods —
    shop owners are told not to enable them.
 
+**Stripe "Incomplete" payments are expected:** a PaymentIntent is created on submit (or when the
+express sheet opens) and stays `requires_payment_method` if the customer leaves, a card fails, or
+3DS is abandoned; the live `paymentCreateTests` / `paymentWebhookTests` leave theirs too (they
+delete the `orderMeta`, not the intent). Nothing is charged; core doesn't cancel them.
+
 Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
-`macros/cart.njk`, see templates doc). Plan / remaining work: `.claude/plans/order-thanks-page.md`.
+`macros/cart.njk`, see templates doc). A customer frontend needs the `order_status` function
+wrapper (`netlify/functions/order_status.mts`) for the order number; why the summary comes from
+sessionStorage: `decisions/order-thanks-summary-from-session-snapshot.md`.
+
+### Refunds (Studio order action → `payment-refund`)
+
+Triggered only from core-back's "Status aktualisieren" (core-back `studio-components.md` →
+Document actions) and the withdrawal "Refund & close". `payment-refund` (`x-server-secret`) takes
+`{ paymentIntentId, amount? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
+refund — and calls `stripe.refunds.create`. The Studio then patches `paymentStatus`; the
+`charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
+(`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
+entry (`source: 'stripe'`) — both idempotent. A full refund of an undispatched order also sets
+`canceled`; a partial one leaves fulfillment alone (the order still ships). Refund mails
+(`orderRefunded` / `orderRefundedPartially`) show the passed `refundAmount`, else the grand total.
+Partial refunds don't reach ERPs via `wc-api` (`wc-api.md` → known gaps).
 
 ## Withdrawal (Widerruf) — declaration only (FAGG §13a)
 
@@ -273,8 +303,8 @@ date + time (`formatShopDate`, shop timezone), then return instructions (`return
 mails the order's email. Processing stays manual in the Studio (core-back `WithdrawalActions.tsx`):
 **"Refund & close"** does a full Stripe refund, sets the order refunded (and canceled if undispatched)
 and closes the withdrawal; partial refunds go through the order's refund action. Kept manual on
-purpose: the refund may be withheld until the goods are back, and its amount varies. Remaining legal
-work (generated withdrawal instructions, "Versand & Zahlung" page): `.claude/plans/order-email-legal.md`.
+purpose: the refund may be withheld until the goods are back, and its amount varies. Generated withdrawal
+instructions: "Legal texts generated from settings" below.
 
 ## Order confirmation content & shop inbox
 

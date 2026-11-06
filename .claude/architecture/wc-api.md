@@ -128,7 +128,8 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   in the line amounts and `discount_total`/`discount_tax` — enough for wineNET (see below).
 - **Bundles** are one plain line (the bundle variant); their items aren't sent (the order only stores
   `bundle.itemCount`). WC's Product Bundles extension adds €0 child lines linked by
-  `bundled_by`/`bundled_items` — planned: `.claude/plans/bundle-checkout.md` (phase 3).
+  `bundled_by`/`bundled_items`; we won't copy that — planned instead: a bundle is sent as its items,
+  as ordinary lines at their price shares (`.claude/plans/bundle-checkout.md`, phase 5.2).
 
 ## wineNET behaviour (observed)
 
