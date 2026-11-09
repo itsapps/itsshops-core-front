@@ -231,7 +231,7 @@ export async function sendOrderNotification(
     refundAmount,
     customerMessage,
   })
-  const subject = subjectFor(ctx, mailType)
+  const subject = subjectFor(ctx, mailType, order)
   const intro =
     refundAmount !== undefined
       ? refundMailText(ctx, mailType, order, refundAmount)

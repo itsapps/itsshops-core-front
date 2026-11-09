@@ -71,14 +71,15 @@ export function refundMailText(
   order: OrderDocument,
   amountCents: number,
 ): string {
-  const amount = ctx.formatPrice(amountCents)
+  // The order number tells the customer which order the refund belongs to.
+  const params = { amount: ctx.formatPrice(amountCents), orderNumber: order.orderNumber }
   if (mailType === 'orderRefunded' && amountCents < order.totals.grandTotal) {
     return ctx.t('emails.orderRefunded.textRemainder', {
-      amount,
+      ...params,
       total: ctx.formatPrice(order.totals.grandTotal),
     })
   }
-  return ctx.t(`emails.${mailType}.text`, { amount })
+  return ctx.t(`emails.${mailType}.text`, params)
 }
 
 export async function renderMailFor(
@@ -118,8 +119,13 @@ export async function renderMailFor(
 }
 
 /**
- * Look up the localized subject for a mailType.
+ * Look up the localized subject for a mailType. With the order, `{{orderNumber}}` is filled in
+ * (used by the refund subjects).
  */
-export function subjectFor(ctx: EmailContext, mailType: MailType): string {
-  return ctx.t(`emails.${mailType}.subject`)
+export function subjectFor(
+  ctx: EmailContext,
+  mailType: MailType,
+  order?: Pick<OrderDocument, 'orderNumber'>,
+): string {
+  return ctx.t(`emails.${mailType}.subject`, order ? { orderNumber: order.orderNumber } : undefined)
 }

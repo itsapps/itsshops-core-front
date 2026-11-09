@@ -338,6 +338,23 @@ describe('refund mails', () => {
     expect(text).toContain('Zahlung von 30,00')
   })
 
+  it('order mail subjects name the order', async () => {
+    await sendOrderNotification('o1', 'orderShipping')
+    expect((await sent()).subject).toBe('Bestellung 000042 versendet 📦')
+    await sendOrderNotification('o1', 'orderConfirmation')
+    expect((await sent()).subject).toBe('Bestellbestätigung 000042 🍷')
+  })
+
+  it('names the order in the subject, the body and the plain-text part', async () => {
+    await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
+    const { html, text, subject } = await sent()
+    const number = order().orderNumber
+    expect(subject).toContain(`Bestellung ${number}`)
+    expect(textOf(html)).toContain(`Bestellung ${number}`)
+    expect(text).toContain(`Bestellung ${number}`)
+    expect(subject).not.toContain('{{')
+  })
+
   it('the plain-text part states the amount, no placeholder left', async () => {
     await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
     const { text } = await sent()
