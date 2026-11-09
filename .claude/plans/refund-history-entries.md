@@ -63,6 +63,29 @@ the view: keys `order.statusHistory.source.{admin,stripe,wc-api}` in `components
 (`t(key, source)`). With one entry per refund (above), "Studio" / "Stripe" in the history then
 match the refund list's meaning. core-back only, no data change.
 
+## Also: more information on the entries
+
+- **Refund amount — no new field.** The order view joins a payment entry to its refund by
+  `refundId` (above) and shows "Teilweise refundiert · 18,00 € · Studio", plus the refund's status
+  when not succeeded ("Fehlgeschlagen"). The amount and status come from `order.refunds` (Stripe's
+  truth, kept current by `refund.updated`), not a copy frozen on the entry. Entries without
+  `refundId` (before this) show no amount.
+- **Customer notified — `mailType` on the entry** (optional string, a core-back `MailType`). Today
+  the history doesn't say whether a mail went out ("notify customer" without a message leaves no
+  trace). The status dialog (`OrderActions.tsx`) saves the entry **before** the mail (the shipped
+  mail must already see the tracking code), so it sets `mailType` with a **second patch after the
+  mail succeeded** — the entry's `_key` is known, so set the path
+  `statusHistory[_key=="<key>"].mailType` on the order; a failed mail leaves it unset, so the
+  entry never claims a mail that didn't go out. Same in "Refund & close" (`WithdrawalActions.tsx`).
+  View: "· Mail gesendet" (`order.statusHistory.mailSent`, de "Mail gesendet", en "Mail sent").
+  **Open decision:** should "Send mail" (`OrderMailAction.tsx`, writes no history today) and the
+  webhook's confirmation mail add an entry of their own (e.g. `type: 'mail'`)? Then the history
+  is the full mail log; it needs a third `type` option and its own view line.
+- **Optional — tracking code on the shipped entry** (`trackingCode`, as set in that step). Low
+  priority: the current code is on the order (`fulfillment.trackingCode`), and with wineNET's
+  early `shipped` it is usually entered later without a status change (no entry then).
+- Not copied onto entries: totals, addresses, anything the order already holds (copies go stale).
+
 ## Tests
 
 core-front: `payment-webhooks.test.ts` / a sanity-service test — Studio refund with an `admin`
