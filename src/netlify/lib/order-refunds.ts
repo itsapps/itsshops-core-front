@@ -63,6 +63,11 @@ export async function syncOrderRefunds(paymentIntentId: string): Promise<OrderRe
 const counts = (refund: OrderRefund): boolean =>
   refund.status !== 'failed' && refund.status !== 'canceled'
 
+/** Cents refunded so far (counted refunds only; no stored refunds → 0). */
+export function refundedTotal(order: Pick<OrderDocument, 'refunds'>): number {
+  return (order.refunds ?? []).filter(counts).reduce((sum, refund) => sum + refund.amount, 0)
+}
+
 /** The newest counted refund of the order (the one a refund mail states), if any. */
 export function latestRefund(order: Pick<OrderDocument, 'refunds'>): OrderRefund | undefined {
   return (order.refunds ?? [])

@@ -17,7 +17,7 @@ import { render } from '@react-email/render'
 import { sendMail } from '../services/email'
 import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
 import { refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
-import { latestRefund } from './order-refunds'
+import { latestRefund, refundedTotal } from './order-refunds'
 import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
 import type { EmailContext } from '../templates/email/types'
@@ -173,8 +173,24 @@ export async function sendOrderNotification(
   const isRefundMail = mailType === 'orderRefunded' || mailType === 'orderRefundedPartially'
   let refundAmount: number | undefined
   if (isRefundMail) {
+    const explicitAmount =
+      typeof options.refundAmount === 'number' && options.refundAmount > 0 ? options.refundAmount : undefined
+    // "Send mail" passes no amount. Its full-refund mail says the payment is refunded in full, so
+    // it is refused while the stored refunds don't cover the total (orders refunded before refunds
+    // were stored have none — those keep stating the total). The status dialog / "Refund & close"
+    // pass the amount Stripe refunded as the rest, so they're trusted.
+    if (mailType === 'orderRefunded' && explicitAmount === undefined && order.refunds?.length) {
+      const refunded = refundedTotal(order)
+      if (refunded < order.totals.grandTotal) {
+        throw new OrderNotifierError(
+          ErrorCode.INVALID_INPUT,
+          `The order is not fully refunded (${fmtPrice(refunded, 'en')} of ${fmtPrice(order.totals.grandTotal, 'en')}) — send the partial-refund mail`,
+          400,
+        )
+      }
+    }
     refundAmount =
-      (typeof options.refundAmount === 'number' && options.refundAmount > 0 ? options.refundAmount : undefined) ??
+      explicitAmount ??
       latestRefund(order)?.amount ??
       (mailType === 'orderRefunded' ? order.totals.grandTotal : undefined)
     if (refundAmount === undefined) {

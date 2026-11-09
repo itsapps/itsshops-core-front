@@ -314,6 +314,30 @@ describe('refund mails', () => {
     expect(text).toContain('Restbetrag von 17,50')
   })
 
+  it('"Send mail" full-refund mail is refused while the stored refunds do not cover the total', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({
+      refunds: [
+        refund('re_1', 1000, '2026-11-01T10:00:00.000Z'),
+        refund('re_2', 2000, '2026-11-02T10:00:00.000Z', 'failed'),
+      ],
+    }))
+    await expect(sendOrderNotification('o1', 'orderRefunded')).rejects.toMatchObject({ httpStatus: 400 })
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('"Send mail" full-refund mail after partial refunds covering the total names the remainder', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({
+      refunds: [
+        refund('re_1', 1250, '2026-11-01T10:00:00.000Z'),
+        refund('re_2', 1750, '2026-11-02T10:00:00.000Z'),
+      ],
+    }))
+    await sendOrderNotification('o1', 'orderRefunded')
+    const text = textOf((await sent()).html)
+    expect(text).toContain('Restbetrag von 17,50')
+    expect(text).toContain('Zahlung von 30,00')
+  })
+
   it('the plain-text part states the amount, no placeholder left', async () => {
     await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
     const { text } = await sent()
