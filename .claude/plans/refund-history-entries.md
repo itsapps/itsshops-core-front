@@ -50,12 +50,25 @@ doesn't stop duplicates from retries/resends (2).
   entry *without* `refundId` (older ones count as covered); (b) only for the newest counted
   refund. (a) also covers two dashboard refunds before one delayed event; pick when implementing.
 
+## Also: translate the history source in the order view
+
+History `source` says **who wrote the entry** (`admin` = Studio dialog, `stripe` = the Stripe
+webhook, `wc-api` = an ERP such as wineNET); refund `source` says **where the refund was created**
+(`studio` | `stripe` = Stripe dashboard). The order view shows the history value raw
+(core-back `OrderView.tsx`, `{entry.source && <Text muted>{entry.source}</Text>}`) but the refund one
+translated (`order.refunds.source.*`: "Studio", "Stripe-Dashboard") — and `stripe` reads like the
+dashboard in both. Keep the stored values (existing orders have them); translate the history one in
+the view: keys `order.statusHistory.source.{admin,stripe,wc-api}` in `components_{de,en}.ts` — de
+"Studio", "Stripe", "Warenwirtschaft"; en "Studio", "Stripe", "ERP" — unknown values stay raw
+(`t(key, source)`). With one entry per refund (above), "Studio" / "Stripe" in the history then
+match the refund list's meaning. core-back only, no data change.
+
 ## Tests
 
 core-front: `payment-webhooks.test.ts` / a sanity-service test — Studio refund with an `admin`
 entry carrying its `refundId` → no `stripe` entry; dashboard refund → one entry; the same event
-twice → one entry; status still updated in all cases. core-back: none beyond types (dialogs by
-hand on staging).
+twice → one entry; status still updated in all cases. core-back: none beyond types (dialogs and the
+translated history source by hand on staging).
 
 ## Ship
 
