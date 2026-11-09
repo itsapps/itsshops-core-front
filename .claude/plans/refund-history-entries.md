@@ -1,7 +1,7 @@
 # Plan — one status-history entry per refund
 
-Status: **planned** (2026-11-09), nothing implemented. Follows `refund-history.md` (order
-`refunds`, ships first). Generic core behaviour (core-back + core-front), every shop with checkout.
+Status: **planned** (2026-11-09), nothing implemented. Follows the refund history (order
+`refunds`, core-front 3.10.0 / core-back 5.3.0; `commerce-and-netlify.md` → Refunds). Generic core behaviour (core-back + core-front), every shop with checkout.
 Cosmetic — no amount or status is wrong today.
 
 ## Problem

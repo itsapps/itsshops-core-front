@@ -119,8 +119,10 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 
 ## Known gaps vs WooCommerce
 
-- No **`refunds`** array. A partial refund only sets `paymentStatus: partiallyRefunded` (the amount
-  lives in Stripe, not on the order), so the ERP sees no change — enter it there by hand.
+- No **`refunds`** array. The order stores its refunds (`order.refunds`, core-front 3.10.0), but the
+  wc-api doesn't send them: wineNET most likely doesn't read WooCommerce refunds (Tinhof corrects
+  refunds by hand there, owner 2026-11-06). Build it when an ERP reads them — WC's
+  `refunds: [{ id, reason, total: "-12.50" }]` on the order.
 - The **`dp`** query param (decimal places) is ignored; values are always 2 dp. (WC formats the
   money strings *and* `taxes[].total`/`subtotal` with `dp`, default 2 — so at default `dp` our
   `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)

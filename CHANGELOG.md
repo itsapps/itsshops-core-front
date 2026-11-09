@@ -4,6 +4,40 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 3.10.0
+
+Pairs with **core-back 5.3.0** (`order.refunds` / `orderRefund`, orders `liveEdit`) — release
+core-back first.
+
+### Upgrading
+- **Stripe webhook endpoint:** add the event **`refund.updated`** (test and live mode) next to
+  `payment_intent.succeeded` and `charge.refunded`. Optional — without it a refund's status stays as
+  of its creation (a refund that fails later still counts as refunded).
+- Orders refunded before this version have no `refunds` until their next refund event; to fill
+  them at once, run `syncOrderRefunds(paymentIntentId)` for their PaymentIntents (old refunds
+  then show source `stripe`).
+
+### Added
+- **Refunds stored on the order** (`order.refunds`): rebuilt from Stripe by `syncOrderRefunds`
+  (`lib/order-refunds.ts`) after `payment-refund`, on `charge.refunded` (before the status update)
+  and on the new **`refund.updated`** webhook (pending → succeeded / failed / canceled; a failed
+  one logs `Refund failed asynchronously`). Studio refunds are tagged
+  `metadata.itsshopsSource = 'studio'`. Survives simultaneous webhooks (revision via the document
+  endpoint, unchanged lists aren't written, conflicts retried).
+- Refund mail text `emails.orderRefunded.textRemainder` (de, de informal, en): a full refund after
+  partial ones names the remainder and the total.
+
+### Changed
+- **Refund mails state the right amount:** explicit `refundAmount` ?? the latest stored refund ??
+  (full refund only) the grand total. The partial mail without any → 400; the full mail from
+  "Send mail" while the stored refunds don't cover the total → 400. Their texts name the order.
+- **Order number in every order mail subject** ("Bestellung 000015 versendet 📦", "Zahlung
+  teilweise zurückerstattet – Bestellung 000015 💶", …). `subjectFor(ctx, mailType, order?)`
+  fills `{{orderNumber}}`. Customer translation overrides of `emails.*.subject` don't get it.
+
+### Fixed
+- The plain-text part of the refund mails contained a literal `{{amount}}`.
+
 ## 3.9.0
 
 Pairs with **core-back 5.2.0** (order snapshot type `orderItemBundleItem`, bundle validation) —

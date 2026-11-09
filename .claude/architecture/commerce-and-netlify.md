@@ -322,15 +322,48 @@ sessionStorage: `decisions/order-thanks-summary-from-session-snapshot.md`.
 Triggered only from core-back's "Status aktualisieren" (core-back `studio-components.md` →
 Document actions) and the withdrawal "Refund & close". `payment-refund` (`x-server-secret`) takes
 `{ paymentIntentId, amount? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
-refund — and calls `stripe.refunds.create`. The Studio then patches `paymentStatus`; the
+refund = the rest — and calls `stripe.refunds.create` with `metadata.itsshopsSource = 'studio'`
+(the function is only called from the Studio). The Studio then patches `paymentStatus`; the
 `charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
 (`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
-entry (`source: 'stripe'`) — both idempotent. A full refund of an undispatched order also sets
-`canceled`; a partial one leaves fulfillment alone (the order still ships). Refund mails
-(`orderRefunded` / `orderRefundedPartially`) show the passed `refundAmount`, else the grand total
-— the order stores no refund amounts, so `orderRefundedPartially` without `refundAmount` is refused
-(400; the Studio's "Send mail" asks for it). Partial refunds don't reach ERPs via `wc-api`
-(`wc-api.md` → known gaps). Storing refunds on the order: `.claude/plans/refund-history.md`.
+entry (`source: 'stripe'`, on every run — a Studio refund therefore has an `admin` and a `stripe`
+entry; fix planned: `.claude/plans/refund-history-entries.md`). A full refund of an undispatched
+order also sets `canceled`; a partial one leaves fulfillment alone (the order still ships).
+Dashboard refunds take the same webhook path (one `stripe` entry, no mail).
+
+**`order.refunds` — Stripe is the source of truth, core-front the only writer.**
+`syncOrderRefunds(paymentIntentId)` (`lib/order-refunds.ts`) rebuilds the whole array from
+`stripe.refunds.list` (`_key = refundId`, `amount` cents, `createdAt`, Stripe `status` — `null` →
+`pending`, `failureReason`, `reason`, `source` `studio` via the metadata else `stripe`, oldest first)
+and writes it with `ifRevisionId`. Called by `payment-refund` right after the refund (a throw is
+only logged — the money is refunded, the webhook syncs again), by `charge.refunded` **before** the
+status update (a throw → 400 → Stripe retries before any history entry was appended) and by
+`refund.updated`. Stripe sends `charge.refunded` and `refund.updated` in the **same second**: the
+revision and stored refunds are read via `getDocument` (the query index lags behind writes — a
+`_rev` from a query made the retry conflict again, Tinhof staging 2026-11-09), an unchanged list
+isn't written, and a 409 is retried twice (250/750 ms); a further one is thrown. No order for the
+payment → null (another system on the same Stripe account). Orders are `liveEdit` (core-back), so
+there is no draft to keep in sync. Orders refunded before core-front 3.10.0 have no `refunds` until
+their next refund event syncs the full list (old refunds then show `source: 'stripe'`); the
+one-off fix is running `syncOrderRefunds` for their PaymentIntents.
+
+**`refund.updated`** (status change after creation: pending → succeeded, failed, canceled) only
+syncs; it reverts nothing (`paymentStatus`, `status`, history stay — the editor refunds again in the
+dashboard, whose `charge.refunded` heals `paymentStatus`). A failed one logs `Refund failed
+asynchronously` (`refundId`, `failureReason`); the order view shows it as failed. Subscribe it on
+the Stripe endpoint (`go-live-checklist.md`); without it statuses stay as of creation.
+"Counted" refunds exclude `failed` / `canceled` (Stripe's `amount_refunded` doesn't count them).
+
+**Refund mails** (`orderRefunded` / `orderRefundedPartially`, `sendOrderNotification`): amount =
+explicit `refundAmount` (status dialog / "Refund & close" pass what Stripe just refunded) ?? the
+latest counted stored refund ("Send mail") ?? (full mail only) the grand total. Partial mail with
+none → 400 "No refund is stored …". Full mail without an explicit amount while stored refunds
+don't cover the total → 400 "The order is not fully refunded …" (it would claim a full refund).
+`refundMailText` picks `emails.orderRefunded.textRemainder` ("den Restbetrag von {{amount}} …
+Ihre Zahlung von {{total}} vollständig erstattet") when a full-refund mail's amount is below the
+total; the texts and subjects name the order (`{{orderNumber}}`). core-back's "Send mail" offers
+and disables the refund mails by the same rules. Partial refunds don't reach ERPs via `wc-api`
+(`wc-api.md` → known gaps).
 
 ## Withdrawal (Widerruf) — declaration only (FAGG §13a)
 
@@ -399,7 +432,8 @@ instructions: "Legal texts generated from settings" below.
 - **New-order mail to the shop** (`sendShopOrderNotification` in `lib/order-notifier.tsx`, template
   `ShopOrderEmail.tsx`): sent by the payment webhook right after the customer's confirmation, in its
   own try/catch (no longer a BCC of the customer mail). Shop's `defaultLocale`, neutral wording
-  (`emails.shopOrderConfirmation.*`, subject "Neue Bestellung <nr> – <name>"), customer contact
+  (`emails.shopOrderConfirmation.*`, subject "Neue Bestellung <nr> – <name>"; the customer mails'
+  subjects carry the order number too, `subjectFor(ctx, mailType, order)`), customer contact
   (email, phone, language) up front, Reply-To = customer; reuses the order summary blocks exported
   from `OrderEmail.tsx`; no greeting, warranty image, withdrawal text, invoice or footer. Button
   "Bestellung im Studio öffnen" when `SANITY_STUDIO_URL` is set (needs the functions scope on

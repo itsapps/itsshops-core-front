@@ -18,6 +18,10 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       links the order in the Studio; unset → no button).
 - [ ] Function wrappers wired: `order-withdraw` (+ `rateLimit`), `order-withdraw-notify`,
       `order-status`, `payment-webhooks`; no `notifyEmail` / `captcha` options passed.
+- [ ] **Stripe webhook endpoint** in **test and live mode** (Developers → Webhooks):
+      `https://<site>/api/payment/webhooks` (the wrapper's `path`), events
+      `payment_intent.succeeded`, `charge.refunded`, `refund.updated`; its signing secret →
+      `STRIPE_ENDPOINT_SECRET` (test secret on staging, live on production).
 
 ## Studio — settings
 

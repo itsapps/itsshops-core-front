@@ -16,5 +16,5 @@ no caller can send one. Core rather than customer code because more than one sho
 
 ## Consequences
 Core still assigns `invoiceNumber` (the mails don't print it). Credit notes for refunds are out of
-scope (`plans/refund-history.md`, decision C). Mechanism: `commerce-and-netlify.md` → "Invoices
+scope until an owner or tax advisor asks (decided with the refund history, core-front 3.10.0). Mechanism: `commerce-and-netlify.md` → "Invoices
 issued elsewhere".
