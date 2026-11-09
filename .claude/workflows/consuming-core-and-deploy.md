@@ -144,7 +144,8 @@ plan and asking before anything that pushes.
    push and were lost when only the branch got pushed (Tinhof had none on GitHub until
    2026-10-15) — so the tag push is separate and never left to the user. **Pushes to the `user`
    remote are the user's:** Claude Code's auto-mode
-   classifier blocks them as a deploy — `production` *and* `staging` — so Claude prepares
+   classifier blocks them as a deploy — `production` *and* `staging` (also deleting remote
+   branches and one-off writes to a live dataset, e.g. a data fix after a release) — so Claude prepares
    everything locally and hands over the `! git -C <repo> push user production` lines
    (unless the user added a permission rule). If another session has uncommitted edits in the
    customer repo, stage the release files explicitly (no `commit -a`) and move a deploy branch

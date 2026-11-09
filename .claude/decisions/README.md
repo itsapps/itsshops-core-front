@@ -83,3 +83,5 @@ alternative was rejected, a constraint discovered the hard way.
   (both cores) for shops whose invoices come from an ERP; no second invoice from core.
 - [bundle-packaging-with-the-cart.md](bundle-packaging-with-the-cart.md) — bundle bottles are boxed
   with the cart; non-wine items pay weight rates on top (revisit with a mixed bundle).
+- [order-refunds-rebuilt-from-stripe.md](order-refunds-rebuilt-from-stripe.md) — `order.refunds`
+  is rebuilt from Stripe's list by core-front only (idempotent); revision via `getDocument`.

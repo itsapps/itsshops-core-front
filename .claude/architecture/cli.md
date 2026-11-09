@@ -23,7 +23,7 @@ Source: `src/bin/itsshops.ts` (commander) → built to `dist/itsshops.js`, expos
 | `clean` | Removes `dist`, `src/_includes/css`, `src/_includes/scripts`. |
 | `sanity [-e <path>] query <groq>` | Runs a GROQ query, prints JSON to stdout. |
 | `sanity [-e <path>] count <type1,type2>` | Document count per type. |
-| `sanity [-e <path>] delete <type1,type2> [--dry-run] [-y\|--yes]` | Deletes **all** documents of those types (incl. drafts) in **one transaction**, after a typed confirmation. |
+| `sanity [-e <path>] delete <type1,type2> [--dry-run] [-y\|--yes]` | Deletes **all** documents of those types — drafts and release versions too (raw perspective) — in **one transaction**, after a typed confirmation. |
 
 ## Examples
 
@@ -98,4 +98,10 @@ SANITY_DATASET=development itsshops sanity count order
   withdrawals (matched ones are the legal proof a declaration was received —
   core-back `src/schemas/documents/orders/orderWithdrawal.ts`); `delete orderWithdrawal` removes all
   of them. Use it for test data; on a live shop's production data only deliberately.
-- `*[_type == $type]` with a token also matches drafts (`drafts.…`), so those are deleted too.
+- **`query` and `count` see published documents only.** Their client sets no `perspective`, and
+  with `apiVersion: 'v2025-05-25'` the default is `published` — no `drafts.…` (checked 2026-11-09:
+  Tinhof production had 2 drafts, the CLI counted 0). To find drafts, query the HTTP API with
+  `perspective=raw` (e.g. `curl` with the `.env` token; don't print it). **`delete`** reads with
+  `perspective: 'raw'`, so it lists and removes the types' drafts and release versions too (the
+  per-type line says how many). Up to core-front 3.10.0 it read `published` and left them
+  behind — a customer pinned to 3.10.0 or older still does.
