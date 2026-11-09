@@ -654,6 +654,14 @@ export async function writeOrderRefunds(
   await sanityClient.patch(order._id).set({ refunds }).ifRevisionId(order._rev).commit()
 }
 
+/**
+ * Appends entries to `order.statusHistory` (append-only). No `ifRevisionId`: an append can't
+ * clobber anything, and a concurrent `syncOrderRefunds` write retries on its own 409.
+ */
+export async function appendOrderHistory(orderId: string, entries: OrderStatusHistoryEntry[]): Promise<void> {
+  await sanityClient.patch(orderId).setIfMissing({ statusHistory: [] }).append('statusHistory', entries).commit()
+}
+
 export async function updateOrderPaymentStatus(
   paymentIntentId: string,
   status: 'refunded' | 'partiallyRefunded',

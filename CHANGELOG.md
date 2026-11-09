@@ -6,6 +6,19 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 
 ## Unreleased
 
+Pairs with the next **core-back** minor (history type `mail`) — release core-back first.
+
+### Upgrading
+- Take it together with the new core-back minor, so the Studio knows `mail` history entries before
+  they appear. Nothing else to change.
+
+### Added
+- **Mail history entries:** every customer order mail appends a `statusHistory` entry
+  (`type: 'mail'`, `status` = mail type, the customer message) after a successful send — the Studio
+  shows which mails the customer got. New `SendOrderNotificationOptions.historySource` (default
+  `admin`; the webhook confirmation passes `system`, the wc-api shipping mail `wc-api`). New
+  `appendOrderHistory` in `services/sanity.ts`. Old orders have none (no migration).
+
 ### Fixed
 - `itsshops sanity delete` also removes the types' drafts and release versions (reads with
   `perspective: 'raw'`; before, it saw published documents only and left drafts behind). The

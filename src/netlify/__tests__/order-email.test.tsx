@@ -3,13 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('../services/sanity', () => ({
   fetchOrderById: vi.fn(),
   fetchEmailSettings: vi.fn(),
+  appendOrderHistory: vi.fn(),
   // imported by lib/order-refunds (the notifier uses its real latestRefund)
   fetchOrderRevision: vi.fn(),
   writeOrderRefunds: vi.fn(),
 }))
 vi.mock('../services/email', () => ({ sendMail: vi.fn(async () => ({ id: 'msg-1' })) }))
 
-import { fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
+import { appendOrderHistory, fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
 import { sendMail } from '../services/email'
 import { sendOrderNotification, sendShopOrderNotification, studioOrderUrlFor } from '../lib/order-notifier'
 import { buildEmailShopSettings } from '../lib/email-settings'
@@ -398,6 +399,59 @@ describe('buildEmailShopSettings', () => {
   it('shop inbox falls back to the sender', () => {
     expect(buildEmailShopSettings(rawSettings(), '').shopNotificationEmail).toBe('noreply@shop.example')
     expect(buildEmailShopSettings(rawSettings({ shopNotificationEmail: 'o@x.example' }), '').shopNotificationEmail).toBe('o@x.example')
+  })
+})
+
+describe('mail history entry', () => {
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    vi.mocked(sendMail).mockClear()
+    vi.mocked(appendOrderHistory).mockReset()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('appends one mail entry after a successful send (default source admin, trimmed message)', async () => {
+    await sendOrderNotification('o1', 'orderShipping', { customerMessage: '  Zwei Pakete.  ' })
+    expect(appendOrderHistory).toHaveBeenCalledTimes(1)
+    const [orderId, entries] = vi.mocked(appendOrderHistory).mock.calls[0]!
+    expect(orderId).toBe('o1')
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({
+      _type: 'orderStatusHistory',
+      type: 'mail',
+      status: 'orderShipping',
+      source: 'admin',
+      customerMessage: 'Zwei Pakete.',
+    })
+    expect(entries[0]!._key).toBeTruthy()
+    expect(entries[0]!.timestamp).toBeTruthy()
+  })
+
+  it('takes historySource and leaves out an empty message', async () => {
+    await sendOrderNotification('o1', 'orderConfirmation', { historySource: 'system', customerMessage: '  ' })
+    const entry = vi.mocked(appendOrderHistory).mock.calls[0]![1][0]!
+    expect(entry).toMatchObject({ type: 'mail', status: 'orderConfirmation', source: 'system' })
+    expect(entry).not.toHaveProperty('customerMessage')
+  })
+
+  it('appends nothing when the mail fails', async () => {
+    vi.mocked(sendMail).mockRejectedValueOnce(new Error('smtp down'))
+    await expect(sendOrderNotification('o1', 'orderShipping')).rejects.toThrow('smtp down')
+    expect(appendOrderHistory).not.toHaveBeenCalled()
+  })
+
+  it('a failing history write does not fail the send', async () => {
+    vi.mocked(appendOrderHistory).mockRejectedValueOnce(new Error('409'))
+    const result = await sendOrderNotification('o1', 'orderShipping')
+    expect(result).toMatchObject({ messageId: 'msg-1', mailType: 'orderShipping' })
+  })
+
+  it('the shop-inbox mail appends nothing', async () => {
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    expect(sendMail).toHaveBeenCalled()
+    expect(appendOrderHistory).not.toHaveBeenCalled()
   })
 })
 

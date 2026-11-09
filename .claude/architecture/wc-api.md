@@ -176,7 +176,8 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 - A PUT logs `Update order` (debug): `orderId`, `wcStatus` (raw, as the ERP sent it),
   `internalStatus`; refused/invalid PUTs log warn/error (`Shipping notification failed` if the mail
   throws). The debug lines only appear with `LOG_LEVEL=debug` (default `info`) — the durable record
-  is the order's `statusHistory` entry (`source: 'wc-api'`). Only `status` is read from the body; other
+  is the order's `statusHistory` entry (`source: 'wc-api'`); a shipping mail sent with `notify` adds
+  a `mail` entry with the same source. Only `status` is read from the body; other
   body fields are never logged.
 - Unit tests: `src/netlify/__tests__/wc-api.test.ts` (`mapOrder` on fixed + randomized orders, paid
   shipping, coupon; the request log).

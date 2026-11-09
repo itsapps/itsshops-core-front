@@ -126,7 +126,8 @@ test payments, and orders / `orderMeta` / withdrawals / users written to the dat
 delete theirs and reset `lastInvoiceNumber`). A plain `npm test` only does read-only checks and
 requests rejected before any write. `orderNotifyTests` mails the order from `getOrderId`, default
 `TEST_ORDER_ID` — a fixed test order with your own address, never "the newest order" (a real
-customer's in any dataset with real orders). The webhook tests send no shop new-order mail
+customer's in any dataset with real orders); each mail it sends leaves a `mail` history entry
+(`source: 'admin'`) on that order — accepted, it's a fixed test order. The webhook tests send no shop new-order mail
 (`shopNotification: false`); the customer confirmation goes to `test@example.com`. Why opt-in:
 [../decisions/integration-tests-side-effects-opt-in.md](../decisions/integration-tests-side-effects-opt-in.md).
 
@@ -407,8 +408,17 @@ instructions: "Legal texts generated from settings" below.
   optional `customerMessage` (trimmed, ≤ `CUSTOMER_MESSAGE_MAX_LENGTH` = 2000, else 400) →
   `sendOrderNotification({ customerMessage })` → `OrderEmail` / `SimpleEmail` render it via
   `components/CustomerMessage.tsx` below the intro text (plain text, lines → paragraphs, left rule),
-  and it's appended to the plain-text part. The studio's internal `statusHistory[].note` is never
-  mailed.
+  and it's appended to the plain-text part. The message is stored on the mail's `mail` history
+  entry (below) — the Studio's own status entry no longer carries it (older ones may). The studio's
+  internal `statusHistory[].note` is never mailed.
+- **Mail history entries:** every customer mail `sendOrderNotification` sends appends one
+  `statusHistory` entry **after** a successful send (`appendOrderHistory`, `services/sanity.ts`):
+  `type: 'mail'`, `status` = the `MailType`, `source` = option `historySource` — `admin` (default,
+  `order-notify`: status dialog, "Send mail", "Refund & close"), `system` (webhook confirmation),
+  `wc-api` (ERP shipping mail, only with `notify`) — plus the sent `customerMessage`. A failed mail
+  writes none; a failed append is logged (`Mail history entry failed`) and the send still succeeds.
+  The shop-inbox mail (`sendShopOrderNotification`) and withdrawal mails write none. The Studio
+  shows them as "E-Mail - Versendet" with the source translated (core-back `OrderView`).
 
 - **Order details** (`OrderEmail.tsx` → `OrderDetails`): order date (`order.orderDate` = PaymentIntent
   `created`, fallback first status entry), payment method, shipping method, delivery time, pickup

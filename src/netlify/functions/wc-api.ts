@@ -672,7 +672,7 @@ async function handleUpdateOrder(
 
   if (internalStatus === 'shipped' && notify) {
     context.waitUntil(
-      sendOrderNotification(order._id, 'orderShipping', notify).catch(err =>
+      sendOrderNotification(order._id, 'orderShipping', { ...notify, historySource: 'wc-api' }).catch(err =>
         log.error('Shipping notification failed', {
           orderId: order._id,
           orderNumber: order.orderNumber,

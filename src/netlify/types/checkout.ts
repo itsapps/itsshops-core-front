@@ -331,13 +331,17 @@ export type Fulfillment = {
 export type OrderStatusHistoryEntry = {
   _key: string
   _type: 'orderStatusHistory'
-  type: 'payment' | 'fulfillment'
+  type: 'payment' | 'fulfillment' | 'mail'
+  /** Payment / fulfillment state, or the `MailType` of a `mail` entry. */
   status: string
   timestamp: string
   source: string
   /** Internal admin note (studio only, never sent to the customer). */
   note?: string
-  /** Message sent to the customer with the status mail (studio "message to customer"). */
+  /**
+   * Message sent to the customer with this mail (studio "message to customer"; `mail` entries —
+   * older status entries may carry one too).
+   */
   customerMessage?: string
 }
 

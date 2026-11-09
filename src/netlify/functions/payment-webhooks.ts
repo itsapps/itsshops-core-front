@@ -129,7 +129,10 @@ async function handlePaymentSucceeded(
   // Send the order confirmation email. Failures here must NOT abort the
   // webhook (Stripe would retry and we'd duplicate the order) — log and move on.
   try {
-    const result = await sendOrderNotification(created._id, 'orderConfirmation', notifyOptions)
+    const result = await sendOrderNotification(created._id, 'orderConfirmation', {
+      ...notifyOptions,
+      historySource: 'system',
+    })
     log.debug('Order confirmation sent', {
       orderId: created._id,
       messageId: result.messageId,

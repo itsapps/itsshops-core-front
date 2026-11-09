@@ -6,6 +6,11 @@
  *   - `functions/order-notify.ts`  — studio-triggered HTTP endpoint
  *   - `functions/payment-webhooks.ts` — Stripe `payment_intent.succeeded`
  *     (customer confirmation + `sendShopOrderNotification` to the shop inbox)
+ *   - `functions/wc-api.ts` — shipping mail on an ERP status update (only with `notify`)
+ *
+ * A sent customer mail appends a `mail` entry to `order.statusHistory` (status = mail type,
+ * `source` = `historySource`, plus the customer message), so the Studio shows which mails the
+ * customer got. The shop-inbox mail appends nothing.
  *
  * Throws `OrderNotifierError` with a typed code so callers can map failures
  * to HTTP responses (HTTP handler) or just log them (webhook).
@@ -15,7 +20,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
-import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
+import { appendOrderHistory, fetchEmailSettings, fetchOrderById } from '../services/sanity'
 import { refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
 import { latestRefund, refundedTotal } from './order-refunds'
 import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
@@ -73,6 +78,11 @@ export type SendOrderNotificationOptions = {
    * shown below the intro text in the HTML mail and appended to the plain-text part.
    */
   customerMessage?: string
+  /**
+   * `source` of the `mail` history entry written after a successful send: `admin` (default —
+   * Studio via `order-notify`), `system` (webhook confirmation), `wc-api` (ERP status update).
+   */
+  historySource?: string
 }
 
 export type SendShopOrderNotificationOptions = {
@@ -259,6 +269,23 @@ export async function sendOrderNotification(
     html,
     ...(attachment && { attachment }),
   })
+
+  // The mail is out: a failed history write is logged, never reported as a failed send.
+  try {
+    await appendOrderHistory(order._id, [
+      {
+        _key: crypto.randomUUID(),
+        _type: 'orderStatusHistory',
+        type: 'mail',
+        status: mailType,
+        timestamp: new Date().toISOString(),
+        source: options.historySource ?? 'admin',
+        ...(customerMessage && { customerMessage }),
+      },
+    ])
+  } catch (error) {
+    log.error('Mail history entry failed', { orderId, mailType, error })
+  }
 
   return {
     messageId: result.id ?? 'unknown',
