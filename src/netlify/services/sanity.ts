@@ -7,6 +7,7 @@ import type {
   OrderMetaDocument,
   OrderDocument,
   OrderStatusHistoryEntry,
+  OrderRefund,
 } from '../types/checkout'
 
 let client: SanityClient | null = null
@@ -623,6 +624,27 @@ export async function getLatestCustomerNumber(): Promise<string> {
   )
   const last = parseInt(latest?.customerNumber ?? '10000', 10)
   return String(last + 1)
+}
+
+/** The order of a payment with its revision (for an `ifRevisionId` write), or null. */
+export async function fetchOrderRevision(
+  paymentIntentId: string,
+): Promise<{ _id: string; _rev: string } | null> {
+  return sanityClient.fetch<{ _id: string; _rev: string } | null>(
+    `*[_type == "order" && paymentIntentId == $pid][0]{ _id, _rev }`,
+    { pid: paymentIntentId },
+  )
+}
+
+/**
+ * Replace the order's `refunds`, only if the order is still at `_rev` (throws a 409
+ * `ClientError` otherwise — `syncOrderRefunds` then re-reads and retries).
+ */
+export async function writeOrderRefunds(
+  order: { _id: string; _rev: string },
+  refunds: OrderRefund[],
+): Promise<void> {
+  await sanityClient.patch(order._id).set({ refunds }).ifRevisionId(order._rev).commit()
 }
 
 export async function updateOrderPaymentStatus(

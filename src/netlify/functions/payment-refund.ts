@@ -1,15 +1,19 @@
 import type { Context } from '@netlify/functions'
 import { refundPayment } from '../services/stripe'
+import { syncOrderRefunds } from '../lib/order-refunds'
 import { ErrorCode } from '../types/errors'
 import { log } from '../utils/logger'
 import { errorResponse, success, methodNotAllowed, badRequest } from '../utils/response'
 import { preflightResponse, requireServerSecret, withCors } from '../utils/server-auth'
 
 // Studio-triggered refund. The dialog calls this from the order document
-// action when an admin transitions paymentStatus → refunded / partiallyRefunded.
+// action when an admin transitions paymentStatus → refunded / partiallyRefunded
+// (and the withdrawal "Refund & close"). The refund is tagged
+// `metadata.itsshopsSource = 'studio'`; right after it, the order's `refunds`
+// are rebuilt from Stripe (`syncOrderRefunds`) so the Studio shows it at once.
 // Stripe → charge.refunded webhook will subsequently update the order's
-// paymentStatus, but the studio also patches the document directly for
-// instant feedback. Both paths must be idempotent.
+// paymentStatus (and sync `refunds` again), but the studio also patches the
+// paymentStatus directly for instant feedback. Both paths must be idempotent.
 //
 // Request body: { paymentIntentId: string, amount?: number }  // amount in cents
 // Auth: x-server-secret header (must match SERVER_FUNCTIONS_SECRET)
@@ -62,6 +66,17 @@ export function createRefundHandler() {
         amount: refund.amount,
         status: refund.status,
       })
+      // The money is refunded already: a failed sync is logged, not returned (the
+      // charge.refunded webhook syncs again).
+      try {
+        await syncOrderRefunds(body.paymentIntentId)
+      } catch (err) {
+        log.error('Refund sync failed', {
+          requestId,
+          paymentIntentId: body.paymentIntentId,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
       return withCors(
         success<RefundResponseBody>({
           refundId: refund.id,

@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('../services/sanity', () => ({ fetchOrderById: vi.fn(), fetchEmailSettings: vi.fn() }))
+vi.mock('../services/sanity', () => ({
+  fetchOrderById: vi.fn(),
+  fetchEmailSettings: vi.fn(),
+  // imported by lib/order-refunds (the notifier uses its real latestRefund)
+  fetchOrderRevision: vi.fn(),
+  writeOrderRefunds: vi.fn(),
+}))
 vi.mock('../services/email', () => ({ sendMail: vi.fn(async () => ({ id: 'msg-1' })) }))
 
 import { fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
@@ -246,7 +252,11 @@ describe('invoices: false (invoices issued elsewhere)', () => {
   })
 })
 
-describe('partial-refund mail', () => {
+const refund = (id: string, amount: number, createdAt: string, status = 'succeeded') => ({
+  _key: id, _type: 'orderRefund' as const, refundId: id, amount, createdAt, status, source: 'studio' as const,
+})
+
+describe('refund mails', () => {
   beforeEach(() => {
     vi.stubEnv('URL', 'https://shop.example')
     vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
@@ -262,9 +272,53 @@ describe('partial-refund mail', () => {
     expect(textOf(html)).not.toContain('30,00')
   })
 
-  it('is refused without an amount (would otherwise state the total)', async () => {
+  it('partial mail is refused without an amount or stored refund (would otherwise state the total)', async () => {
     await expect(sendOrderNotification('o1', 'orderRefundedPartially')).rejects.toMatchObject({ httpStatus: 400 })
+    expect(fetchOrderById).toHaveBeenCalled()
     expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('states the latest stored refund when no amount is passed (skipping failed ones)', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({
+      refunds: [
+        refund('re_1', 500, '2026-11-01T10:00:00.000Z'),
+        refund('re_2', 750, '2026-11-02T10:00:00.000Z'),
+        refund('re_3', 990, '2026-11-03T10:00:00.000Z', 'failed'),
+      ],
+    }))
+    await sendOrderNotification('o1', 'orderRefundedPartially')
+    const text = textOf((await sent()).html)
+    expect(text).toContain('7,50')
+    expect(text).not.toContain('9,90')
+  })
+
+  it('an explicit refundAmount wins over the stored refunds', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({ refunds: [refund('re_1', 500, '2026-11-01T10:00:00.000Z')] }))
+    await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
+    expect(textOf((await sent()).html)).toContain('12,50')
+  })
+
+  it('full-refund mail without stored refunds states the order total', async () => {
+    await sendOrderNotification('o1', 'orderRefunded')
+    const { html, text } = await sent()
+    expect(textOf(html)).toContain('30,00')
+    expect(textOf(html)).toContain('in voller Höhe')
+    expect(text).toContain('30,00')
+  })
+
+  it('full-refund mail for less than the total names the remainder and the total', async () => {
+    await sendOrderNotification('o1', 'orderRefunded', { refundAmount: 1750 })
+    const { html, text } = await sent()
+    expect(textOf(html)).toContain('Restbetrag von 17,50')
+    expect(textOf(html)).toContain('Zahlung von 30,00')
+    expect(text).toContain('Restbetrag von 17,50')
+  })
+
+  it('the plain-text part states the amount, no placeholder left', async () => {
+    await sendOrderNotification('o1', 'orderRefundedPartially', { refundAmount: 1250 })
+    const { text } = await sent()
+    expect(text).toContain('12,50')
+    expect(text).not.toContain('{{')
   })
 })
 

@@ -341,6 +341,27 @@ export type OrderStatusHistoryEntry = {
   customerMessage?: string
 }
 
+/**
+ * One Stripe refund of the order, rebuilt from Stripe's refund list by `syncOrderRefunds`
+ * (core-front is the only writer). `amount` in cents.
+ */
+export type OrderRefund = {
+  _key: string
+  _type: 'orderRefund'
+  /** Stripe refund id (`re_…`), also the `_key`. */
+  refundId: string
+  amount: number
+  createdAt: string
+  /** Stripe's status: pending | succeeded | failed | canceled | requires_action. */
+  status: string
+  /** `studio` = created through `payment-refund`; `stripe` = Stripe dashboard (or another system). */
+  source: 'studio' | 'stripe'
+  /** Stripe's reason enum (duplicate | fraudulent | requested_by_customer | …). */
+  reason?: string
+  /** Stripe's `failure_reason` of a failed refund. */
+  failureReason?: string
+}
+
 export type OrderMetaDocument = {
   _type: 'orderMeta'
   paymentIntentId: string
@@ -368,4 +389,6 @@ export type OrderDocument = {
   totals: OrderTotals
   fulfillment: Fulfillment
   appliedCoupons?: AppliedCouponSnapshot[]
+  /** Stripe refunds, oldest first. Absent on orders refunded before refunds were stored. */
+  refunds?: OrderRefund[]
 }

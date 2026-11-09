@@ -33,6 +33,10 @@ export function retrievePaymentIntentWithCharge(id: string): Promise<Stripe.Paym
   return stripe().paymentIntents.retrieve(id, { expand: ['latest_charge'] })
 }
 
+/**
+ * Refund created from the Studio (`payment-refund` is only called from there). The metadata
+ * marks it as such, so `syncOrderRefunds` can tell it from a Stripe-dashboard refund.
+ */
 export function refundPayment(
   paymentIntentId: string,
   amount?: number,
@@ -40,7 +44,14 @@ export function refundPayment(
   return stripe().refunds.create({
     payment_intent: paymentIntentId,
     ...(amount !== undefined && { amount }),
+    metadata: { itsshopsSource: 'studio' },
   })
+}
+
+/** All refunds of a PaymentIntent (newest first, as Stripe lists them). */
+export async function listRefunds(paymentIntentId: string): Promise<Stripe.Refund[]> {
+  const list = await stripe().refunds.list({ payment_intent: paymentIntentId, limit: 100 })
+  return list.data
 }
 
 export function constructWebhookEvent(

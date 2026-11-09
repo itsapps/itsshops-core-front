@@ -9,6 +9,7 @@ import {
   getNextInvoiceNumber,
 } from '../services/sanity'
 import { buildOrder, formatOrderNumber } from '../lib/order-builder'
+import { syncOrderRefunds } from '../lib/order-refunds'
 import { mapPaymentMethodDetails } from '../lib/payment-method'
 import type { ComponentType } from 'react'
 import {
@@ -178,9 +179,39 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
     return
   }
 
+  // Sync first: updateOrderPaymentStatus appends a history entry on every run, so a sync throw
+  // after it would make Stripe's retry append a duplicate. Thrown here, nothing was appended yet.
+  await syncOrderRefunds(paymentIntentId)
+
   const status = charge.amount_refunded === charge.amount ? 'refunded' as const : 'partiallyRefunded' as const
   await updateOrderPaymentStatus(paymentIntentId, status)
   log.info('Order payment status updated', { paymentIntentId, status })
+}
+
+/**
+ * A refund's status changed after creation (pending → succeeded, failed, canceled). Only the
+ * stored refunds follow: paymentStatus / status / statusHistory are not reverted — the editor
+ * refunds again in the Stripe dashboard, whose charge.refunded then heals paymentStatus from
+ * the lowered `amount_refunded`.
+ */
+async function handleRefundUpdated(refund: Stripe.Refund): Promise<void> {
+  const paymentIntentId = typeof refund.payment_intent === 'string'
+    ? refund.payment_intent
+    : refund.payment_intent?.id
+
+  if (!paymentIntentId) {
+    log.warn('Refund has no payment_intent', { refundId: refund.id })
+    return
+  }
+
+  await syncOrderRefunds(paymentIntentId)
+  if (refund.status === 'failed') {
+    log.error('Refund failed asynchronously', {
+      paymentIntentId,
+      refundId: refund.id,
+      failureReason: refund.failure_reason,
+    })
+  }
 }
 
 export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
@@ -227,6 +258,9 @@ export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
           break
         case 'charge.refunded':
           await handleChargeRefunded(event.data.object as Stripe.Charge)
+          break
+        case 'refund.updated':
+          await handleRefundUpdated(event.data.object as Stripe.Refund)
           break
       }
     } catch (err) {

@@ -49,6 +49,7 @@ export default {
     orderRefunded: {
       preview: "Wir haben Deine Zahlung zurückerstattet.",
       text: "Wir haben Dir {{amount}} in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
+      textRemainder: "Wir haben Dir den Restbetrag von {{amount}} zurückerstattet; damit ist Deine Zahlung von {{total}} vollständig erstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
       preview: "Wir haben einen Teil Deiner Zahlung zurückerstattet.",

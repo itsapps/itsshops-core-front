@@ -61,13 +61,36 @@ export type EmailTemplateOverrides = Partial<{
  *
  * Returns the rendered HTML string.
  */
+/**
+ * Localized body of a refund mail for `amountCents`. A full-refund mail for less than the order
+ * total (the rest after earlier partial refunds) names the remainder and the total.
+ */
+export function refundMailText(
+  ctx: EmailContext,
+  mailType: MailType,
+  order: OrderDocument,
+  amountCents: number,
+): string {
+  const amount = ctx.formatPrice(amountCents)
+  if (mailType === 'orderRefunded' && amountCents < order.totals.grandTotal) {
+    return ctx.t('emails.orderRefunded.textRemainder', {
+      amount,
+      total: ctx.formatPrice(order.totals.grandTotal),
+    })
+  }
+  return ctx.t(`emails.${mailType}.text`, { amount })
+}
+
 export async function renderMailFor(
   mailType: MailType,
   ctx: EmailContext,
   order: OrderDocument,
   overrides?: EmailTemplateOverrides,
   extras: {
-    /** Refunded amount in cents — interpolated as `{{amount}}` into the refund emails. */
+    /**
+     * Refunded amount in cents — interpolated as `{{amount}}` into the refund emails
+     * (resolved by `sendOrderNotification`; default: the order total).
+     */
     refundAmount?: number
     /** Personal message from the shop admin (plain text), shown below the intro text. */
     customerMessage?: string
@@ -87,11 +110,8 @@ export async function renderMailFor(
   const Component =
     (overrides?.[mailType] as ComponentType<SimpleEmailProps> | undefined) ?? SimpleEmail
   const headline = ctx.t('emails.headline', { customerName: order.customer.billingAddress.name })
-  // The simple mail types are the refund notifications, whose text references the
-  // refunded amount. Use the explicit refund amount when provided, else fall back
-  // to the order total (correct for a full refund).
-  const amount = ctx.formatPrice(refundAmount ?? order.totals.grandTotal)
-  const text = ctx.t(`emails.${mailType}.text`, { amount })
+  // The simple mail types are the refund notifications, whose text states the refunded amount.
+  const text = refundMailText(ctx, mailType, order, refundAmount ?? order.totals.grandTotal)
   return render(
     <Component ctx={ctx} headline={headline} text={text} customerMessage={customerMessage} />,
   )

@@ -16,7 +16,8 @@ import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
 import { fetchEmailSettings, fetchOrderById } from '../services/sanity'
-import { renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
+import { refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
+import { latestRefund } from './order-refunds'
 import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
 import type { EmailContext } from '../templates/email/types'
@@ -62,7 +63,10 @@ export type SendOrderNotificationOptions = {
    * consumer withdrawal right.
    */
   withdrawalNotice?: boolean
-  /** Refunded amount in cents — interpolated into the refund emails. */
+  /**
+   * Refunded amount in cents — interpolated into the refund emails. Explicit override; default:
+   * the latest stored refund (`order.refunds`), for the full-refund mail else the order total.
+   */
   refundAmount?: number
   /**
    * Personal message from the shop admin (plain text, studio "message to customer"),
@@ -158,18 +162,28 @@ export async function sendOrderNotification(
       400,
     )
   }
-  // The order doesn't store refunded amounts, and the refund mails fall back to the order total —
-  // right for a full refund, wrong for a partial one. So a partial-refund mail needs the amount.
-  if (mailType === 'orderRefundedPartially' && !(typeof options.refundAmount === 'number' && options.refundAmount > 0)) {
-    throw new OrderNotifierError(
-      ErrorCode.INVALID_INPUT,
-      'refundAmount (cents) is required for the partial-refund mail',
-      400,
-    )
-  }
   const order = await fetchOrderById(orderId)
   if (!order) {
     throw new OrderNotifierError(ErrorCode.ORDER_NOT_FOUND, `Order not found: ${orderId}`, 404)
+  }
+
+  // Refund mails state an amount: the explicit one (status dialog / "Refund & close" pass what
+  // they just refunded), else the latest stored refund ("Send mail", dashboard refunds), else —
+  // full refund only — the order total. A partial-refund mail without any refuses to send.
+  const isRefundMail = mailType === 'orderRefunded' || mailType === 'orderRefundedPartially'
+  let refundAmount: number | undefined
+  if (isRefundMail) {
+    refundAmount =
+      (typeof options.refundAmount === 'number' && options.refundAmount > 0 ? options.refundAmount : undefined) ??
+      latestRefund(order)?.amount ??
+      (mailType === 'orderRefunded' ? order.totals.grandTotal : undefined)
+    if (refundAmount === undefined) {
+      throw new OrderNotifierError(
+        ErrorCode.INVALID_INPUT,
+        "No refund is stored for this order — the partial-refund mail can't state an amount",
+        400,
+      )
+    }
   }
 
   const locale = order.customer.locale || 'de'
@@ -198,11 +212,14 @@ export async function sendOrderNotification(
 
   const customerMessage = options.customerMessage?.trim() || undefined
   const html = await renderMailFor(mailType, ctx, order, options.templates, {
-    refundAmount: options.refundAmount,
+    refundAmount,
     customerMessage,
   })
   const subject = subjectFor(ctx, mailType)
-  const intro = ctx.t(`emails.${mailType}.text`)
+  const intro =
+    refundAmount !== undefined
+      ? refundMailText(ctx, mailType, order, refundAmount)
+      : ctx.t(`emails.${mailType}.text`)
   const text = customerMessage ? `${intro}\n\n${customerMessage}` : intro
 
   const wantsInvoice = options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType)

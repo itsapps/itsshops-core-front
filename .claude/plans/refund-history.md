@@ -1,6 +1,8 @@
 # Plan — refund history on the order
 
-Status: **planned** (2026-11-06; refined three times the same day, then simplified with the owner:
+Status: **implemented, not released** (2026-11-09) on `feature/refund-history` in core-back and
+core-front (Phases 1–2 + tests; uncommitted). Open: CHANGELOGs + docs, order drafts per dataset,
+`refund.updated` on the Stripe endpoints, Tinhof staging test (see Ship & docs). History: planned (2026-11-06; refined three times the same day, then simplified with the owner:
 `liveEdit` orders instead of a draft double-write (F), refund source set server-side, no
 `refund.updated`/`refund.failed` events, "Send mail" without an amount field, no backfill script
 (G–J)); fourth refine the same day reviewed the webhook events: H changed to also subscribe

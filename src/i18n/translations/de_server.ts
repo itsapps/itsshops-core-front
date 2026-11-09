@@ -201,6 +201,7 @@ export default {
       subject: "Zahlung zurückerstattet 💶",
       preview: "Wir haben Ihre Zahlung zurückerstattet.",
       text: "Wir haben Ihnen {{amount}} in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Ihrem Konto sichtbar ist. Bei Fragen können Sie sich jederzeit bei uns melden.",
+      textRemainder: "Wir haben Ihnen den Restbetrag von {{amount}} zurückerstattet; damit ist Ihre Zahlung von {{total}} vollständig erstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Ihrem Konto sichtbar ist. Bei Fragen können Sie sich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
       subject: "Zahlung teilweise zurückerstattet 💶",

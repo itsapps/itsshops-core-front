@@ -201,6 +201,7 @@ export default {
       subject: "Payment refunded 💶",
       preview: "We've refunded your payment.",
       text: "We've refunded {{amount}} to you in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
+      textRemainder: "We've refunded the remaining {{amount}}, so your payment of {{total}} has now been refunded in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
     },
     orderRefundedPartially: {
       subject: "Payment partially refunded 💶",
