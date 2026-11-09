@@ -81,7 +81,21 @@ describe('syncOrderRefunds', () => {
     expect(failed).toMatchObject({ status: 'failed', failureReason: 'expired_or_canceled_card' })
   })
 
-  it('a revision conflict re-reads revision and Stripe list once and writes again', async () => {
+  it('writes nothing when the stored refunds already match (fields in another order)', async () => {
+    listMock.mockResolvedValue([stripeRefund()])
+    revisionMock.mockResolvedValue({
+      _id: 'order-1',
+      _rev: 'rev1',
+      refunds: [{
+        status: 'succeeded', source: 'studio', refundId: 're_1', amount: 1000, _type: 'orderRefund',
+        _key: 're_1', createdAt: new Date(1_762_000_000 * 1000).toISOString(),
+      }],
+    })
+    expect(await syncOrderRefunds('pi_1')).toHaveLength(1)
+    expect(writeMock).not.toHaveBeenCalled()
+  })
+
+  it('a revision conflict re-reads revision and Stripe list and writes again', async () => {
     revisionMock
       .mockResolvedValueOnce({ _id: 'order-1', _rev: 'rev1' })
       .mockResolvedValueOnce({ _id: 'order-1', _rev: 'rev2' })
@@ -94,12 +108,12 @@ describe('syncOrderRefunds', () => {
     expect(refunds).toHaveLength(2)
   })
 
-  it('a second conflict is thrown', async () => {
+  it('a conflict on the third attempt is thrown', async () => {
     listMock.mockResolvedValue([stripeRefund()])
     const err = conflict()
     writeMock.mockRejectedValue(err)
     await expect(syncOrderRefunds('pi_1')).rejects.toBe(err)
-    expect(writeMock).toHaveBeenCalledTimes(2)
+    expect(writeMock).toHaveBeenCalledTimes(3)
   })
 
   it('other errors are thrown without a retry', async () => {

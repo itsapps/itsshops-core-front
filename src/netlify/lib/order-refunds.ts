@@ -27,6 +27,18 @@ function toOrderRefund(refund: Stripe.Refund): OrderRefund {
 const isConflict = (err: unknown): boolean =>
   (err as { statusCode?: number } | null)?.statusCode === 409
 
+/** JSON with sorted object keys — Sanity may return a stored entry's fields in another order. */
+const canonical = (value: unknown): string =>
+  JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
+      : v,
+  )
+
+/** Pauses before the retries of a revision conflict. */
+const RETRY_DELAYS_MS = [250, 750]
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 async function syncOnce(paymentIntentId: string): Promise<OrderRefund[] | null> {
   // Revision first, Stripe list second: a stale list then always loses to a newer write.
   const order = await fetchOrderRevision(paymentIntentId)
@@ -38,7 +50,11 @@ async function syncOnce(paymentIntentId: string): Promise<OrderRefund[] | null> 
     .slice()
     .sort((a, b) => a.created - b.created)
     .map(toOrderRefund)
-  await writeOrderRefunds(order, refunds)
+  // Stripe sends charge.refunded and refund.updated in the same second: the second sync then
+  // finds the list already stored and doesn't write (no revision conflict).
+  if (canonical(order.refunds ?? []) !== canonical(refunds)) {
+    await writeOrderRefunds(order, refunds)
+  }
   return refunds
 }
 
@@ -46,16 +62,18 @@ async function syncOnce(paymentIntentId: string): Promise<OrderRefund[] | null> 
  * Rebuild the order's `refunds` from Stripe. Returns the stored refunds, or null when no order
  * belongs to the payment (another system on the same Stripe account, a deleted test order).
  * A revision conflict (two webhooks, webhook + `payment-refund`, a Studio patch at the same
- * moment) is retried once; a second conflict and every other error are thrown — the webhook
- * then answers 400 and Stripe retries.
+ * moment) is retried after a short pause, up to twice; a further conflict and every other error
+ * are thrown — the webhook then answers 400 and Stripe retries.
  */
 export async function syncOrderRefunds(paymentIntentId: string): Promise<OrderRefund[] | null> {
-  try {
-    return await syncOnce(paymentIntentId)
-  } catch (err) {
-    if (!isConflict(err)) throw err
-    log.debug('Refund sync conflict, retrying', { paymentIntentId })
-    return syncOnce(paymentIntentId)
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await syncOnce(paymentIntentId)
+    } catch (err) {
+      if (!isConflict(err) || attempt >= RETRY_DELAYS_MS.length) throw err
+      log.debug('Refund sync conflict, retrying', { paymentIntentId, attempt: attempt + 1 })
+      await sleep(RETRY_DELAYS_MS[attempt])
+    }
   }
 }
 

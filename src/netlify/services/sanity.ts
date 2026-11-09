@@ -626,14 +626,21 @@ export async function getLatestCustomerNumber(): Promise<string> {
   return String(last + 1)
 }
 
-/** The order of a payment with its revision (for an `ifRevisionId` write), or null. */
+/**
+ * The order of a payment with its revision (for an `ifRevisionId` write) and stored refunds, or
+ * null. The id comes from a query; revision and refunds from the document endpoint — the query
+ * index can lag a moment behind a write, so a `_rev` from a query can already be stale.
+ */
 export async function fetchOrderRevision(
   paymentIntentId: string,
-): Promise<{ _id: string; _rev: string } | null> {
-  return sanityClient.fetch<{ _id: string; _rev: string } | null>(
-    `*[_type == "order" && paymentIntentId == $pid][0]{ _id, _rev }`,
+): Promise<{ _id: string; _rev: string; refunds?: OrderRefund[] } | null> {
+  const id = await sanityClient.fetch<string | null>(
+    `*[_type == "order" && paymentIntentId == $pid][0]._id`,
     { pid: paymentIntentId },
   )
+  if (!id) return null
+  const doc = await sanityClient.getDocument<{ _id: string; _rev: string; refunds?: OrderRefund[] }>(id)
+  return doc ? { _id: doc._id, _rev: doc._rev, ...(doc.refunds && { refunds: doc.refunds }) } : null
 }
 
 /**
