@@ -332,7 +332,7 @@ export type OrderStatusHistoryEntry = {
   _key: string
   _type: 'orderStatusHistory'
   type: 'payment' | 'fulfillment' | 'mail'
-  /** Payment / fulfillment state, or the `MailType` of a `mail` entry. */
+  /** Payment / fulfillment state, or the `MailType` of a `mail` entry (`withdrawalReceipt` for the withdrawal receipt). */
   status: string
   timestamp: string
   source: string

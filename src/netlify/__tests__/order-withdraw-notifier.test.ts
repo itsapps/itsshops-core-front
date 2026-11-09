@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('../services/sanity', () => ({ fetchEmailSettings: vi.fn() }))
+vi.mock('../services/sanity', () => ({ fetchEmailSettings: vi.fn(), appendOrderHistory: vi.fn() }))
 vi.mock('../services/email', () => ({ sendMail: vi.fn() }))
 
-import { buildWithdrawalMails } from '../lib/order-withdraw-notifier'
-import type { WithdrawalRecord } from '../services/sanity'
+import { buildWithdrawalMails, sendWithdrawalNotifications } from '../lib/order-withdraw-notifier'
+import { appendOrderHistory, fetchEmailSettings, type WithdrawalRecord } from '../services/sanity'
+import { sendMail } from '../services/email'
 import type { EmailContext, EmailShopSettings } from '../templates/email/types'
 import { serverT } from '../utils/i18n'
 
@@ -91,5 +92,62 @@ describe('withdrawal mails', () => {
     const { customer } = buildWithdrawalMails(matched, ctx())
     expect(customer.text).toContain('Deiner Widerrufserklärung')
     expect(customer.text).toContain('Bitte sende die Ware')
+  })
+})
+
+describe('withdrawal receipt history entry', () => {
+  beforeEach(() => {
+    vi.mocked(fetchEmailSettings).mockResolvedValue({
+      shopName: 'Weingut Test',
+      senderName: 'Weingut Test',
+      senderEmail: 'noreply@shop.example',
+      billingAddress: { line1: 'Hauptstraße 1', line2: null, zip: '3550', city: 'Langenlois', country: 'AT' },
+      bankAccount: null,
+      orderNumberPrefix: null,
+      invoiceNumberPrefix: null,
+      returnAddress: null,
+      returnShippingBorneBy: null,
+      returnPolicyNote: null,
+      shopNotificationEmail: null,
+      company: null,
+      withdrawalPeriodStart: null,
+      withdrawalExceptions: null,
+    })
+    vi.mocked(sendMail).mockReset().mockResolvedValue({ id: 'msg-1' } as never)
+    vi.mocked(appendOrderHistory).mockReset()
+  })
+
+  it('linked record: one mail entry on the order (default source admin), also with the shop mail', async () => {
+    await sendWithdrawalNotifications(matched, { audience: 'both' })
+    expect(sendMail).toHaveBeenCalledTimes(2)
+    expect(appendOrderHistory).toHaveBeenCalledTimes(1)
+    const [orderId, entries] = vi.mocked(appendOrderHistory).mock.calls[0]!
+    expect(orderId).toBe('o1')
+    expect(entries).toEqual([
+      expect.objectContaining({ _type: 'orderStatusHistory', type: 'mail', status: 'withdrawalReceipt', source: 'admin' }),
+    ])
+  })
+
+  it('takes historySource', async () => {
+    await sendWithdrawalNotifications(matched, { audience: 'customer', historySource: 'system' })
+    expect(vi.mocked(appendOrderHistory).mock.calls[0]![1][0]).toMatchObject({ source: 'system' })
+  })
+
+  it('unmatched record (no order) appends nothing', async () => {
+    await sendWithdrawalNotifications({ ...matched, status: 'unmatched', order: null }, { audience: 'both' })
+    expect(sendMail).toHaveBeenCalled()
+    expect(appendOrderHistory).not.toHaveBeenCalled()
+  })
+
+  it('a failed receipt appends nothing', async () => {
+    vi.mocked(sendMail).mockRejectedValueOnce(new Error('smtp down'))
+    await expect(sendWithdrawalNotifications(matched, { audience: 'customer' })).rejects.toThrow('smtp down')
+    expect(appendOrderHistory).not.toHaveBeenCalled()
+  })
+
+  it('a failed history write does not fail the send', async () => {
+    vi.mocked(appendOrderHistory).mockRejectedValueOnce(new Error('409'))
+    await expect(sendWithdrawalNotifications(matched, { audience: 'both' })).resolves.toEqual({ to: 'anna@example.com' })
+    expect(sendMail).toHaveBeenCalledTimes(2)
   })
 })

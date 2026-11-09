@@ -417,8 +417,13 @@ instructions: "Legal texts generated from settings" below.
   `order-notify`: status dialog, "Send mail", "Refund & close"), `system` (webhook confirmation),
   `wc-api` (ERP shipping mail, only with `notify`) — plus the sent `customerMessage`. A failed mail
   writes none; a failed append is logged (`Mail history entry failed`) and the send still succeeds.
-  The shop-inbox mail (`sendShopOrderNotification`) and withdrawal mails write none. The Studio
-  shows them as "E-Mail - Versendet" with the source translated (core-back `OrderView`).
+  The shop-inbox mail (`sendShopOrderNotification`) writes none. The **withdrawal receipt**
+  (`sendWithdrawalNotifications`) writes its own `mail` entry (`status: 'withdrawalReceipt'`) on
+  the linked order after the receipt is sent — `system` from the web form (`order-withdraw`, also
+  a repeat submission), `admin` (default) from the Studio create / resend (`order-withdraw-notify`);
+  an `unmatched` record has no order and writes none, nor does the shop's withdrawal mail. The Studio
+  shows them as "E-Mail - Versendet" with the source translated (core-back `OrderView`). Why:
+  [../decisions/mail-history-entries-after-send.md](../decisions/mail-history-entries-after-send.md).
 
 - **Order details** (`OrderEmail.tsx` → `OrderDetails`): order date (`order.orderDate` = PaymentIntent
   `created`, fallback first status entry), payment method, shipping method, delivery time, pickup

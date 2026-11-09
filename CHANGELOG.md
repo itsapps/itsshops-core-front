@@ -18,6 +18,8 @@ Pairs with the next **core-back** minor (history type `mail`) — release core-b
   shows which mails the customer got. New `SendOrderNotificationOptions.historySource` (default
   `admin`; the webhook confirmation passes `system`, the wc-api shipping mail `wc-api`). New
   `appendOrderHistory` in `services/sanity.ts`. Old orders have none (no migration).
+- The withdrawal receipt appends a `mail` entry (`status: 'withdrawalReceipt'`) to the linked
+  order — `system` from the web form, `admin` from the Studio; `WithdrawNotifyOptions.historySource`.
 
 ### Fixed
 - `itsshops sanity delete` also removes the types' drafts and release versions (reads with

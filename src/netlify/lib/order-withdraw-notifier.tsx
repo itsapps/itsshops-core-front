@@ -7,6 +7,10 @@
  * stored `orderWithdrawal` record (FAGG §13a / Art. 11a (3): the receipt repeats what was
  * submitted and when), never from "now" or the request.
  *
+ * A sent receipt for a record linked to an order appends a `mail` history entry to that order
+ * (`status: 'withdrawalReceipt'`, `source` = `historySource`); unmatched records have no order and
+ * write none, the shop mail never does.
+ *
  * Throws on failure so callers can decide how to react:
  *   - the public `/api/order/withdraw` path wraps this and swallows errors (the
  *     record is already persisted), while
@@ -16,11 +20,12 @@
 import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
-import { fetchEmailSettings, type WithdrawalRecord } from '../services/sanity'
+import { appendOrderHistory, fetchEmailSettings, type WithdrawalRecord } from '../services/sanity'
 import { SimpleEmail } from '../templates/email/SimpleEmail'
 import type { EmailAddress, EmailContext } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
 import { formatPrice as fmtPrice, formatShopDate, serverT } from '../utils/i18n'
+import { log } from '../utils/logger'
 
 export type WithdrawNotifyOptions = {
   baseUrl?: string
@@ -31,6 +36,11 @@ export type WithdrawNotifyOptions = {
    * Never shown to the consumer.
    */
   emailMismatch?: boolean
+  /**
+   * `source` of the order's `mail` history entry for the receipt: `admin` (default — Studio create /
+   * resend via `order-withdraw-notify`), `system` (web form).
+   */
+  historySource?: string
 }
 
 function oneLineAddress(shopName: string, a: EmailAddress): string {
@@ -159,6 +169,29 @@ export async function sendWithdrawalNotifications(
     text: customer.text,
     html: await render(<SimpleEmail ctx={ctx} headline={customer.headline} text={customer.text} />),
   })
+
+  // The receipt is out: record it on the linked order; a failed write is logged, never thrown.
+  if (record.order?._id) {
+    try {
+      await appendOrderHistory(record.order._id, [
+        {
+          _key: crypto.randomUUID(),
+          _type: 'orderStatusHistory',
+          type: 'mail',
+          status: 'withdrawalReceipt',
+          timestamp: new Date().toISOString(),
+          source: options.historySource ?? 'admin',
+        },
+      ])
+    } catch (error) {
+      log.error('Mail history entry failed', {
+        orderId: record.order._id,
+        withdrawalId: record._id,
+        mailType: 'withdrawalReceipt',
+        error,
+      })
+    }
+  }
 
   if (audience === 'both') {
     await sendMail({

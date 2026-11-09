@@ -85,3 +85,5 @@ alternative was rejected, a constraint discovered the hard way.
   with the cart; non-wine items pay weight rates on top (revisit with a mixed bundle).
 - [order-refunds-rebuilt-from-stripe.md](order-refunds-rebuilt-from-stripe.md) — `order.refunds`
   is rebuilt from Stripe's list by core-front only (idempotent); revision via `getDocument`.
+- [mail-history-entries-after-send.md](mail-history-entries-after-send.md) — every customer order
+  mail appends a `mail` history entry after a successful send; the customer message lives there only.

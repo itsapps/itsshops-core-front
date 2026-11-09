@@ -108,7 +108,7 @@ describe('order-withdraw', () => {
       orderNumber: '000042',
       reason: 'Zu viel',
     }))
-    expect(m.notify).toHaveBeenCalledWith(stored(), expect.objectContaining({ audience: 'both', emailMismatch: false }))
+    expect(m.notify).toHaveBeenCalledWith(stored(), expect.objectContaining({ audience: 'both', emailMismatch: false, historySource: 'system' }))
   })
 
   it('unmatched → stores without order, same response, flagged shop mail', async () => {

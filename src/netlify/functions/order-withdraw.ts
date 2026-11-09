@@ -140,6 +140,7 @@ export function createOrderWithdrawHandler(config: OrderWithdrawConfig = {}) {
         // Repeat submission: receipt again, the shop already knows.
         audience: isNew ? 'both' : 'customer',
         emailMismatch,
+        historySource: 'system',
       }
       try {
         await sendWithdrawalNotifications(record, options)

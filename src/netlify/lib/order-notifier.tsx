@@ -10,7 +10,8 @@
  *
  * A sent customer mail appends a `mail` entry to `order.statusHistory` (status = mail type,
  * `source` = `historySource`, plus the customer message), so the Studio shows which mails the
- * customer got. The shop-inbox mail appends nothing.
+ * customer got. The shop-inbox mail appends nothing; the withdrawal receipt writes its own entry
+ * (`order-withdraw-notifier.tsx`).
  *
  * Throws `OrderNotifierError` with a typed code so callers can map failures
  * to HTTP responses (HTTP handler) or just log them (webhook).
