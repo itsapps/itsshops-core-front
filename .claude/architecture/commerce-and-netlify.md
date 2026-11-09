@@ -395,10 +395,13 @@ Every mail is built from the **stored record** (`buildWithdrawalMails` in
 `lib/order-withdraw-notifier.tsx`): the receipt repeats name, order number, reason (matched only) and
 date + time (`formatShopDate`, shop timezone), then return instructions (`returnShippingBorneBy`,
 `returnPolicyNote`) or "not dispatched → refund". The admin resend (`order-withdraw-notify`,
-`fetchWithdrawal`) uses the same record → original timestamp; after assigning an unmatched record it
-mails the order's email. Processing stays manual in the Studio (core-back `WithdrawalActions.tsx`):
-**"Refund & close"** does a full Stripe refund, sets the order refunded (and canceled if undispatched)
-and closes the withdrawal; partial refunds go through the order's refund action. Kept manual on
+`fetchWithdrawal`) uses the same record → original timestamp; editors assign an unmatched record with
+the Studio action "Bestellung zuordnen" (withdrawals are `liveEdit`; the action can send the receipt
+to the order's email right away). Processing stays manual in the Studio (core-back
+`WithdrawalActions.tsx`, guided by a next-step box with the 14-day deadline): **"Refund & close"**
+does a full **or partial** Stripe refund (or only closes when something was refunded already), sets
+the order refunded / partially refunded (canceled if undispatched, optionally returned) and closes the
+withdrawal. Kept manual on
 purpose: the refund may be withheld until the goods are back, and its amount varies. Generated withdrawal
 instructions: "Legal texts generated from settings" below.
 

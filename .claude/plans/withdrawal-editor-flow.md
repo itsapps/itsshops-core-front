@@ -1,12 +1,10 @@
 # Plan — withdrawals: guided editor flow + `liveEdit`
 
-Status: **planned** (2026-11-09), nothing implemented; refined 2026-11-09 (checked against
-core-back `add6aaa` / core-front `7cf08c3`), refined again the same day (stale-refund snapshot,
-resolve options, status-input writes, stopgap CHANGELOG entry). **core-back only** (code) plus docs in both repos;
-core-front reads published withdrawals already and needs no code change. Every shop with checkout
-(generic → core). Goal (owner, 2026-11-09): editors handle a withdrawal **correctly and know what
-to do next** — today they get a flat list, no next step, no deadline, and two statuses
-(withdrawal + order) to keep in step by hand.
+Status: **implemented, not released** (2026-11-09) — core-back branch
+`feature/withdrawal-editor-flow` (A–E, unit tests, docs, CHANGELOG `Unreleased`). Open: the manual
+staging checks under "Tests", the D.5 draft check per dataset, merge + release ("Ship"); delete
+this file then. Goal (owner, 2026-11-09): editors handle a withdrawal **correctly and know what
+to do next**. The sections below describe the state **before** the change.
 
 ## Today (checked 2026-11-09)
 
