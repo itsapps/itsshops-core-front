@@ -70,17 +70,26 @@ match the refund list's meaning. core-back only, no data change.
   when not succeeded ("Fehlgeschlagen"). The amount and status come from `order.refunds` (Stripe's
   truth, kept current by `refund.updated`), not a copy frozen on the entry. Entries without
   `refundId` (before this) show no amount.
-- **Customer notified — `mailType` on the entry** (optional string, a core-back `MailType`). Today
-  the history doesn't say whether a mail went out ("notify customer" without a message leaves no
-  trace). The status dialog (`OrderActions.tsx`) saves the entry **before** the mail (the shipped
-  mail must already see the tracking code), so it sets `mailType` with a **second patch after the
-  mail succeeded** — the entry's `_key` is known, so set the path
-  `statusHistory[_key=="<key>"].mailType` on the order; a failed mail leaves it unset, so the
-  entry never claims a mail that didn't go out. Same in "Refund & close" (`WithdrawalActions.tsx`).
-  View: "· Mail gesendet" (`order.statusHistory.mailSent`, de "Mail gesendet", en "Mail sent").
-  **Open decision:** should "Send mail" (`OrderMailAction.tsx`, writes no history today) and the
-  webhook's confirmation mail add an entry of their own (e.g. `type: 'mail'`)? Then the history
-  is the full mail log; it needs a third `type` option and its own view line.
+- **Every customer mail gets a `mail` entry** (decided 2026-11-09: "Send mail" and the automatic
+  confirmation too — the history becomes the full log of mails to the customer). Today the history
+  doesn't say whether a mail went out ("notify customer" without a message leaves no trace, "Send
+  mail" none at all). Single writer: core-front's **`sendOrderNotification`** (`lib/order-notifier.tsx`)
+  appends after `sendMail` succeeded — `{ type: 'mail', status: <mailType>, timestamp, source,
+  customerMessage? }` — so a failed mail is never recorded, and all callers are covered (status
+  dialog, "Send mail", "Refund & close", webhook confirmation) without Studio changes. Plain
+  `append` (no `ifRevisionId`; a concurrent `syncOrderRefunds` write just retries on its 409). A
+  failing history write is logged, not thrown (the mail is out — the caller must not report a
+  failure and invite a resend). `source`: new notify option (core-back's `notifyOrder` passes
+  `'admin'`; the webhook's confirmation passes `'system'`; default `'admin'` for the
+  `order-notify` function, which only the Studio calls). The status dialog's own payment/
+  fulfillment entry keeps its `customerMessage` as today. Not for the shop's new-order mail or
+  withdrawal mails (not customer order mails / own records).
+  - core-back: `orderStatusHistory.type` option `mail` (labels "Email" / "Email"); preview and
+    order view translate a mail entry's `status` via `actions.order.mailTypes.<type>` (not
+    `getStateTranslationKey`); view line e.g. "Email · Versendet · Studio". `MailType` already
+    exists in `utils/orderTransitions.ts`.
+  - core-front: `OrderStatusHistoryEntry.type` gains `'mail'`; the wc-api status-history read
+    (`wc-api.md`) must ignore `mail` entries if it reads history — check when implementing.
 - **Optional — tracking code on the shipped entry** (`trackingCode`, as set in that step). Low
   priority: the current code is on the order (`fulfillment.trackingCode`), and with wineNET's
   early `shipped` it is usually entered later without a status change (no entry then).
@@ -90,8 +99,10 @@ match the refund list's meaning. core-back only, no data change.
 
 core-front: `payment-webhooks.test.ts` / a sanity-service test — Studio refund with an `admin`
 entry carrying its `refundId` → no `stripe` entry; dashboard refund → one entry; the same event
-twice → one entry; status still updated in all cases. core-back: none beyond types (dialogs and the
-translated history source by hand on staging).
+twice → one entry; status still updated in all cases. core-front `order-email.test.tsx`: a successful send appends one `mail` entry (type, source,
+customerMessage), a failed send appends none, a failing append doesn't fail the send.
+core-back: none beyond types (dialogs, the mail entries and the translated history source by hand
+on staging).
 
 ## Ship
 
