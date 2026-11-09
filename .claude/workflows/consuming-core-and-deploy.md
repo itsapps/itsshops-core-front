@@ -102,9 +102,17 @@ for its first production release.
 
 ## Release flow (core version → customer release)
 
-Trigger phrase: **"release <customer>"** (optionally which repos, e.g. "release tinhof frontend",
-and the core bump if known, e.g. "core-back major"). Claude then runs the steps below, showing the
-plan and asking before anything that pushes.
+Trigger phrases (owner's rule, 2026-11-09):
+- **"release <customer> staging"** → **no versions, no tags**: push the core commit(s) via `origin`
+  (a feature branch stays a branch), pin those commit hashes in the customer lockfile(s) ("Dev /
+  test deploys" above), commit, move `staging` (`git branch -f staging <branch>`), hand over the
+  `user` push lines.
+- **"release <customer> production"** (or plain **"release <customer>"**) → the full flow below:
+  core versions + CHANGELOG, tag pins, customer version + tag, `production`.
+
+Optionally which repos (e.g. "release tinhof frontend") and the core bump if known (e.g.
+"core-back major"). Claude then runs the steps, showing the plan and asking before anything that
+pushes.
 
 1. **Core — cut a version** (only for a core repo the customer's `main` uses past its last tag).
    Decide the bump from the commits since the last tag (`git log <lastTag>..main`) — semver:
