@@ -256,7 +256,9 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
 ## Checkout → Stripe → order thanks (client flow)
 
 1. Checkout submit (`scripts/checkout.ts`, also the express path) → `POST /api/payment/create` →
-   `clientSecret`. Right before `stripe.confirmPayment`, an **order snapshot** is written to
+   `clientSecret`. Calculate and create are the same endpoint: `createPayment: false` returns
+   only the calculation, `true` also writes the `orderMeta` and creates/updates the
+   PaymentIntent (`metadata.orderMetaId`; the webhook builds the order from that `orderMeta`). Right before `stripe.confirmPayment`, an **order snapshot** is written to
    **sessionStorage** (`scripts/order-snapshot.ts`): items, totals, coupons, shipping method,
    email, first name, shipping address — keyed to the PaymentIntent id. No phone, billing address,
    client secret or `orderMetaId`.
@@ -304,8 +306,9 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    reservation until they succeed and no failure handling; core doesn't restrict payment methods —
    shop owners are told not to enable them.
 
-**Stripe "Incomplete" payments are expected:** a PaymentIntent is created on submit (or when the
-express sheet opens) and stays `requires_payment_method` if the customer leaves, a card fails, or
+**Stripe "Incomplete" payments are expected:** a PaymentIntent is created on submit (express: on the
+wallet's `confirm` event, after the customer approved the sheet — address/rate changes only
+calculate) and stays `requires_payment_method` if the customer leaves, a card fails, or
 3DS is abandoned; the live `paymentCreateTests` / `paymentWebhookTests` leave theirs too (they
 delete the `orderMeta`, not the intent). Nothing is charged; core doesn't cancel them.
 
