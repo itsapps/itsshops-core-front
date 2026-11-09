@@ -327,7 +327,8 @@ refund = the rest — and calls `stripe.refunds.create` with `metadata.itsshopsS
 `charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
 (`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
 entry (`source: 'stripe'`, on every run — a Studio refund therefore has an `admin` and a `stripe`
-entry; fix planned: `.claude/plans/refund-history-entries.md`). A full refund of an undispatched
+entry, and a resent event adds another; accepted, not fixed — the order view's "Rückerstattungen"
+card (`order.refunds`, below) is the authoritative refund record). A full refund of an undispatched
 order also sets `canceled`; a partial one leaves fulfillment alone (the order still ships).
 Dashboard refunds take the same webhook path (one `stripe` entry, no mail).
 
