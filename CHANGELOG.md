@@ -4,6 +4,13 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+### Fixed
+- `itsshops sanity delete` also removes the types' drafts and release versions (reads with
+  `perspective: 'raw'`; before, it saw published documents only and left drafts behind). The
+  per-type line counts them. `query` / `count` still read published documents.
+
 ## 3.10.0
 
 Pairs with **core-back 5.3.0** (`order.refunds` / `orderRefund`, orders `liveEdit`) — release

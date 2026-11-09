@@ -237,7 +237,9 @@ function loadEnv(envFile: string = '.env') {
   }
 }
 
-async function getSanityClient() {
+// Without a perspective, apiVersion v2025-05-25 reads `published`: drafts (`drafts.…`) and release
+// versions (`versions.…`) are invisible. `delete` reads `raw` so it removes them too.
+async function getSanityClient(perspective?: 'raw') {
   const { createClient } = await import('@sanity/client');
   const projectId = process.env.SANITY_PROJECT_ID;
   const dataset = process.env.SANITY_DATASET;
@@ -247,7 +249,14 @@ async function getSanityClient() {
     process.exit(1);
   }
   console.error(`Sanity: ${projectId} / ${dataset}\n`);
-  return createClient({ projectId, dataset, token, apiVersion: 'v2025-05-25', useCdn: false });
+  return createClient({
+    projectId,
+    dataset,
+    token,
+    apiVersion: 'v2025-05-25',
+    useCdn: false,
+    ...(perspective && { perspective }),
+  });
 }
 
 sanity
@@ -269,14 +278,16 @@ sanity
   .option('-y, --yes', 'Skip the confirmation prompt (for scripts)')
   .action(async (types: string, options: { dryRun?: boolean; yes?: boolean }, command: Command) => {
     loadEnv(command.optsWithGlobals().env);
-    const client = await getSanityClient();
+    // raw: also the drafts / release versions of those types — else they'd survive the delete
+    const client = await getSanityClient('raw');
     const dataset = process.env.SANITY_DATASET!;
     const typeList = types.split(',').map(t => t.trim()).filter(Boolean);
 
     const ids: string[] = [];
     for (const type of typeList) {
       const typeIds: string[] = await client.fetch(`*[_type == $type]._id`, { type });
-      console.log(`${type}: ${typeIds.length} document(s)`);
+      const unpublished = typeIds.filter((id) => id.startsWith('drafts.') || id.startsWith('versions.')).length;
+      console.log(`${type}: ${typeIds.length} document(s)${unpublished ? ` (incl. ${unpublished} draft/version)` : ''}`);
       ids.push(...typeIds);
     }
 
