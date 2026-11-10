@@ -1,6 +1,6 @@
 # Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **Planned** (2026-11-10, owner discussion in the itsapps session; refined once, then
+Status: **Planned** (2026-11-10; step 1 spike done the same day, `layer()` confirmed; owner discussion in the itsapps session; refined once, then
 reworked the same day from "one starter + `itsshops init` generator" to "starter repo with a
 variant library, assembled by the command"). Nothing built yet. Parts A + B verified against the
 code 2026-11-10; parts C–E refined once the same day (wrappers, default header/footer, itsapps
@@ -282,14 +282,35 @@ plus every active customer header with `[data-menu-toggle]`:
    `var(--wrapper-max-width, …)` and differs only in that fallback (itsapps 90rem,
    tinhof/rosi 85rem). Core ships `src/assets/css/utilities.css` → `dist/utilities.css` (the
    three rules as they are, wrapper fallback `90rem`; `copySync` line in `tsup.config.ts`
-   `onSuccess` next to the other CSS files, row in the "Importable core CSS files" table). The
-   **starter** entry writes `@tailwind components;` and `@tailwind utilities;` inline (no
-   `tailwind/` files, no `@tailwind base`); `@tailwind components` is where core's Tailwind
+   `onSuccess` next to the other CSS files, row in the "Importable core CSS files" table). Core
+   also ships the two directive files as `src/assets/css/tailwind-components.css` (`@tailwind
+   components;`) and `tailwind-utilities.css` (`@tailwind utilities;`) → `dist/`, same
+   `copySync` + table rows. The **starter** entry `@import`s them (no `tailwind/` files, no
+   `@tailwind base`). They must be **imports, not inline directives** (spike step 1,
+   2026-11-10): postcss-import inlines only `@import`s that precede every other statement, so an
+   inline `@tailwind components;` before the `@import-glob 'blocks/*.css'` silently drops every
+   block file from the output (only a warning: "@import must precede all other statements").
+   `@tailwind components` is where core's Tailwind
    plugin emits the palette/space/size/font custom properties (`addComponents({':root': …})`
    in `tailwind.config.ts`), so without it no `--color-*` exists. **Existing customers are not
    switched** to `utilities.css` in this release (additive; they keep their files). Customers
    `@apply wrapper` (15×: itsapps 13, tinhof 2), `flow`, `region` today — keeps working,
-   `@apply` resolves classes from any imported file.
+   `@apply` resolves classes from any imported file. Starter entry order (all `@import`s first;
+   only the empty layer statement may precede them):
+   ```css
+   @layer reset, core;
+   @import '@itsapps/itsshops-core-front/dist/reset.css' layer(reset);
+   @import '@itsapps/itsshops-core-front/dist/base.css' layer(core);
+   /* starter:core-imports */  /* carousel, shop, form, checkout, … — each layer(core) */
+   @import '@itsapps/itsshops-core-front/dist/utilities.css';
+   @import 'global/fonts.css';
+   @import '@itsapps/itsshops-core-front/dist/tailwind-components.css';
+   @import 'global/variables.css';  /* roles + @custom-media */
+   @import 'global/base.css';
+   @import-glob 'blocks/*.css';
+   @import-glob 'blocks/modules/*.css';
+   @import '@itsapps/itsshops-core-front/dist/tailwind-utilities.css';
+   ```
 2. **Cascade layers for core CSS.** Starter entries import core files into a layer:
    `@layer reset, core;` then `@import '…/dist/reset.css' layer(reset);`,
    `@import '…/dist/base.css' layer(core);` (and `carousel`/`shop`/`form`/`checkout`/…
@@ -302,9 +323,17 @@ plus every active customer header with `[data-menu-toggle]`:
    `@layer core { .page2 {…} }`) and silently loses to every unlayered rule. Hence
    `utilities.css` is imported **unlayered**, and starter CSS never `@apply`s a class from a
    layered core file (no customer does today: tinhof's `@apply btn is-primary` uses its own
-   `.btn` from `global-styles.css`; core's `form.css` only has `.form .btn`). Step 1 re-checks through the real pipeline (`src/config/css.ts`: ext-glob →
-   import → custom-media → nesting → tailwind nesting → tailwind → nesting → autoprefixer,
-   optional cssnano — cssnano must keep the `@layer` order statement).
+   `.btn` from `global-styles.css`; core's `form.css` only has `.form .btn`). **Spike through the real pipeline — done 2026-11-10, passed**
+   (scratch project; `css.ts`'s exact chain ext-glob → import → custom-media → nesting →
+   tailwind nesting → tailwind with core's `getTailwindConfig` → nesting → autoprefixer, with and
+   without cssnano 7.1.3; the real `dist/reset|core|form|checkout.css` as layered imports): the
+   `@layer reset, core;` statement stays first, also minified; each layered file is wrapped in
+   its layer, a relative `@import` inside it inherits the layer, nested CSS in it is flattened;
+   `@custom-media` defined in customer CSS applies inside layered core files; block CSS, the
+   `:root` tokens from `@tailwind components`, utilities and `@apply wrapper` from the
+   unlayered `utilities.css` stay unlayered; the `@apply`-from-layer gotcha reproduces (the rule
+   lands in a second `@layer core{}`). The only failure: inline `@tailwind` directives (B.1).
+   **Decision: starter entries use `layer()`.**
 3. **Colour-role contract.**
    - Document in `templates-and-assets.md` the roles core's CSS uses: `--color-bg`,
      `--color-text` (skip link — `base.css` after B.4 —, `form.css`), `--color-error`
@@ -662,7 +691,8 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 
 ## Steps
 
-1. B.2 spike through the real pipeline (decides whether starter entries use `layer()`).
+1. ~~B.2 spike through the real pipeline~~ — done 2026-11-10: `layer()` works; the `@tailwind`
+   directives must come in as imported files (B.1).
 2. Core-front on `feature/customer-starter`: A (contracts doc), A.2 (submenu disclosure),
    A.3 (menu resize fix, burger/logo/`aria-current` fixes, footer label, cart-toggle partial,
    own button classes, `product_image` block, gallery thumb `aria-current`),
@@ -685,6 +715,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (if the site
    renders the cart sidebar, the withdrawal/shipping modules or a modal filter panel); compact
    warranty notice now in `checkout.css`. "Added": submenu disclosure, `partials/cart-toggle.njk`,
+   `tailwind-components.css` + `tailwind-utilities.css`,
    an own class on every form/flow button next to `btn` (A.3 table), `{% block product_image %}`
    in the product container,
    `utilities.css`, role fallbacks, the `--color-*` build warning, `btn--secondary` on the
