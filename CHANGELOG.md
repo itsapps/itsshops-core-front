@@ -4,13 +4,13 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 3.11.0
 
-Pairs with the next **core-back** minor (history type `mail`) — release core-back first.
+Pairs with **core-back 5.4.0** (history type `mail`) — release core-back first.
 
 ### Upgrading
-- Take it together with the new core-back minor, so the Studio knows `mail` history entries before
-  they appear. Nothing else to change.
+- Take it together with core-back 5.4.0, so the Studio knows `mail` history entries before they
+  appear. Nothing else to change.
 
 ### Added
 - **Mail history entries:** every customer order mail appends a `statusHistory` entry
