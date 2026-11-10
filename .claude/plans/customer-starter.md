@@ -4,7 +4,10 @@ Status: **Planned** (2026-11-10, owner discussion in the itsapps session; refine
 reworked the same day from "one starter + `itsshops init` generator" to "starter repo with a
 variant library, assembled by the command"). Nothing built yet. Parts A + B verified against the
 code 2026-11-10; parts C–E refined once the same day (wrappers, default header/footer, itsapps
-modules, intake limits checked; A.3 added from it). Open question 7 needs the owner.
+modules, intake limits checked; A.3 added from it). A.3 refined 2026-11-10 against `menu.ts`,
+core's `header.njk`/`footer.njk` in full and every active customer header (resize fix made
+concrete and widened to the itsapps/rosi_schuster overlay bug; four header/footer a11y fixes
+added). Open question 7 decided the same day (two datasets; owner created `development-shop`).
 
 **Goal:** `/itsshops-new-customer` asks the owner a few basic questions (site or shop, features,
 which header/menu/cart/footer style, layout, modules) and assembles a working project from
@@ -59,17 +62,26 @@ against `src/scripts/` 2026-11-10:
 - **Menu** (`menu.ts`, every `[data-menu-toggle]` button): target = `data-menu-toggle` value or
   `aria-controls` id. Open: removes `hidden` (only if the target started `hidden`), adds
   `is-open`, `aria-hidden="false"`, removes `inert`, `aria-expanded="true"` on the button,
-  inerts the rest of the page (`lockInertOutside([el, btn])`), focuses the first focusable.
+  inerts the rest of the page (`lockInertOutside([el, btn])`, **not** `deep` — so only
+  `<body>` children that contain neither the target nor the button; in core's default header,
+  where button and `#site-nav` share `<header>`, the logo and actions stay reachable — the
+  starter's overlay CSS must leave them visible, not cover them), focuses the first focusable.
   Close (button, `[data-menu-close]` inside, Escape): the reverse, `data-closing` on the button
-  for 300 ms (for a closing animation), focus back to the button. CSS: show/hide/animate on
-  `.is-open`; a target that is visible inline on large screens must **not** start `hidden` there.
+  for 300 ms (for a closing animation; tinhof/rosi style the burger with it), focus back to the
+  button. After A.3 also: when the button stops being rendered (resize), the menu closes without
+  moving focus and the target gets its initial `hidden`/`inert`/`aria-hidden` back. CSS:
+  show/hide/animate on `.is-open`; a target that is visible inline on large screens must **not**
+  start `hidden` or `inert` there.
 - **Submenus:** core's default header renders `.site-nav__submenu-toggle` /
   `.site-nav__trigger` buttons with `aria-expanded` + `aria-controls` — **no core script handles
-  them** (only jurtschitsch has its own `src/assets/scripts/nav.ts`). That's a bug in core's
+  them** (no customer script does either: jurtschitsch's `src/assets/scripts/nav.ts` only syncs
+  header state, `[data-nav-close]` and hover previews; its menu has no submenu buttons). That's a bug in core's
   default markup (a control that does nothing). Fix in core (A.2).
 - **Cart** (`cart-ui.ts`): `#cart-sidebar` containing `[data-cart-items]`, `[data-cart-total]`,
   `[data-cart-empty]`, `[data-cart-close]`; any number of `[data-cart-toggle]` buttons
-  (`aria-expanded` kept in sync) and `[data-cart-count]` badges; optional `[data-cart-overlay]`.
+  (`aria-expanded` kept in sync) and `[data-cart-count]` elements (text set to the count;
+  with `data-cart-count-hide` also `display: none` at 0 — tinhof); optional `[data-cart-overlay]`.
+  The sidebar is rendered only with `shop.checkout` (`layouts/base.njk:34`), so a toggle must be too.
   States: `.cart-sidebar.is-open`, overlay `.is-visible`, `[data-cart-empty]` `hidden`, Escape
   closes. Lines come from the `cartItem` macro template (`[data-cart-item]`,
   `[data-qty-decrease|value|increase]`, `[data-cart-remove]`). Add to cart:
@@ -95,30 +107,75 @@ against `src/scripts/` 2026-11-10:
 `aria-expanded` + `aria-controls` inside `.site-nav` (better: a hook `[data-submenu-toggle]`,
 added to core's default header) toggles its list (`hidden` + `aria-expanded`), Escape closes the
 open one and returns focus, opening one closes its siblings. Justified for core: core's own
-default header renders these buttons. Jurtschitsch keeps its `nav.ts` (its override doesn't use
-the new hook) — check that both don't bind the same buttons. Unit test (jsdom, like the other
-script tests).
+default header renders these buttons. No customer header renders `.site-nav__submenu-toggle` /
+`.site-nav__trigger` or the new hook (checked 2026-11-10: tinhof, jurtschitsch, rosi_schuster,
+itsapps), so nothing else binds them. Unit test (jsdom, like the other script tests).
 
-**A.3 — two more fixes in core's default header/footer** (found in the refine round
+**A.3 — fixes in `menu.ts` and core's default header/footer** (found in the refine rounds
 2026-11-10; the starter's `inline` header and both footer variants use core's default markup,
-see part C, so these must be right):
-- **Menu stays inert after a resize.** Core's default header uses *one* `#site-nav` for the
-  inline desktop menu and the mobile overlay. `menu.ts` `close()` sets `aria-hidden="true"` +
-  `inert` on it; open → close on a phone, then widen the window (or rotate a tablet) and the
-  desktop menu is unreachable for keyboard and screen readers. (itsapps doesn't hit it: its
-  overlay is a separate `.site-nav-overlay` element that starts `inert`.) Fix in `menu.ts`:
-  set/clear `inert`/`aria-hidden` only while the toggle button is rendered
-  (`btn.offsetParent !== null`, or a `matchMedia` of the toggle's breakpoint passed via
-  `data-menu-breakpoint`), and on `resize`/`matchMedia` change when the toggle disappears:
-  close without moving focus and remove `inert`/`aria-hidden` (same approach as
-  `product-filter.ts`, which closes itself when its toggle is no longer rendered). jsdom test.
-- **Untranslated footer label:** `overridable/footer.njk` has `aria-label="Footer navigation"`
-  hard-coded (English on a German site). Use a translation key (`navigation.footerMenu` or
-  similar, de + en in core's translations).
-- **Cart button as a partial:** core's header renders the cart toggle inline (count only,
-  `aria-label`). Move it to `overridable/partials/cart-toggle.njk` (included by the default
-  header) so a customer can change the cart button without overriding the whole header.
-  Additive; customers with their own header are unaffected.
+see part C, so these must be right). `overridable/header.njk` and `footer.njk` read in full,
+plus every active customer header with `[data-menu-toggle]`:
+- **Menu state survives a resize (`menu.ts`)** — two failures, one fix:
+  - *Core default header:* one `#site-nav` is both the inline desktop menu and the mobile
+    overlay. `close()` sets `aria-hidden="true"` + `inert` on it for good; open → close on a
+    phone, then widen the window (or rotate a tablet) and the desktop menu is unreachable for
+    keyboard and screen readers.
+  - *itsapps and rosi_schuster today:* their burger is `display: none` from `sm` / `tablet`, the
+    overlay (`.site-nav-overlay`, starts `aria-hidden` + `inert`) is shown by opacity only. Open
+    it on a phone, widen past the breakpoint → the overlay stays open over the page, the rest of
+    the page stays inert (lock never released) and no visible control closes it (only Escape).
+    tinhof (burger at every size) and jurtschitsch (overlay starts `hidden`, `display: none`;
+    burger hidden only on the home page from `md`) are affected only marginally or not at all.
+  - **Fix:** at init record the target's initial `hidden`, `inert` and `aria-hidden`
+    (`startsHidden` exists; add `startsInert`, `startsAriaHidden`). Give `close` a parameter
+    `close({ focus = true } = {})`; only focus the button when `focus`. Add
+    `const isRendered = () => btn.getClientRects().length > 0` (**not** `offsetParent`: it is
+    `null` for a `position: fixed` button, which a sticky header's burger may be) and one
+    `window.addEventListener('resize', …)` per toggle, as in `product-filter.ts:292`: when
+    `!isRendered()` → if open, `close({ focus: false })`; then restore the three initial
+    attributes on the target (set or remove each to match its start value). So core's default
+    `#site-nav` (starts with none) becomes reachable inline again; overlays that start
+    `inert`/`aria-hidden`/`hidden` keep them. No breakpoint attribute — the button's own CSS
+    visibility is the single source. Behaviour while the button is rendered is unchanged.
+  - **Tests** `src/scripts/__tests__/menu.test.ts` (`// @vitest-environment jsdom`; jsdom has no
+    layout, so stub `btn.getClientRects` to return `[]` / one rect, then
+    `window.dispatchEvent(new Event('resize'))`): (1) core-default target (no initial attrs):
+    open → close → hide button → resize → no `inert`/`aria-hidden`; (2) overlay starting
+    `inert aria-hidden`: open → hide button → resize → `is-open` gone, `aria-expanded="false"`,
+    target `inert` + `aria-hidden="true"`, body siblings no longer inert, focus not moved to the
+    button; (3) target starting `hidden` gets `hidden` back; (4) resize while button rendered:
+    no change.
+  - No customer change needed; itsapps + rosi_schuster get the fix with the 4.0 pin.
+- **Burger without a menu:** the default header renders the `[data-menu-toggle]` button
+  unconditionally but `#site-nav` only `{% if _settings and _settings.mainMenus.length %}` →
+  a dead button (`menu.ts` finds no target and returns). Move the button inside the same `if`.
+- **Logo name (WCAG 2.5.3 Label in Name, level A):** the logo link shows `siteTitle` but has
+  `aria-label="{{ 'navigation.ariaGoHome' | trans }}"` ("Zur Startseite"), so the accessible
+  name doesn't contain the visible text (voice control "click <site title>" fails). Drop the
+  `aria-label` — the visible title is the name (tinhof and itsapps use the site title as label).
+- **`aria-current` missing:** `linkActiveState` is applied to the header's top-level internal
+  links and to `system` links, but not to internal sub-links (`site-nav__sublink`, both
+  branches) nor to the footer's internal links. Add `{{ child.internal._id | pageUrl |
+  linkActiveState | safe }}` / `{{ item.internal._id | pageUrl | linkActiveState | safe }}`
+  there.
+- **Untranslated footer label:** `overridable/footer.njk:8` has `aria-label="Footer navigation"`
+  hard-coded (English on a German site). New key `navigation.footerMenu` in
+  `src/i18n/translations/de_11ty.ts` ("Fußzeilenmenü") and `en_11ty.ts` ("Footer menu"), next to
+  `mainMenu`; no entry in `de_11ty.informal.ts` (it holds only keys whose text differs).
+- **Cart button as a partial** `overridable/partials/cart-toggle.njk` (included from the default
+  header like `overridable/partials/product-filters.njk` is from core components), with three
+  fixes in it:
+  - rendered only `{% if coreConfig.features.shop.checkout and page.url !=
+    cms[_locale].checkoutUrl %}` — today the header checks `shop.enabled`, but the sidebar exists
+    only with `shop.checkout`, so a catalog-only shop gets a button controlling nothing; on the
+    checkout page tinhof and jurtschitsch already hide it.
+  - the count reaches screen readers: today `aria-label="Zum Warenkorb"` replaces the content
+    and the count is `aria-hidden`, so the number is never announced. New markup, no
+    `aria-label`: `<span class="sr-only">{{ 'navigation.ariaOpenCart' | trans }}, </span>`
+    `<span class="cart-toggle__count" data-cart-count>0</span>` (name: "Zum Warenkorb, 2").
+  - classes `cart-toggle`, `cart-toggle__count` and the hooks (`data-cart-toggle`,
+    `aria-expanded="false"`, `aria-controls="cart-sidebar"`) unchanged.
+  Additive for customers with their own header (all four active ones).
 
 ## Part B — core CSS (core-front)
 
@@ -265,7 +322,7 @@ one group per footer menu + company block. So v1 variants are **CSS on core's de
 | Part | Variants v1 | Implementation |
 |---|---|---|
 | Header + menu | `inline` only (owner, 2026-11-10): one row on wide screens, dropdown submenus (A.2), burger + overlay of the same `#site-nav` below the breakpoint (A.3 resize fix). Later candidates: `two-row` (itsapps), burger on every size, centred logo | `blocks/header.css` + `blocks/nav.css`, no override. Mobile hiding via `display`/`visibility`, never off-screen transform alone (keeps it out of the a11y tree before the first toggle) |
-| Cart button | `count` (core default: count badge, `aria-label`, like tinhof) · `text-count` ("Warenkorb 2", like jurtschitsch: visible text `aria-hidden` + sr-only text with `aria-live` count) | `count`: CSS only; `text-count`: overrides `partials/cart-toggle.njk` (A.3) |
+| Cart button | `count` (core default after A.3: count badge + sr-only label, like tinhof) · `text-count` ("Warenkorb 2", like jurtschitsch: visible text `aria-hidden` + sr-only text with `aria-live` count) | `count`: CSS only; `text-count`: overrides `partials/cart-toggle.njk` (A.3) |
 | Footer | `simple` (groups in a row, company below) · `columns` (groups + company as columns) | CSS only on core's footer |
 | Cart | sidebar only (core has no cart page; a page is out of scope — open question 5) | `blocks/cart.css` (feature `shop`) |
 
@@ -371,15 +428,17 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
   (checkout, newsletter, search; no vinofact) into a scratch dir, `npm link` core, build
-  against the demo dataset (open question 2) — also checks every package's inserts land.
-- **Demo content:** create it once in the assembled shop Studio against the dataset, then
-  `npx sanity dataset export` → `seed/<dataset>.tar.gz` in the starter repo (commands:
+  against its demo dataset — content site → `development`, shop → `development-shop` (open
+  questions 2, 7; `SANITY_DATASET` set per build) — also checks every package's inserts land.
+- **Demo content:** create it once per dataset in the assembled Studio (content-site Studio →
+  `development`, shop Studio → `development-shop`), then `npx sanity dataset export` per
+  dataset → `seed/development.tar.gz` + `seed/development-shop.tar.gz` in the starter repo (commands:
   core-back `workflows/datasets.md`); restore with `dataset import`. Simpler and more robust
   than a seed script: core-back's product/variant/tax/shipping documents are many and
-  linked, and an export carries them as they are. Contents: home + text pages using each v1
-  module, main + footer menus, settings (company name/address/email, home + privacy page),
-  shop settings, a tax category/country, two shipping methods, a few products with variants,
-  two categories, the privacy/withdrawal/shipping pages.
+  linked, and an export carries them as they are. Contents — both datasets: home + text pages
+  using each v1 module, main + footer menus, settings (company name/address/email, home +
+  privacy page); `development-shop` also: shop settings, a tax category/country, two shipping
+  methods, a few products with variants, two categories, the withdrawal/shipping pages.
 - **Per new project:** `npm run build`, `npm test`, Lighthouse accessibility on every page type
   (go-live checklist → "Tests"), cart/menu by keyboard.
 
@@ -387,7 +446,8 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 
 1. B.2 spike through the real pipeline (decides whether starter entries use `layer()`).
 2. Core-front on `feature/customer-starter`: A (contracts doc), A.2 (submenu disclosure),
-   A.3 (menu resize fix, footer label, cart-toggle partial), B.1–B.4 + tests.
+   A.3 (menu resize fix, burger/logo/`aria-current` fixes, footer label, cart-toggle partial),
+   B.1–B.4 + tests.
 3. Switch the four active customers (B.4 table) against the linked core: diff each one's
    compiled `src/_includes/css/global.css` before/after — same rules, only the former
    `core.css` sections moved (itsapps: minus the shop section and the compact warranty notice).
@@ -401,8 +461,13 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
    `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (shops); compact
    warranty notice now in `checkout.css`. "Added": submenu disclosure, `partials/cart-toggle.njk`,
-   `utilities.css`, role fallbacks, the `--color-*` build warning. "Fixed": default menu stays
-   inert after a resize; translated footer-menu label. Push core before any customer
+   `utilities.css`, role fallbacks, the `--color-*` build warning. "Fixed": menu state after a
+   resize (default menu stayed inert; an overlay whose burger disappears stayed open with the
+   page inert — itsapps, rosi_schuster); default header: no burger without a main menu, logo
+   name = visible title, cart button only with checkout + count announced, `aria-current` on
+   sub-links and footer links; translated footer-menu label. "Changed" (default header only):
+   cart toggle markup (no `aria-label`, sr-only label) — customers styling `.cart-toggle`
+   from core's markup check it. Push core before any customer
    pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
 10. Optional, separate: split itsapps' 899-line `blocks/modules.css` into
@@ -416,7 +481,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    only, no personal data → public dataset, Free plan is fine. Needs: project id + a read token
    for the smoke builds and an Editor token (or the owner in the Studio) to seed it, both in the
    starter repo's gitignored `.env`. Content: created once in the Studio, kept as a dataset
-   export in the starter repo (part E → "Demo content"). See question 7 (one or two datasets).
+   export in the starter repo (part E → "Demo content"). Second dataset `development-shop`: question 7.
    The smoke shop runs **without vinofact** (its build
    fetches the live API and fails without credentials — `decisions/vinofact-failure-fails-build.md`).
 3. ~~Gallery CSS~~ — resolved: the inline product gallery (`overridable/gallery/*`, embla) has
@@ -435,10 +500,11 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    cart button `count` = core default (as tinhof), `text-count` = jurtschitsch's markup
    (`jurtschitsch/webshop-frontend/src/_includes/overridable/header.njk`, the `cart-toggle`
    button); footers = CSS on core's default footer.
-7. **One dataset for both smoke builds?** The owner creates one `development` dataset; the
-   `settings` document is a singleton, so the content site and the shop share one home page and
-   menus. With one dataset the content-site smoke renders the shop's pages too (with
-   `features: {}` the product modules render empty). Recommendation: a second dataset
-   `development-shop` in the same project (check the Free plan's dataset limit on
-   sanity.io/pricing first); fallback: one dataset, the content-site smoke checks only that it
-   builds.
+7. ~~One dataset for both smoke builds?~~ — decided (owner, 2026-11-10): **two datasets** in
+   the same project — `development` (content site) and `development-shop` (shop; created by
+   the owner). Each has its own `settings` singleton, home page and menus, so the content-site
+   smoke never renders shop pages. Confirmed (owner, 2026-11-10): same project (one project
+   id), **both datasets public** (builds read without a token). Tokens: a read and an Editor
+   token, created **at project level when step 5 starts** (they cover both datasets), stored
+   only in the starter repo's gitignored `.env` — the read token is for draft/preview reads,
+   the Editor token for seeding/import.
