@@ -18,6 +18,7 @@ this file stays the always-loaded router.
 | Checkout/Stripe, refunds, users/Supabase, newsletter, email, orders/tax/shipping/free shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
+| **Starting a new customer** (website or webshop) from scratch — intake, accounts, backend + frontend scaffold, docs, first staging deploy (command: `/itsshops-new-customer`) | `.claude/workflows/new-customer.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches, Node.js version) | `.claude/workflows/consuming-core-and-deploy.md` |
 | **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
@@ -41,9 +42,12 @@ by customer Eleventy shop frontends. It provides the full frontend: data layer (
 Consumers register it in `eleventy.config.mts`:
 
 ```ts
-import { shopCoreFrontendPlugin } from '@itsapps/itsshops-core-front'
-eleventyConfig.addPlugin(shopCoreFrontendPlugin, config)   // config: type Config
+import { createEleventyConfig } from '@itsapps/itsshops-core-front'
+export default createEleventyConfig(projectConfig)   // projectConfig: type Config; optional
+                                                     // 2nd arg (eleventyConfig) => {…} for extras
 ```
+
+(`createEleventyConfig` adds `shopCoreFrontendPlugin`, which is also exported.)
 
 ## Commands
 
