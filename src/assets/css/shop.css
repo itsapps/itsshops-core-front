@@ -1,55 +1,10 @@
-/* ─── itsshops-core-front: base structural styles ────────────────────────────
+/* ─── itsshops-core-front: shop.css ─────────────────────────────────────────────
  *
- * Import this file in your global.css:
- *   @import '@itsapps/itsshops-core-front/dist/core.css';
- *
- * These styles are functionally required by core templates.
- * Override any class in your own CSS as needed.
+ * Shop structure: cart icons, filter-panel scroll lock, legal notices of the generated shop modules.
+ * Import: @import '@itsapps/itsshops-core-front/dist/shop.css' layer(core);
+ *   (or without layer() — then import it before your own CSS).
+ * Needed when the site renders the cart sidebar (shop.checkout), withdrawalPolicyModule / shippingInfoModule, or a [data-filter-panel-modal] panel.
  * ─────────────────────────────────────────────────────────────────────────── */
-
-/* ─── Skip link ──────────────────────────────────────────────────────────────
- * Used in layouts/base.njk. Visually hidden until focused by keyboard.
- */
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: 1rem;
-  z-index: 9999;
-  padding: 0.5rem 1rem;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 0.25rem;
-}
-
-.skip-link:focus {
-  top: 1rem;
-}
-
-
-/* ─── Carousel pause/play button ────────────────────────────────────────────
- * Structural positioning only. Override colors/size in customer CSS.
- */
-.carousel {
-  position: relative;
-
-  &__pause {
-    position: absolute;
-    bottom: 0.75rem;
-    right: 0.75rem;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  &__pause svg[hidden] {
-    display: none;
-  }
-}
-
 
 /* ─── Cart close / remove icon ───────────────────────────────────────────────
  * Core emits these buttons empty (they carry an aria-label); the glyph is drawn
@@ -95,13 +50,11 @@ html.has-filter-panel-open {
  * layout). Width, alignment and typography come from the customer's module wrapper CSS.
  */
 .withdrawal-instructions > * + *,
-.privacy-policy > * + *,
 .shipping-info > * + *,
 .shipping-info__shipping > * + * {
   margin-block-start: var(--space-l, 2.5em);
 }
 .withdrawal-instructions__section > * + *,
-.privacy-policy__section > * + *,
 .shipping-info__payment > * + *,
 .shipping-info__method > * + *,
 .shipping-info__guarantee > * + * {
@@ -157,16 +110,4 @@ html.has-filter-panel-open {
 .shipping-info__table th:last-child {
   text-align: end;
   padding-inline-end: 0;
-}
-
-/* Compact warranty notice in the checkout (legal-guarantee-compact.njk): thumbnail + one line */
-.legal-guarantee-compact__link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs, 0.75em);
-}
-.legal-guarantee-compact__thumb {
-  flex-shrink: 0;
-  inline-size: 3.5rem;
-  block-size: auto;
 }

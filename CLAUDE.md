@@ -12,6 +12,7 @@ this file stays the always-loaded router.
 | Extending for custom schemas/fields/modules — `config.extensions`, resolve hooks, portable text, search | `.claude/architecture/extending.md` |
 | GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
 | Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS, schema.org JSON-LD (merchant listings) | `.claude/architecture/templates-and-assets.md` |
+| UI contracts — markup hooks, JS states, required CSS and a11y per part (menu, submenus, cart, newsletter dialog, filter panel, …), the look classes customers must style (`btn`, `btn--secondary`) | `.claude/architecture/ui-contracts.md` |
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles). Same-origin scripts, fetches (`/api/…`) and styles are always allowed; only an **external** host needs `headers.extra` — no external host, no CSP change or check | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |

@@ -4,6 +4,8 @@
 
 <article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
 
+  {#- Override only the image (e.g. with a gallery) via {% extends %} + this block. #}
+  {% block product_image %}
   <figure class="product__image">
     {% if product.image %}
       {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
@@ -11,6 +13,7 @@
       {% include "overridable/product/placeholder.njk" %}
     {% endif %}
   </figure>
+  {% endblock %}
 
   <div class="product__body">
     <header class="product__header">

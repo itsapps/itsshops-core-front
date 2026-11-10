@@ -3,6 +3,7 @@ export default {
     goHome: "Zur Startseite",
     ariaGoHome: "Zur Startseite",
     mainMenu: "Hauptmenü",
+    footerMenu: "Fußzeilenmenü",
     openMainMenu: "Hauptmenü",
     ariaOpenMainMenu: "Hauptmenü öffnen",
     closeMainMenu: "Schließen",

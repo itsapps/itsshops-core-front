@@ -1,6 +1,6 @@
 # Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **Planned** (2026-11-10; step 1 spike done the same day, `layer()` confirmed; owner discussion in the itsapps session; refined once, then
+Status: **In progress** (2026-11-10; step 1 spike done, `layer()` confirmed; **step 2 built** the same day on `feature/customer-starter` — A, A.2, A.3, B.1–B.4 + tests + docs; verified by itsapps + tinhof scratch builds against the linked core; owner discussion in the itsapps session; refined once, then
 reworked the same day from "one starter + `itsshops init` generator" to "starter repo with a
 variant library, assembled by the command"). Nothing built yet. Parts A + B verified against the
 code 2026-11-10; parts C–E refined once the same day (wrappers, default header/footer, itsapps
@@ -693,7 +693,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 
 1. ~~B.2 spike through the real pipeline~~ — done 2026-11-10: `layer()` works; the `@tailwind`
    directives must come in as imported files (B.1).
-2. Core-front on `feature/customer-starter`: A (contracts doc), A.2 (submenu disclosure),
+2. ~~Core-front on `feature/customer-starter`~~ (done 2026-11-10; CHANGELOG has an "Unreleased (4.0.0)" entry): A (contracts doc), A.2 (submenu disclosure),
    A.3 (menu resize fix, burger/logo/`aria-current` fixes, footer label, cart-toggle partial,
    own button classes, `product_image` block, gallery thumb `aria-current`),
    B.1–B.4 + tests.

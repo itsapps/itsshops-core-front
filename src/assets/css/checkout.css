@@ -303,3 +303,17 @@
 .checkout__shipping-info {
   margin-block-end: var(--space-s-m);
 }
+
+/* ─── Compact warranty notice (core/components/partials/legal-guarantee-compact.njk) ─────
+ * Thumbnail + one line, before ordering. (Moved here from the former core.css.)
+ */
+.legal-guarantee-compact__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs, 0.75em);
+}
+.legal-guarantee-compact__thumb {
+  flex-shrink: 0;
+  inline-size: 3.5rem;
+  block-size: auto;
+}

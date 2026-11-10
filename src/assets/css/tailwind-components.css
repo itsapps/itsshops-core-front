@@ -1,0 +1,3 @@
+/* itsshops-core-front: import (don't inline) — postcss-import only inlines @imports that precede
+ * every other statement. Emits core's palette/space/size/font custom properties. */
+@tailwind components;

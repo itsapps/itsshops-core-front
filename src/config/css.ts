@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 import { type CoreContext } from '../types'
+import { findUndefinedColorVars } from './css-color-check'
 
 export const cssConfig = (ctx: CoreContext) => {
   const { eleventyConfig, config } = ctx
@@ -70,6 +71,13 @@ export const cssConfig = (ctx: CoreContext) => {
           plugins.push(cssnano);
         }
         const result = await postcss(plugins).process(inputContent, {from: inputPath});
+
+        // Colour roles used without fallback but never defined (e.g. a renamed palette colour).
+        // Warn only — a template may define a property inline.
+        const undefinedColors = findUndefinedColorVars(result.css)
+        if (undefinedColors.length) {
+          console.warn('[itsshops] CSS uses colour roles that are never defined and have no fallback: ' + undefinedColors.join(', '))
+        }
 
         for (const outputPath of paths) {
           await fs.mkdir(path.dirname(outputPath), {recursive: true});

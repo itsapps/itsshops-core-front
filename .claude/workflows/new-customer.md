@@ -88,7 +88,7 @@ Create `web/<customer>/<…>-frontend`, `git init`, copy from the sibling:
 | `eleventy.config.mts` | `export default createEleventyConfig(projectConfig)` (optional callback for customer filters/global data) |
 | `itsshops.config.mts` | `Config`: `features`, `css: { colors, fontFamilies, textSizes }`, `imageSizes`, `extensions`, `translations` (`customer.*` strings), `headers.extra` only for external hosts, `menu` — reference: `architecture/configuration.md` |
 | `src/_config/colors.mts`, `fonts.mts`, `text-sizes.mts` | design tokens (Tailwind is generated from them — `templates-and-assets.md` → "Token-driven Tailwind"); `extensions.mts` (`queries`, `resolveData`, `modules.page.<type>` projections — `architecture/extending.md`) |
-| `src/assets/css/global/global.css` | the CSS entry: `@import` core's `dist/reset.css` + `dist/core.css` (+ any importable core CSS the features need), then `global/`, `blocks/*`, `utilities/*`, tailwind layers — copy the sibling's structure, **not** its block styles |
+| `src/assets/css/global/global.css` | the CSS entry: `@import` core's `dist/reset.css` + `dist/base.css` (+ `carousel.css`/`shop.css`/… per feature — `templates-and-assets.md` → "Importable core CSS files"; all `@import`s before any other statement), then `global/`, `blocks/*`, `utilities/*`, tailwind layers — copy the sibling's structure, **not** its block styles |
 | `src/assets/fonts/preload/*.woff2` | every file here is preloaded — only the fonts used above the fold |
 | `src/assets/images/favicon/*` | favicon set (served at `/`) |
 | `src/assets/scripts/index.ts` | customer client JS entry (may be empty) |

@@ -5,7 +5,7 @@
 
     {# ── Footer navigation ─────────────────────────────────────────────── #}
     {%- if _settings and _settings.footerMenus.length -%}
-      <nav class="footer-nav" aria-label="Footer navigation">
+      <nav class="footer-nav" aria-label="{{ 'navigation.footerMenu' | trans }}">
         {%- for _menuId in _settings.footerMenus -%}
           {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
           {%- if _menu -%}
@@ -20,7 +20,7 @@
                 {%- for item in _menu.items -%}
                   {%- if item.linkType == 'internal' and item.internal -%}
                     <li>
-                      <a href="{{ item.internal._id | pageUrl }}" class="footer-nav__link">{{ item.title or (item.internal._id | docById).title }}</a>
+                      <a href="{{ item.internal._id | pageUrl }}" class="footer-nav__link" {{ item.internal._id | pageUrl | linkActiveState | safe }}>{{ item.title or (item.internal._id | docById).title }}</a>
                     </li>
                   {%- elif item.linkType == 'system' and item.url -%}
                     <li>

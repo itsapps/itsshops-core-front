@@ -4,11 +4,14 @@
   <div class="site-header__inner">
 
     {# ── Logo ──────────────────────────────────────────────────────────── #}
-    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo" aria-label="{{ 'navigation.ariaGoHome' | trans }}">
+    {#- No aria-label: the visible title is the link's name (WCAG 2.5.3 Label in Name). #}
+    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo">
       {{ _settings.siteTitle }}
     </a>
 
-    {# ── Mobile menu toggle ────────────────────────────────────────────── #}
+    {%- if _settings and _settings.mainMenus.length %}
+
+    {# ── Mobile menu toggle (only with a menu to open) ─────────────────── #}
     <button
       type="button"
       class="site-header__menu-toggle"
@@ -23,7 +26,6 @@
     </button>
 
     {# ── Main navigation ───────────────────────────────────────────────── #}
-    {% if _settings and _settings.mainMenus.length %}
       <nav id="site-nav" class="site-nav" aria-label="{{ 'navigation.mainMenu' | trans }}">
         <ul class="site-nav__list" role="list">
           {%- for _menuId in _settings.mainMenus -%}
@@ -46,13 +48,14 @@
                         type="button"
                         class="site-nav__submenu-toggle"
                         aria-expanded="false"
+                        data-submenu-toggle
                         aria-controls="{{ _submenuId }}"
                       ><span class="sr-only">{{ 'navigation.ariaOpenSubmenu' | trans }}: {{ _itemTitle }}</span></button>
                       <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink" {{ child.internal._id | pageUrl | linkActiveState | safe }}>{{ child.title or (child.internal._id | docById).title }}</a>
                             </li>
                           {%- elif child.linkType == 'system' and child.url -%}
                             <li class="site-nav__subitem">
@@ -83,6 +86,7 @@
                       type="button"
                       class="site-nav__trigger"
                       aria-expanded="false"
+                      data-submenu-toggle
                       aria-controls="{{ _submenuId }}"
                     >{{ item.title }}</button>
                     {%- if item.children.length -%}
@@ -90,7 +94,7 @@
                         {%- for child in item.children -%}
                           {%- if child.linkType == 'internal' and child.internal -%}
                             <li class="site-nav__subitem">
-                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink">{{ child.title or (child.internal._id | docById).title }}</a>
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink" {{ child.internal._id | pageUrl | linkActiveState | safe }}>{{ child.title or (child.internal._id | docById).title }}</a>
                             </li>
                           {%- elif child.linkType == 'system' and child.url -%}
                             <li class="site-nav__subitem">
@@ -133,11 +137,7 @@
         </nav>
       {%- endif -%}
 
-      {%- if coreConfig.features.shop.enabled -%}
-        <button type="button" class="cart-toggle" aria-label="{{ 'navigation.ariaOpenCart' | trans }}" aria-expanded="false" aria-controls="cart-sidebar" data-cart-toggle>
-          <span class="cart-toggle__count" aria-hidden="true" data-cart-count>0</span>
-        </button>
-      {%- endif -%}
+      {%- include "overridable/partials/cart-toggle.njk" -%}
 
     </div>
 

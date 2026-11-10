@@ -1,0 +1,39 @@
+/* ─── itsshops-core-front: base.css ─────────────────────────────────────────────
+ *
+ * Structural styles every site needs (skip link, generated privacy policy).
+ * Import: @import '@itsapps/itsshops-core-front/dist/base.css' layer(core);
+ *   (or without layer() — then import it before your own CSS).
+ * Needed by every site.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Skip link ──────────────────────────────────────────────────────────────
+ * Used in layouts/base.njk. Visually hidden until focused by keyboard.
+ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--color-bg, Canvas);
+  color: var(--color-text, CanvasText);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+
+/* ─── Generated privacy policy ───────────────────────────────────────────────
+ * privacyPolicyModule (every site) — structural baseline only (spacing). Width, alignment and
+ * typography come from the customer's module wrapper CSS.
+ */
+.privacy-policy > * + * {
+  margin-block-start: var(--space-l, 2.5em);
+}
+.privacy-policy__section > * + * {
+  margin-block-start: var(--space-s, 1em);
+}

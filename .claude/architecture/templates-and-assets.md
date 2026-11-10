@@ -56,7 +56,7 @@ order email). The warranty notice ships as lossless 256-colour PNGs in three wid
 `core/components/partials/legal-guarantee-compact.njk` (checkout) —
 see `commerce-and-netlify.md` → "Legal texts". `shippingInfoModule.njk` renders the heading outline
 h2 Zahlung (`module.paymentInfo`, plain text → `paragraphs` filter; omitted when empty) · h2 Versand
-(h3 per shipping method) · h2 Gesetzliche Gewährleistung — site CSS styles these h2/h3. Their CSS in `core.css` is a **structural baseline
+(h3 per shipping method) · h2 Gesetzliche Gewährleistung — site CSS styles these h2/h3. Their CSS in `shop.css` (privacy policy: `base.css`) is a **structural baseline
 only** (spacing, fact grid, table layout, max-widths): no fonts or line-height — typography and the
 container (width, indent, alignment) come from each site's module CSS.
 
@@ -133,33 +133,65 @@ step; most are also exposed via `package.json` `exports`:
 | File | Contains |
 |---|---|
 | `reset.css` | CSS reset / base normalize |
-| `core.css` | core shop/layout styles |
+| `base.css` | every site: skip link, generated privacy-policy spacing |
+| `carousel.css` | carousel module: pause/play button position |
+| `shop.css` | cart close/remove icon, `html.has-filter-panel-open`, the generated shop legal modules (`withdrawalPolicyModule`, `shippingInfoModule`, full warranty notice) |
+| `utilities.css` | `flow`, `region`, `wrapper` (`--wrapper-max-width`, fallback 90rem) — import **unlayered** |
+| `tailwind-components.css` / `tailwind-utilities.css` | the two `@tailwind` directives as files — `@import` them, never inline (below) |
 | `form.css` | the shared token-driven form system |
-| `checkout.css` | checkout UI |
+| `checkout.css` | checkout UI (incl. the compact warranty notice before ordering) |
 | `lightbox.css` | gallery lightbox |
 | `product-filter-price.css` | product-list price-range filter |
 | `search.css` | search UI |
 | `age-gate.css` | age-gate overlay |
 
-Customers compose the ones they need, by **feature** — e.g. `checkout.css` only with checkout,
-`search.css` with search, `age-gate.css` with the age gate, `lightbox.css` with galleries. Import via
-the package path:
+Customers compose the ones they need, by **feature**: `base.css` always; `carousel.css` with the
+carousel module; `shop.css` when the site renders the cart sidebar (`shop.checkout`),
+`withdrawalPolicyModule`/`shippingInfoModule` or a `[data-filter-panel-modal]` panel;
+`checkout.css` with checkout; `form.css` with shop/users/newsletter forms; `search.css` with search;
+`age-gate.css` with the age gate; `lightbox.css` with the `{% gallery %}` shortcode. `core.css` was
+split into `base`/`carousel`/`shop` in 4.0.0 (CHANGELOG → "Upgrading"). Import via the package path:
 
 ```css
-/* src/assets/css/global/global.css (customer) */
-@import '@itsapps/itsshops-core-front/dist/reset.css';
-@import '@itsapps/itsshops-core-front/dist/core.css';
-@import '@itsapps/itsshops-core-front/dist/form.css';
-@import '@itsapps/itsshops-core-front/dist/checkout.css';
-@import '@itsapps/itsshops-core-front/dist/lightbox.css';
-/* …then the project's own tokens/blocks/utilities… */
+/* src/assets/css/global/global.css (customer) — all @imports first */
+@layer reset, core;
+@import '@itsapps/itsshops-core-front/dist/reset.css' layer(reset);
+@import '@itsapps/itsshops-core-front/dist/base.css' layer(core);
+@import '@itsapps/itsshops-core-front/dist/form.css' layer(core);
+@import '@itsapps/itsshops-core-front/dist/checkout.css' layer(core);
+@import '@itsapps/itsshops-core-front/dist/utilities.css';
+@import '@itsapps/itsshops-core-front/dist/tailwind-components.css';
+@import 'global/variables.css';
+@import-glob 'blocks/*.css';
+@import '@itsapps/itsshops-core-front/dist/tailwind-utilities.css';
 ```
+
+**Cascade layers (optional, new projects):** importing core files with `layer(reset)` /
+`layer(core)` makes every unlayered customer rule beat core, whatever the order or specificity.
+Verified 2026-11-10 through `css.ts`'s plugin chain incl. cssnano: the `@layer` order statement
+stays first, relative imports inside a layered file inherit the layer, `@custom-media` from customer
+CSS applies inside it. Rules: import each core file **once** (postcss-import deduplicates only
+identical imports); import `utilities.css` **unlayered**; never `@apply` a class from a layered core
+file — the generated rule lands inside that layer and silently loses to all unlayered CSS. Existing
+customers import core unlayered (before their own CSS) — also fine.
+
+**All `@import`s before any other statement.** postcss-import inlines only `@import`s that precede
+every other rule (an empty `@layer a, b;` may come first). An inline `@tailwind components;` in the
+entry ends the import section: every `@import`/`@import-glob` after it is **dropped from the output**
+with only a warning ("@import must precede all other statements"). Hence the two directive files.
+
+**Colour roles:** core CSS uses `--color-bg`, `--color-text` (skip link, forms) and `--color-error`
+(form errors), each with a fallback (`Canvas`, `CanvasText`, `#b3261e`). Customer palettes
+(`css.colors`) *replace* core's default palette. `css.ts` warns once per compile —
+`[itsshops] CSS uses colour roles that are never defined and have no fallback: …` — for every
+`var(--color-x)` without fallback whose `--color-x:` is never declared (`src/config/css-color-check.ts`;
+a renamed palette colour otherwise fails silently).
 
 **The `dist/<name>.css` path is required — do NOT switch to the export subpath form.** Verified
 (2026-10-02) against core's `postcss-import` v16.1.1: `postcss-import` does **not** honor the package
-`exports` map; it resolves physically. There is no root-level `core.css` (only `dist/core.css`), so:
-- `@import '@itsapps/itsshops-core-front/dist/core.css'` → **resolves** ✓
-- `@import '@itsapps/itsshops-core-front/core.css'` (the export subpath) → **fails** ✗
+`exports` map; it resolves physically. There is no root-level `base.css` (only `dist/base.css`), so:
+- `@import '@itsapps/itsshops-core-front/dist/base.css'` → **resolves** ✓
+- `@import '@itsapps/itsshops-core-front/base.css'` (an export subpath) → **fails** ✗
   (`Failed to find …`)
 
 So the `dist/` imports in `global.css` are correct for this Eleventy/PostCSS pipeline — `files`
@@ -262,7 +294,7 @@ via `textContent` only (coupon codes, titles are user/editor input).
 grass-art). Adding `data-filter-panel-modal` opts the panel into a **modal dialog** for layouts where
 it's a full-screen overlay (jurtschitsch, small screens only): while open it gets `role="dialog"`
 `aria-modal`, `aria-labelledby` from `data-filter-panel-labelledby`, the rest of the page is inerted
-(`lockInertOutside([panel], { deep: true })`), `html.has-filter-panel-open` locks scroll (`core.css`),
+(`lockInertOutside([panel], { deep: true })`), `html.has-filter-panel-open` locks scroll (`shop.css`),
 Escape / any `[data-filter-panel-close]` closes it and focus returns to the toggle. It closes itself
 (without moving focus) on resize once the toggle is no longer rendered — so a customer that shows the
 panel as an inline sidebar on desktop must **hide the toggle** at that breakpoint. Modal is opt-in so

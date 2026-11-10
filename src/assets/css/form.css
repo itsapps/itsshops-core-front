@@ -46,13 +46,13 @@
   /* family is a token so every form input matches regardless of DOM context
      (default: inherit — i.e. unchanged unless a customer pins it once on .form) */
   font-family: var(--field-font-family, inherit);
-  color: var(--color-text);
+  color: var(--color-text, CanvasText);
   background: var(--field-bg, transparent);
   /* border-width is a shorthand token: set it to e.g. `0 0 1px` for a
      bottom-border-only look without touching any selector */
   border-width: var(--field-border-width, 1px);
   border-style: var(--field-border-style, solid);
-  border-color: var(--field-border-color, color-mix(in srgb, var(--color-text) 30%, transparent));
+  border-color: var(--field-border-color, color-mix(in srgb, var(--color-text, CanvasText) 30%, transparent));
   border-radius: var(--field-radius, 0);
   padding: var(--field-padding, var(--space-2xs) var(--space-xs));
   transition: border-color var(--transition-base, 0.15s);
@@ -64,17 +64,17 @@
 
 .form-field :is(input, textarea, select):focus {
   outline: none;
-  border-color: var(--field-focus-color, var(--color-text));
+  border-color: var(--field-focus-color, var(--color-text, CanvasText));
 }
 
 /* validation error state — the checkout JS toggles .is-invalid on the control;
    defining it here gives every form the same error affordance for free */
 .form-field :is(input, textarea, select).is-invalid {
-  border-color: var(--color-error);
+  border-color: var(--color-error, #b3261e);
 }
 
 .form-field__error {
-  color: var(--color-error);
+  color: var(--color-error, #b3261e);
   font-size: var(--field-error-size, var(--size-g-small));
 }
 
@@ -92,7 +92,7 @@
 
 /* form-level error alert */
 .form__error {
-  color: var(--color-error);
+  color: var(--color-error, #b3261e);
   font-weight: 600;
 }
 

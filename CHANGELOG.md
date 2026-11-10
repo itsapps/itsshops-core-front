@@ -4,6 +4,40 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (4.0.0)
+
+Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); final text at release.
+
+### Upgrading
+- **`dist/core.css` is gone.** Replace its `@import` with `base.css`, plus `carousel.css` if the
+  carousel module is used, plus `shop.css` if the site renders the cart sidebar (`shop.checkout`),
+  `withdrawalPolicyModule`/`shippingInfoModule` or a `[data-filter-panel-modal]` panel. The compact
+  warranty notice moved to `checkout.css` (nothing to change if you import it).
+- The cart sidebar's checkout link (core-only template) now also has `btn` — check that your `.btn`
+  rules suit `.cart-sidebar__checkout`.
+- Default header only (customers with their own header: nothing): the cart toggle is now
+  `partials/cart-toggle.njk` without `aria-label` (sr-only label + count) — check `.cart-toggle`
+  styles.
+
+### Added
+- Submenu disclosure (`submenu.ts`, `[data-submenu-toggle]`) for core's default header.
+- `overridable/partials/cart-toggle.njk`; `{% block product_image %}` in the product container.
+- `utilities.css`, `tailwind-components.css`, `tailwind-utilities.css`, `base.css`,
+  `carousel.css`, `shop.css`.
+- Colour-role fallbacks in core CSS; build warning for undefined `--color-*` without fallback.
+- `btn--secondary` on the checkout's coupon buttons; an own class next to `btn` on every form/flow
+  button (`user-login__submit`, …); `btn` on the cart sidebar's checkout link.
+- `.claude/architecture/ui-contracts.md`.
+
+### Fixed
+- Menu state after a resize (`menu.ts`): the default inline menu stayed inert after a mobile
+  open/close; an overlay whose burger disappears stayed open with the page inert.
+- Default header: no burger without a main menu; logo name = visible title (WCAG 2.5.3); cart
+  button only with checkout and not on the checkout page, count announced; `aria-current` on
+  sub-links. Default footer: `aria-current` on internal links, translated label
+  (`navigation.footerMenu`).
+- Gallery thumbs expose the selected image (`aria-current`).
+
 ## 3.11.0
 
 Pairs with **core-back 5.4.0** (history type `mail`) — release core-back first.

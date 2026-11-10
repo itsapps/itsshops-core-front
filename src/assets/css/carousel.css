@@ -1,0 +1,29 @@
+/* ─── itsshops-core-front: carousel.css ─────────────────────────────────────────────
+ *
+ * Carousel module: pause/play button position.
+ * Import: @import '@itsapps/itsshops-core-front/dist/carousel.css' layer(core);
+ *   (or without layer() — then import it before your own CSS).
+ * Needed when the site uses the carousel module (core/modules/carousel.njk).
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Carousel pause/play button ────────────────────────────────────────────
+ * Structural positioning only. Override colors/size in customer CSS.
+ */
+.carousel {
+  position: relative;
+
+  &__pause {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  &__pause svg[hidden] {
+    display: none;
+  }
+}

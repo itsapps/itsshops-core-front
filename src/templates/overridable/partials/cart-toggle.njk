@@ -1,0 +1,15 @@
+{#-
+  Cart toggle — opens the cart sidebar (`cart-ui.ts`). Rendered only where the sidebar exists
+  (`shop.checkout`, see layouts/base.njk) and not on the checkout page.
+  Contract (ui-contracts.md → Cart): `[data-cart-toggle]` with `aria-controls="cart-sidebar"` +
+  `aria-expanded` (kept in sync by the script), `[data-cart-count]` (text = item count).
+  No aria-label: the sr-only text + the visible count form the name ("Zum Warenkorb, 2").
+  Override this partial for another look (e.g. visible text).
+-#}
+{%- set _locale = _locale or page.lang or coreConfig.defaultLocale -%}
+{%- if coreConfig.features.shop.checkout and page.url != cms[_locale].checkoutUrl -%}
+  <button type="button" class="cart-toggle" aria-expanded="false" aria-controls="cart-sidebar" data-cart-toggle>
+    <span class="sr-only">{{ 'navigation.ariaOpenCart' | trans }}, </span>
+    <span class="cart-toggle__count" data-cart-count>0</span>
+  </button>
+{%- endif -%}

@@ -20,6 +20,9 @@ function setupGallery(scope: HTMLElement): void {
     const curr = emblaMain.selectedScrollSnap()
     thumbSlides[prev]?.classList.remove('embla-thumbs__slide--selected')
     thumbSlides[curr]?.classList.add('embla-thumbs__slide--selected')
+    // Expose the selection to assistive tech too, not only by the class (WCAG 4.1.2)
+    thumbSlides[prev]?.querySelector('button')?.removeAttribute('aria-current')
+    thumbSlides[curr]?.querySelector('button')?.setAttribute('aria-current', 'true')
     emblaThumb.scrollTo(curr)
   }
 

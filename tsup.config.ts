@@ -43,7 +43,12 @@ export default defineConfig({
     copySync('src/templates',          'dist/templates', { overwrite: true });
     copySync('src/scripts',            'dist/scripts',   { overwrite: true });
     copySync('src/shared',             'dist/shared',    { overwrite: true });
-    copySync('src/assets/css/core.css', 'dist/core.css',  { overwrite: true });
+    copySync('src/assets/css/base.css', 'dist/base.css', { overwrite: true });
+    copySync('src/assets/css/carousel.css', 'dist/carousel.css', { overwrite: true });
+    copySync('src/assets/css/shop.css', 'dist/shop.css', { overwrite: true });
+    copySync('src/assets/css/utilities.css', 'dist/utilities.css', { overwrite: true });
+    copySync('src/assets/css/tailwind-components.css', 'dist/tailwind-components.css', { overwrite: true });
+    copySync('src/assets/css/tailwind-utilities.css', 'dist/tailwind-utilities.css', { overwrite: true });
     copySync('src/assets/css/reset.css','dist/reset.css', { overwrite: true });
     copySync('src/assets/css/checkout.css','dist/checkout.css', { overwrite: true });
     copySync('src/assets/css/form.css','dist/form.css', { overwrite: true });

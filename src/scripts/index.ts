@@ -14,6 +14,10 @@ console.groupEnd()
 initAgeGate()
 initMenu()
 
+if (document.querySelector('[data-submenu-toggle]')) {
+  import('./submenu').then(m => m.initSubmenus())
+}
+
 if (document.querySelector('[data-carousel]')) {
   import('./carousel').then(m => m.initCarousels())
 }

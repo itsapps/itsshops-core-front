@@ -12,9 +12,9 @@ them via the deep `dist/` path instead.
 
 Verified 2026-10-02 against the actual pipeline resolver (`postcss-import` v16.1.1): **`postcss-import`
 does not honor the package `exports` map — it resolves physically.** There is no root-level
-`core.css` (only `dist/core.css`), so:
-- `@import '@itsapps/itsshops-core-front/dist/core.css'` → resolves ✓
-- `@import '@itsapps/itsshops-core-front/core.css'` (the subpath) → fails ✗
+`base.css` (only `dist/base.css`; `core.css` itself was split in 4.0.0), so:
+- `@import '@itsapps/itsshops-core-front/dist/base.css'` → resolves ✓
+- `@import '@itsapps/itsshops-core-front/base.css'` (the subpath) → fails ✗
 
 A grep across all 7 customer frontends + core + docs found **zero** uses of the subpath form;
 `lightbox.css` never had a subpath at all.
