@@ -99,14 +99,27 @@ in preview). Compilation:
   for pre-built/third-party CSS.
 
 ### Token-driven Tailwind (`src/config/tailwind/`)
-`getTailwindConfig(overrides)` (built to `dist/tailwind.js`) merges the core **design tokens**
-(`design-tokens/{colors,fonts,spacing,text-sizes}.ts`) with the customer's token arrays passed via
-`config.css` — `colors`, `fontFamilies`, `textSizes`, `spacings`, `screens`, `viewport`. The
+`getTailwindConfig(overrides)` (built to `dist/tailwind.js`) takes the customer's token arrays passed
+via `config.css` — `colors`, `fontFamilies`, `textSizes`, `spacings`, `screens`, `viewport` — and
+falls back to core's **design tokens** (`design-tokens/{colors,fonts,spacing,text-sizes}.ts`) per
+group: a customer array **replaces** that group, it isn't merged. The
 `css-utils/` helpers turn tokens into the Tailwind theme (`tokens-to-tailwind.ts`) and generate fluid
 `clamp()` sizes (`clamp-generator.ts`). So a customer themes the shop by supplying token arrays in
 `itsshops.config.mts` (Jurtschitsch keeps them in `src/_config/{colors,fonts,text-sizes,spacing}.mts`),
 not by rewriting CSS. The token → CSS-custom-property system also powers the shared form system and
 CSS-mask cart icons.
+
+What the directives emit (plugins in `tailwind.config.ts`):
+- **`@tailwind components`** = one `:root {…}` block of raw tokens, `--color-*`, `--space-*`,
+  `--size-*`, `--font-*` (registered via `addComponents`, hence "components"; no component
+  classes). Customers map these to colour roles in their own variables.
+- **`@tailwind utilities`** = Tailwind's classes for the classes found in `content` (themed by
+  the same tokens) plus core's `flow-space-*` and `spot-color-*`.
+- **`@tailwind base` is not used** and core ships no file for it: `preflight` is off (`reset.css`
+  replaces it), so it would only add the empty `--tw-*` defaults that Tailwind's composite
+  utilities need (`rotate-*`, `blur-*`, `ring-*`, `shadow-*`, `filter`). Without them such a class
+  silently does nothing, so style those in CSS. Tailwind's content scan also picks up plain words
+  (an SVG `<filter>` yields an unused `.filter` rule). Harmless.
 
 Customer CSS entry: `src/assets/css/global/global.css` (or `config.css.cssPath`).
 `config.css.minify`/`inline` control output.
