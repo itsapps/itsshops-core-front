@@ -129,6 +129,10 @@ pushes.
    `%s`, then the upgrade notes) — bumps `package.json`, commits, creates the annotated tag
    (`.npmrc` `tag-version-prefix=""` keeps tags unprefixed); then `git push --follow-tags origin main`. Until pushed, the version commit/tag can still be amended
    (`git tag -f -a <tag>`); once pushed, treat a tag as final.
+   **Before pinning:** do the new versions' CHANGELOG "Upgrading" steps for the customer's datasets
+   (e.g. core-back 5.4.0: no `orderWithdrawal` drafts, raw perspective). **Reading a production
+   dataset is the user's call:** Claude Code's auto-mode classifier blocks it like a `user` push —
+   ask the user to allow one read (it then applies to that read only) or to run the query in Vision.
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
    in the frontend and/or backend; in the **frontend** then also `npx update-browserslist-db@latest`
    (refreshes `caniuse-lite` in the lockfile — it's frozen there, and autoprefixer/cssnano print
