@@ -1,208 +1,444 @@
-# Plan — customer starter: `itsshops init` generates a new project
+# Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **Parked** (2026-11-10, owner discussion in the itsapps session; not yet reviewed with
-`/itsshops-refine-plan`). Nothing built yet. Resume with `/itsshops-refine-plan customer-starter`,
-then step 1.
+Status: **Planned** (2026-11-10, owner discussion in the itsapps session; refined once, then
+reworked the same day from "one starter + `itsshops init` generator" to "starter repo with a
+variant library, assembled by the command"). Nothing built yet. Parts A + B verified against the
+code 2026-11-10; parts C–E refined once the same day (wrappers, default header/footer, itsapps
+modules, intake limits checked; A.3 added from it). Open question 7 needs the owner.
 
-**Goal:** a new customer project (website or webshop) starts from a clean, feature-trimmed starter
-instead of a copy of another customer. The file structure is easy to scan and logical. CSS and JS
-start with good, plain defaults. Every part core renders for the chosen features works and is
-styled — nothing missing, nothing unused. The customer project stays **free and unopinionated**:
-everything the starter writes belongs to the customer and can be changed or deleted; core never
-reads it.
+**Goal:** `/itsshops-new-customer` asks the owner a few basic questions (site or shop, features,
+which header/menu/cart/footer style, layout, modules) and assembles a working project from
+**tested parts** — clean, easy-to-scan structure, plain good defaults, every part core renders for
+the chosen features working and styled, nothing unused. The customer project stays **free**:
+everything copied in belongs to the customer; core never reads it.
 
 **Why:** new customers were copied from siblings (itsapps from Tinhof/fem_innenarchitektur) and
-carried leftovers for months. Core's JS toggles states that no core CSS styles (cart `is-open`,
-overlay `is-visible`, menu `is-open`), so a project without hand-written CSS has a broken cart and
-menu. Core also uses colour roles (`--color-bg/text/error`) it never defines.
+carried leftovers for months. Core's JS toggles states no core CSS styles (cart `is-open`,
+overlay `is-visible`, menu `is-open`), core's default header renders submenu buttons no script
+opens, `core.css` ships shop CSS to content sites, and the markup/JS contract each part must keep
+is written down nowhere — every customer re-derived it from the code.
 
-When this ships, delete this file. Durable parts go to `workflows/new-customer.md` (rewritten),
-`architecture/cli.md` (`init`), `architecture/templates-and-assets.md` (CSS: layers, role
-contract, boilerplate, starter layout), the core-front `CHANGELOG.md`, and a decision record (why
-the starter is copied into the customer instead of imported from core).
+When this ships, delete this file. Durable parts go to the new `architecture/ui-contracts.md`,
+`architecture/templates-and-assets.md` (CSS split, layers, role contract), the starter repo's own
+`CLAUDE.md`, `workflows/new-customer.md` (rewritten), the core-front `CHANGELOG.md`, and decision
+records (why the starter is copied, not imported; why variants live outside core).
 
 ## Decided (owner, 2026-11-10)
 
-- **The starter is copied, not imported.** All default styling (look *and* the CSS core's JS
-  needs to work) lands in the customer repo as customer-owned files. Reason: CSS imported from
-  core and then overridden ships twice; customer-owned files are edited in place, so nothing is
-  unused. No new design CSS in core.
-- **Feature-trimmed:** a project gets only the files for its features (no `cart.css` on a content
-  site, no user-page CSS without `users`).
-- **The CSS mechanism stays** (one entry `global.css`, PostCSS + Tailwind 3, core's per-feature
-  importable files). Only small, opt-in simplifications (part B).
+- **Three layers, each in one place:**
+  1. **Contracts in core** (part A): per UI part, the hooks, states and a11y behaviour core's
+     JS relies on. Core owns them because core's JS defines them.
+  2. **Core CSS, split by feature** (part B); `core.css` is deleted.
+  3. **A separate starter repo `itsshops-starter`** (part C) with a base skeleton, a **variant
+     library** per part, feature and module packages, and a manifest. Core repos carry no
+     starter files.
+- **The command assembles** (part D): intake → copy base + chosen variants + features + modules
+  per the manifest → fill tokens → checks. **No generator script** (`itsshops init` keeps doing
+  only `netlify.toml`); add one later on top of the same manifest only if manual assembly proves
+  error-prone.
+- **Wishes outside the library** are built by Claude **from the part's contract**; a variant that
+  proves itself in a project may be added back to the library.
+- **Copied, not imported:** default styling (look and the CSS the JS states need) lands in the
+  customer repo as customer-owned files, so nothing ships twice and nothing is unused.
 - **One CSS file per module** under `blocks/modules/`, named like its template.
 - **Colour roles** are the starter's vocabulary; core documents the roles it uses and gets
   fallbacks.
-- **Existing customers change nothing** — every core change here is additive or opt-in.
+- **`core.css` removed** (B.4): the four active customers (tinhof, jurtschitsch, rosi_schuster,
+  itsapps) switch imports in the same release → core-front **major** (3.x → 4.0.0). Dormant
+  customers (fem_innenarchitektur, grass-art, yogamax, …) pin old tags; not edited (global
+  rule) — they follow the CHANGELOG "Upgrading" note when work resumes.
+- Everything else in core is additive or opt-in.
 
-## Part A — the starter (frontend)
+## Part A — UI contracts (core-front)
 
-Lives in core-front `src/starter/` (shipped as `dist/starter/` via a tsup `onSuccess` copy, like
-`src/templates`). Generated tree for a project (★ = only with the named feature):
+New doc `.claude/architecture/ui-contracts.md` (+ routing row in `CLAUDE.md`). One section per
+part core's JS drives, each with: **required markup hooks**, **states the JS sets**, **what the
+CSS must do with them**, **a11y the markup must provide** (the JS supplies the rest). Verified
+against `src/scripts/` 2026-11-10:
 
-```
-<project>/
-  CLAUDE.md                          thin, customer-only (pattern: itsapps/tinhof)
-  package.json  eleventy.config.mts  itsshops.config.mts  netlify.toml
-  tsconfig.json  vitest.config.ts  .gitignore  .env.example
-  netlify/functions/
-    preview.mts
-    ★checkout: payment_create, payment_webhooks, payment_refund, order_notify,
-               order_status, order_withdraw, order_withdraw_notify, order_meta_cleanup
-    ★users: user_* wrappers   ★newsletter: newsletter-* wrappers
-  src/
-    _config/  colors.mts  fonts.mts  text-sizes.mts  extensions.mts  (stdContent projection)
-    _includes/overridable/modules/stdContent.njk   the one text module (see below)
-    assets/
-      css/global/
-        global.css                   the entry (short; part B)
-        global/  fonts.css  variables.css (spacing, radius, motion + colour roles)  base.css
-        blocks/
-          header.css  nav.css  footer.css  locale-switcher.css  buttons.css  page.css
-          static-page.css  error-page.css  maintenance.css  carousel.css  youtube.css
-          ★shop: cart.css  product-card.css  product-list.css  product.css  category.css
-                 product-filters.css  order-thanks.css
-          ★newsletter: newsletter.css   ★users: user-pages.css   ★gallery: gallery.css
-          modules/
-            _shared.css              spacing between modules, .module wrapper
-            stdContent.css  privacyPolicyModule.css  carousel.css  youtube.css
-            ★shop: productList.css  productVariantList.css  categoryList.css
-                   withdrawalPolicyModule.css  shippingInfoModule.css
-      scripts/index.ts               imports core's scripts + a commented example of a
-                                     guarded lazy import for customer code
-      fonts/preload/                 empty (+ README line: only above-the-fold fonts)
-      images/favicon/                placeholder set
-  tests/  setup.ts  utils/sanity.ts  dataset/menu.test.ts  unit/eleventy-run.test.ts
-```
+- **Menu** (`menu.ts`, every `[data-menu-toggle]` button): target = `data-menu-toggle` value or
+  `aria-controls` id. Open: removes `hidden` (only if the target started `hidden`), adds
+  `is-open`, `aria-hidden="false"`, removes `inert`, `aria-expanded="true"` on the button,
+  inerts the rest of the page (`lockInertOutside([el, btn])`), focuses the first focusable.
+  Close (button, `[data-menu-close]` inside, Escape): the reverse, `data-closing` on the button
+  for 300 ms (for a closing animation), focus back to the button. CSS: show/hide/animate on
+  `.is-open`; a target that is visible inline on large screens must **not** start `hidden` there.
+- **Submenus:** core's default header renders `.site-nav__submenu-toggle` /
+  `.site-nav__trigger` buttons with `aria-expanded` + `aria-controls` — **no core script handles
+  them** (only jurtschitsch has its own `src/assets/scripts/nav.ts`). That's a bug in core's
+  default markup (a control that does nothing). Fix in core (A.2).
+- **Cart** (`cart-ui.ts`): `#cart-sidebar` containing `[data-cart-items]`, `[data-cart-total]`,
+  `[data-cart-empty]`, `[data-cart-close]`; any number of `[data-cart-toggle]` buttons
+  (`aria-expanded` kept in sync) and `[data-cart-count]` badges; optional `[data-cart-overlay]`.
+  States: `.cart-sidebar.is-open`, overlay `.is-visible`, `[data-cart-empty]` `hidden`, Escape
+  closes. Lines come from the `cartItem` macro template (`[data-cart-item]`,
+  `[data-qty-decrease|value|increase]`, `[data-cart-remove]`). Add to cart:
+  `[data-add-to-cart]` inside `[data-product-actions]` or `.product-card__actions`, with an
+  optional `[data-qty-control]`; the button gets `.is-added` briefly. **No cart page exists in
+  core** — the sidebar is the only cart UI.
+- **Newsletter dialog** (`newsletter-dialog.ts`): `[data-newsletter-dialog]` containing
+  `[data-newsletter-open]`, a `<dialog>`, `[data-newsletter-backdrop]` (toggled `hidden`),
+  `[data-newsletter-subscribe]`, `[data-newsletter-close]`; sets `html.newsletter-dialog-open`
+  while open — **no core CSS styles it**, the customer CSS must lock scroll.
+- **Product filter panel:** already documented in `templates-and-assets.md` → "Product filter
+  panel" — move/link it here (`is-open`, modal opt-in, `html.has-filter-panel-open`,
+  `[data-product-list][data-view]`).
+- **Carousel, gallery, lightbox, search, age gate, checkout:** hooks listed (`[data-carousel]`,
+  `[data-gallery]`, `[data-gallery-open]`, `[data-search]`, …); their states are styled by core
+  CSS already — note which file.
+- **Global rule for all parts:** core shows/hides almost everything with the `hidden` attribute,
+  and any author `display` rule beats the UA's `[hidden]` style; core patches this only per
+  component. Customer base CSS must set `[hidden] { display: none !important; }`.
 
-Rules for the default CSS:
-- **Plain on purpose:** system font stack, neutral palette, readable spacing — works on day one
-  and doesn't make every site look alike. The real design starts with the `frontend-design`
-  skill.
-- **Only roles, never palette names or literal colours** (part B.3), so restyling = palette +
-  one mapping.
-- **Accessible:** AA contrast for every role pairing that carries text, `:focus-visible` outline
-  (the itsapps/jurtschitsch inset dotted pattern), `prefers-reduced-motion` respected, menu/cart
-  states keyboard-reachable as core's JS expects.
-- **Covers every state core's JS sets**, inventoried from `src/scripts/` (cart `is-open`, overlay
-  `is-visible`, menu `is-open`/`hidden`, `is-added`, newsletter backdrop + scroll-lock class,
-  filter panel `is-open`, carousel icons) and every class core's templates render that no core
-  CSS styles (inventory 2026-11-10: `site-header`, `site-nav`, `site-footer`, `footer-nav`,
-  `locale-switcher`, `cart-sidebar`/`cart-overlay`/`cart-item`/`qty-control`/`cart-toggle`,
-  `product-card`, `product-list`, `product*`, `category*`, `newsletter-dialog`/`-signup`,
-  `static-page`, `page-title`, `error-page`, `maintenance`, `youtube-embed`, `post*`). Each lands
-  in the block file of its part.
+**A.2 — submenu disclosure in core** (core-front, `src/scripts/menu.ts` or a new
+`submenu.ts` wired in `src/scripts/index.ts` with a DOM guard): any button with
+`aria-expanded` + `aria-controls` inside `.site-nav` (better: a hook `[data-submenu-toggle]`,
+added to core's default header) toggles its list (`hidden` + `aria-expanded`), Escape closes the
+open one and returns focus, opening one closes its siblings. Justified for core: core's own
+default header renders these buttons. Jurtschitsch keeps its `nav.ts` (its override doesn't use
+the new hook) — check that both don't bind the same buttons. Unit test (jsdom, like the other
+script tests).
 
-**The one text module:** core has no generic text module (its page modules are carousel,
-youtube, category/product lists and the generated legal ones). The starter ships `stdContent`
-(portable text) — schema in the backend starter, projection in `extensions.mts`, template + CSS
-in the frontend — so a fresh page can show content. Same shape as itsapps' `stdContent`.
+**A.3 — two more fixes in core's default header/footer** (found in the refine round
+2026-11-10; the starter's `inline` header and both footer variants use core's default markup,
+see part C, so these must be right):
+- **Menu stays inert after a resize.** Core's default header uses *one* `#site-nav` for the
+  inline desktop menu and the mobile overlay. `menu.ts` `close()` sets `aria-hidden="true"` +
+  `inert` on it; open → close on a phone, then widen the window (or rotate a tablet) and the
+  desktop menu is unreachable for keyboard and screen readers. (itsapps doesn't hit it: its
+  overlay is a separate `.site-nav-overlay` element that starts `inert`.) Fix in `menu.ts`:
+  set/clear `inert`/`aria-hidden` only while the toggle button is rendered
+  (`btn.offsetParent !== null`, or a `matchMedia` of the toggle's breakpoint passed via
+  `data-menu-breakpoint`), and on `resize`/`matchMedia` change when the toggle disappears:
+  close without moving focus and remove `inert`/`aria-hidden` (same approach as
+  `product-filter.ts`, which closes itself when its toggle is no longer rendered). jsdom test.
+- **Untranslated footer label:** `overridable/footer.njk` has `aria-label="Footer navigation"`
+  hard-coded (English on a German site). Use a translation key (`navigation.footerMenu` or
+  similar, de + en in core's translations).
+- **Cart button as a partial:** core's header renders the cart toggle inline (count only,
+  `aria-label`). Move it to `overridable/partials/cart-toggle.njk` (included by the default
+  header) so a customer can change the cart button without overriding the whole header.
+  Additive; customers with their own header are unaffected.
 
-## Part B — CSS simplifications (core-front, opt-in)
+## Part B — core CSS (core-front)
 
 1. **Boilerplate into core.** `tailwind/{base,components,utilities}.css` are one `@tailwind …`
    line each and byte-identical in every customer; `utilities/flow.css` + `region.css` are
    identical in tinhof/jurtschitsch/rosi_schuster; `wrapper.css` differs only by its default
-   width (a variable). Core ships `dist/utilities.css` (flow, region, wrapper with
-   `--wrapper-max-width`). The starter's `global.css` keeps the three `@tailwind` directives
-   inline (they must stay in the customer entry — Tailwind processes the entry) and imports the
-   utilities from core. Existing customers may switch; their copies keep working.
-2. **Cascade layers for core CSS.** The starter imports core files into a layer:
-   `@import '@itsapps/itsshops-core-front/dist/core.css' layer(core);` (reset into
-   `layer(reset)`, declared first: `@layer reset, core;`). Unlayered customer CSS then always
-   wins over core, whatever the import order or specificity (today tinhof/jurtschitsch/rosi
-   import `core.css` *after* their globals, so core can win at equal specificity). **Verify
-   first:** `postcss-import` 16 supports `layer()`; check that Tailwind 3 (preflight is already
-   off — `tailwind.config.ts` `corePlugins.preflight: false`, so `@tailwind base` emits no reset)
-   and `postcss-nesting` leave the layer blocks intact and the output order is right, with a
-   built test page.
+   width (a variable). Core ships `src/assets/css/utilities.css` → `dist/utilities.css` (flow,
+   region, wrapper with `--wrapper-max-width`; `copySync` line in `tsup.config.ts` `onSuccess`,
+   row in the "Importable core CSS files" table). Customer entries keep the three `@tailwind`
+   directives inline — they must be in the entry, and `@tailwind components` is also where
+   core's Tailwind plugin emits the palette/space/size/font custom properties
+   (`addComponents({':root': …})` in `tailwind.config.ts`), so without it no `--color-*` exists.
+   Customers `@apply wrapper` (15×), `flow`, `region` today — keeps working, `@apply` resolves
+   classes from any imported file.
+2. **Cascade layers for core CSS.** Starter entries import core files into a layer:
+   `@layer reset, core;` then `@import '…/dist/reset.css' layer(reset);`,
+   `@import '…/dist/base.css' layer(core);` (and `carousel`/`shop`/`form`/`checkout`/…
+   likewise). Unlayered customer CSS then always wins over core, whatever the import order or
+   specificity (today tinhof/jurtschitsch/rosi import `core.css` *after* their globals).
+   **Spike (2026-11-10, postcss-import 16 + tailwindcss 3.4, scratch test):** `layer()` imports
+   pass through Tailwind intact; plain customer rules stay unlayered; relative `@import`s inside a
+   package file resolve and inherit the layer. **Gotcha:** a customer rule that `@apply`s a class
+   defined inside a layered file is emitted *inside that layer* (`.page2 { @apply wrapper }` →
+   `@layer core { .page2 {…} }`) and silently loses to every unlayered rule. Hence
+   `utilities.css` is imported **unlayered**, and starter CSS never `@apply`s a class from a
+   layered core file (one customer `@apply btn` from `form.css` today — the starter defines its
+   own button). Step 1 re-checks through the real pipeline (`src/config/css.ts`: ext-glob →
+   import → custom-media → nesting → tailwind nesting → tailwind → nesting → autoprefixer,
+   optional cssnano — cssnano must keep the `@layer` order statement).
 3. **Colour-role contract.**
-   - Document in `templates-and-assets.md` the roles core's own CSS uses: today `--color-bg`,
-     `--color-text` (`core.css` skip link, `form.css`), `--color-error` (`form.css`). The
-     starter's `variables.css` defines a fixed role set: `bg`, `text`, `muted`, `primary`,
-     `on-primary`, `surface`, `border`, `error` (itsapps' set — it already carries dark mode and
-     bands), mapped from the palette in `src/_config/colors.mts`.
-   - **Fallbacks** in core CSS for every role it uses (`var(--color-error, <AA red>)` etc.), so
-     core parts render correctly without customer roles.
-   - **Build warning** in `src/config/css.ts`: after compiling, list every `var(--color-…)`
-     used without a fallback whose custom property is defined nowhere in the output → warn with
-     the names. Catches a renamed/removed palette colour (today: no error, the property silently
-     falls back to inherited/initial). Note: customer `colors` *replace* core's default palette
-     (no merge — `tailwind.config.ts`), so only the customer's names exist.
+   - Document in `templates-and-assets.md` the roles core's CSS uses: `--color-bg`,
+     `--color-text` (skip link — `base.css` after B.4 —, `form.css`), `--color-error`
+     (`form.css`). The starter's `variables.css` defines a fixed role set: `bg`, `text`,
+     `muted`, `primary`, `on-primary`, `surface`, `border`, `error` (itsapps' set — it already
+     carries dark mode and bands), mapped from the palette in `src/_config/colors.mts`.
+   - **Fallbacks** in core CSS for every role it uses (`var(--color-error, <AA red>)` etc.).
+   - **Build warning** in `src/config/css.ts`, after `postcss(plugins).process()` (before the
+     write to `_includes/css/global.css`): collect every `--color-*` *defined* in `result.css`
+     and every `var(--color-x)` *used without a fallback*; warn once per build with the undefined
+     names (`console.warn`, no failure — a template may define a property inline). Unit test with
+     a small CSS string. Catches a renamed/removed palette colour (today: silent fallback to
+     inherited/initial). Customer `colors` *replace* core's default palette (no merge —
+     `tailwind.config.ts`), so only the customer's names exist.
+4. **Split `core.css` by feature, then delete it.** Today `core.css` (172 lines) is imported by
+   every customer, ~110 lines of it shop-only:
 
-## Part C — `itsshops init` generates the project (core-front CLI)
+   | Section in `core.css` today | Needed by | Moves to |
+   |---|---|---|
+   | skip link (`layouts/base.njk`) | every site | `base.css` |
+   | `.privacy-policy` spacing (shares selector lists with the two shop modules — split them) | every site | `base.css` |
+   | carousel pause button (`core/modules/carousel.njk`) | sites with the carousel module | `carousel.css` |
+   | cart close/remove icon | shop | `shop.css` |
+   | `html.has-filter-panel-open` | shop | `shop.css` |
+   | `.legal-guarantee-notice` (shipping module, checkout) | shop | `shop.css` |
+   | `.withdrawal-instructions`, `.shipping-info*` | shop | `shop.css` |
+   | `.legal-guarantee-compact*` (only `core/components/checkout.njk`) | checkout | `checkout.css` |
 
-Today `init` only writes `netlify.toml`. New:
+   - New `src/assets/css/{base,carousel,shop}.css`, one `copySync` each; **delete**
+     `src/assets/css/core.css` and its `copySync` line (`tsup.config.ts:46`).
+   - **Customer switch, in the same release as the core pin** (an import of the deleted file
+     fails with "Failed to find"). Replace the one `core.css` line in
+     `src/assets/css/global/global.css`, same position:
+
+     | Customer | Replace `dist/core.css` with |
+     |---|---|
+     | itsapps (content site; `carousel` in `page.modules`) | `base.css`, `carousel.css` |
+     | tinhof | `base.css`, `carousel.css`, `shop.css` |
+     | jurtschitsch | `base.css`, `shop.css` (+ `carousel.css` if its backend `page.modules` lists `carousel` — check) |
+     | rosi_schuster | `base.css`, `carousel.css`, `shop.css` (catalog without checkout still renders the shop modules) |
+
+     Check each against its backend's `page.modules` before writing it.
+   - Import each core file once — postcss-import deduplicates only identical imports, so the
+     same file imported in two layers (or with and without one) ships twice.
+   - `form`, `checkout`, `search`, `lightbox`, `age-gate`, `product-filter-price.css` are
+     already per feature — unchanged.
+   - Docs naming `core.css` that must change: `templates-and-assets.md` (table, the
+     `global.css` example, the `dist/` path explanation — use `base.css`),
+     `decisions/css-shipped-via-dist-no-exports.md` (example paths), `workflows/new-customer.md`.
+
+## Part C — the starter repo `itsshops-starter`
+
+New repo `~/Documents/programming/jamstack/itsshops-starter` (GitHub `itsapps/itsshops-starter`,
+**private** — owner, 2026-11-10; own GitHub user, `main`, like core). The command always reads
+the local checkout; nothing installs the starter as a dependency, so private needs no token
+anywhere except a fresh clone on another machine. It is a **parts library**, not a
+runnable project by itself:
 
 ```
-itsshops init [dir] --kind site|shop [--features checkout,users,newsletter,search,gallery,vinofact,age-gate]
-              [--name <slug>] [--locales de,en] [--force]
+itsshops-starter/
+  CLAUDE.md                      how the library works, rules for adding a variant
+  manifest.json                  every package: id, kind, needs (features), files → target
+                                 paths, inserts (see below), intake label + ASCII preview
+  base/                          always copied
+    frontend/   package.json  eleventy.config.mts  itsshops.config.mts  netlify.toml
+                tsconfig.json  vitest.config.ts  .gitignore  .env-sample  CLAUDE.md
+                netlify/functions/preview.mts
+                src/_config/{colors,fonts,text-sizes,extensions}.mts
+                src/assets/css/global/global.css + global/{fonts,variables,base}.css
+                src/assets/css/global/blocks/{page,buttons,locale-switcher,error-page,maintenance}.css
+                src/assets/css/global/blocks/modules/_shared.css
+                src/assets/scripts/index.ts   (imports core's scripts + a commented guarded
+                                               lazy-import example)
+                src/assets/images/favicon/*   (names core's head links: favicon.ico,
+                                               favicon.svg, favicon-96x96.png,
+                                               apple-touch-icon.png,
+                                               web-app-manifest-192x192.png, -512x512.png)
+                src/assets/fonts/preload/     (empty)
+                tests/ setup.ts utils/sanity.ts dataset/menu.test.ts unit/eleventy-run.test.ts
+    backend/    package.json  sanity.config.ts  sanity.cli.ts (dedupe)  netlify.toml
+                .env-sample  .gitignore  tsconfig.json  vitest.config.ts  CLAUDE.md
+                src/schema/{index,extensions}.ts  src/structure/index.ts
+                src/translation/{index,de,en}.ts  src/assets/icons.ts
+  variants/                        a variant = CSS, plus a template override only where needed
+    header/inline/       blocks/header.css + blocks/nav.css (core's default markup)
+    cart-button/count/   blocks/cart-toggle.css
+    cart-button/text-count/  overridable/partials/cart-toggle.njk + blocks/cart-toggle.css
+    footer/simple/       blocks/footer.css
+    footer/columns/      blocks/footer.css
+  features/
+    shop/  checkout/  category/  blog/  users/  newsletter/  search/  age-gate/  gallery/  dark/
+                       each: function wrappers, block CSS, page templates' CSS, core CSS
+                       imports, config + .env-sample inserts, backend feature flags
+  modules/
+    <type>/            backend schema object(s) + frontend projection snippet + template
+                       + blocks/modules/<type>.css + de/en labels
 ```
 
-- Reads `dist/starter/` + a **manifest** (`src/starter/manifest.ts`): each file → the condition
-  it's written under (`always`, `kind: shop`, `feature: checkout`, …), and which lines of
-  `global.css`, `itsshops.config.mts` `features`, `.env.example` keys and `package.json` deps a
-  feature adds. Template placeholders (`{{name}}`, locales) filled by simple string replacement
-  — no template engine dependency.
-- Skips existing files unless `--force` (as today); prints the list written and the next steps
-  (npm install core as git dep, `npm link`, `.env`, run).
-- `netlify.toml`: Rosi Schuster's `!node_modules/…` excludes for the preview function become the
-  default (keeps the function small).
-- Feature → core CSS imports: `form.css` (shop/users/newsletter), `checkout.css` (checkout),
-  `search.css` (search), `lightbox.css` (gallery), `age-gate.css` (age-gate),
-  `product-filter-price.css` (shop).
+**Inserts** (how packages extend shared files without a generator): base files carry marker
+comments, e.g. `/* starter:core-imports */` in `global.css`, `// starter:features` in
+`itsshops.config.mts` and the backend `sanity.config.ts`, `// starter:page-modules` in
+`schema/extensions.ts`, `// starter:schema-objects` in `schema/index.ts`,
+`// starter:module-projections` in `extensions.mts`, `# starter:env` in both `.env-sample`s.
+Each package's manifest entry lists the lines it inserts at which marker; the command inserts
+them and removes the markers at the end. **Block and module CSS need no inserts:** the base
+`global.css` globs `blocks/*.css` and `blocks/modules/*.css` (`@import-glob`, as every customer
+entry does today), so a package's CSS file is picked up by being copied.
 
-**Backend starter — open question (see below):** the Studio side needs `package.json`,
-`sanity.config.ts` (features mirrored from the frontend flags — the backend set is a superset),
-`sanity.cli.ts` (dedupe), `src/schema/{index,extensions}.ts` (page modules incl. `stdContent` and
-the feature's core modules), `src/schema/objects/stdContent.ts`, `src/structure/index.ts`,
-`src/translation/*`, `netlify.toml`, `.env.example`, `CLAUDE.md`.
+**Variant library v1** — verified 2026-11-10: core's default `overridable/header.njk` already
+is the "inline" header (logo, `#site-nav` with submenu buttons, burger toggle, actions with
+locale switcher + count-only cart toggle) and core's default `overridable/footer.njk` renders
+one group per footer menu + company block. So v1 variants are **CSS on core's default markup**
+(no template override → the customer gets core's markup fixes for free), except where noted:
 
-## Part D — command & docs
+| Part | Variants v1 | Implementation |
+|---|---|---|
+| Header + menu | `inline` only (owner, 2026-11-10): one row on wide screens, dropdown submenus (A.2), burger + overlay of the same `#site-nav` below the breakpoint (A.3 resize fix). Later candidates: `two-row` (itsapps), burger on every size, centred logo | `blocks/header.css` + `blocks/nav.css`, no override. Mobile hiding via `display`/`visibility`, never off-screen transform alone (keeps it out of the a11y tree before the first toggle) |
+| Cart button | `count` (core default: count badge, `aria-label`, like tinhof) · `text-count` ("Warenkorb 2", like jurtschitsch: visible text `aria-hidden` + sr-only text with `aria-live` count) | `count`: CSS only; `text-count`: overrides `partials/cart-toggle.njk` (A.3) |
+| Footer | `simple` (groups in a row, company below) · `columns` (groups + company as columns) | CSS only on core's footer |
+| Cart | sidebar only (core has no cart page; a page is out of scope — open question 5) | `blocks/cart.css` (feature `shop`) |
 
-- Rewrite `workflows/new-customer.md`: intake → `itsshops init` (frontend + backend) → tokens,
-  `.env` → accounts/Sanity/Netlify (owner steps) → first content → checks. Drop the
-  copy-a-sibling tables; siblings stay as *design* references only.
-- `~/.claude/commands/itsshops-new-customer.md`: map the intake answers to the `init` flags.
-- Customer `CLAUDE.md` template in the starter; the module rule there names all four parts
-  (schema, projection, template, `blocks/modules/<type>.css`).
+**Layout** is intake values, not variants: content width (`--wrapper-max-width`), text measure,
+section spacing → written into `variables.css`.
+
+**Modules v1:** `stdContent` (text), `hero`, `teaser` (image + text), `faq` — plus the core
+modules a feature brings (`carousel`, `youtube`, `privacyPolicyModule` always; shop:
+`productList`, `productVariantList`, `withdrawalPolicyModule`, `shippingInfoModule`;
+`shop.category`: `categoryList` — core-back gates them by `feature:` in
+`src/schemas/modules/*.ts`; the module package only adds the CSS file). Sources: itsapps (`hero`,
+`teaser`, `faq`), Rosi Schuster / itsapps `stdContent` (`stdContent.ts` byte-identical there;
+needs `standardContent.ts`, `builders.ts` `standardBlock`, icons, `localizedFieldTypes:
+['standardContent']`; frontend projection `p.i18nStandardContentField('text')`, template
+`<div class="std-content">{{ module.text | portableText | safe }}</div>`). Taken over as
+**plain** versions — the source customers' looks (itsapps "Poster" etc.) stay with them.
+Concretely (itsapps schemas checked 2026-11-10): `hero` = `headline` (`i18nText`), `subline`
+(`i18nText`), `image` (`localeAltImage`) — **drop** `illustration` (itsapps' own drawings,
+`illustrations.ts`); `teaser` = `eyebrow`, `headline`, `text` (`i18nStandardContent`), `image`,
+`layout` — drop `illustration`, keep `video` optional only if its template part (native
+`<video controls>`, poster = image, `aria-label` from the alt) comes along, else drop; `faq` =
+`headline` + `items[]` (`question`, `answer`), native `<details>`, as is. Templates rewritten
+without itsapps' bands/`theme`, illustration and reveal markup; each module's icon from the
+backend `src/assets/icons.ts` (itsapps' `HeroIcon`, `TeaserIcon`, `FaqIcon`,
+`StandardContentIcon`).
+
+**Feature packages** — function wrappers with file names and `config.path` matching core's
+fixed `/api/…` routes (`commerce-and-netlify.md`). Verified 2026-11-10:
+- **checkout** — copy jurtschitsch's set (identical names in tinhof): `payment_create`
+  (`/api/payment/create`), `payment_webhooks` (`/api/payment/webhooks`), `payment_refund`
+  (`/api/payment/refund`), `order_notify` (`/api/order/notify`), `order_status`
+  (`/api/order/status`, `rateLimit`), `order_withdraw` (`/api/order/withdraw`, `rateLimit`),
+  `order_withdraw_notify` (`/api/order/withdraw-notify`), `order_meta_cleanup`
+  (`schedule: '@daily'`).
+- **newsletter** — jurtschitsch's `newsletter-subscribe|confirm|unsubscribe`
+  (`/api/newsletter/<name>`); with `captcha: false` take rosi_schuster's subscribe wrapper
+  (`rateLimit`, `captcha: false` passed to the handler).
+- **users** — **no active customer wires them on current core** (rosi_schuster removed its
+  user wrappers; the old `jurtschitsch/jurtschitsch_frontend` is a legacy checkout). Paths from
+  core's client code (`src/shared/user-api.ts`): `user-register|login|confirm|recover|reset` →
+  `/api/user/<name>`; `user-logout` has no caller in core's scripts/templates — check before
+  adding it; `supabase-keep-alive` (scheduled; its doc comment suggests
+  `schedule: '0 9 * * 1,4'`). Mark the users package **untested** in the manifest until a real
+  project uses it.
+- Not in the library: `wc-api` (Winenet only), `auth-webhooks` (removed at rosi_schuster). Scheduled
+functions run only on the production deploy (not `staging` branch deploys) — the feature
+package's `CLAUDE.md` snippet says so. Core CSS per feature: `base` + `carousel` always, `shop`
+(shop), `form` (shop, users, newsletter), `checkout` (checkout), `search`, `lightbox` (gallery),
+`age-gate`, `product-filter-price` (shop). Non-feature switches: search → `search: {…}` stub
+(shop only), age gate → `ageGate: { enabled: true }`, gallery → `lightbox.css`, dark →
+`manifest.colorScheme: 'light dark'` + a dark role block (system preference; the theme toggle
+stays itsapps-only until a second customer needs it).
+
+**Default CSS rules (all packages):** plain on purpose (system font stack, neutral palette);
+only colour roles, never palette names or literal colours; AA contrast for every role pairing
+that carries text; `:focus-visible` inset dotted outline (itsapps/jurtschitsch pattern);
+motion only under `prefers-reduced-motion: no-preference`; every state from the part's contract
+styled; base CSS has the `[hidden]` rule. Files: `.env-sample` (not `.env.example` — the
+customers' `.gitignore` ignores `.env*` except `!.env-sample`).
+
+## Part D — the command `/itsshops-new-customer`
+
+Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-customer.md`:
+
+1. **Intake**, with `AskUserQuestion` — limits: 1–4 questions per call, **2–4 options per
+   question** (an "Other" free-text option is added automatically), previews only on
+   single-select questions. So a long feature list is split into several multi-select
+   questions, and **a part with only one variant is not asked** (v1: the header). Rounds:
+   - Round 1 — basics: kind (site / shop); locales (de / de + en / other); form of address
+     (Sie / Du); extras, multi-select (newsletter, users, blog, dark mode).
+   - Round 2 — only for a shop: shop features, multi-select (checkout, category, coupons,
+     vinofact); more shop, multi-select (stock, manufacturer, search, age gate).
+   - Round 3 — look: footer (`simple` / `columns`, with previews); cart button (`count` /
+     `text-count`, shop only); content width (narrow / medium / wide → `--wrapper-max-width`).
+   - Round 4 — content: modules, multi-select (stdContent, hero, teaser, faq); gallery
+     (yes / no).
+   - Names (folder, repo, domain, company) as free text in the plan step.
+   The manifest carries each question's label and each option's description/preview, so
+   adding a variant later needs no command change.
+2. **Plan + go-ahead:** the package list resolved from the manifest (with `needs` checked,
+   e.g. a package requiring `shop`), paths, owner steps.
+3. **Assemble:** copy `base/` → `web/<customer>/<…>-frontend|backend`, then each package's
+   files; apply the inserts; remove the markers; set name/locales/tokens.
+4. **Wishes outside the library:** build from `ui-contracts.md` for that part, same CSS rules;
+   note in the customer `CLAUDE.md` that it isn't a library variant.
+5. **Design pass:** `frontend-design` skill for palette/fonts/details on top of the plain
+   defaults.
+6. Accounts, Sanity, Netlify, first content, remotes, first staging deploy — as in today's
+   `new-customer.md` sections 1, 4, 6, 7 (kept).
+7. **Checks** (below) and the "Done when" list.
 
 ## Part E — checks
 
-- **Generator test** (vitest in core-front): `init` into a temp dir for `--kind site` and
-  `--kind shop --features checkout,newsletter,search` → assert the file list per manifest, no
-  shop files on a site, every `@import` target exists.
-- **Class drift test:** every class selector in `src/starter/**/*.css` must occur in core's
-  `src/templates/`, `src/scripts/` or the starter's own templates — fails when core renames a
-  class the starter styles.
-- **Build smoke:** a generated site and shop build against a real dataset (`npm link` core) — see
-  open question 2. Then Lighthouse accessibility on home, a text page, 404, and for the shop
-  product list, product page, cart open, checkout.
+- **In the starter repo** (vitest; the repo's own `package.json` has
+  `@itsapps/itsshops-core-front` as a devDependency — git dep, `npm link` while core's 4.0
+  branch is unreleased): manifest integrity (every file exists, every insert marker exists in
+  base, `needs` names real features, every intake option points to a package); **contract
+  test** — every template the library ships (v1: `cart-toggle` partial, module templates)
+  contains its part's required hooks (`[data-cart-toggle]` with `aria-controls` +
+  `aria-expanded`, `[data-cart-count]`, …); **drift test** — every class selector in the
+  library's CSS occurs in core's `dist/templates/**/*.njk`, `dist/scripts/**` or the library's
+  own templates.
+- **Assembly smoke** (starter repo script, run before a library release and by the command at
+  the end): assemble a content site (all modules, each footer variant once) and a shop
+  (checkout, newsletter, search; no vinofact) into a scratch dir, `npm link` core, build
+  against the demo dataset (open question 2) — also checks every package's inserts land.
+- **Demo content:** create it once in the assembled shop Studio against the dataset, then
+  `npx sanity dataset export` → `seed/<dataset>.tar.gz` in the starter repo (commands:
+  core-back `workflows/datasets.md`); restore with `dataset import`. Simpler and more robust
+  than a seed script: core-back's product/variant/tax/shipping documents are many and
+  linked, and an export carries them as they are. Contents: home + text pages using each v1
+  module, main + footer menus, settings (company name/address/email, home + privacy page),
+  shop settings, a tax category/country, two shipping methods, a few products with variants,
+  two categories, the privacy/withdrawal/shipping pages.
+- **Per new project:** `npm run build`, `npm test`, Lighthouse accessibility on every page type
+  (go-live checklist → "Tests"), cart/menu by keyboard.
 
 ## Steps
 
-1. Part B.2 spike: verify cascade layers through the PostCSS/Tailwind 3 pipeline (decides
-   whether the starter uses `layer()`).
-2. Part B.1 + B.3 in core-front (utilities file, fallbacks, role docs, build warning) + tests.
-3. Part A starter files (frontend) + the manifest; class drift test.
-4. Part C `init` + generator test.
-5. Backend starter (per open question 1).
-6. Build smoke + a11y for a generated site and shop.
-7. Part D docs + command; `/itsshops-update-docs`; CHANGELOG (minor: new CLI behaviour + opt-in
-   CSS; no customer must change anything).
-8. Optional, separate: split itsapps' 899-line `blocks/modules.css` into `blocks/modules/*.css`.
+1. B.2 spike through the real pipeline (decides whether starter entries use `layer()`).
+2. Core-front on `feature/customer-starter`: A (contracts doc), A.2 (submenu disclosure),
+   A.3 (menu resize fix, footer label, cart-toggle partial), B.1–B.4 + tests.
+3. Switch the four active customers (B.4 table) against the linked core: diff each one's
+   compiled `src/_includes/css/global.css` before/after — same rules, only the former
+   `core.css` sections moved (itsapps: minus the shop section and the compact warranty notice).
+   Commit each on `main` with the core pin at release (step 9).
+4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
+5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
+   (needs the owner's Sanity project, dataset and tokens).
+6. Variant library v1, each against its contract.
+7. Starter checks (manifest, contract, drift) + assembly smoke.
+8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
+9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
+   `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (shops); compact
+   warranty notice now in `checkout.css`. "Added": submenu disclosure, `partials/cart-toggle.njk`,
+   `utilities.css`, role fallbacks, the `--color-*` build warning. "Fixed": default menu stays
+   inert after a resize; translated footer-menu label. Push core before any customer
+   pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
+   Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
+10. Optional, separate: split itsapps' 899-line `blocks/modules.css` into
+    `blocks/modules/*.css`.
 
 ## Open questions
 
-1. **Backend starter delivery:** core-back has no CLI. (a) core-front's `itsshops init --backend
-   <dir>` also writes the Studio from templates in core-front, or (b) core-back ships
-   `starter/` + a tiny bin, or (c) core-back ships `starter/` and the command copies it.
-   Recommendation: (b) — the Studio files belong with core-back's knowledge and versions; one
-   shared manifest format.
-2. **Dataset for the build smoke:** a dedicated `starter` dataset (e.g. in the itsapps Sanity
-   project) seeded with demo pages, menus, settings and a few products, so generated site and
-   shop render real content. Recommendation: yes — also usable as a demo for new customers.
-3. **Gallery/lightbox block CSS:** customers style embla themselves (`blocks/embla-gallery.css`
-   at jurtschitsch) on top of core's `lightbox.css` — check during step 3 whether core's file
-   already makes the gallery usable or the starter needs `gallery.css`.
+1. ~~Backend starter location~~ — resolved by the starter repo (frontend + backend in one).
+2. ~~Dataset for the assembly smoke~~ — decided (owner, 2026-11-10): a **new Sanity project in
+   the itsapps account** with a dataset **`development`** (owner creates both). Demo content
+   only, no personal data → public dataset, Free plan is fine. Needs: project id + a read token
+   for the smoke builds and an Editor token (or the owner in the Studio) to seed it, both in the
+   starter repo's gitignored `.env`. Content: created once in the Studio, kept as a dataset
+   export in the starter repo (part E → "Demo content"). See question 7 (one or two datasets).
+   The smoke shop runs **without vinofact** (its build
+   fetches the live API and fails without credentials — `decisions/vinofact-failure-fails-build.md`).
+3. ~~Gallery CSS~~ — resolved: the inline product gallery (`overridable/gallery/*`, embla) has
+   no core CSS → `features/gallery` ships it (jurtschitsch's `embla-gallery.css` as reference);
+   core's `lightbox.css` covers only the lightbox dialog.
+4. ~~`stdContent` in core?~~ — decided (owner, 2026-11-10): **stays customer-owned, no move
+   to core.** The module shell is shared, but what editors may do in the text is a per-customer
+   choice: Tinhof adds AI translate + system-page links, itsapps blockquotes, Rosi Schuster
+   drops blockquotes and h1, Jurtschitsch has its own `richContent` (with footnotes) instead.
+   The library's `modules/stdContent` is a plain default (standard block styles, no h1 — the
+   page renders its own) that each project adjusts.
+5. ~~Cart as its own page~~ — decided (owner, 2026-11-10): **not in v1**, sidebar only. If a
+   customer wants one, it's a core feature (template + `cartUrl` + `cart-ui.ts` page mode) in
+   its own plan.
+6. ~~Variant sources~~ — resolved in the refine round: v1 header = core's default markup;
+   cart button `count` = core default (as tinhof), `text-count` = jurtschitsch's markup
+   (`jurtschitsch/webshop-frontend/src/_includes/overridable/header.njk`, the `cart-toggle`
+   button); footers = CSS on core's default footer.
+7. **One dataset for both smoke builds?** The owner creates one `development` dataset; the
+   `settings` document is a singleton, so the content site and the shop share one home page and
+   menus. With one dataset the content-site smoke renders the shop's pages too (with
+   `features: {}` the product modules render empty). Recommendation: a second dataset
+   `development-shop` in the same project (check the Free plan's dataset limit on
+   sanity.io/pricing first); fallback: one dataset, the content-site smoke checks only that it
+   builds.
