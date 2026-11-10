@@ -8,6 +8,14 @@ modules, intake limits checked; A.3 added from it). A.3 refined 2026-11-10 again
 core's `header.njk`/`footer.njk` in full and every active customer header (resize fix made
 concrete and widened to the itsapps/rosi_schuster overlay bug; four header/footer a11y fixes
 added). Open question 7 decided the same day (two datasets; owner created `development-shop`).
+Part B + Part C's feature packages refined 2026-11-10 against `src/config/css.ts`,
+`tsup.config.ts`, `core.css` in full, the four active customers' `global.css`, `utilities/`,
+backend `page.modules` and every `netlify/functions` wrapper (B.4 customer table made concrete,
+checkout/newsletter wrapper options and rate-limit count added). Part A "Classes the customer
+must style" + A.3 button hierarchy + Part D intake refined 2026-11-10 against every `btn` in
+`src/templates`, the form scripts' submit handling, `checkout.ts`/`checkout-coupon.ts`,
+core-back's `FeatureConfig` (intake → manifest mapping made concrete; gallery moved to shop
+with its product-container override; open questions 8 + 9 added, then decided by the owner the same day: own button classes, `product_image` block).
 
 **Goal:** `/itsshops-new-customer` asks the owner a few basic questions (site or shop, features,
 which header/menu/cart/footer style, layout, modules) and assembles a working project from
@@ -50,6 +58,15 @@ records (why the starter is copied, not imported; why variants live outside core
   itsapps) switch imports in the same release → core-front **major** (3.x → 4.0.0). Dormant
   customers (fem_innenarchitektur, grass-art, yogamax, …) pin old tags; not edited (global
   rule) — they follow the CHANGELOG "Upgrading" note when work resumes.
+- **`btn` stays** as core's one button-look class (no rename — it would only cost customer
+  edits); core adds **`btn--secondary`** for buttons that aren't the main action on their
+  view (plain `btn` = primary). Documented as a contract, styled by the starter, checked by a
+  test (A, A.3, C, E).
+- **Every core button also has its own class** (owner, 2026-11-10): `btn` (+ `btn--secondary`)
+  gives the site's shared button look, the button's own BEM class (`user-login__submit`, …)
+  lets a site restyle one button without context selectors. The buttons that have only `btn`
+  today get one in A.3. **Component controls** (`.add-to-cart`, `.age-gate__btn--*`, …) keep
+  only their own class — no `btn` (open question 8).
 - Everything else in core is additive or opt-in.
 
 ## Part A — UI contracts (core-front)
@@ -98,6 +115,42 @@ against `src/scripts/` 2026-11-10:
 - **Carousel, gallery, lightbox, search, age gate, checkout:** hooks listed (`[data-carousel]`,
   `[data-gallery]`, `[data-gallery-open]`, `[data-search]`, …); their states are styled by core
   CSS already — note which file.
+- **Look classes core emits but never styles** (section "Classes the customer must style"):
+  `btn` and `btn--secondary` (after A.3). `btn` sits on 15 elements in core's templates
+  (checkout submit + coupon buttons, order withdrawal, the five user forms + two user links,
+  three newsletter views, the withdrawal module's link) and, after A.3, the cart sidebar's
+  checkout link; core's only rule is `.form .btn { align-self }` in `form.css`. Both `<button>`
+  and `<a>` carry it, so the customer rule must style both alike. States the CSS must cover:
+  hover, `:focus-visible`, `:disabled`, and `hidden` (verified 2026-11-10):
+  - user, newsletter and withdrawal forms: while submitting, the script sets `disabled` and
+    swaps `[data-submit-text]` for `[data-submit-loading]` — both `<span>`s inside the button,
+    toggled with `hidden` — so the button must not change size noticeably. `user-reset`'s button
+    starts `disabled` in the markup and `user-reset.ts` enables it once the URL has a token (so
+    without JS it stays disabled).
+  - checkout submit (`[data-checkout-submit]`): no text swap; `checkout.ts` keeps it `disabled`
+    while totals recalculate and while submitting (`setLoading`), progress is shown by
+    `[data-checkout-progress]`, `aria-busy` + `data-checkout-state` sit on the container — so
+    `:disabled` must look clearly inactive but stay readable (AA on its text is not required
+    for disabled controls, but the label must stay legible).
+  - coupon buttons: `checkout-coupon.ts` disables both while busy and swaps apply/remove via
+    `hidden` (remove starts `hidden`) — a `display` on `.btn` would show both; covered by the
+    global `[hidden]` rule below, which is why `buttons.css` relies on it instead of its own
+    `[hidden]` patch.
+  The list holds only shared look classes — a class core adds later for customers to style goes
+  here in the same change. A BEM class of one component (`checkout__submit`) is not on the list.
+  **Rule for the doc:** a button or button-like link in core's form and flow views carries
+  `btn` (+ `btn--secondary` when it isn't the view's main action) **and** its own class
+  (`<block>__<role>`); the shared look goes on `.btn`, a one-off change on the own class.
+  Component controls carry only their own class (next item).
+- **Component buttons without `btn`** (core renders them with their own class; each is styled
+  by the package that brings the part, not by `buttons.css`): `.add-to-cart` (+ `.is-added`,
+  `macros/product.njk` `addToCartButton`, the default class) and `.qty-control__btn` (shop);
+  `.cart-item__qty-btn`, `.cart-item__remove`, `.cart-sidebar__close` (shop, cart); `.cart-toggle`
+  (cart-button variant); `.age-gate__btn--confirm|--deny` (`age-gate.css` is structural only);
+  `.newsletter-dialog__trigger|__close` (newsletter); `.product-filters__reset` (shop);
+  `.carousel__pause` (core-styled, `carousel.css` after B.4); the lightbox trigger
+  `.<cls>__trigger` (`{% gallery %}` shortcode — not in the v1 library); the product gallery's
+  `.embla-thumbs__slide__number` (gallery package). None of them gets `btn` (owner, 2026-11-10, open question 8).
 - **Global rule for all parts:** core shows/hides almost everything with the `hidden` attribute,
   and any author `display` rule beats the UA's `[hidden]` style; core patches this only per
   component. Customer base CSS must set `[hidden] { display: none !important; }`.
@@ -176,20 +229,67 @@ plus every active customer header with `[data-menu-toggle]`:
   - classes `cart-toggle`, `cart-toggle__count` and the hooks (`data-cart-toggle`,
     `aria-expanded="false"`, `aria-controls="cart-sidebar"`) unchanged.
   Additive for customers with their own header (all four active ones).
+- **`{% block product_image %}`** (owner, 2026-11-10, open question 9) around the `<figure
+  class="product__image">…</figure>` in `core/components/product/container.njk:7–13`, content
+  unchanged — no output change. Lets the starter's gallery package (part C) replace only the
+  image. jurtschitsch's full override is unaffected.
+- **Gallery thumbs announce the selected image** (`overridable/gallery/thumbs.njk`,
+  `src/scripts/gallery.ts`): the selected thumb is marked only by the class
+  `embla-thumbs__slide--selected` — a state shown by colour/border alone, not exposed to
+  assistive tech (WCAG 4.1.2). Fix: `thumbs.njk` renders `aria-current="true"` on the first
+  thumb's `<button>`; `syncSelected` in `gallery.ts` removes it from the previous slide's button
+  and sets it on the current one, next to the class swap. Test
+  `src/scripts/__tests__/gallery.test.ts` (jsdom, `embla-carousel` mocked with a stub exposing
+  `on`/`scrollTo`/`selectedScrollSnap`/`previousScrollSnap`/`slideNodes`): after a `select`
+  event only the current thumb's button has `aria-current`. Additive for jurtschitsch (uses
+  core's partials and script).
+- **Button hierarchy** (owner, 2026-11-10): `btn--secondary` added to the coupon buttons in
+  `core/components/checkout.njk` (`checkout-coupon__apply`, `checkout-coupon__remove` — the
+  page's main action is `checkout__submit`). Every other `btn` is the only or main action of its
+  view and stays plain (also `user-confirm.njk`'s "request a new link", which appears only once
+  confirming failed). `btn` added to the cart sidebar's checkout link
+  (`core/components/cart.njk:42`, `class="cart-sidebar__checkout btn"`) — the cart's main
+  action had none. **Own classes** for the buttons that have only `btn` today (added next to
+  it, nothing removed):
+
+  | Template (`core/components/…`) | Element | Class added |
+  |---|---|---|
+  | `order/order-withdraw.njk:51` | submit | `order-withdraw__submit` |
+  | `user/user-register.njk:119` | submit | `user-registration__submit` (block = its root `user-registration`) |
+  | `user/user-recover.njk:26` | submit | `user-recover__submit` |
+  | `user/user-confirm.njk:11` | confirm button | `user-confirm__submit` |
+  | `user/user-confirm.njk:18` | "request a new link" `<a>` | `user-confirm__recover` |
+  | `user/user-reset.njk:21` | submit | `user-reset__submit` |
+  | `user/user-login.njk:28` | submit | `user-login__submit` |
+  | `user/user-reset-success.njk:5` | login `<a>` | `user-reset-success__login` |
+  | `newsletter/newsletter-confirm.njk:12` | confirm button | `newsletter-confirm__submit` |
+  | `newsletter/newsletter-form.njk:36` | submit | `newsletter-signup__submit` (block = its root `newsletter-signup`) |
+  | `newsletter/newsletter-unsubscribe.njk:12` | unsubscribe button | `newsletter-unsubscribe__submit` |
+
+  Checked 2026-11-10: no active customer overrides these templates with its own button markup
+  (their `overridable/` copies `extends` core), so all four get the classes with the pin; none
+  needs a change. The cart template is core-only (not overridable), so tinhof and jurtschitsch
+  (both style `.cart-sidebar__checkout` in `blocks/cart.css`; tinhof also has a global `.btn`
+  in `global-styles.css`) get their `.btn` rules on that link too — check it in step 3.
 
 ## Part B — core CSS (core-front)
 
 1. **Boilerplate into core.** `tailwind/{base,components,utilities}.css` are one `@tailwind …`
-   line each and byte-identical in every customer; `utilities/flow.css` + `region.css` are
-   identical in tinhof/jurtschitsch/rosi_schuster; `wrapper.css` differs only by its default
-   width (a variable). Core ships `src/assets/css/utilities.css` → `dist/utilities.css` (flow,
-   region, wrapper with `--wrapper-max-width`; `copySync` line in `tsup.config.ts` `onSuccess`,
-   row in the "Importable core CSS files" table). Customer entries keep the three `@tailwind`
-   directives inline — they must be in the entry, and `@tailwind components` is also where
-   core's Tailwind plugin emits the palette/space/size/font custom properties
-   (`addComponents({':root': …})` in `tailwind.config.ts`), so without it no `--color-*` exists.
-   Customers `@apply wrapper` (15×), `flow`, `region` today — keeps working, `@apply` resolves
-   classes from any imported file.
+   line each and byte-identical in every customer; `tailwind/base.css` is imported by **no**
+   customer (preflight is off, `tailwind.config.ts:119`, and core's `reset.css` replaces it).
+   `utilities/flow.css` + `region.css` are byte-identical in itsapps/tinhof/rosi_schuster
+   (jurtschitsch has no `utilities/` and uses none of the three); `wrapper.css` already reads
+   `var(--wrapper-max-width, …)` and differs only in that fallback (itsapps 90rem,
+   tinhof/rosi 85rem). Core ships `src/assets/css/utilities.css` → `dist/utilities.css` (the
+   three rules as they are, wrapper fallback `90rem`; `copySync` line in `tsup.config.ts`
+   `onSuccess` next to the other CSS files, row in the "Importable core CSS files" table). The
+   **starter** entry writes `@tailwind components;` and `@tailwind utilities;` inline (no
+   `tailwind/` files, no `@tailwind base`); `@tailwind components` is where core's Tailwind
+   plugin emits the palette/space/size/font custom properties (`addComponents({':root': …})`
+   in `tailwind.config.ts`), so without it no `--color-*` exists. **Existing customers are not
+   switched** to `utilities.css` in this release (additive; they keep their files). Customers
+   `@apply wrapper` (15×: itsapps 13, tinhof 2), `flow`, `region` today — keeps working,
+   `@apply` resolves classes from any imported file.
 2. **Cascade layers for core CSS.** Starter entries import core files into a layer:
    `@layer reset, core;` then `@import '…/dist/reset.css' layer(reset);`,
    `@import '…/dist/base.css' layer(core);` (and `carousel`/`shop`/`form`/`checkout`/…
@@ -201,8 +301,8 @@ plus every active customer header with `[data-menu-toggle]`:
    defined inside a layered file is emitted *inside that layer* (`.page2 { @apply wrapper }` →
    `@layer core { .page2 {…} }`) and silently loses to every unlayered rule. Hence
    `utilities.css` is imported **unlayered**, and starter CSS never `@apply`s a class from a
-   layered core file (one customer `@apply btn` from `form.css` today — the starter defines its
-   own button). Step 1 re-checks through the real pipeline (`src/config/css.ts`: ext-glob →
+   layered core file (no customer does today: tinhof's `@apply btn is-primary` uses its own
+   `.btn` from `global-styles.css`; core's `form.css` only has `.form .btn`). Step 1 re-checks through the real pipeline (`src/config/css.ts`: ext-glob →
    import → custom-media → nesting → tailwind nesting → tailwind → nesting → autoprefixer,
    optional cssnano — cssnano must keep the `@layer` order statement).
 3. **Colour-role contract.**
@@ -212,11 +312,17 @@ plus every active customer header with `[data-menu-toggle]`:
      `muted`, `primary`, `on-primary`, `surface`, `border`, `error` (itsapps' set — it already
      carries dark mode and bands), mapped from the palette in `src/_config/colors.mts`.
    - **Fallbacks** in core CSS for every role it uses (`var(--color-error, <AA red>)` etc.).
-   - **Build warning** in `src/config/css.ts`, after `postcss(plugins).process()` (before the
-     write to `_includes/css/global.css`): collect every `--color-*` *defined* in `result.css`
-     and every `var(--color-x)` *used without a fallback*; warn once per build with the undefined
-     names (`console.warn`, no failure — a template may define a property inline). Unit test with
-     a small CSS string. Catches a renamed/removed palette colour (today: silent fallback to
+   - **Build warning:** new pure helper `findUndefinedColorVars(css: string): string[]` in
+     `src/config/css-color-check.ts` — defined = every match of `/(--color-[\w-]+)\s*:/g`, used
+     without fallback = every match of `/var\(\s*(--color-[\w-]+)\s*\)/g` (a `var(--color-a,
+     …)` has a fallback and is skipped; an inner `var(--color-b)` in that fallback still counts);
+     returns used − defined, de-duplicated and sorted. `src/config/css.ts` calls it on
+     `result.css` right after `postcss(plugins).process()` (before the write to
+     `_includes/css/global.css`) and, if non-empty, `console.warn('[itsshops] CSS uses colour
+     roles that are never defined and have no fallback: ' + names.join(', '))` — once per
+     compile, no failure (a template may define a property inline). Test
+     `src/config/__tests__/css-color-check.test.ts` with small CSS strings (defined, undefined,
+     with fallback, nested fallback, minified input). Catches a renamed/removed palette colour (today: silent fallback to
      inherited/initial). Customer `colors` *replace* core's default palette (no merge —
      `tailwind.config.ts`), so only the customer's names exist.
 4. **Split `core.css` by feature, then delete it.** Today `core.css` (172 lines) is imported by
@@ -229,7 +335,7 @@ plus every active customer header with `[data-menu-toggle]`:
    | carousel pause button (`core/modules/carousel.njk`) | sites with the carousel module | `carousel.css` |
    | cart close/remove icon | shop | `shop.css` |
    | `html.has-filter-panel-open` | shop | `shop.css` |
-   | `.legal-guarantee-notice` (shipping module, checkout) | shop | `shop.css` |
+   | `.legal-guarantee-notice` (only `core/modules/shippingInfoModule.njk`) | shop | `shop.css` |
    | `.withdrawal-instructions`, `.shipping-info*` | shop | `shop.css` |
    | `.legal-guarantee-compact*` (only `core/components/checkout.njk`) | checkout | `checkout.css` |
 
@@ -239,20 +345,26 @@ plus every active customer header with `[data-menu-toggle]`:
      fails with "Failed to find"). Replace the one `core.css` line in
      `src/assets/css/global/global.css`, same position:
 
-     | Customer | Replace `dist/core.css` with |
-     |---|---|
-     | itsapps (content site; `carousel` in `page.modules`) | `base.css`, `carousel.css` |
-     | tinhof | `base.css`, `carousel.css`, `shop.css` |
-     | jurtschitsch | `base.css`, `shop.css` (+ `carousel.css` if its backend `page.modules` lists `carousel` — check) |
-     | rosi_schuster | `base.css`, `carousel.css`, `shop.css` (catalog without checkout still renders the shop modules) |
+     | Customer (`core.css` line in `global.css`) | Replace with | Why (checked 2026-11-10) |
+     |---|---|---|
+     | itsapps (line 2) | `base.css`, `carousel.css` | `carousel` in backend `page.modules`; no shop |
+     | tinhof (line 10) | `base.css`, `carousel.css`, `shop.css` | `carousel` + `stdContentWithCarousel`; checkout (cart sidebar), `withdrawalPolicyModule` + `shippingInfoModule` in `page.modules` |
+     | jurtschitsch (line 10) | `base.css`, `shop.css` | no `carousel` in `page.modules` (its `carousel` field only feeds gallery images, no `.carousel` markup); checkout, both legal modules, modal filter panel (`custom/partials/shop-main.njk`) |
+     | rosi_schuster (line 10) | `base.css`, `carousel.css` | `carousel` + `stdContentWithCarousel`; **no `shop.css`**: `checkout: false` (no cart sidebar), neither legal module in `page.modules`, core's own filter partial has no modal mode — nothing in `shop.css` renders |
 
-     Check each against its backend's `page.modules` before writing it.
+     `shop.css` rule for the CHANGELOG and the starter: needed when the site renders the cart
+     sidebar (`shop.checkout`), `withdrawalPolicyModule`/`shippingInfoModule`, or a
+     `[data-filter-panel-modal]` panel. The compact notice moving into `checkout.css` needs no
+     customer change (tinhof + jurtschitsch already import it; jurtschitsch's own
+     `.legal-guarantee-compact*` rules in `blocks/checkout.css` come later and still win).
    - Import each core file once — postcss-import deduplicates only identical imports, so the
      same file imported in two layers (or with and without one) ships twice.
    - `form`, `checkout`, `search`, `lightbox`, `age-gate`, `product-filter-price.css` are
      already per feature — unchanged.
-   - Docs naming `core.css` that must change: `templates-and-assets.md` (table, the
-     `global.css` example, the `dist/` path explanation — use `base.css`),
+   - Docs naming `core.css` that must change (grep 2026-11-10; no customer doc names it):
+     `templates-and-assets.md` (generated legal modules' "structural baseline" ~line 59 →
+     `shop.css`/`base.css`, the table, the `global.css` example, the `dist/` path explanation —
+     use `base.css`, the filter-panel scroll lock ~line 265 → `shop.css`),
      `decisions/css-shipped-via-dist-no-exports.md` (example paths), `workflows/new-customer.md`.
 
 ## Part C — the starter repo `itsshops-starter`
@@ -266,8 +378,9 @@ runnable project by itself:
 ```
 itsshops-starter/
   CLAUDE.md                      how the library works, rules for adding a variant
-  manifest.json                  every package: id, kind, needs (features), files → target
-                                 paths, inserts (see below), intake label + ASCII preview
+  manifest.json                  packages[]: id, kind, needs, files → target paths, inserts,
+                                 placeholders, rate-limit rules; intake[]: rounds → questions
+                                 → options (see part D.1)
   base/                          always copied
     frontend/   package.json  eleventy.config.mts  itsshops.config.mts  netlify.toml
                 tsconfig.json  vitest.config.ts  .gitignore  .env-sample  CLAUDE.md
@@ -296,8 +409,10 @@ itsshops-starter/
     footer/columns/      blocks/footer.css
   features/
     shop/  checkout/  category/  blog/  users/  newsletter/  search/  age-gate/  gallery/  dark/
-                       each: function wrappers, block CSS, page templates' CSS, core CSS
+    vinofact/          each: function wrappers, block CSS, page templates' CSS, core CSS
                        imports, config + .env-sample inserts, backend feature flags
+                       (coupons, stock, manufacturer are values of the shop package's
+                       config insert, not packages — part D.1)
   modules/
     <type>/            backend schema object(s) + frontend projection snippet + template
                        + blocks/modules/<type>.css + de/en labels
@@ -306,8 +421,11 @@ itsshops-starter/
 **Inserts** (how packages extend shared files without a generator): base files carry marker
 comments, e.g. `/* starter:core-imports */` in `global.css`, `// starter:features` in
 `itsshops.config.mts` and the backend `sanity.config.ts`, `// starter:page-modules` in
-`schema/extensions.ts`, `// starter:schema-objects` in `schema/index.ts`,
-`// starter:module-projections` in `extensions.mts`, `# starter:env` in both `.env-sample`s.
+`schema/extensions.ts`, `// starter:schema-extensions` (top-level `schemaExtensions` entries,
+e.g. `product: { fields }`) in the same file, `// starter:schema-objects` in `schema/index.ts`,
+`// starter:module-projections`, `// starter:extension-fields` and `// starter:extension-resolve`
+in `extensions.mts`, `// starter:translations` in the backend `src/translation/{de,en}.ts`
+(module and field labels), `# starter:env` in both `.env-sample`s.
 Each package's manifest entry lists the lines it inserts at which marker; the command inserts
 them and removes the markers at the end. **Block and module CSS need no inserts:** the base
 `global.css` globs `blocks/*.css` and `blocks/modules/*.css` (`@import-glob`, as every customer
@@ -326,8 +444,9 @@ one group per footer menu + company block. So v1 variants are **CSS on core's de
 | Footer | `simple` (groups in a row, company below) · `columns` (groups + company as columns) | CSS only on core's footer |
 | Cart | sidebar only (core has no cart page; a page is out of scope — open question 5) | `blocks/cart.css` (feature `shop`) |
 
-**Layout** is intake values, not variants: content width (`--wrapper-max-width`), text measure,
-section spacing → written into `variables.css`.
+**Layout** is intake values, not variants: content width → `--wrapper-max-width` in
+`variables.css` (narrow `64rem` / medium `76rem` / wide `90rem` — defaults, adjust in the design
+pass). Text measure and section spacing are fixed defaults in `variables.css` (not asked).
 
 **Modules v1:** `stdContent` (text), `hero`, `teaser` (image + text), `faq` — plus the core
 modules a feature brings (`carousel`, `youtube`, `privacyPolicyModule` always; shop:
@@ -349,32 +468,107 @@ without itsapps' bands/`theme`, illustration and reveal markup; each module's ic
 backend `src/assets/icons.ts` (itsapps' `HeroIcon`, `TeaserIcon`, `FaqIcon`,
 `StandardContentIcon`).
 
+**Placeholders:** besides marker inserts, package files may carry `%%name%%` placeholders
+(`%%defaultLocale%%`, `%%stock%%`, `%%coupons%%`, …; not `{{ }}` — that is Nunjucks). The
+manifest lists each package's placeholders and which intake answer fills them; the command
+replaces them in step D.3.
+
 **Feature packages** — function wrappers with file names and `config.path` matching core's
-fixed `/api/…` routes (`commerce-and-netlify.md`). Verified 2026-11-10:
-- **checkout** — copy jurtschitsch's set (identical names in tinhof): `payment_create`
-  (`/api/payment/create`), `payment_webhooks` (`/api/payment/webhooks`), `payment_refund`
-  (`/api/payment/refund`), `order_notify` (`/api/order/notify`), `order_status`
-  (`/api/order/status`, `rateLimit`), `order_withdraw` (`/api/order/withdraw`, `rateLimit`),
-  `order_withdraw_notify` (`/api/order/withdraw-notify`), `order_meta_cleanup`
-  (`schedule: '@daily'`).
-- **newsletter** — jurtschitsch's `newsletter-subscribe|confirm|unsubscribe`
-  (`/api/newsletter/<name>`); with `captcha: false` take rosi_schuster's subscribe wrapper
-  (`rateLimit`, `captcha: false` passed to the handler).
+fixed `/api/…` routes (`commerce-and-netlify.md`). Verified 2026-11-10 against every active
+customer's `netlify/functions/`:
+- **base** `netlify/functions/preview.mts` — itsapps' and jurtschitsch's are identical but full
+  of commented-out leftovers; the starter ships it clean: `config.path:
+  '/api/preview/:locale/:documentType/:documentId'`, `export default (request, context) =>
+  preview({ request, context })`.
+- **checkout** — jurtschitsch's set (tinhof's is identical except `invoices: false` in
+  `order_notify` — wineNET-only, not in the library): `payment_create` (`/api/payment/create`),
+  `payment_webhooks` (`/api/payment/webhooks`), `payment_refund` (`/api/payment/refund`),
+  `order_notify` (`/api/order/notify`, `withdrawalNotice: true`), `order_status`
+  (`/api/order/status`, `rateLimit` 30 / 60 s), `order_withdraw` (`/api/order/withdraw`,
+  `rateLimit` 5 / 60 s), `order_withdraw_notify` (`/api/order/withdraw-notify`),
+  `order_meta_cleanup` (`schedule: '@daily'`). **Server options must match the frontend
+  config:** `payment_create` and `payment_webhooks` take `{ defaultLocale, features: { shop: {
+  stock, coupons } } }` — the functions don't read `itsshops.config.mts`, and
+  `resolveServerConfig` (`src/netlify/types/config.ts`) defaults **stock on** (`stock !==
+  false`) while the frontend defaults it off (`src/config/config.ts:211`). So both wrappers get
+  `defaultLocale: '%%defaultLocale%%'` (first intake locale) and `features: { shop: { stock:
+  %%stock%%, coupons: %%coupons%% } }` from the intake (webhooks reads only `stock` +
+  `defaultLocale`, same object for simplicity); webhooks also `notify: { withdrawalNotice: true }`.
+- **newsletter** — default is **without captcha** (owner rule 2026-11-04, `commerce-and-netlify.md`
+  → "Captcha or not"): rosi_schuster's set — `newsletter-subscribe` with `rateLimit` 5 / 60 s and
+  `createNewsletterSubscribeHandler({ captcha: false })`, `newsletter-confirm|unsubscribe`
+  (identical in jurtschitsch and rosi), paths `/api/newsletter/<name>`; config insert
+  `newsletter: { captcha: false }` (frontend default is `captcha: true` — the two must match, or
+  the handler rejects every tokenless request). jurtschitsch's captcha wiring is not in the
+  library.
+- **Rate-limit rules count against the Netlify plan** (`workflows/netlify-plans.md`: 2 per site
+  on Free/Personal, 5 on Pro): checkout = 2, newsletter = 1 → checkout + newsletter needs
+  **Pro**. The manifest gives each package its rule count; the command's plan step (D.2) sums
+  them and names the plan.
 - **users** — **no active customer wires them on current core** (rosi_schuster removed its
   user wrappers; the old `jurtschitsch/jurtschitsch_frontend` is a legacy checkout). Paths from
   core's client code (`src/shared/user-api.ts`): `user-register|login|confirm|recover|reset` →
-  `/api/user/<name>`; `user-logout` has no caller in core's scripts/templates — check before
-  adding it; `supabase-keep-alive` (scheduled; its doc comment suggests
-  `schedule: '0 9 * * 1,4'`). Mark the users package **untested** in the manifest until a real
-  project uses it.
-- Not in the library: `wc-api` (Winenet only), `auth-webhooks` (removed at rosi_schuster). Scheduled
+  `/api/user/<name>`; **`user-logout` left out** (no caller in core's scripts/templates);
+  `supabase-keep-alive` (`schedule: '0 9 * * 1,4'`, from its doc comment). User forms use
+  hCaptcha from the start (same rule): `.env-sample` gets `CAPTCHA_SITE_KEY` +
+  `CAPTCHA_SECRET_KEY` (`src/netlify/utils/captcha.ts`). Mark the users package **untested** in
+  the manifest until a real project uses it.
+- Not in the library: `wc-api` (Winenet only), `auth-webhooks` (removed at rosi_schuster),
+  rosi_schuster's `interest-*` (customer feature, `interest-list-and-invites.md`). Scheduled
 functions run only on the production deploy (not `staging` branch deploys) — the feature
 package's `CLAUDE.md` snippet says so. Core CSS per feature: `base` + `carousel` always, `shop`
-(shop), `form` (shop, users, newsletter), `checkout` (checkout), `search`, `lightbox` (gallery),
-`age-gate`, `product-filter-price` (shop). Non-feature switches: search → `search: {…}` stub
-(shop only), age gate → `ageGate: { enabled: true }`, gallery → `lightbox.css`, dark →
+(shop), `form` (shop, users, newsletter), `checkout` (checkout), `search`, `age-gate`,
+`product-filter-price` (shop). `lightbox.css` belongs to the `{% gallery %}` shortcode (lightbox
+dialog, `src/gallery/render.ts`; used only by jurtschitsch's downloads module) — **not** to the
+product gallery, and not in the v1 library. **Shop flags in both stacks:** the shop package
+inserts `shop: { checkout: %%checkout%%, category: %%category%%, coupons: %%coupons%%, stock:
+%%stock%%, manufacturer: %%manufacturer%% }` into **both** `itsshops.config.mts` and the
+backend `sanity.config.ts` (backend: plus `enabled: true`), always with every flag written out —
+core-back defaults `checkout` **on** (`FeatureConfig`, core-back `src/types/config.ts`) while
+core-front defaults it off, so an omitted flag differs between the stacks. `vinofact` package:
+`vinofact: { enabled: true }` in both configs + `VINOFACT_API_URL`, `VINOFACT_API_TOKEN`,
+`VINOFACT_PROFILE_SLUG` in the frontend `.env-sample`; needs `shop`. **Gallery** (needs `shop`; verified 2026-11-10 against jurtschitsch's
+`overridable/product/container.njk`, `extensions.mts`, backend `schema/extensions.ts`, and core's
+`gallery/{main,thumbs}.njk` + `gallery.ts`): more than one product image is **not core data** —
+core's product/variant carry one `image`. jurtschitsch adds it as a customer extension, so the
+package carries all of it (both stacks):
+  - *Backend* (`// starter:schema-extensions`): `product` and `productVariant` each get
+    `f('localeAltImages', 'array', { of: [{ type: 'localeAltImage' }], group: 'media' })`;
+    labels (`// starter:translations`) `'product.fields.localeAltImages.title'` and
+    `'productVariant.fields.localeAltImages.title'`: de "Galerie" (jurtschitsch's "Gallerie" is
+    a typo), en "Gallery".
+  - *Frontend* `extensions.mts`: `fields.product` and `fields.variant` =
+    `` `"localeAltImages": localeAltImages[]${p.i18nAltImage}` `` (`// starter:extension-fields`);
+    `resolve.product` returns `localeAltImages` mapped with `ctx.resolveLocaleAltImage` and
+    filtered on `img?.asset?._ref`; `resolve.variant` returns it **only when the variant has
+    some** (`...(raw.localeAltImages?.length && {…})`), so the product's stay as fallback
+    (`// starter:extension-resolve`; jurtschitsch `extensions.mts:192–208` without the factsheet).
+  - *Template* `overridable/product/container.njk` = `{% extends
+    "core/components/product/container.njk" %}` + only `{% block product_image %}` (new in core,
+    A.3 / open question 9). Inside the block (all `set`s there too, not at the child's top
+    level): `_galleryImages` = `[product.image].concat(product.localeAltImages or [])`, skipping
+    empty images and repeated `asset._ref`s (jurtschitsch `container.njk:9–16`);
+    `_galleryImageSize = imageSizes.product`, `_galleryThumbSize = imageSizes.thumb` (both core
+    defaults — no `imageSizes` insert; jurtschitsch's `productThumb` is its own); `_galleryThumbsMin`
+    left at its default 2 (no lone thumb for one image). Markup: `<div class="product__image
+    product-gallery" data-gallery>` with `gallery/main.njk` then `gallery/thumbs.njk` — one
+    `[data-gallery]` ancestor, as `gallery.ts` needs; `main.njk` falls back to the placeholder
+    with no image and loads the first slide eager. jurtschitsch's preload and its wine layout
+    stay out.
+  - *CSS* `blocks/embla-gallery.css` (jurtschitsch's as reference): `.embla*`, `.embla-thumbs*`,
+    `.embla-thumbs__slide--selected`, thumb buttons ≥ 24 × 24 px with `:focus-visible`.
+Non-feature
+switches: search → `search: {…}` stub (shop only), age gate → `ageGate: { enabled: true }`, dark →
 `manifest.colorScheme: 'light dark'` + a dark role block (system preference; the theme toggle
 stays itsapps-only until a second customer needs it).
+
+**Base `blocks/buttons.css`** styles the look classes from Part A's "Classes the customer
+must style": `.btn` (primary: `--color-primary` / `--color-on-primary`) and `.btn--secondary`
+(outline: `--color-text` on `--color-bg`, `--color-border`), on `<button>` and `<a>` alike,
+with every listed state (hover, `:focus-visible` — the global outline, `:disabled`, the
+loading text swap), AA contrast in every role set (light, dark, bands), target
+size ≥ 24 × 24 px (WCAG 2.5.8). It never sets `align-self` (core's `.form .btn` owns it; with
+`form.css` layered, an unlayered `.btn` would win).
 
 **Default CSS rules (all packages):** plain on purpose (system font stack, neutral palette);
 only colour roles, never palette names or literal colours; AA contrast for every role pairing
@@ -390,22 +584,37 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 1. **Intake**, with `AskUserQuestion` — limits: 1–4 questions per call, **2–4 options per
    question** (an "Other" free-text option is added automatically), previews only on
    single-select questions. So a long feature list is split into several multi-select
-   questions, and **a part with only one variant is not asked** (v1: the header). Rounds:
-   - Round 1 — basics: kind (site / shop); locales (de / de + en / other); form of address
-     (Sie / Du); extras, multi-select (newsletter, users, blog, dark mode).
+   questions, and **a part with only one variant is not asked** (v1: the header). The command
+   splits any question with more than 4 options into consecutive questions of ≤ 4 (modules
+   will outgrow 4). Rounds:
+   - Round 1 — basics: kind (site / shop); locales (de / de + en / Other → free text, first =
+     default → `%%defaultLocale%%`); form of address (Sie / Du → `SHOP_FORMALITY=informal` in
+     the frontend `.env-sample` and an owner step to set it in Netlify — env only, the functions
+     read it too; nothing in the backend); extras, multi-select (newsletter, users, blog, dark
+     mode).
    - Round 2 — only for a shop: shop features, multi-select (checkout, category, coupons,
-     vinofact); more shop, multi-select (stock, manufacturer, search, age gate).
+     vinofact); more shop, multi-select (stock, manufacturer, search, age gate); product
+     gallery (yes / no).
    - Round 3 — look: footer (`simple` / `columns`, with previews); cart button (`count` /
-     `text-count`, shop only); content width (narrow / medium / wide → `--wrapper-max-width`).
-   - Round 4 — content: modules, multi-select (stdContent, hero, teaser, faq); gallery
-     (yes / no).
+     `text-count`, **only with checkout** — without it core renders no cart toggle, A.3);
+     content width (narrow / medium / wide, part C → "Layout").
+   - Round 4 — content: modules, multi-select (stdContent, hero, teaser, faq).
    - Names (folder, repo, domain, company) as free text in the plan step.
-   The manifest carries each question's label and each option's description/preview, so
-   adding a variant later needs no command change.
+   **Manifest `intake[]`:** rounds → questions (`id`, `header` ≤ 12 chars, `question`,
+   `multiSelect`, optional `when`: an expression over earlier answers, e.g. `kind == shop`,
+   `checkout`) → options (`label`, `description`, optional `preview`, and what choosing it does:
+   `packages: [...]` and/or `values: { placeholder: value }`). Unchosen options set their
+   `values` to the declared default (`false` for `stock`, `coupons`, …), so every placeholder is
+   filled either way. Coupons and stock also `needs: checkout` (server-side only; the
+   payment wrappers read them). Adding a variant later = a package + an option, no command
+   change.
 2. **Plan + go-ahead:** the package list resolved from the manifest (with `needs` checked,
-   e.g. a package requiring `shop`), paths, owner steps.
+   e.g. a package requiring `shop`), paths, owner steps, and the summed rate-limit rules →
+   Netlify plan (Personal ≤ 2, Pro ≤ 5).
 3. **Assemble:** copy `base/` → `web/<customer>/<…>-frontend|backend`, then each package's
-   files; apply the inserts; remove the markers; set name/locales/tokens.
+   files; apply the inserts; remove the markers; fill the `%%…%%` placeholders; set
+   name/locales/tokens. Then `grep -r '%%[a-zA-Z]*%%\|starter:'` over both folders must find
+   nothing.
 4. **Wishes outside the library:** build from `ui-contracts.md` for that part, same CSS rules;
    note in the customer `CLAUDE.md` that it isn't a library variant.
 5. **Design pass:** `frontend-design` skill for palette/fonts/details on top of the plain
@@ -419,15 +628,24 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 - **In the starter repo** (vitest; the repo's own `package.json` has
   `@itsapps/itsshops-core-front` as a devDependency — git dep, `npm link` while core's 4.0
   branch is unreleased): manifest integrity (every file exists, every insert marker exists in
-  base, `needs` names real features, every intake option points to a package); **contract
+  base, `needs` names real packages or answers, every intake option has `packages` or
+  `values` and names only existing packages/placeholders, every question has 2–4 options and a
+  `header` ≤ 12 chars, every `%%…%%` placeholder in a package file is declared in its
+  manifest entry and filled by some intake answer or a default); **contract
   test** — every template the library ships (v1: `cart-toggle` partial, module templates)
   contains its part's required hooks (`[data-cart-toggle]` with `aria-controls` +
   `aria-expanded`, `[data-cart-count]`, …); **drift test** — every class selector in the
-  library's CSS occurs in core's `dist/templates/**/*.njk`, `dist/scripts/**` or the library's
-  own templates.
+  library's CSS occurs in core's `dist/templates/**/*.njk`, `dist/scripts/**` (copied `.ts`
+  sources) or the library's own templates, plus a short allowlist in the test for classes core
+  builds in TS from a prefix (`src/gallery/render.ts`: `${cls}__trigger`, default `gallery`),
+  which no text search finds — empty in v1 (no package styles the lightbox), the mechanism is
+  for when one does; **look-class test** (the reverse direction) — every class in `ui-contracts.md`
+  → "Classes the customer must style" (v1: `btn`, `btn--secondary`; kept as a list in the
+  test, with a comment pointing at the doc) has a rule in the base CSS, and each still occurs
+  in core's `dist/templates/**` (so a class core drops fails the test too).
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
-  (checkout, newsletter, search; no vinofact) into a scratch dir, `npm link` core, build
+  (checkout, coupons, stock, newsletter, search, gallery; no vinofact) into a scratch dir, `npm link` core, build
   against its demo dataset — content site → `development`, shop → `development-shop` (open
   questions 2, 7; `SANITY_DATASET` set per build) — also checks every package's inserts land.
 - **Demo content:** create it once per dataset in the assembled Studio (content-site Studio →
@@ -446,28 +664,40 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 
 1. B.2 spike through the real pipeline (decides whether starter entries use `layer()`).
 2. Core-front on `feature/customer-starter`: A (contracts doc), A.2 (submenu disclosure),
-   A.3 (menu resize fix, burger/logo/`aria-current` fixes, footer label, cart-toggle partial),
+   A.3 (menu resize fix, burger/logo/`aria-current` fixes, footer label, cart-toggle partial,
+   own button classes, `product_image` block, gallery thumb `aria-current`),
    B.1–B.4 + tests.
 3. Switch the four active customers (B.4 table) against the linked core: diff each one's
    compiled `src/_includes/css/global.css` before/after — same rules, only the former
-   `core.css` sections moved (itsapps: minus the shop section and the compact warranty notice).
+   `core.css` sections moved (itsapps + rosi_schuster: minus the shop sections and the compact
+   warranty notice; jurtschitsch: minus the carousel section; tinhof: the compact notice now
+   with `checkout.css`). tinhof + jurtschitsch: also look at the cart sidebar's checkout link
+   in `npm run dev` (it now carries `btn`, A.3) and, if their `.btn` rules clash with
+   `.cart-sidebar__checkout`, fix it in their `blocks/cart.css`.
    Commit each on `main` with the core pin at release (step 9).
 4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
 5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
    (needs the owner's Sanity project, dataset and tokens).
 6. Variant library v1, each against its contract.
-7. Starter checks (manifest, contract, drift) + assembly smoke.
+7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
-   `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (shops); compact
+   `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (if the site
+   renders the cart sidebar, the withdrawal/shipping modules or a modal filter panel); compact
    warranty notice now in `checkout.css`. "Added": submenu disclosure, `partials/cart-toggle.njk`,
-   `utilities.css`, role fallbacks, the `--color-*` build warning. "Fixed": menu state after a
+   an own class on every form/flow button next to `btn` (A.3 table), `{% block product_image %}`
+   in the product container,
+   `utilities.css`, role fallbacks, the `--color-*` build warning, `btn--secondary` on the
+   checkout's coupon buttons (`btn` documented as the button-look class customers style).
+   "Fixed": gallery thumbs expose the selected image (`aria-current`); menu state after a
    resize (default menu stayed inert; an overlay whose burger disappears stayed open with the
    page inert — itsapps, rosi_schuster); default header: no burger without a main menu, logo
    name = visible title, cart button only with checkout + count announced, `aria-current` on
    sub-links and footer links; translated footer-menu label. "Changed" (default header only):
    cart toggle markup (no `aria-label`, sr-only label) — customers styling `.cart-toggle`
-   from core's markup check it. Push core before any customer
+   from core's markup check it; the cart sidebar's checkout link now also has `btn` (core-only
+   template) — customers whose `.btn` rules don't suit it adjust `.cart-sidebar__checkout`.
+   Push core before any customer
    pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
 10. Optional, separate: split itsapps' 899-line `blocks/modules.css` into
@@ -508,3 +738,9 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    token, created **at project level when step 5 starts** (they cover both datasets), stored
    only in the starter repo's gitignored `.env` — the read token is for draft/preview reads,
    the Editor token for seeding/import.
+8. ~~`btn` on component buttons?~~ — decided (owner, 2026-11-10): **no.** `.add-to-cart`,
+   `.age-gate__btn--*` and the other component controls keep only their own class (tinhof and
+   jurtschitsch style add-to-cart by class; `btn` would pull tinhof's global `.btn` onto it).
+   Also decided: every core form/flow button carries `btn` **and** its own class (A.3 table).
+9. ~~Product gallery without copying core's container?~~ — decided (owner, 2026-11-10): core
+   adds `{% block product_image %}` (A.3); the gallery package overrides only that block.
