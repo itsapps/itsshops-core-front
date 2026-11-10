@@ -1,10 +1,15 @@
 # Plan — withdrawals: guided editor flow + `liveEdit`
 
-Status: **implemented, not released** (2026-11-09) — core-back branch
-`feature/withdrawal-editor-flow` (A–E, unit tests, docs, CHANGELOG `Unreleased`). Open: the manual
-staging checks under "Tests", the D.5 draft check per dataset, merge + release ("Ship"); delete
-this file then. Goal (owner, 2026-11-09): editors handle a withdrawal **correctly and know what
-to do next**. The sections below describe the state **before** the change.
+Status: **implemented, tested on Tinhof staging, merged to core-back `main`** (2026-11-10;
+A–E, unit tests, docs, CHANGELOG `Unreleased`); not released.
+Changed while testing: unmatched withdrawals show the 14-day refund deadline too, the guide's
+unmatched step is two options (assign / delete with the data-protection reason); the box colour
+follows the deadline only; "So geht's" sits below the box (never tinted); the status input writes
+with a sync client commit (ADR core-back `live-edit-preview-fields-written-by-client.md`). Open:
+the D.5 draft check per dataset (Tinhof development: 0; production, Jurtschitsch), the release
+("Ship"); delete this file then. Goal (owner, 2026-11-09): editors handle a
+withdrawal **correctly and know what to do next**. The sections below describe the state
+**before** the change.
 
 ## Today (checked 2026-11-09)
 
