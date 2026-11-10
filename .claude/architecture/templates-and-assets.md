@@ -173,7 +173,17 @@ stays first, relative imports inside a layered file inherit the layer, `@custom-
 CSS applies inside it. Rules: import each core file **once** (postcss-import deduplicates only
 identical imports); import `utilities.css` **unlayered**; never `@apply` a class from a layered core
 file — the generated rule lands inside that layer and silently loses to all unlayered CSS. Existing
-customers import core unlayered (before their own CSS) — also fine.
+customers import core unlayered (before their own CSS) — also fine; itsapps uses layers from 4.0.0.
+
+What layers flip, so customer CSS must keep it in mind:
+- **A bare customer rule beats core's state rules.** Core styles states with long selectors, e.g.
+  `[data-checkout][data-checkout-state="loading"] .checkout__summary { opacity: 0.6 }`. Unlayered,
+  `.checkout__summary { opacity: 1 }` now wins **always** and the loading dim is gone, silently.
+  Don't set a property a core state uses (`opacity`, `display`, `pointer-events`, `visibility`,
+  …) on the bare class: scope it to the state you mean, or restyle the state yourself.
+- **`!important` reverses:** an `!important` inside a layer beats an unlayered one (affects
+  reset's reduced-motion rules and the `dialog`/`popover` `display: none`). Don't override core
+  with `!important`. A plain rule already wins.
 
 **All `@import`s before any other statement.** postcss-import inlines only `@import`s that precede
 every other rule (an empty `@layer a, b;` may come first). An inline `@tailwind components;` in the
