@@ -24,5 +24,5 @@ number + email didn't match an order, and required an hCaptcha.
 - Every shop wiring `order-withdraw` needs a rate-limit rule in its wrapper (all plans; Free/Personal
   allow 2 per site — `workflows/netlify-plans.md`). (Earlier assumption "paid plan only" was wrong,
   corrected 2026-10-16.)
-- Editors get an `unmatched` worklist in the Studio (core-back: editable order field with
-  suggestions, guarded delete).
+- Editors get an `unmatched` worklist in the Studio (core-back: "Bestellung zuordnen" action with
+  suggestions and an undo, guarded delete).

@@ -384,12 +384,15 @@ stored/sent). Name and order number are capped and URL-like input is rejected
 (name/email/orderNumber/locale/reason/`declaredAt` as submitted):
 - order number + email match → linked to the order, status `received`;
 - otherwise → status **`unmatched`**, no order; the shop mail is flagged (+ "order exists, email
-  differs" hint, shop-only). Editors assign the order in the Studio (status follows) or delete it
+  differs" hint, shop-only). Editors assign the order in the Studio ("Bestellung zuordnen") or delete it
   (core-back: guarded delete, unmatched only; 30-day retention rule for editors).
 - Same response either way (no order-number probing).
 - Repeat submission (open record for that order / same email + number) → receipt re-sent, no new
   record, no shop mail. Double submits: deterministic `_id` (`withdrawal-<orderId | u-hash>-<n>`) +
   `createIfNotExists`.
+- Known gap: once the order's withdrawal is closed, a further submission is a new record (`-<n>`
+  counts on) — also on a fully refunded order (new open record, receipt + shop mail again). Planned
+  fix: `.claude/plans/withdrawal-already-refunded.md`.
 
 Every mail is built from the **stored record** (`buildWithdrawalMails` in
 `lib/order-withdraw-notifier.tsx`): the receipt repeats name, order number, reason (matched only) and
