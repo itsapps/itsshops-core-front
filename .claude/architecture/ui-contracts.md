@@ -24,9 +24,11 @@ hidden, whatever its `display`. Consequences:
 - **Animated (overlay, drawer, dropdown that slides/fades) → a state class (`.is-open`) +
   `visibility: hidden` when closed.** `display: none` can't animate, while `visibility` also
   takes the element out of the a11y tree and tab order and can be delayed by `transition` until
-  the closing animation ends. Never hide only with `opacity`/`transform`: the element stays
-  focusable and announced. The cart sidebar works this way. A menu that animates must not start
-  `hidden` (see Menu).
+  the closing animation ends. The alternative: `opacity`/`transform` **plus `inert` (and
+  `aria-hidden`) in the markup**, which `menu.ts` removes on open and restores on close (itsapps'
+  overlay). Never `opacity`/`transform` alone: the element stays focusable and announced. The
+  cart sidebar is state-class based too (`.is-open`; how it hides is customer CSS). A menu that
+  animates must not start `hidden` (see Menu).
 
 ## Menu (`menu.ts`, every `[data-menu-toggle]` button)
 
@@ -45,8 +47,9 @@ hidden, whatever its `display`. Consequences:
   there again, an overlay never stays open with the page inert. The button's own CSS visibility is
   the single source — no breakpoint in JS.
 - **CSS:** show/hide/animate on `.is-open`. A target visible inline on large screens must **not**
-  start `hidden` or `inert`. Hide the mobile overlay with `display`/`visibility`, never only an
-  off-screen transform (keeps it out of the a11y tree before the first toggle).
+  start `hidden` or `inert`. A separate mobile overlay is hidden with `display`/`visibility`, or
+  with `opacity`/`transform` when it starts `inert` + `aria-hidden="true"` in the markup. Never
+  with `opacity`/`transform` alone: it must be out of the a11y tree before the first toggle.
 - **A11y in markup:** the button has an accessible name (`aria-label` via i18n), `aria-expanded`,
   `aria-controls`.
 
