@@ -896,6 +896,28 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    a submenu child's own empty `children` (path has two `children` → depth 2 > `maxDepth` 1), so
    no submenu validates at the default depth (jurtschitsch sidesteps it with `maxDepth: 2`). Open:
    fix in core-back, owner review in the Studio, then `dataset export` → `seed/`.
+   - *Menu depth (owner, 2026-11-11):* `maxDepth` = **number of menu levels, top level included**,
+     in both repos (1 = flat, default; 2 = top level + submenu links). Found because core-back's
+     depth rule counted that way while core-front's query counted levels below the top (an extra
+     empty level fetched; jurtschitsch's `maxDepth: 2` looked like a workaround). Changes:
+     **core-back** builds one item type per level from the `menuItem` definition — `menuItem`,
+     `menuItem1`, … (`maxDepth` types; only the last is link-only: no `submenu` choice, no
+     `children`; flat when `disableSubmenus` or `maxDepth: 1`). Sanity choice lists are static, so
+     per-level types are how the "submenu" option disappears at the last level; the depth rule
+     goes. A definition gets an optional `baseName` so every level shares `menuItem`'s labels,
+     extension (`schemaExtensions.menuItem`) and preview. Existing submenu children are stored as
+     `menuItem` → one-time migration to `menuItem1` (jurtschitsch). **core-front** fetches
+     `maxDepth − 1` levels of `children` (flat menus: none). **Starter:** flat by default (base
+     drops `disableSubmenus: false`); intake option "menu with submenus" sets `disableSubmenus:
+     false` + `maxDepth: 2` (backend) and `menu.maxDepth: 2` (frontend); the smoke fixtures pick it.
+     **Built 2026-11-11:** core-back `feature/menu-levels` (`menuItemTypes`, `baseName`, tests,
+     `scripts/migrate-menu-item-levels.mjs`, CHANGELOG "Unreleased"), core-front `queries.ts`
+     (`maxDepth − 1` child levels, tests, CHANGELOG 4.0.1 "Upgrading"), starter `637190f`. Checked:
+     migration on the demo `development` menu (2 items relabelled, re-run 0); both demo datasets
+     validate with 0 errors / 0 warnings against the linked core-back; the content site renders the
+     submenu (Kontakt, Newsletter). Release: core-back version to decide (the type rename needs the
+     migration for projects with submenus — jurtschitsch only); jurtschitsch runs the script on
+     `development` + `production` when pinning it.
    - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
      `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
      without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on

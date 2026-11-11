@@ -178,8 +178,10 @@ function buildMenuItemProjection(depth: number, extraFields: string): string {
   }`
 }
 
+/** `maxDepth` = menu levels, top level included (as core-back): 1 = flat, no `children` fetched;
+ *  2 = one level of submenu children. */
 export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1): string {
-  const itemProjection = buildMenuItemProjection(maxDepth, extraFields('menuItem', extensions))
+  const itemProjection = buildMenuItemProjection(Math.max(0, maxDepth - 1), extraFields('menuItem', extensions))
   return `*[_type == 'menu']{
   _id,
   "title": ${proj.i18nStringField('title')},
