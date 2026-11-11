@@ -942,6 +942,18 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    open → resize to wide closes and leaves the nav non-inert, no horizontal scroll at 320 px; both
    frontends build, assembled test suites pass. Note for step 7: root `vitest` picks up
    `base/**/tests` and `.scratch/**` — the starter checks need their own include list.
+   **Cart button `count` + `text-count` done 2026-11-11** (starter commit e79e5bd): packages
+   `cart-button-count` (CSS on core's partial: bag icon as a CSS mask in `currentColor` — `data:`
+   is in core's `img-src` — count badge, ring outside so the badge doesn't cover it) and
+   `cart-button-text-count` (overrides `partials/cart-toggle.njk` with core's conditions; visible
+   "Warenkorb" + count pill). Deviation from part C: **no sr-only copy and no `aria-live`** in
+   `text-count` — the visible text is the name ("Warenkorb 2", label in name), and the add button
+   already announces the add (a second region would announce it twice). Below 30em the word is
+   hidden visually (still in the name) and the bag icon shows — the word pushed the button onto
+   a second header row at 390 px. Both `needs: checkout`; intake round 3 question `cartButton`
+   (`when: { package: checkout }`); fixtures: shop → `count`, all → `text-count`. Checked
+   (Playwright): names "Zum Warenkorb, 1" / "Warenkorb 1" after an add, 44 px high targets,
+   sidebar opens with `aria-expanded`, one header row at 390 px; shop builds + tests pass with each.
 7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
