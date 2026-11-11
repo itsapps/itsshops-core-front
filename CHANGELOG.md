@@ -41,6 +41,8 @@ Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); 
   sub-links. Default footer: `aria-current` on internal links, translated label
   (`navigation.footerMenu`).
 - Gallery thumbs expose the selected image (`aria-current`).
+- Inline theme script: no uncaught error when `localStorage` is blocked (falls back to the
+  system theme).
 
 ## 3.11.0
 
