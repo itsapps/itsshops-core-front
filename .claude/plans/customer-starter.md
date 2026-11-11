@@ -929,6 +929,19 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      `src/config/__tests__/templates-gate.test.ts`; verified on the starter content site (no
      `search.json`). CHANGELOG "Unreleased (4.0.1)", `extending.md` → "Search".
 6. Variant library v1, each against its contract.
+   **Header `inline` done 2026-11-11** (starter commit 4c54789): `variants/header/inline/` =
+   `blocks/header.css` + `blocks/nav.css` on core's default markup, package `header-inline`
+   (kind `variant`, `part: header`), pulled in by `base.includes` (one variant → not asked; moves
+   to the intake when a second one exists). Breakpoint `--nav-inline` 60em, defined only in
+   `header.css`. Narrow: the nav is `display: none` until `.is-open`; the header itself turns
+   `position: fixed; inset: 0` while open (`:has(.site-nav.is-open)`), so logo, burger and actions
+   stay visible and reachable — no header-height variable. Wide: dropdown below the item (the last
+   item's opens leftwards). Burger lines in `ButtonText` under forced colours. Checked (Playwright,
+   site + shop): no burger on wide, nav out of the a11y tree when closed on narrow, open focuses the
+   first link and inerts `main`, Escape closes submenu then menu with focus back on the burger,
+   open → resize to wide closes and leaves the nav non-inert, no horizontal scroll at 320 px; both
+   frontends build, assembled test suites pass. Note for step 7: root `vitest` picks up
+   `base/**/tests` and `.scratch/**` — the starter checks need their own include list.
 7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
