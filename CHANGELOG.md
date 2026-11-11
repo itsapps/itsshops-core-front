@@ -13,6 +13,12 @@ Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); 
   carousel module is used, plus `shop.css` if the site renders the cart sidebar (`shop.checkout`),
   `withdrawalPolicyModule`/`shippingInfoModule` or a `[data-filter-panel-modal]` panel. The compact
   warranty notice moved to `checkout.css` (nothing to change if you import it).
+- New entry pattern (recommended): core files in `layer(reset)` / `layer(core)`, Tailwind and
+  `utilities.css` from core (delete local `tailwind/` + `utilities/` copies). `utilities.css`'s
+  wrapper falls back to `90rem` — set `--wrapper-max-width` if yours differed. With layers your
+  bare element/global rules (`a`, `input, select`, `:focus-visible`) beat core's class rules —
+  `templates-and-assets.md` → "Cascade layers"; check with
+  `.claude/workflows/compare-customer-builds.md`.
 - The cart sidebar's checkout link (core-only template) now also has `btn` — check that your `.btn`
   rules suit `.cart-sidebar__checkout`.
 - Default header only (customers with their own header: nothing): the cart toggle is now

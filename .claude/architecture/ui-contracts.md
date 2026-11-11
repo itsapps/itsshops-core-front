@@ -174,8 +174,15 @@ Both `<button>` and `<a>` carry them — style both alike. States to cover:
   and is enabled once the URL has a token.
 - **Checkout submit:** no text swap; `disabled` while totals recalculate and while submitting —
   `:disabled` must look inactive but stay legible.
+- **`:focus-visible` on a bordered button:** an inset ring in the border's colour sits on the
+  border and vanishes (tinhof's `.btn`) — draw it outside or in another colour.
 - **Coupon buttons:** disabled while busy; apply/remove swap via `hidden` (remove starts hidden) —
   relies on the global `[hidden]` rule.
+
+**Form fields (`form.css`):** core shows focus only through the border (`outline: none` +
+`--field-focus-color`). A site whose `--field-focus-color` equals `--field-border-color` has **no
+visible focus** on fields (WCAG 2.4.7) — keep them different, or let the global `:focus-visible`
+ring reach the fields (with layered imports it beats core's `outline: none`).
 
 **Rule:** every `btn` element also has its **own class** (`<block>__<role>`, e.g.
 `user-login__submit`, `checkout__submit`, `newsletter-signup__submit`) — the shared look goes on

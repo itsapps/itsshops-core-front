@@ -83,6 +83,11 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       sibling variants and one without: product/merchant listing valid, shipping details and return
       policy recognised. Needs `company.name`, shipping methods with a delivery time in days ("2 – 5
       Werktage") and the return settings (`templates-and-assets.md` → "schema.org").
+- [ ] **Keyboard pass** on the same page types: Tab from the address bar reaches the skip link
+      first, every control shows a visible focus ring (fields, filled and outlined buttons,
+      overlays). **Safari** Tabs only to buttons and fields by default — turn on Settings →
+      Advanced → "Press Tab to highlight each item on a webpage" (or use Option-Tab) before
+      calling the skip link or links unreachable. VoiceOver starts on the skip link by itself.
 - [ ] **Lighthouse accessibility on every page type**, not only the home page: home, shop/category,
       a product page, checkout, a text page (e.g. AGB). The home page can score 100 while shop
       controls and inline links fail contrast (Tinhof, 2026-10-19: muted text tokens and the brand

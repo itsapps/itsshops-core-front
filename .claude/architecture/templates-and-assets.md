@@ -180,14 +180,14 @@ split into `base`/`carousel`/`shop` in 4.0.0 (CHANGELOG → "Upgrading"). Import
 @import '@itsapps/itsshops-core-front/dist/tailwind-utilities.css';
 ```
 
-**Cascade layers (optional, new projects):** importing core files with `layer(reset)` /
+**Cascade layers** (the four active customers from 4.0.0; the starter's default): importing core files with `layer(reset)` /
 `layer(core)` makes every unlayered customer rule beat core, whatever the order or specificity.
 Verified 2026-11-10 through `css.ts`'s plugin chain incl. cssnano: the `@layer` order statement
 stays first, relative imports inside a layered file inherit the layer, `@custom-media` from customer
 CSS applies inside it. Rules: import each core file **once** (postcss-import deduplicates only
 identical imports); import `utilities.css` **unlayered**; never `@apply` a class from a layered core
 file — the generated rule lands inside that layer and silently loses to all unlayered CSS. Existing
-customers import core unlayered (before their own CSS) — also fine; itsapps uses layers from 4.0.0.
+customers on old tags import core unlayered (before their own CSS) — that still works.
 
 What layers flip, so customer CSS must keep it in mind:
 - **A bare customer rule beats core's state rules.** Core styles states with long selectors, e.g.
@@ -195,9 +195,22 @@ What layers flip, so customer CSS must keep it in mind:
   `.checkout__summary { opacity: 1 }` now wins **always** and the loading dim is gone, silently.
   Don't set a property a core state uses (`opacity`, `display`, `pointer-events`, `visibility`,
   …) on the bare class: scope it to the state you mean, or restyle the state yourself.
+- **A bare element or global customer rule beats core's class rules** — the most common flip,
+  found in every 4.0 switch: `a { text-decoration: underline }` underlines core's `.skip-link`;
+  `input, select { background-color }` beats the transparent `.form-field` inputs and the price
+  slider; a global `:focus-visible { outline: … }` beats `.form-field … :focus { outline: none }`
+  and `.checkout__changes:focus-visible`. Write link rules as `a:not([class])`; where core's value
+  should stay, restore it in a scoped customer rule (`.form-field :is(input, textarea, select)
+  { background-color: var(--field-bg, transparent) }`).
+- **`[hidden]` always wins** (reset, `!important`): a static `hidden` in a customer template
+  that the customer's own `display` rule used to override now hides the element for good. Let
+  either the attribute or CSS decide, not both.
 - **`!important` reverses:** an `!important` inside a layer beats an unlayered one (affects
   reset's reduced-motion rules and the `dialog`/`popover` `display: none`). Don't override core
   with `!important`. A plain rule already wins.
+
+Checking a customer after a switch (or any core CSS change): `workflows/compare-customer-builds.md`
+— a CSS rule diff can't show either flip above.
 
 **All `@import`s before any other statement.** postcss-import inlines only `@import`s that precede
 every other rule (an empty `@layer a, b;` may come first). An inline `@tailwind components;` in the

@@ -24,6 +24,7 @@ this file stays the always-loaded router.
 | **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
 | Which Netlify / Sanity plan a site needs (credits, costs, rate-limit rule caps, public vs. private dataset) | `.claude/workflows/netlify-plans.md` |
+| Checking that a customer still renders the same after a core CSS change (side-by-side builds, HTML + computed-style diff, dead rules) | `.claude/workflows/compare-customer-builds.md` |
 | What every shop needs before go-live (env, settings, legal pages, approvals, tests) and right after (relaunch redirects, Search Console/Bing) | `.claude/workflows/go-live-checklist.md` |
 | Backing up a customer's Sanity production dataset (daily docs + weekly full, encrypted GitHub artifacts) / restoring it | `.claude/workflows/sanity-dataset-backups.md` |
 | Why a non-obvious choice was made | `.claude/decisions/` |

@@ -89,3 +89,5 @@ alternative was rejected, a constraint discovered the hard way.
   mail appends a `mail` history entry after a successful send; the customer message lives there only.
 - [theme-switch-in-core.md](theme-switch-in-core.md) — light/dark switch gated by `colorScheme`,
   fixed label + `aria-pressed`, own `themeBgColorDark`, scrollbar colours only in `theme.css`.
+- [focus-ring-customer-owned.md](focus-ring-customer-owned.md) — the global `:focus-visible` ring
+  is customer CSS (starter), not core: it's design, and a layered core rule couldn't enforce it.
