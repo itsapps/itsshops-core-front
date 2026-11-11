@@ -127,6 +127,11 @@ Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read
 
 ## Menus & system links (`src/data/resolve/menus.ts`)
 
+The menu query (`buildMenuQuery` in `queries.ts`) fetches `menu.maxDepth − 1` levels of `children`
+(`maxDepth` = levels, top level included, as core-back — flat menus fetch none); the
+`extensions.fields.menuItem` projection is added on every level. core-back types the levels
+`menuItem`, `menuItem1`, …; the frontend reads fields, never `_type`.
+
 A `menuItem` has a `linkType`: `internal` (doc ref), `external` (`url`), `submenu` (`children`), or
 `system`, meaning a **fixed core route** that isn't a document. It is named by `systemPage`, which is
 currently only `orderWithdraw` (the Widerruf form). In the per-locale loop, `resolveMenus` gets a
@@ -174,7 +179,8 @@ blog→blog, page→seiten/pages). Customers override per-locale segments via `c
 
 `buildSearchIndex(products, config, locale, ctx)` produces `cms[locale].searchIndex` (`SearchEntry[]`)
 and `searchFields` (fed to MiniSearch on the client — `src/scripts/search.ts`). Empty when
-`extensions.search` isn't configured. The config supplies **one of** `buildProductEntry` (one entry
+`extensions.search` isn't configured — and then `search-index.njk` isn't built at all (no
+`/<locale>/search.json`; gate `features.shop.search` in `src/config/templates.ts`). The config supplies **one of** `buildProductEntry` (one entry
 per product, variants grouped by `product._id`) or `buildEntry` (one entry per variant); returning
 `null` excludes an item. The build `ctx` (`SearchBuildContext`) gives `imageUrl`, `imageSrcset` (using
 the customer's named `imageSizes`), and `formatVolume`. Also generates a per-locale
