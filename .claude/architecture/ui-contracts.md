@@ -90,6 +90,11 @@ hidden, whatever its `display`. Consequences:
   `[data-newsletter-close]`.
 - **States:** `html.newsletter-dialog-open` while open — **no core CSS styles it**; the customer CSS
   must lock scroll (`overflow: hidden`).
+- **CSS:** opened with the non-modal `dialog.show()`, and `reset.css` unsets the dialog's UA
+  `inset`/`max-width`/`max-height`. So the customer CSS positions the dialog (e.g. `position:
+  fixed` + `inset` + `margin: auto`) and gives it `max-block-size` (≤ `100dvh`) + `overflow: auto`.
+  Otherwise, on a small or landscape screen, part of the form lies off screen, unreachable
+  (WCAG 1.4.10).
 
 ## Product filter panel (`product-filter.ts`)
 
