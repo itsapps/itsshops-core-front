@@ -9,12 +9,14 @@ keep its part's contract — then core's JS works unchanged. Verified against `s
 ## Global rule
 
 Core shows/hides almost everything with the `hidden` attribute, and any author `display` rule beats
-the UA's `[hidden] { display: none }`. Core patches this only per component, so customer base CSS
-must set:
+the UA's `[hidden] { display: none }`. So `reset.css` (4.0.0) sets
+`[hidden]:not([hidden='until-found']) { display: none !important; }`: an element with `hidden` is
+hidden, whatever its `display`. Consequences:
 
-```css
-[hidden] { display: none !important; }
-```
+- **Show or animate a part with a class or attribute** (`.is-open`), never by overriding
+  `display` on `[hidden]`. That no longer works (layered: core's `!important` beats a customer's).
+- Per-component `&[hidden] { display: none }` patches are redundant (harmless).
+- Every site imports `reset.css`. One that doesn't must set the rule itself.
 
 ## Menu (`menu.ts`, every `[data-menu-toggle]` button)
 

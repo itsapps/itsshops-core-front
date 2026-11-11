@@ -145,7 +145,7 @@ step; most are also exposed via `package.json` `exports`:
 
 | File | Contains |
 |---|---|
-| `reset.css` | CSS reset / base normalize |
+| `reset.css` | CSS reset / base normalize; makes `hidden` always win (`ui-contracts.md` → "Global rule") |
 | `base.css` | every site: skip link, generated privacy-policy spacing |
 | `carousel.css` | carousel module: pause/play button position |
 | `shop.css` | cart close/remove icon, `html.has-filter-panel-open`, the generated shop legal modules (`withdrawalPolicyModule`, `shippingInfoModule`, full warranty notice) |

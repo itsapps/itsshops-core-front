@@ -18,6 +18,10 @@ Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); 
 - Default header only (customers with their own header: nothing): the cart toggle is now
   `partials/cart-toggle.njk` without `aria-label` (sr-only label + count) — check `.cart-toggle`
   styles.
+- `reset.css` now hides every `[hidden]` element with `display: none !important` (except
+  `hidden="until-found"`). An element that carries `hidden` but was visible through an own
+  `display` rule is now hidden. Show it via a class instead. Own `&[hidden] { display: none }`
+  patches can go.
 
 ### Added
 - Submenu disclosure (`submenu.ts`, `[data-submenu-toggle]`) for core's default header.

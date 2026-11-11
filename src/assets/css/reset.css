@@ -125,6 +125,14 @@ dialog:not([open], [popover]),
   display: none !important;
 }
 
+/* `hidden` only works via the UA's [hidden] { display: none }, which any author `display` rule
+ * beats (`.menu { display: flex }` + `hidden` = visible). Core's scripts toggle `hidden`
+ * everywhere, so it must always win. `until-found` is left alone: it hides via
+ * content-visibility so find-in-page can reveal it, and display: none would break that. */
+[hidden]:not([hidden='until-found']) {
+  display: none !important;
+}
+
 html:has(dialog[open]:modal) {
   overflow: hidden;
 }
