@@ -878,6 +878,12 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    with all modules + newsletter + dark builds, Studio builds + validates (de, en), backend
    `tsc`; shop + all-packages assemblies still pass. Template rendering is checked with the
    demo content (5g).
+   **5f done 2026-11-11** (starter commit b2c8dc2): `manifest.json` → `intake` (4 rounds as D.1) +
+   `intakeRules`. Deviations: `when` is structured (`{ answer, is }` / `{ package }`) instead of an
+   expression string, so the step-7 test can check it; options carry `needs` (coupons, stock →
+   checkout); round 3 has only the content width — footer + cart-button questions come with
+   their variant packages in step 6; search gone (dropped). Checked inline: limits, known
+   packages/placeholders, every package reachable by an answer or `includes`.
    - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
      `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
      without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on
