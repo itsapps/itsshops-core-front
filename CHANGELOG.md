@@ -4,9 +4,10 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased (4.0.0)
+## 4.0.0
 
-Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); final text at release.
+CSS split by feature (`core.css` removed), cascade layers, UI contracts, theme switch from
+itsapps, menu/header/footer a11y fixes.
 
 ### Upgrading
 - **`dist/core.css` is gone.** Replace its `@import` with `base.css`, plus `carousel.css` if the

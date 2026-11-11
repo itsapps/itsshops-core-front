@@ -831,6 +831,9 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    cart toggle markup (no `aria-label`, sr-only label) — customers styling `.cart-toggle`
    from core's markup check it; the cart sidebar's checkout link now also has `btn` (core-only
    template) — customers whose `.btn` rules don't suit it adjust `.cart-sidebar__checkout`.
+   **Core 4.0.0 tagged 2026-11-11** (owner asked ahead of steps 5–8, which don't change core);
+   tinhof pinned it on `staging` for review. Remaining: tinhof production, jurtschitsch,
+   rosi_schuster, itsapps pins; starter tag once steps 5–8 are done.
    Push core before any customer
    pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
