@@ -464,8 +464,13 @@ export type Config = {
   imageSizes?: Record<string, PictureSize>
   imagePlaceholders?: Record<string, string>
   manifest?: {
+    /** Page background (light): the light `theme-color` meta tag + the web app manifest's `background_color`. */
     themeBgColor?: string
+    /** Brand colour: the web app manifest's `theme_color`. */
     themeColor?: string
+    /** Page background in dark mode: the dark `theme-color` meta tag (`colorScheme` 'dark' or
+     *  'light dark'). Default: `themeColor`. */
+    themeBgColorDark?: string
     colorScheme?: 'light' | 'dark' | 'light dark'
   }
   developer?: {
@@ -541,6 +546,7 @@ export type CoreConfig = {
   manifest: {
     themeBgColor: string
     themeColor: string
+    themeBgColorDark: string
     colorScheme: 'light' | 'dark' | 'light dark'
   }
   developer: {

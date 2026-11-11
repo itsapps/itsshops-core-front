@@ -26,6 +26,9 @@ export default {
   skipLink: {
     title: 'Zum Hauptinhalt springen',
   },
+  theme: {
+    dark: "Dunkles Design",
+  },
   cart: {
     ariaMain: "Warenkorb",
     title: "Warenkorb",

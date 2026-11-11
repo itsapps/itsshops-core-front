@@ -66,7 +66,11 @@ repos' configs aligned.
   textSizes?, spacings? }`. `cssPath` points at the exported Tailwind config; the token arrays drive
   the design-token system (see [templates-and-assets.md](templates-and-assets.md)).
 - `js?: Js` — `{ minify? }`.
-- `manifest?` — PWA `{ themeBgColor '#ffffff', themeColor '#000000', colorScheme 'light' }`.
+- `manifest?` — `{ themeBgColor '#ffffff', themeColor '#000000', themeBgColorDark (default: themeColor),
+  colorScheme 'light' }`. `themeBgColor` = light page background (light `theme-color` meta + the web
+  app manifest's `background_color`), `themeColor` = brand colour (web app manifest `theme_color`),
+  `themeBgColorDark` = dark page background (dark `theme-color` meta). `colorScheme: 'light dark'`
+  turns on the theme switch (`ui-contracts.md` → "Theme switch").
 - `menu?: { maxDepth? }` — menu nesting depth, default `1`.
 - `units?: { volume?, price?: { currency?, currencyLabel? } }` — `price.currency` default `'EUR'`;
   `currencyLabel` replaces the Intl symbol. ⚠️ `units.volume` **defaults to `'l'` in

@@ -14,6 +14,10 @@ console.groupEnd()
 initAgeGate()
 initMenu()
 
+if (document.querySelector('[data-theme-toggle]')) {
+  import('./theme-toggle').then(m => m.initThemeToggle())
+}
+
 if (document.querySelector('[data-submenu-toggle]')) {
   import('./submenu').then(m => m.initSubmenus())
 }

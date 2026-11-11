@@ -26,6 +26,9 @@ export default {
   skipLink: {
     title: 'Skip to main content',
   },
+  theme: {
+    dark: "Dark mode",
+  },
   cart: {
     ariaMain: "Shopping cart",
     title: "Shopping cart",

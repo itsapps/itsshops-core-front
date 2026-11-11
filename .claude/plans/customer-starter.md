@@ -588,8 +588,9 @@ package carries all of it (both stacks):
     `.embla-thumbs__slide--selected`, thumb buttons ≥ 24 × 24 px with `:focus-visible`.
 Non-feature
 switches: search → `search: {…}` stub (shop only), age gate → `ageGate: { enabled: true }`, dark →
-`manifest.colorScheme: 'light dark'` + a dark role block (system preference; the theme toggle
-stays itsapps-only until a second customer needs it).
+`manifest.colorScheme: 'light dark'` + `themeBgColorDark`, `theme.css` import, the three-block
+role set with `color-scheme` (`ui-contracts.md` → "Theme switch"). The theme toggle is core's
+since 2026-11-11 (moved from itsapps; two upcoming customers want dark mode).
 
 **Base `blocks/buttons.css`** styles the look classes from Part A's "Classes the customer
 must style": `.btn` (primary: `--color-primary` / `--color-on-primary`) and `.btn--secondary`

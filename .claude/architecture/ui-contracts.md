@@ -99,6 +99,40 @@ hidden, whatever its `display`. Consequences:
   Otherwise, on a small or landscape screen, part of the form lies off screen, unreachable
   (WCAG 1.4.10).
 
+## Theme switch (`theme-toggle.ts` + inline `scripts/inline/theme.ts`)
+
+Only with `manifest.colorScheme: 'light dark'`. Without it, core renders, loads and inlines none of
+it.
+
+- **Hooks:** `[data-theme-toggle]` buttons, from `overridable/partials/theme-toggle.njk` (core's
+  default header includes it; an own header includes the partial). Icons in
+  `overridable/partials/theme-toggle-icons.njk`, two elements `.theme-toggle__icon--to-dark` /
+  `--to-light`. Override that file for other icons, keep the classes.
+- **States:** the choice lives in localStorage `theme` (`light`|`dark`) and as `data-theme` on
+  `<html>`. No choice = follow the system (`prefers-color-scheme`), the button only mirrors it.
+  The button starts `hidden` (JS only) and is revealed by the script. `aria-pressed="true"` =
+  dark.
+- **Before paint** (inline script, CSP hash computed by `config/headers.ts`): applies the stored
+  choice, and keeps the two `theme-color` meta tags (browser chrome: Safari's tab bar, mobile
+  toolbars) on the page's theme. With `data-theme` both tags get that theme's colour, without it
+  they follow the system. It watches `data-theme`, so any toggle that sets it is followed. Colours:
+  `manifest.themeBgColor` (light) / `manifest.themeBgColorDark` (dark); `themeColor` is only the
+  web app manifest's brand colour.
+- **CSS:**
+  - `theme.css` (import with `layer(core)`) hides the icon that doesn't apply, and sets
+    `scrollbar-color` from the roles (`--color-muted` on `--color-bg`; override via
+    `--color-scrollbar-thumb|-track`). Firefox on macOS otherwise draws scrollbars after the
+    system appearance.
+  - The toggle's look (size ≥ 24px target, colours, hover, `:focus-visible`) is customer CSS on
+    `.theme-toggle`.
+  - **Colour roles:** the customer defines every role three times: in `:root` (light,
+    `color-scheme: light dark`), in `@media (prefers-color-scheme: dark) { :root {…} }`, and in
+    `:root[data-theme='dark']` (`color-scheme: dark`), plus `:root[data-theme='light'] {
+    color-scheme: light }`. `color-scheme` switches the browser's own parts (scrollbars, form
+    fields, autofill). Reference: itsapps' `global/variables.css`.
+- **A11y in markup:** fixed label `theme.dark` ("Dunkles Design" / "Dark mode") with
+  `aria-pressed`, so screen readers say "Dunkles Design, gedrückt"; icons `aria-hidden`.
+
 ## Product filter panel (`product-filter.ts`)
 
 See `templates-and-assets.md` → "Product filter panel": `[data-toggle-products-filter]` toggles
@@ -146,7 +180,7 @@ Both `<button>` and `<a>` carry them — style both alike. States to cover:
 their component class and are styled with their part: `.add-to-cart` (+ `.is-added`),
 `.qty-control__btn`, `.cart-item__qty-btn`, `.cart-item__remove`, `.cart-sidebar__close`,
 `.cart-toggle`, `.age-gate__btn--confirm|--deny`, `.newsletter-dialog__trigger|__close`,
-`.product-filters__reset`, `.carousel__pause`, `.embla-thumbs__slide__number`, the lightbox trigger
+`.product-filters__reset`, `.carousel__pause`, `.theme-toggle`, `.embla-thumbs__slide__number`, the lightbox trigger
 `.<cls>__trigger`.
 
 A class core adds later for customers to style goes on this list in the same change. A BEM class of

@@ -1,0 +1,20 @@
+{#
+  Light/dark switch — rendered only with manifest.colorScheme 'light dark'
+  (script: scripts/theme-toggle.ts, contract: .claude/architecture/ui-contracts.md → "Theme switch").
+  Rendered hidden: it only works with JS, so the script reveals it. A toggle button with a fixed
+  label — aria-pressed carries the state ("Dunkles Design, gedrückt").
+  Other icons: override overridable/partials/theme-toggle-icons.njk (keep the two icon classes,
+  theme.css swaps them). Look (size, colours, hover): customer CSS on .theme-toggle.
+#}
+{%- if coreConfig.manifest.colorScheme == 'light dark' -%}
+<button
+  type="button"
+  class="theme-toggle"
+  data-theme-toggle
+  aria-pressed="false"
+  aria-label="{{ 'theme.dark' | trans }}"
+  hidden
+>
+  {%- include "overridable/partials/theme-toggle-icons.njk" -%}
+</button>
+{%- endif -%}

@@ -22,6 +22,9 @@ Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); 
   `hidden="until-found"`). An element that carries `hidden` but was visible through an own
   `display` rule is now hidden. Show it via a class instead. Own `&[hidden] { display: none }`
   patches can go.
+- Dark mode (`colorScheme` 'light dark' or 'dark'): the dark `theme-color` meta tag now uses the
+  new `manifest.themeBgColorDark` (default `themeColor`, so unchanged until set). Set it to the
+  dark page background; `themeColor` stays the web app manifest's brand colour.
 
 ### Added
 - Submenu disclosure (`submenu.ts`, `[data-submenu-toggle]`) for core's default header.
@@ -32,6 +35,10 @@ Built on `feature/customer-starter` (plan `.claude/plans/customer-starter.md`); 
 - `btn--secondary` on the checkout's coupon buttons; an own class next to `btn` on every form/flow
   button (`user-login__submit`, …); `btn` on the cart sidebar's checkout link.
 - `.claude/architecture/ui-contracts.md`.
+- Theme switch in core (from itsapps): `overridable/partials/theme-toggle.njk` (+
+  `theme-toggle-icons.njk`), `scripts/theme-toggle.ts`, `theme.css`, translation `theme.dark`.
+  Only with `colorScheme: 'light dark'`; the default header includes it. The inline theme script
+  keeps the `theme-color` meta tags on an explicit choice (browser chrome follows the toggle).
 
 ### Fixed
 - Menu state after a resize (`menu.ts`): the default inline menu stayed inert after a mobile

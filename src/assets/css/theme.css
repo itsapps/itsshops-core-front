@@ -1,0 +1,22 @@
+/* ─── itsshops-core-front: theme.css ────────────────────────────────────────────
+ *
+ * Light/dark mode (manifest.colorScheme 'light dark') — import only then:
+ *   @import '@itsapps/itsshops-core-front/dist/theme.css' layer(core);
+ * Structural only; the toggle's look (size, colours, hover) is customer CSS on .theme-toggle.
+ * Contract: .claude/architecture/ui-contracts.md → "Theme switch".
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Toggle icons: show what a click switches to (moon while light, sun while dark). */
+.theme-toggle[aria-pressed='true'] .theme-toggle__icon--to-dark,
+.theme-toggle[aria-pressed='false'] .theme-toggle__icon--to-light {
+  display: none;
+}
+
+/* Scrollbars in the page's theme. Firefox on macOS draws them after the system appearance and
+ * ignores the page's color-scheme, so an explicit choice would keep the wrong colours. The
+ * colour roles are redefined per theme on :root, so this one rule follows all three states
+ * (system, explicit light, explicit dark). Override via --color-scrollbar-thumb/-track. */
+:root {
+  scrollbar-color: var(--color-scrollbar-thumb, var(--color-muted, GrayText))
+    var(--color-scrollbar-track, var(--color-bg, Canvas));
+}

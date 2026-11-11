@@ -148,6 +148,7 @@ step; most are also exposed via `package.json` `exports`:
 | `reset.css` | CSS reset / base normalize; makes `hidden` always win (`ui-contracts.md` → "Global rule") |
 | `base.css` | every site: skip link, generated privacy-policy spacing |
 | `carousel.css` | carousel module: pause/play button position |
+| `theme.css` | light/dark mode (`colorScheme: 'light dark'`): theme switch icon swap, scrollbar colours (`ui-contracts.md` → "Theme switch") |
 | `shop.css` | cart close/remove icon, `html.has-filter-panel-open`, the generated shop legal modules (`withdrawalPolicyModule`, `shippingInfoModule`, full warranty notice) |
 | `utilities.css` | `flow`, `region`, `wrapper` (`--wrapper-max-width`, fallback 90rem) — import **unlayered** |
 | `tailwind-components.css` / `tailwind-utilities.css` | the two `@tailwind` directives as files — `@import` them, never inline (below) |
@@ -159,7 +160,7 @@ step; most are also exposed via `package.json` `exports`:
 | `age-gate.css` | age-gate overlay |
 
 Customers compose the ones they need, by **feature**: `base.css` always; `carousel.css` with the
-carousel module; `shop.css` when the site renders the cart sidebar (`shop.checkout`),
+carousel module; `theme.css` with light/dark mode; `shop.css` when the site renders the cart sidebar (`shop.checkout`),
 `withdrawalPolicyModule`/`shippingInfoModule` or a `[data-filter-panel-modal]` panel;
 `checkout.css` with checkout; `form.css` with shop/users/newsletter forms; `search.css` with search;
 `age-gate.css` with the age gate; `lightbox.css` with the `{% gallery %}` shortcode. `core.css` was

@@ -118,7 +118,7 @@
       </nav>
     {% endif %}
 
-    {# ── Actions (locale switcher, cart) ───────────────────────────────── #}
+    {# ── Actions (locale switcher, theme switch, cart) ─────────────────── #}
     <div class="site-header__actions">
 
       {%- if coreConfig.locales.length > 1 -%}
@@ -136,6 +136,8 @@
           {%- endfor -%}
         </nav>
       {%- endif -%}
+
+      {%- include "overridable/partials/theme-toggle.njk" -%}
 
       {%- include "overridable/partials/cart-toggle.njk" -%}
 
