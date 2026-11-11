@@ -734,13 +734,39 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    flip found: tinhof's global `:focus-visible` (inset) beat core's
    `.checkout__changes:focus-visible` and sat on the notice's border — `blocks/checkout.css`
    now only sets `outline-offset: 2px` (the site's dotted ring, outside). Global ring then
-   aligned to the other three (2px dotted `currentColor`, `:focus-visible` only). Dead rules removed:
+   aligned to the other three (2px dotted `currentColor`, `:focus-visible` only). Follow-up
+   (found with the rosi check below): that ring also beat core's `.form-field
+   :is(input, textarea, select):focus { outline: none }` — `blocks/form-base.css` restores it
+   (fields show focus by their border, as live). Found in `npm run dev`: shop cards' vintage
+   image wrapper had a static `hidden` that tinhof's `display: contents` used to override —
+   core's `[hidden] … !important` reset now wins, image area blank → attribute removed
+   (`overridable/product/card.njk`). Final check (2026-11-11): `main` (core 3.11.0) and the
+   branch built side by side in a scratch dir. HTML diff over all pages = only the expected
+   class/`hidden` changes. Computed-style diff (Playwright, every element incl.
+   `::before`/`::after` + bounding box; home, shop, product, a content page, checkout with a
+   cart item; 390 + 1440 px) found the global `input, select { background-color }` beating
+   core's transparent field/price-slider background → restored in `blocks/form-base.css`;
+   then **0 differences**. Use this check for jurtschitsch too; it catches what the CSS rule
+   diff can't (markup `hidden`, which rule wins).
+   **rosi_schuster done 2026-11-11** (branch `feature/core-4-css`): `base` + `carousel`
+   layered; diff vs 3.6.3 = only the shop sections and compact notice gone, fallbacks,
+   privacy-policy split, `[hidden]`; `--wrapper-max-width: 85rem` as tinhof. Layer flip: its
+   bare `a { text-decoration: underline }` reached core's `.skip-link` → `.skip-link {
+   text-decoration: none }` in `global-styles.css` (`a:hover` won already before). Dead rules
+   removed: `.product-list__item[hidden]`, the `[role='list']` copy. Newsletter dialog sets
+   `max-height: calc(100dvh - …)` + `overflow: auto` — passes. Build + `npm test` pass.
+   **Method addition:** also compare core rules whose selector names no element
+   (`.skip-link`, `.form-field … :focus`) against the customer's bare element/pseudo rules
+   (`a`, `:focus-visible`, `input`, …) with the same property, and grep the templates for
+   static `hidden` attributes on elements whose CSS sets `display` — the first tinhof pass missed the form
+   field because it only matched rules by shared class or element. itsapps re-checked this
+   way: clean (its link rules are `a:not([class])`). Dead rules removed:
    six `[hidden] { display: none }` (incl. `.btn[hidden]`) and the `[role='list']` reset copy.
    Cart checkout link: `.cart-sidebar__checkout` (in `blocks/`, after `.btn`) sets every
    property `.btn` does, hover too — no change; worth a look in `npm run dev`. Eleventy build
    passes; `npm test`: `wc-api` "filter by status" fails against the deployed API (live
    data, no core netlify change since 3.11.0) — unrelated.
-   Same for the other two: layered entry like itsapps, delete local `tailwind/` + `utilities/`
+   Same for jurtschitsch: layered entry like itsapps, delete local `tailwind/` + `utilities/`
    copies and the unused `tailwind/base.css`, then diff declaration by declaration. With layers,
    list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
    e.g. the loading dim) and fix it. Also look for dead rules. rosi_schuster: check that its
