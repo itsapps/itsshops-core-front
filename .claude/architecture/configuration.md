@@ -124,7 +124,10 @@ Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
   `MAILGUN_USE_EU_REGION_URL` (default **true**; `false` → US endpoint).
 - **Studio → functions** (refund, send mail, …): `SERVER_FUNCTIONS_SECRET` (shared secret in the
   `x-server-secret` header) and `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (comma-separated CORS allowlist,
-  i.e. the studio origins). Missing → fail closed (`utils/server-auth.ts`).
+  i.e. the studio origins). Missing → fail closed (`utils/server-auth.ts`). **Known leak:** the
+  Studio sends the secret from `SANITY_STUDIO_NETLIFY_FUNCTIONS_SECRET`, which is in its public
+  bundle, so treat the secret as public and the CORS allowlist as no protection. Fix planned:
+  `.claude/plans/studio-auth-and-security-hardening.md`.
 - **Users (Supabase):** `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_EMAIL_HOOKS_SECRET`
   (`auth-webhooks`), `SUPABASE_KEEP_ALIVE_URL` (`supabase-keep-alive`). `SKIP_AUTH_EMAILS=true`
   suppresses auth + newsletter mails (tests). `PUBLIC_URL` overrides `URL` as the base for links in

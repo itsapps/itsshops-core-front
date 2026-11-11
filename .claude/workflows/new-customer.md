@@ -72,7 +72,7 @@ strip everything customer-specific:
 | `src/structure/index.ts` | `structure: ITSStructureItem[] = []` |
 | `src/translation/{index,de,en}.ts` | `i18n` (`ui`, `fields`, `defaultLocale`, `localizedFieldTypes`, overrides) |
 | `netlify.toml` | Studio SPA: `npm run build` → `dist`, `/* → /` 200 rewrite |
-| `.env` (gitignored) | `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_*` (deploy button), shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_*`, `SANITY_STUDIO_VINOFACT_*` |
+| `.env` (gitignored) | `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_*` (deploy button), shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_*`, `SANITY_STUDIO_VINOFACT_*`. **Every `SANITY_STUDIO_*` value is public** (bundled); the token/secret ones are a known leak until `.claude/plans/studio-auth-and-security-hardening.md` ships. Until then, leave `SANITY_STUDIO_NETLIFY_ACCESS_TOKEN` empty (deploy from Netlify) |
 | `tests/`, `vitest.config.ts`, `tsconfig.json`, `.gitignore` | as the sibling |
 
 Schema/structure details: core-back `CLAUDE.md` + `.claude/architecture/` (schema-authoring,

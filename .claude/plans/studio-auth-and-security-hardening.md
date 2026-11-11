@@ -90,11 +90,17 @@ keys, deploys). It must not be in the bundle, and not in the secrets document ei
   - **Limitation:** the Studio can only *display* the image, not read its state (a cross-origin
     SVG). So there's no "building" lock on the Deploy button and no "done" toast, which the PAT
     version has today.
-  - **Upgrade path, if editors miss that:** a signed Netlify deploy notification (outgoing webhook,
-    JWS secret `NETLIFY_DEPLOY_WEBHOOK_SECRET`) → core-front `deploy-status` function verifies it →
-    writes `itsshops-deploy.status` (`state`, `deployId`, `title`, timestamps, `error`) → the
-    DeployDialog listens to that doc live. Costs one function plus one Netlify setting per site.
-    Start with the badge.
+  - **Upgrade path, if editors miss that: server proxy.** The PAT goes in the **shop's server env**
+    (`NETLIFY_ACCESS_TOKEN`, Functions scope) and a core-front function `/api/studio/deploy` does
+    exactly three things with it: latest build, trigger, cancel. It's authenticated like refund/mail
+    (`x-server-secret` from the secrets doc + CORS allowlist). Editors can only do those three
+    things; the PAT never reaches the browser. Anyone who can read the server env is a Netlify
+    member already. This brings back the full status (building lock, done toast) and cancel. It's
+    the same idea as ffmh's `/api/deploy`.
+  - Rejected: storing the PAT in the secrets doc (every editor, and every script in the Studio,
+    could read an account-wide token, which means the shop's server keys plus deploying their own
+    code); and a signed Netlify deploy notification writing a status doc (one function plus a
+    Netlify setting per site, and still no cancel).
 - **"Open in Netlify"** link stays (`SANITY_STUDIO_NETLIFY_PROJECT_NAME`).
 - **Cancel deploy is dropped** (rare; editors cancel in Netlify).
 - Spike: [ ] Can the Studio `POST` the build hook cross-origin (CORS), or does it need `no-cors`

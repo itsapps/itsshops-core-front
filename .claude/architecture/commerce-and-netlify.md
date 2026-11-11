@@ -32,7 +32,9 @@ Rules of thumb:
   reference customer (`jurtschitsch/webshop-frontend/netlify/functions/`) as the canonical set.
 - Some factories take an optional config object (`create...Handler(config)`); most are zero-arg.
 - The functions need their server env vars at runtime (Stripe secret, Supabase, Mailgun/Resend,
-  Sanity token, `SANITY_STUDIO_NETLIFY_*` etc.) — set them on the Netlify site, not in client config.
+  Sanity token, `SERVER_FUNCTIONS_*` etc.) — set them on the Netlify site, not in client config.
+  (`SANITY_STUDIO_*` vars are Studio-side and **public**: they're compiled into the Studio bundle.
+  See core-back `CLAUDE.md` → "Config".)
 - `netlify.toml` controls bundling: the preview function declares `included_files` and excludes the
   bundler/React/Stripe node_modules it doesn't need (see the customer's `netlify.toml`).
 
