@@ -766,6 +766,15 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    property `.btn` does, hover too — no change; worth a look in `npm run dev`. Eleventy build
    passes; `npm test`: `wc-api` "filter by status" fails against the deployed API (live
    data, no core netlify change since 3.11.0) — unrelated.
+   **Dead-rule check (each customer, 2026-11-11):** every class / `data-` attribute in the
+   customer's own compiled (unlayered) CSS, looked up in the built pages + JS and in the
+   template/script sources of customer and core (names core builds from a variable —
+   `{{ class }}__option`, `checkout-totals__row--${…}` — and state-only ones like the sold-out
+   label count as used; Leaflet builds its classes at runtime). Found: tinhof 14 rules
+   (`[data-no-flash]`, `.preload-transitions` and other copied starter helpers, old shop
+   classes, commit `55da0e0`), rosi `[data-no-flash]` (`672d0d2`); jurtschitsch has
+   `[data-no-flash]` too. Note: core never fetches archived variants (`queries.ts`), so a
+   `--archived` style never renders.
    Same for jurtschitsch: layered entry like itsapps, delete local `tailwind/` + `utilities/`
    copies and the unused `tailwind/base.css`, then diff declaration by declaration. With layers,
    list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
