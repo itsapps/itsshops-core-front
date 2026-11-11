@@ -884,6 +884,18 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    checkout); round 3 has only the content width — footer + cart-button questions come with
    their variant packages in step 6; search gone (dropped). Checked inline: limits, known
    packages/placeholders, every package reachable by an answer or `includes`.
+   **5g in progress 2026-11-11** (starter commit 8cc3497): `seed/demo-content.mjs` +
+   `scripts/seed.mjs` wrote the demo content (Editor token): `development` 9 documents (6 pages
+   using every content module, main menu with a submenu, footer menu, settings), `development-shop`
+   33 (+ shop, terms, withdrawal, shipping pages, tax category + AT/DE, 2 shipping methods, 2
+   categories, colour options, 4 products / 5 variants incl. sold out + coming soon, shop
+   settings). Fictional company, placeholder images. Both frontends build every page;
+   screenshots of home, shop, product look right (header/footer unstyled until step 6). Found:
+   base needs `disableSubmenus: false` (core-back default off; set). `sanity documents
+   validate` is clean except **one core-back bug**: `menuItem.children`'s depth rule also fires on
+   a submenu child's own empty `children` (path has two `children` → depth 2 > `maxDepth` 1), so
+   no submenu validates at the default depth (jurtschitsch sidesteps it with `maxDepth: 2`). Open:
+   fix in core-back, owner review in the Studio, then `dataset export` → `seed/`.
    - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
      `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
      without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on
