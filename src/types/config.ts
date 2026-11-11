@@ -138,6 +138,8 @@ export type Features = {
     category: boolean
     coupons: boolean
     checkoutAgeConfirmation: boolean
+    /** Derived (shop on + `extensions.search` set) — not part of the customer input. Gates `search.json`. */
+    search: boolean
     vinofact: VinofactConfig
   }
   blog: boolean
@@ -412,7 +414,10 @@ export type Config = {
   extensions?: Extensions
 
   menu?: {
-    /** Maximum nesting depth for menu items. Defaults to 1 (one level of children). */
+    /**
+     * Menu levels, top level included — same meaning as core-back's `schemaSettings.menus.maxDepth`.
+     * 1 (default) = flat menus, no children fetched; 2 = top level + submenu links.
+     */
     maxDepth?: number
   }
 

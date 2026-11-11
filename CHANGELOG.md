@@ -4,6 +4,20 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (4.0.1)
+
+### Upgrading
+- `menu.maxDepth` now counts menu **levels, top level included** (as core-back): the query
+  fetches `maxDepth − 1` levels of `children`. Flat menus (default `1`) fetch none; a project
+  with submenus sets `2` (jurtschitsch already does — before, `2` fetched one empty level too
+  many). A project with submenus that relied on the default `1` must set `2`.
+
+### Fixed
+- `/<locale>/search.json` is written only when the product search is configured (shop on +
+  `extensions.search`). Before, every site wrote one empty `[]` file per locale. New derived
+  flag `features.shop.search` (resolved config only, not customer input) gates
+  `search-index.njk` in `src/config/templates.ts`. Nothing to change for customers.
+
 ## 4.0.0
 
 CSS split by feature (`core.css` removed), cascade layers, UI contracts, theme switch from

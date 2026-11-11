@@ -173,7 +173,7 @@ export const loadTemplates = (ctx: CoreContext) => {
   }
 }
 
-function shouldIgnoreTemplate({
+export function shouldIgnoreTemplate({
   dir,
   file,
   ctx
@@ -216,6 +216,7 @@ function shouldIgnoreTemplate({
     if (file === 'categories.njk' && !features.shop.category) return true
     if ((file === 'checkout.njk' || (file === 'order-thanks.njk')) && !features.shop.checkout) return true
     if (file.startsWith('order-withdraw') && !(features.shop.enabled && features.shop.checkout)) return true
+    if (file === 'search-index.njk' && !features.shop.search) return true
   }
   if (dir === 'maintenance') return true
   if (dir === 'preview') return true

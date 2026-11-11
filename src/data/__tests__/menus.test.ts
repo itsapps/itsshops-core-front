@@ -48,3 +48,24 @@ describe('system menu links', () => {
     expect(menus[1].items).toEqual([])
   })
 })
+
+import { buildMenuQuery } from '../queries'
+
+describe('menu query depth (maxDepth = levels, top level included)', () => {
+  const childLevels = (q: string) => (q.match(/"children": children\[\]/g) ?? []).length
+
+  it('flat menus (default 1) fetch no children', () => {
+    expect(childLevels(buildMenuQuery())).toBe(0)
+    expect(childLevels(buildMenuQuery(undefined, 1))).toBe(0)
+  })
+
+  it('2 levels fetch one level of children, 3 levels two', () => {
+    expect(childLevels(buildMenuQuery(undefined, 2))).toBe(1)
+    expect(childLevels(buildMenuQuery(undefined, 3))).toBe(2)
+  })
+
+  it('applies the menuItem extension fields on every level', () => {
+    const q = buildMenuQuery({ fields: { menuItem: 'spaceBefore' } }, 2)
+    expect((q.match(/spaceBefore/g) ?? []).length).toBe(2)
+  })
+})

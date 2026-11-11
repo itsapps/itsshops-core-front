@@ -66,6 +66,8 @@ is tied to whether checkout is enabled.
 
 ## Other resolved config of note
 
-`units.volume` (`'l'`), `units.price.currency` (`'EUR'`), `menu.maxDepth` (default 1),
+`units.volume` (`'l'`), `units.price.currency` (`'EUR'`), `menu.maxDepth` (default 1 — menu levels, top level included; `configuration.md`),
+`features.shop.search` (derived: shop on + `extensions.search`, not customer input — gates
+`search.json`, `extending.md` → "Search"),
 `manifest` (PWA theme colors), `ageGate` (`{enabled, minAge: 16}`), `imagePlaceholders`,
 `resolvedPermalinks` (see data-layer / i18n), `userPaths`.

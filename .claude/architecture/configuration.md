@@ -71,7 +71,9 @@ repos' configs aligned.
   app manifest's `background_color`), `themeColor` = brand colour (web app manifest `theme_color`),
   `themeBgColorDark` = dark page background (dark `theme-color` meta). `colorScheme: 'light dark'`
   turns on the theme switch (`ui-contracts.md` → "Theme switch").
-- `menu?: { maxDepth? }` — menu nesting depth, default `1`.
+- `menu?: { maxDepth? }` — menu **levels, top level included**, default `1` (flat; no `children`
+  fetched). `2` = top-level links + one level of submenu children. Same meaning as core-back's
+  `schemaSettings.menus.maxDepth` — set both to the same value.
 - `units?: { volume?, price?: { currency?, currencyLabel? } }` — `price.currency` default `'EUR'`;
   `currencyLabel` replaces the Intl symbol. ⚠️ `units.volume` **defaults to `'l'` in
   `resolveConfig`**, though the `Config` JSDoc says `'ml'` — code wins; verify if it matters.

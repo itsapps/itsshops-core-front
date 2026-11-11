@@ -640,7 +640,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      read it too; nothing in the backend); extras, multi-select (newsletter, users, blog, dark
      mode).
    - Round 2 — only for a shop: shop features, multi-select (checkout, category, coupons,
-     vinofact); more shop, multi-select (stock, manufacturer, search, age gate); product
+     vinofact); more shop, multi-select (stock, manufacturer, age gate; search dropped from v1); product
      gallery (yes / no).
    - Round 3 — look: footer (`simple` / `columns`, with previews); cart button (`count` /
      `text-count`, **only with checkout** — without it core renders no cart toggle, A.3);
@@ -695,7 +695,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
   the same selector.
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
-  (checkout, coupons, stock, newsletter, search, gallery; no vinofact) into a scratch dir, `npm link` core, build
+  (checkout, coupons, stock, newsletter, gallery; no vinofact) into a scratch dir, `npm link` core, build
   against its demo dataset — content site → `development`, shop → `development-shop` (open
   questions 2, 7; `SANITY_DATASET` set per build) — also checks every package's inserts land.
 - **Demo content:** create it once per dataset in the assembled Studio (content-site Studio →
@@ -809,9 +809,160 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    same properties as core's multi-class/state selectors (`form.css`, `checkout.css`,
    `shop.css`).
 4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
-5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
-   (needs the owner's Sanity project, dataset and tokens).
+5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export.
+   **Setup (owner, 2026-11-11):** Sanity project `pdsm6m17` (itsapps account), public datasets
+   `development` + `development-shop` both exist. Viewer + Editor tokens: the owner adds them to
+   the starter's gitignored `.env` before 5g (not needed for builds). Demo content: Claude
+   writes the documents with the Editor token, owner reviews them in the Studio before the
+   export. GitHub repo `itsapps/itsshops-starter` (private) exists, empty; push `main` as own
+   user. Order: 5a scaffold → 5b base (front + back, markers) → 5c base-only build →
+   5d feature packages (shop → checkout → category, newsletter, users, blog, search, age-gate,
+   dark, gallery, vinofact; re-assemble after each) → 5e modules → 5f manifest `intake[]` →
+   5g demo content + `seed/` export.
+   **5a–5c done 2026-11-11** (uncommitted in the starter): scaffold, `base/` front + back, a
+   manifest-driven `scripts/assemble.mjs` (Part E smoke: copy base + packages, a package may
+   replace a file only if it lists it in `overrides`; inserts go above their marker with its
+   indentation; marker lines removed; `%%…%%` filled from answers → package values → manifest
+   defaults, an unfilled one fails). Markers grew beyond part C: `starter:manifest`,
+   `starter:config`, `starter:colors`, `starter:color-roles`, `starter:module-resolve`,
+   `starter:schema-imports`, `starter:schema-documents`, `starter:localized-field-types`,
+   `starter:icon-imports`, `starter:icons`, `<!-- starter:claude-features -->` — all listed in
+   `manifest.json` → `markers`. Base placeholders: `projectName`, `projectTitle`,
+   `sanityProjectId`, `locales`, `localesText`, `defaultLocale`, `formality`,
+   `wrapperMaxWidth`, `colorScheme`, `starterVersion`, `createdAt`. Base-only assembly against
+   `development` (empty): Eleventy build with no `[itsshops]` warning, `sanity build`,
+   `sanity schema validate` per workspace (0/0), backend `tsc`, both test suites pass. Found:
+   core-back no longer exports `./localization` (the itsapps backend translator test can't run),
+   so base has no translator test; itsapps' `eleventy-run` test swallowed errors — base's asserts
+   a rendered page.
+   **5d done 2026-11-11** (starter commits 140855f, b601e4e): packages `shop`, `checkout`,
+   `category`, `newsletter`, `users` + `blog` (both `untested`), `age-gate`, `dark`,
+   `gallery`, `vinofact`, plus two shared ones pulled in by `includes` (never asked): `form`
+   (core `form.css` + field tokens — core's default field edge, 30 % text, is ~1.9:1, below the
+   3:1 WCAG 1.4.11 needs; ring drawn outside) and `mail` (mail env, needed by checkout,
+   newsletter, users). Deviations from part C: `cart.css` is in `checkout` (the sidebar only
+   renders with checkout); the shop module CSS (`productList`, `productVariantList`) and
+   `categoryList` ship with their feature, not as module packages; `age-gate` sets
+   `checkoutAgeConfirmation: true`; base module lists are shared by `page` and `post` (blog adds
+   `post: moduleProjections` / `post.modules`). Core-front renders **no blog index**. Checked:
+   smoke shop (shop, checkout, category, newsletter, gallery; coupons + stock) builds
+   against `development-shop` and its Studio builds + validates; an all-packages assembly
+   (vinofact switched off for the frontend build) builds both sides; all 18 wrappers load in
+   Node; checkout + newsletter = 3 rules → Pro.
+   **Placement decisions (owner, 2026-11-11):** core renders neither the newsletter dialog nor
+   a search trigger anywhere by default.
+   - *Newsletter:* customers want it in the footer (rosi) or on its own page, linked from a
+     menu (jurtschitsch's field-less `newsletterModule`). v1 ships the page module
+     (`modules/newsletterModule`, plain, headline/intro optional, added by the newsletter
+     answer); the footer dialog can't be a CSS-only variant (core's footer has no slot) — the
+     command builds it from the newsletter-dialog contract on request (D.4), the package keeps
+     its CSS. Core change only when a second customer wants the footer dialog.
+   - *Search:* **dropped from v1** (owner, 2026-11-11; package removed, starter commit
+     63a2e4a) — only tinhof (live) and grass-art (dormant) use it, each
+     placing the modal + `[data-search-open]` in its own `productList` override; the index holds
+     products only and its one consumer is the search modal. Re-add with a placement when a
+     second active shop wants it (package: `extensions.search` entry, `searchResult` image size,
+     placement).
+   - *Modules v1 (owner, 2026-11-11):* hero + teaser **without buttons** (no `actionGroup`; a
+     project adds them), teaser **without video**, `newsletterModule` with optional `headline` +
+     `intro` (both may stay empty → only core's form renders). CSS for core's always-present
+     modules (`carousel`, `youtube`, `privacyPolicyModule`) goes into base, not module packages.
+   **5e done 2026-11-11** (starter commit d9c5503): module packages `stdContent`, `hero`, `teaser`,
+   `faq`, `newsletterModule` (needs newsletter; the newsletter package pulls it in), each with
+   schema object, icon, de/en labels, projection, resolve, template, one CSS file; shared
+   `standardContent` (rich text, `standardBlock`, `localizedFieldTypes`) pulled in by the text
+   modules via `includes` (now transitive). Hero headline is an `<h2>` (the page title is the
+   `<h1>`); first hero image preloaded + eager. Teaser: image left/right/none, DOM order stays
+   image → text. Base got `blocks/modules/{carousel,youtube,privacyPolicyModule}.css` and an
+   `imageSizes` block (`starter:image-sizes`; hero + teaser add theirs). Checked: content site
+   with all modules + newsletter + dark builds, Studio builds + validates (de, en), backend
+   `tsc`; shop + all-packages assemblies still pass. Template rendering is checked with the
+   demo content (5g).
+   **5f done 2026-11-11** (starter commit b2c8dc2): `manifest.json` → `intake` (4 rounds as D.1) +
+   `intakeRules`. Deviations: `when` is structured (`{ answer, is }` / `{ package }`) instead of an
+   expression string, so the step-7 test can check it; options carry `needs` (coupons, stock →
+   checkout); round 3 has only the content width — footer + cart-button questions come with
+   their variant packages in step 6; search gone (dropped). Checked inline: limits, known
+   packages/placeholders, every package reachable by an answer or `includes`.
+   **5g done 2026-11-11** (starter commits 8cc3497, 7206b40; owner reviewed both datasets in the
+   Studio, exports in `seed/development{,-shop}.tar.gz`, 9 + 33 published documents, no drafts): `seed/demo-content.mjs` +
+   `scripts/seed.mjs` wrote the demo content (Editor token): `development` 9 documents (6 pages
+   using every content module, main menu with a submenu, footer menu, settings), `development-shop`
+   33 (+ shop, terms, withdrawal, shipping pages, tax category + AT/DE, 2 shipping methods, 2
+   categories, colour options, 4 products / 5 variants incl. sold out + coming soon, shop
+   settings). Fictional company, placeholder images. Both frontends build every page;
+   screenshots of home, shop, product look right (header/footer unstyled until step 6). Found:
+   base needs `disableSubmenus: false` (core-back default off; set). `sanity documents
+   validate` is clean except **one core-back bug**: `menuItem.children`'s depth rule also fires on
+   a submenu child's own empty `children` (path has two `children` → depth 2 > `maxDepth` 1), so
+   no submenu validates at the default depth (jurtschitsch sidesteps it with `maxDepth: 2`) — fixed
+   by the menu-depth change below.
+   - *Menu depth (owner, 2026-11-11):* `maxDepth` = **number of menu levels, top level included**,
+     in both repos (1 = flat, default; 2 = top level + submenu links). Found because core-back's
+     depth rule counted that way while core-front's query counted levels below the top (an extra
+     empty level fetched; jurtschitsch's `maxDepth: 2` looked like a workaround). Changes:
+     **core-back** builds one item type per level from the `menuItem` definition — `menuItem`,
+     `menuItem1`, … (`maxDepth` types; only the last is link-only: no `submenu` choice, no
+     `children`; flat with `maxDepth: 1`). Sanity choice lists are static, so
+     per-level types are how the "submenu" option disappears at the last level; the depth rule
+     goes. A definition gets an optional `baseName` so every level shares `menuItem`'s labels,
+     extension (`schemaExtensions.menuItem`) and preview. Existing submenu children are stored as
+     `menuItem` → one-time migration to `menuItem1` (jurtschitsch). **core-front** fetches
+     `maxDepth − 1` levels of `children` (flat menus: none). **Starter:** flat by default (base
+     drops `disableSubmenus: false`); intake option "menu with submenus" sets `maxDepth: 2`
+     (backend; `disableSubmenus` removed — redundant with `maxDepth`, owner 2026-11-11) and `menu.maxDepth: 2` (frontend); the smoke fixtures pick it.
+     **Built 2026-11-11:** core-back `feature/menu-levels` (`menuItemTypes`, `baseName`, tests,
+     CHANGELOG "Unreleased"; merged to `main` 2026-11-11), migration script moved to the
+     jurtschitsch backend `scripts/migrate-menu-item-levels.mjs` (one customer → not core; env as
+     `itsshops sanity`; dry run on `development`: 4 + 6 draft items), core-front `queries.ts`
+     (`maxDepth − 1` child levels, tests, CHANGELOG 4.0.1 "Upgrading"), starter `637190f`. Checked:
+     migration on the demo `development` menu (2 items relabelled, re-run 0); both demo datasets
+     validate with 0 errors / 0 warnings against the linked core-back; the content site renders the
+     submenu (Kontakt, Newsletter). Release: core-back version to decide (the type rename needs the
+     migration for projects with submenus — jurtschitsch only); jurtschitsch runs the script on
+     `development` + `production` when pinning it.
+   - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
+     `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
+     without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on
+     + `extensions.search`; resolved type only, not customer input — no second switch that could
+     disagree) read by `src/config/templates.ts` like the other feature gates. Test
+     `src/config/__tests__/templates-gate.test.ts`; verified on the starter content site (no
+     `search.json`). CHANGELOG "Unreleased (4.0.1)", `extending.md` → "Search".
 6. Variant library v1, each against its contract.
+   **Header `inline` done 2026-11-11** (starter commit 4c54789): `variants/header/inline/` =
+   `blocks/header.css` + `blocks/nav.css` on core's default markup, package `header-inline`
+   (kind `variant`, `part: header`), pulled in by `base.includes` (one variant → not asked; moves
+   to the intake when a second one exists). Breakpoint `--nav-inline` 60em, defined only in
+   `header.css`. Narrow: the nav is `display: none` until `.is-open`; the header itself turns
+   `position: fixed; inset: 0` while open (`:has(.site-nav.is-open)`), so logo, burger and actions
+   stay visible and reachable — no header-height variable. Wide: dropdown below the item (the last
+   item's opens leftwards). Burger lines in `ButtonText` under forced colours. Checked (Playwright,
+   site + shop): no burger on wide, nav out of the a11y tree when closed on narrow, open focuses the
+   first link and inerts `main`, Escape closes submenu then menu with focus back on the burger,
+   open → resize to wide closes and leaves the nav non-inert, no horizontal scroll at 320 px; both
+   frontends build, assembled test suites pass. Note for step 7: root `vitest` picks up
+   `base/**/tests` and `.scratch/**` — the starter checks need their own include list.
+   **Cart button `count` + `text-count` done 2026-11-11** (starter commit e79e5bd): packages
+   `cart-button-count` (CSS on core's partial: bag icon as a CSS mask in `currentColor` — `data:`
+   is in core's `img-src` — count badge, ring outside so the badge doesn't cover it) and
+   `cart-button-text-count` (overrides `partials/cart-toggle.njk` with core's conditions; visible
+   "Warenkorb" + count pill). Deviation from part C: **no sr-only copy and no `aria-live`** in
+   `text-count` — the visible text is the name ("Warenkorb 2", label in name), and the add button
+   already announces the add (a second region would announce it twice). Below 30em the word is
+   hidden visually (still in the name) and the bag icon shows — the word pushed the button onto
+   a second header row at 390 px. Both `needs: checkout`; intake round 3 question `cartButton`
+   (`when: { package: checkout }`); fixtures: shop → `count`, all → `text-count`. Checked
+   (Playwright): names "Zum Warenkorb, 1" / "Warenkorb 1" after an add, 44 px high targets,
+   sidebar opens with `aria-expanded`, one header row at 390 px; shop builds + tests pass with each.
+   **Footer `simple` + `columns` done 2026-11-11** (starter commit 5a5c34c): CSS on core's
+   default footer, both `blocks/footer.css` (the assembler's no-collision rule keeps them
+   exclusive). `simple`: each menu's links in a wrapping row (underlined), company line below.
+   `columns`: `footer-nav` = `auto-fit` grid of menus, company column at the end from 48em,
+   stacked below. Intake round 3 question `footer` (always asked) — the Look round is now at its
+   4-question limit (menus, width, cartButton, footer); a fifth look question needs a round 3b.
+   Fixtures: site + all → `simple`, shop → `columns`. Checked: links ≥ 29 px high, outside focus
+   ring, dark mode (site), no horizontal scroll at 390 px; site + shop build, tests pass.
+   **Step 6 done.**
 7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
