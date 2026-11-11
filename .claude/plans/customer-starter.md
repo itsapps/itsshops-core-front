@@ -863,6 +863,21 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      products only and its one consumer is the search modal. Re-add with a placement when a
      second active shop wants it (package: `extensions.search` entry, `searchResult` image size,
      placement).
+   - *Modules v1 (owner, 2026-11-11):* hero + teaser **without buttons** (no `actionGroup`; a
+     project adds them), teaser **without video**, `newsletterModule` with optional `headline` +
+     `intro` (both may stay empty → only core's form renders). CSS for core's always-present
+     modules (`carousel`, `youtube`, `privacyPolicyModule`) goes into base, not module packages.
+   **5e done 2026-11-11** (starter commit d9c5503): module packages `stdContent`, `hero`, `teaser`,
+   `faq`, `newsletterModule` (needs newsletter; the newsletter package pulls it in), each with
+   schema object, icon, de/en labels, projection, resolve, template, one CSS file; shared
+   `standardContent` (rich text, `standardBlock`, `localizedFieldTypes`) pulled in by the text
+   modules via `includes` (now transitive). Hero headline is an `<h2>` (the page title is the
+   `<h1>`); first hero image preloaded + eager. Teaser: image left/right/none, DOM order stays
+   image → text. Base got `blocks/modules/{carousel,youtube,privacyPolicyModule}.css` and an
+   `imageSizes` block (`starter:image-sizes`; hero + teaser add theirs). Checked: content site
+   with all modules + newsletter + dark builds, Studio builds + validates (de, en), backend
+   `tsc`; shop + all-packages assemblies still pass. Template rendering is checked with the
+   demo content (5g).
    - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
      `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
      without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on
