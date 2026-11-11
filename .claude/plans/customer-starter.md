@@ -640,7 +640,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      read it too; nothing in the backend); extras, multi-select (newsletter, users, blog, dark
      mode).
    - Round 2 — only for a shop: shop features, multi-select (checkout, category, coupons,
-     vinofact); more shop, multi-select (stock, manufacturer, search, age gate); product
+     vinofact); more shop, multi-select (stock, manufacturer, age gate; search dropped from v1); product
      gallery (yes / no).
    - Round 3 — look: footer (`simple` / `columns`, with previews); cart button (`count` /
      `text-count`, **only with checkout** — without it core renders no cart toggle, A.3);
@@ -695,7 +695,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
   the same selector.
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
-  (checkout, coupons, stock, newsletter, search, gallery; no vinofact) into a scratch dir, `npm link` core, build
+  (checkout, coupons, stock, newsletter, gallery; no vinofact) into a scratch dir, `npm link` core, build
   against its demo dataset — content site → `development`, shop → `development-shop` (open
   questions 2, 7; `SANITY_DATASET` set per build) — also checks every package's inserts land.
 - **Demo content:** create it once per dataset in the assembled Studio (content-site Studio →
@@ -836,7 +836,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    so base has no translator test; itsapps' `eleventy-run` test swallowed errors — base's asserts
    a rendered page.
    **5d done 2026-11-11** (starter commits 140855f, b601e4e): packages `shop`, `checkout`,
-   `category`, `newsletter`, `users` + `blog` (both `untested`), `search`, `age-gate`, `dark`,
+   `category`, `newsletter`, `users` + `blog` (both `untested`), `age-gate`, `dark`,
    `gallery`, `vinofact`, plus two shared ones pulled in by `includes` (never asked): `form`
    (core `form.css` + field tokens — core's default field edge, 30 % text, is ~1.9:1, below the
    3:1 WCAG 1.4.11 needs; ring drawn outside) and `mail` (mail env, needed by checkout,
@@ -845,7 +845,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    `categoryList` ship with their feature, not as module packages; `age-gate` sets
    `checkoutAgeConfirmation: true`; base module lists are shared by `page` and `post` (blog adds
    `post: moduleProjections` / `post.modules`). Core-front renders **no blog index**. Checked:
-   smoke shop (shop, checkout, category, newsletter, search, gallery; coupons + stock) builds
+   smoke shop (shop, checkout, category, newsletter, gallery; coupons + stock) builds
    against `development-shop` and its Studio builds + validates; an all-packages assembly
    (vinofact switched off for the frontend build) builds both sides; all 18 wrappers load in
    Node; checkout + newsletter = 3 rules → Pro.
@@ -857,8 +857,8 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      answer); the footer dialog can't be a CSS-only variant (core's footer has no slot) — the
      command builds it from the newsletter-dialog contract on request (D.4), the package keeps
      its CSS. Core change only when a second customer wants the footer dialog.
-   - *Search:* **drop from v1** (recommended 2026-11-11, owner OK pending; package still in the
-     starter until confirmed) — only tinhof (live) and grass-art (dormant) use it, each
+   - *Search:* **dropped from v1** (owner, 2026-11-11; package removed, starter commit
+     63a2e4a) — only tinhof (live) and grass-art (dormant) use it, each
      placing the modal + `[data-search-open]` in its own `productList` override; the index holds
      products only and its one consumer is the search modal. Re-add with a placement when a
      second active shop wants it (package: `extensions.search` entry, `searchResult` image size,
