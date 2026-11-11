@@ -902,14 +902,14 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      empty level fetched; jurtschitsch's `maxDepth: 2` looked like a workaround). Changes:
      **core-back** builds one item type per level from the `menuItem` definition — `menuItem`,
      `menuItem1`, … (`maxDepth` types; only the last is link-only: no `submenu` choice, no
-     `children`; flat when `disableSubmenus` or `maxDepth: 1`). Sanity choice lists are static, so
+     `children`; flat with `maxDepth: 1`). Sanity choice lists are static, so
      per-level types are how the "submenu" option disappears at the last level; the depth rule
      goes. A definition gets an optional `baseName` so every level shares `menuItem`'s labels,
      extension (`schemaExtensions.menuItem`) and preview. Existing submenu children are stored as
      `menuItem` → one-time migration to `menuItem1` (jurtschitsch). **core-front** fetches
      `maxDepth − 1` levels of `children` (flat menus: none). **Starter:** flat by default (base
-     drops `disableSubmenus: false`); intake option "menu with submenus" sets `disableSubmenus:
-     false` + `maxDepth: 2` (backend) and `menu.maxDepth: 2` (frontend); the smoke fixtures pick it.
+     drops `disableSubmenus: false`); intake option "menu with submenus" sets `maxDepth: 2`
+     (backend; `disableSubmenus` removed — redundant with `maxDepth`, owner 2026-11-11) and `menu.maxDepth: 2` (frontend); the smoke fixtures pick it.
      **Built 2026-11-11:** core-back `feature/menu-levels` (`menuItemTypes`, `baseName`, tests,
      `scripts/migrate-menu-item-levels.mjs`, CHANGELOG "Unreleased"), core-front `queries.ts`
      (`maxDepth − 1` child levels, tests, CHANGELOG 4.0.1 "Upgrading"), starter `637190f`. Checked:
