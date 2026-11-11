@@ -192,8 +192,11 @@ set aside as more machinery than the leak needs.
 - implement on `feature/security-hardening` (both repos) from `main` → merge into `main` → cut
   core releases (both major; core-back's includes menu levels) → Tinhof **staging** (pin, enter
   secrets, env, test) → Tinhof **production** → rotate + redeploy the Studio;
-- **customer-starter must not merge into core-front `main` before this release** (or it ships with
-  it).
+- core-front `main` already contains customer-starter's core changes (merged 2026-11-11: the
+  `search.json` gate and menu `maxDepth` = levels, both CHANGELOG `4.0.1`). They belong in the same
+  release as core-back's menu levels, so that both sides mean the same by `maxDepth`. Later
+  customer-starter work merges as usual; check before the release that `main` holds nothing
+  half-done.
 - Interim until the release: optionally remove Tinhof's `payment_refund.mts` (and
   `order_notify.mts`); refunds then go through the Stripe dashboard, and the webhook syncs them.
 
