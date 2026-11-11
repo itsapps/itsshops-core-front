@@ -295,8 +295,8 @@ The browser modules in `src/scripts/`, grouped by feature:
 - **checkout**: `checkout*.ts` (api, changes, coupon, express, form, shipping, stripe, summary)
 - **users**: `user-*.ts` (login, register, recover, reset, confirm, withdraw), `user-store.ts`
 - **newsletter**: `newsletter-*.ts`
-- **browse**: `product-filter.ts`, `search.ts`, `carousel.ts`, `menu.ts`, `gallery.ts`,
-  `lightbox.ts`
+- **browse**: `product-filter.ts`, `search.ts`, `carousel.ts`, `menu.ts`, `submenu.ts`, `gallery.ts`,
+  `lightbox.ts`, `theme-toggle.ts`
 - **order thanks** (flow in [commerce-and-netlify.md](commerce-and-netlify.md)): `order-thanks.ts`,
   `order-snapshot.ts` (sessionStorage summary), `order-status.ts` (order-number lookup),
   `pending-payment.ts` (cart cleanup marker)
@@ -382,7 +382,7 @@ customer uses custom inline scripts — this path works but is lightly trodden; 
 `package.json` `exports` subpath.)
 
 `src/scripts/inline/` (`age-gate.ts`, `theme.ts`) are built as **separate tsup entries** and inlined
-into `<head>` by the head template to run before paint (no-FOUC theme, age gate) — not part of the
+into `<head>` by the head template to run before paint (no-FOUC theme + `theme-color` meta sync, age gate) — not part of the
 deferred bundle. `src/shared/` holds code shared between client scripts and Netlify functions
 (`validation.ts`, `*-api.ts` typed API clients).
 

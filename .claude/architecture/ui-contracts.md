@@ -52,6 +52,9 @@ hidden, whatever its `display`. Consequences:
   with `opacity`/`transform` alone: it must be out of the a11y tree before the first toggle.
 - **A11y in markup:** the button has an accessible name (`aria-label` via i18n), `aria-expanded`,
   `aria-controls`.
+- **No no-JS fallback** (owner, 2026-11-11): `@media (scripting: none)` only matches JS switched
+  off. It doesn't match a blocked, failed or still-loading script, so it covers only the case the
+  owner ignores. A JS-set marker would either miss those cases (inline) or flash (bundle).
 
 ## Submenus (`submenu.ts`, every `[data-submenu-toggle]` button)
 
