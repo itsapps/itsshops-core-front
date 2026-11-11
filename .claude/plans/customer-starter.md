@@ -954,6 +954,15 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    (`when: { package: checkout }`); fixtures: shop → `count`, all → `text-count`. Checked
    (Playwright): names "Zum Warenkorb, 1" / "Warenkorb 1" after an add, 44 px high targets,
    sidebar opens with `aria-expanded`, one header row at 390 px; shop builds + tests pass with each.
+   **Footer `simple` + `columns` done 2026-11-11** (starter commit 5a5c34c): CSS on core's
+   default footer, both `blocks/footer.css` (the assembler's no-collision rule keeps them
+   exclusive). `simple`: each menu's links in a wrapping row (underlined), company line below.
+   `columns`: `footer-nav` = `auto-fit` grid of menus, company column at the end from 48em,
+   stacked below. Intake round 3 question `footer` (always asked) — the Look round is now at its
+   4-question limit (menus, width, cartButton, footer); a fifth look question needs a round 3b.
+   Fixtures: site + all → `simple`, shop → `columns`. Checked: links ≥ 29 px high, outside focus
+   ring, dark mode (site), no horizontal scroll at 390 px; site + shop build, tests pass.
+   **Step 6 done.**
 7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
