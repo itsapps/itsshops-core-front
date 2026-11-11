@@ -712,7 +712,21 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
    e.g. the loading dim) and fix it. Also look for dead rules. rosi_schuster: check that its
    newsletter dialog sets `max-block-size` + `overflow` (`ui-contracts.md` → Newsletter dialog).
-   Commit each on `main` with the core pin at release (step 9).
+   **Setup per customer:** `npm link @itsapps/itsshops-core-front` first (core on
+   `feature/customer-starter`, built), work on a branch `feature/core-4-css` (as itsapps), not
+   `main`. Merge into `main` with the core tag pin at release (step 9). Order doesn't matter.
+   **How to compare (itsapps method):** a scratch script runs the customer entry through
+   `css.ts`'s PostCSS chain: ext-glob, postcss-import, custom-media, nesting, tailwind nesting,
+   tailwindcss with `getTailwindConfig(projectConfig.css)` from the customer's
+   `itsshops.config.mts`, nesting, autoprefixer. Run it from the customer root, with core's
+   `node_modules` for the plugins. Compile (a) the entry before the change against the old core
+   CSS: copy core's `dist/*.css` from `main` (3.x) into a folder and rewrite the
+   `@itsapps/itsshops-core-front/dist/` paths to it. Compile (b) the new entry. Flatten both with
+   postcss: one line per declaration = `ancestors (selector / at-rule, layer wrappers stripped) ::
+   prop:value`. Then `diff`. Expected differences only: the moved/removed core sections. Specificity
+   effects of layers don't show in this diff. Check them separately: customer rules hitting the
+   same properties as core's multi-class/state selectors (`form.css`, `checkout.css`,
+   `shop.css`).
 4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
 5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
    (needs the owner's Sanity project, dataset and tokens).
