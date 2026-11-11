@@ -775,7 +775,20 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    classes, commit `55da0e0`), rosi `[data-no-flash]` (`672d0d2`); jurtschitsch has
    `[data-no-flash]` too. Note: core never fetches archived variants (`queries.ts`), so a
    `--archived` style never renders.
-   Same for jurtschitsch: layered entry like itsapps, delete local `tailwind/` + `utilities/`
+   **jurtschitsch done 2026-11-11** (branch `feature/core-4-css`; staging on 3.6.3, compared
+   against 3.11.0 to isolate the switch): `base`, `shop`, `form`, `checkout`, `lightbox`
+   layered, no `carousel`, no `utilities.css` (unused here). Rule diff = carousel section gone
+   + the common changes. Fields: `--field-focus-color` = border colour, so a focused field had
+   **no visible indicator** before; the global ring now reaches them (layer flip, kept as a
+   fix) and is drawn outside (`form-base.css`); checkout-changes notice ring outside. Global
+   `input, select { background-color }` beat core's transparent fields → restored. Cart
+   checkout link + `btn`: no standalone `.btn` rule here, no change. Dead rules removed:
+   `[data-no-flash]`, `[role='list']` copy, five `[hidden]` rules. Side-by-side: HTML of all
+   88 pages = expected changes only (incl. gallery thumb `aria-current`); computed styles on
+   five pages × 2 widths = only the skip link's `text-decoration-thickness` (no underline,
+   invisible). No `npm test` script; its `tests/unit` fail on a broken import
+   (`../utils/sanity`, pre-existing). **Step 3 complete.**
+   Original instructions for the switch: layered entry like itsapps, delete local `tailwind/` + `utilities/`
    copies and the unused `tailwind/base.css`, then diff declaration by declaration. With layers,
    list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
    e.g. the loading dim) and fix it. Also look for dead rules. rosi_schuster: check that its
