@@ -809,8 +809,67 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    same properties as core's multi-class/state selectors (`form.css`, `checkout.css`,
    `shop.css`).
 4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
-5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
-   (needs the owner's Sanity project, dataset and tokens).
+5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export.
+   **Setup (owner, 2026-11-11):** Sanity project `pdsm6m17` (itsapps account), public datasets
+   `development` + `development-shop` both exist. Viewer + Editor tokens: the owner adds them to
+   the starter's gitignored `.env` before 5g (not needed for builds). Demo content: Claude
+   writes the documents with the Editor token, owner reviews them in the Studio before the
+   export. GitHub repo `itsapps/itsshops-starter` (private) exists, empty; push `main` as own
+   user. Order: 5a scaffold → 5b base (front + back, markers) → 5c base-only build →
+   5d feature packages (shop → checkout → category, newsletter, users, blog, search, age-gate,
+   dark, gallery, vinofact; re-assemble after each) → 5e modules → 5f manifest `intake[]` →
+   5g demo content + `seed/` export.
+   **5a–5c done 2026-11-11** (uncommitted in the starter): scaffold, `base/` front + back, a
+   manifest-driven `scripts/assemble.mjs` (Part E smoke: copy base + packages, a package may
+   replace a file only if it lists it in `overrides`; inserts go above their marker with its
+   indentation; marker lines removed; `%%…%%` filled from answers → package values → manifest
+   defaults, an unfilled one fails). Markers grew beyond part C: `starter:manifest`,
+   `starter:config`, `starter:colors`, `starter:color-roles`, `starter:module-resolve`,
+   `starter:schema-imports`, `starter:schema-documents`, `starter:localized-field-types`,
+   `starter:icon-imports`, `starter:icons`, `<!-- starter:claude-features -->` — all listed in
+   `manifest.json` → `markers`. Base placeholders: `projectName`, `projectTitle`,
+   `sanityProjectId`, `locales`, `localesText`, `defaultLocale`, `formality`,
+   `wrapperMaxWidth`, `colorScheme`, `starterVersion`, `createdAt`. Base-only assembly against
+   `development` (empty): Eleventy build with no `[itsshops]` warning, `sanity build`,
+   `sanity schema validate` per workspace (0/0), backend `tsc`, both test suites pass. Found:
+   core-back no longer exports `./localization` (the itsapps backend translator test can't run),
+   so base has no translator test; itsapps' `eleventy-run` test swallowed errors — base's asserts
+   a rendered page.
+   **5d done 2026-11-11** (starter commits 140855f, b601e4e): packages `shop`, `checkout`,
+   `category`, `newsletter`, `users` + `blog` (both `untested`), `search`, `age-gate`, `dark`,
+   `gallery`, `vinofact`, plus two shared ones pulled in by `includes` (never asked): `form`
+   (core `form.css` + field tokens — core's default field edge, 30 % text, is ~1.9:1, below the
+   3:1 WCAG 1.4.11 needs; ring drawn outside) and `mail` (mail env, needed by checkout,
+   newsletter, users). Deviations from part C: `cart.css` is in `checkout` (the sidebar only
+   renders with checkout); the shop module CSS (`productList`, `productVariantList`) and
+   `categoryList` ship with their feature, not as module packages; `age-gate` sets
+   `checkoutAgeConfirmation: true`; base module lists are shared by `page` and `post` (blog adds
+   `post: moduleProjections` / `post.modules`). Core-front renders **no blog index**. Checked:
+   smoke shop (shop, checkout, category, newsletter, search, gallery; coupons + stock) builds
+   against `development-shop` and its Studio builds + validates; an all-packages assembly
+   (vinofact switched off for the frontend build) builds both sides; all 18 wrappers load in
+   Node; checkout + newsletter = 3 rules → Pro.
+   **Placement decisions (owner, 2026-11-11):** core renders neither the newsletter dialog nor
+   a search trigger anywhere by default.
+   - *Newsletter:* customers want it in the footer (rosi) or on its own page, linked from a
+     menu (jurtschitsch's field-less `newsletterModule`). v1 ships the page module
+     (`modules/newsletterModule`, plain, headline/intro optional, added by the newsletter
+     answer); the footer dialog can't be a CSS-only variant (core's footer has no slot) — the
+     command builds it from the newsletter-dialog contract on request (D.4), the package keeps
+     its CSS. Core change only when a second customer wants the footer dialog.
+   - *Search:* **drop from v1** (recommended 2026-11-11, owner OK pending; package still in the
+     starter until confirmed) — only tinhof (live) and grass-art (dormant) use it, each
+     placing the modal + `[data-search-open]` in its own `productList` override; the index holds
+     products only and its one consumer is the search modal. Re-add with a placement when a
+     second active shop wants it (package: `extensions.search` entry, `searchResult` image size,
+     placement).
+   - *Core fix found on the way (4.0.1, owner 2026-11-11):* every site wrote an empty `[]`
+     `/<locale>/search.json` (`search-index.njk` had no gate; `resolver.ts:211` returns `[]`
+     without `extensions.search`). Fixed with a **derived** flag `features.shop.search` (shop on
+     + `extensions.search`; resolved type only, not customer input — no second switch that could
+     disagree) read by `src/config/templates.ts` like the other feature gates. Test
+     `src/config/__tests__/templates-gate.test.ts`; verified on the starter content site (no
+     `search.json`). CHANGELOG "Unreleased (4.0.1)", `extending.md` → "Search".
 6. Variant library v1, each against its contract.
 7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
 8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).

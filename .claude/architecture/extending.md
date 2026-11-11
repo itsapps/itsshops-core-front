@@ -100,6 +100,11 @@ Jurtschitsch maps `size: small|medium|large` to `content*` presets).
 and `buildEntry(variant, locale, ctx)` **or** `buildProductEntry(variants, locale, ctx)` (mutually
 exclusive). `ctx` (`SearchBuildContext`) offers `imageUrl`, `imageSrcset` (using your `imageSizes`),
 `formatVolume`. See client wiring in `src/scripts/search.ts`.
+`search.json` is written only when `extensions.search` is set and the shop is on — resolved
+as the derived flag `features.shop.search` (not configurable; `src/config/templates.ts` skips
+`search-index.njk` without it). The index holds products only. Its one consumer is the search
+modal (`overridable/search.njk` + `search.ts`), which core places nowhere: the project includes
+the modal and a `[data-search-open]` button itself (tinhof: in its `productList` override).
 
 ## Debug hooks
 

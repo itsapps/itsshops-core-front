@@ -6,7 +6,7 @@ import { resolveRedirects } from './redirects'
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
-  const features = resolveFeatures(config.features, env)
+  const features = resolveFeatures(config.features, env, !!config.extensions?.search)
 
   const previewEnabled = env.preview.enabled
   const perspective = (previewEnabled ? (env.preview.perspective || 'drafts') : 'published') as ClientPerspective
@@ -196,7 +196,7 @@ function resolveCspDirectives(input: CspDirectives | undefined): ResolvedCspDire
   }
 }
 
-function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<typeof readEnv>): Features {
+function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<typeof readEnv>, hasSearchConfig = false): Features {
   const vinofactInput = input?.shop?.vinofact
   const vinofactIntegration = vinofactInput?.integration ?? (
     env.vinofact.endpoint && env.vinofact.accessToken && env.vinofact.profileSlug
@@ -213,6 +213,8 @@ function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<ty
       category:     input?.shop?.category     ?? false,
       coupons: input?.shop?.coupons ?? false,
       checkoutAgeConfirmation: input?.shop?.checkoutAgeConfirmation ?? false,
+      // Derived, not configurable: the product search exists only with `extensions.search`.
+      search: !!input?.shop && hasSearchConfig,
       vinofact: {
         enabled:     vinofactInput?.enabled     ?? false,
         fields:      vinofactInput?.fields,

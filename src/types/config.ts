@@ -138,6 +138,8 @@ export type Features = {
     category: boolean
     coupons: boolean
     checkoutAgeConfirmation: boolean
+    /** Derived (shop on + `extensions.search` set) — not part of the customer input. Gates `search.json`. */
+    search: boolean
     vinofact: VinofactConfig
   }
   blog: boolean
