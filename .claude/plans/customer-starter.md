@@ -704,6 +704,13 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    with `checkout.css`). tinhof + jurtschitsch: also look at the cart sidebar's checkout link
    in `npm run dev` (it now carries `btn`, A.3) and, if their `.btn` rules clash with
    `.cart-sidebar__checkout`, fix it in their `blocks/cart.css`.
+   **itsapps done 2026-11-10** (branch `feature/core-4-css`): layered imports, core's
+   Tailwind/utilities files (local copies deleted), output identical declaration by declaration.
+   Same for the other three: layered entry like itsapps, delete local `tailwind/` + `utilities/`
+   copies and the unused `tailwind/base.css`, then diff declaration by declaration. With layers,
+   list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
+   e.g. the loading dim) and fix it. Also look for dead rules. rosi_schuster: check that its
+   newsletter dialog sets `max-block-size` + `overflow` (`ui-contracts.md` → Newsletter dialog).
    Commit each on `main` with the core pin at release (step 9).
 4. ~~Refine parts C–E~~ — done 2026-11-10 (one round; see Status).
 5. Starter repo: base, manifest, inserts; feature packages; modules v1; demo content + export
