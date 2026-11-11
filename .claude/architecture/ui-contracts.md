@@ -18,6 +18,16 @@ hidden, whatever its `display`. Consequences:
 - Per-component `&[hidden] { display: none }` patches are redundant (harmless).
 - Every site imports `reset.css`. One that doesn't must set the rule itself.
 
+**When to use `hidden` and when a class** (for new parts, core and customer):
+- **Plain on/off, no animation → `hidden`.** One attribute hides visually, from screen readers
+  and from the tab order, works before CSS loads, and is trivial to toggle and test.
+- **Animated (overlay, drawer, dropdown that slides/fades) → a state class (`.is-open`) +
+  `visibility: hidden` when closed.** `display: none` can't animate, while `visibility` also
+  takes the element out of the a11y tree and tab order and can be delayed by `transition` until
+  the closing animation ends. Never hide only with `opacity`/`transform`: the element stays
+  focusable and announced. The cart sidebar works this way. A menu that animates must not start
+  `hidden` (see Menu).
+
 ## Menu (`menu.ts`, every `[data-menu-toggle]` button)
 
 - **Hooks:** a button `[data-menu-toggle]`; its target = the `data-menu-toggle` value or the
