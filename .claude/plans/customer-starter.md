@@ -67,6 +67,11 @@ records (why the starter is copied, not imported; why variants live outside core
   lets a site restyle one button without context selectors. The buttons that have only `btn`
   today get one in A.3. **Component controls** (`.add-to-cart`, `.age-gate__btn--*`, …) keep
   only their own class — no `btn` (open question 8).
+- **Focus ring = starter, not core** (owner, 2026-11-11): the global `:focus-visible` rule
+  is design (colour, style, offset, per-site exceptions), and a core rule would add no safety
+  — without one the browser's own ring shows, and unlayered customer CSS beats layered core
+  anyway. All four active customers now share one rule (tinhof aligned 2026-11-11); the
+  starter's base ships it and a check keeps it there (C, E).
 - Everything else in core is additive or opt-in.
 
 ## Part A — UI contracts (core-front)
@@ -602,7 +607,19 @@ size ≥ 24 × 24 px (WCAG 2.5.8). It never sets `align-self` (core's `.form .bt
 
 **Default CSS rules (all packages):** plain on purpose (system font stack, neutral palette);
 only colour roles, never palette names or literal colours; AA contrast for every role pairing
-that carries text; `:focus-visible` inset dotted outline (itsapps/jurtschitsch pattern);
+that carries text; the **focus ring** in base `global/global-styles.css`, the rule all four
+active customers share:
+```css
+:focus-visible {
+  outline: 2px dotted currentColor;
+  outline-offset: -2px;   /* inset: no overflow:hidden ancestor clips it, shows on filled buttons */
+}
+```
+`:focus-visible` only (no ring on mouse clicks); no package sets `outline: none` without a
+replacement ring; text-only links where an inset ring crosses letters (header logo, nav,
+locale switch) get it outside (`outline-offset: 0.25em` in the header variant's CSS, as
+itsapps); a package may draw a stronger ring for its own control (tinhof: video toggle, shop
+button);
 motion only under `prefers-reduced-motion: no-preference`; every state from the part's contract
 styled; base CSS has the `[hidden]` rule. Files: `.env-sample` (not `.env.example` — the
 customers' `.gitignore` ignores `.env*` except `!.env-sample`).
@@ -672,7 +689,10 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
   for when one does; **look-class test** (the reverse direction) — every class in `ui-contracts.md`
   → "Classes the customer must style" (v1: `btn`, `btn--secondary`; kept as a list in the
   test, with a comment pointing at the doc) has a rule in the base CSS, and each still occurs
-  in core's `dist/templates/**` (so a class core drops fails the test too).
+  in core's `dist/templates/**` (so a class core drops fails the test too); **focus test** —
+  the base CSS has the `:focus-visible` rule above (parsed with postcss, not a text match), and
+  no library CSS sets `outline: none`/`0` in a rule without a `:focus-visible` replacement for
+  the same selector.
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
   (checkout, coupons, stock, newsletter, search, gallery; no vinofact) into a scratch dir, `npm link` core, build
@@ -707,7 +727,20 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    `.cart-sidebar__checkout`, fix it in their `blocks/cart.css`.
    **itsapps done 2026-11-10** (branch `feature/core-4-css`): layered imports, core's
    Tailwind/utilities files (local copies deleted), output identical declaration by declaration.
-   Same for the other three: layered entry like itsapps, delete local `tailwind/` + `utilities/`
+   **tinhof done 2026-11-11** (branch `feature/core-4-css`, commit 3376f59):
+   diff vs 3.11.0 = only the expected changes (privacy-policy split out of the shop lists,
+   role fallbacks, reset `[hidden]` rule; the compact notice moved to `checkout.css`
+   unchanged); `--wrapper-max-width: 85rem` on `:root` replaces the old 85rem fallback. Layer
+   flip found: tinhof's global `:focus-visible` (inset) beat core's
+   `.checkout__changes:focus-visible` and sat on the notice's border — `blocks/checkout.css`
+   now only sets `outline-offset: 2px` (the site's dotted ring, outside). Global ring then
+   aligned to the other three (2px dotted `currentColor`, `:focus-visible` only). Dead rules removed:
+   six `[hidden] { display: none }` (incl. `.btn[hidden]`) and the `[role='list']` reset copy.
+   Cart checkout link: `.cart-sidebar__checkout` (in `blocks/`, after `.btn`) sets every
+   property `.btn` does, hover too — no change; worth a look in `npm run dev`. Eleventy build
+   passes; `npm test`: `wc-api` "filter by status" fails against the deployed API (live
+   data, no core netlify change since 3.11.0) — unrelated.
+   Same for the other two: layered entry like itsapps, delete local `tailwind/` + `utilities/`
    copies and the unused `tailwind/base.css`, then diff declaration by declaration. With layers,
    list every customer rule that now beats a core state rule (`form.css`, `checkout.css`:
    e.g. the loading dim) and fix it. Also look for dead rules. rosi_schuster: check that its
