@@ -14,6 +14,8 @@ export enum ErrorCode {
   AUTH_CAPTCHA_FAILED = 'AUTH_CAPTCHA_FAILED',
   AUTH_LINK_EXPIRED = 'AUTH_LINK_EXPIRED',
   REFUND_FAILED = 'REFUND_FAILED',
+  /** The order's refunds changed since the Studio dialog opened (other tab / editor) — nothing refunded. */
+  REFUND_CONFLICT = 'REFUND_CONFLICT',
   MAIL_FAILED = 'MAIL_FAILED',
   COUPON_NOT_FOUND = 'COUPON_NOT_FOUND',
   COUPON_DISABLED = 'COUPON_DISABLED',

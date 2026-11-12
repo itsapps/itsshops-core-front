@@ -266,6 +266,13 @@ must refuse anything the UI wouldn't do:
     non-order / `drafts.` id → 404, order without `paymentIntentId` → 404, Stripe called with the
     order's PI + derived key as 2nd arg (`{ idempotencyKey }`), same request twice → same key,
     one more refund in the list → new key; keep the sync/502 cases.
+- **Correction after the staging test (2026-11-12):** the idempotency key does **not** cover a
+  second tab confirming ~1 s later — by then the first refund exists, the count is higher, the key
+  differs, Stripe refunds again (seen twice on Tinhof staging order 000010, also with equal amounts);
+  the Studio's re-fetch misses it too (`order.refunds` syncs 2–3 s later). Added: the Studio sends
+  `expectedRefunded` (its snapshot's counted total), `payment-refund` compares it with Stripe's live
+  refunds → mismatch = 409 `REFUND_CONFLICT` (replays too) → core-back `changedMeanwhile`. The key
+  stays for truly simultaneous requests. `FrontendResponse` errors now carry core-front's `code`.
 - `order-notify`: **already guarded, no change** (checked 2026-11-11): `customerMessage` is capped
   at `CUSTOMER_MESSAGE_MAX_LENGTH = 2000`, type-checked, and rendered as React text nodes per line
   (`templates/email/components/CustomerMessage.tsx`), so no HTML/links get injected. Recipients are

@@ -358,19 +358,25 @@ exists as a preview template, so post/product/category previews render nothing y
 
 Triggered only from core-back's "Status aktualisieren" (core-back `studio-components.md` →
 Document actions) and the withdrawal "Refund & close". `payment-refund` (`x-server-secret`) takes
-`{ orderId, amount? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
+`{ orderId, amount?, expectedRefunded? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
 refund = the rest. The **PaymentIntent comes from the order** (`fetchOrderById`), never from the
 request, so only a shop order can be refunded: unknown id, a `drafts.` id, a non-`order` document or
 an order without `paymentIntentId` → 404 `ORDER_NOT_FOUND` (fixed text). No amount cap of our own —
 Stripe rejects more than what's left. It calls `stripe.refunds.create` with
-`metadata.itsshopsSource = 'studio'` (the function is only called from the Studio) and a
-server-derived **idempotency key** `refund:<orderId>:<refundCount>:<amount|full>` (`refundCount` =
-`listRefunds(pi).length`, which only grows): two confirms at the same moment share the key → one
-refund (the in-flight twin gets Stripe's 409 → `REFUND_FAILED` 502); a same-key request after the
-first finished is **replayed** by Stripe (`lastResponse.headers['idempotent-replayed']`) → we
-answer 409 "Refund already processed" (sync still runs), so the second tab patches nothing and
-mails nobody. Not the charge's `amount_refunded`: an asynchronously failed refund drops out of it
-and a retry would replay the failed one. The secret is readable by every Studio member (core-back
+`metadata.itsshopsSource = 'studio'` (the function is only called from the Studio).
+**Duplicate guards** (same order confirmed in two tabs / by two editors):
+1. `expectedRefunded` = the counted refund total the Studio dialog showed; compared with Stripe's
+   **live** refunds (failed/canceled not counted) — not `order.refunds`, which is synced 2–3 s
+   after Stripe, so the Studio's own re-fetch misses a refund made seconds earlier. Mismatch → 409
+   `REFUND_CONFLICT`, nothing refunded, no sync; the Studio shows "changed meanwhile". Covers any
+   amount. (A two-tab test on Tinhof staging, 2026-11-12, refunded twice before this check — the key
+   below alone doesn't cover it.)
+2. **Idempotency key** `refund:<orderId>:<refundCount>:<amount|full>` (`refundCount` =
+   `listRefunds(pi).length`) only for requests so close that both read the refunds before either
+   was created: same key → one refund (in-flight twin: Stripe's 409 → `REFUND_FAILED` 502); a
+   replay (`lastResponse.headers['idempotent-replayed']`) → 409 `REFUND_CONFLICT` (sync still runs).
+   A request after the first refund exists sees a higher count → a new key — that's guard 1's job.
+   Not the charge's `amount_refunded`: an asynchronously failed refund drops out of it. The secret is readable by every Studio member (core-back
 secrets document), which is why the server validates all of this. The Studio then patches `paymentStatus`; the
 `charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
 (`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history

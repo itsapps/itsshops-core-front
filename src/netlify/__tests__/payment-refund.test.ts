@@ -117,8 +117,43 @@ describe('payment-refund', () => {
     create.mockResolvedValue(refundResult({ 'idempotent-replayed': 'true' }))
     const res = await call({ orderId: 'order-1', amount: 1250 })
     expect(res.status).toBe(409)
-    expect((await res.json()).error).toEqual({ code: 'REFUND_FAILED', message: 'Refund already processed' })
+    expect((await res.json()).error).toEqual({ code: 'REFUND_CONFLICT', message: 'Refund already processed' })
     expect(syncMock).toHaveBeenCalledWith('pi_1')
+  })
+
+  it('expectedRefunded matches Stripe (failed/canceled not counted) → refunds', async () => {
+    list.mockResolvedValue({
+      data: [
+        { id: 're_a', amount: 500, status: 'succeeded' },
+        { id: 're_b', amount: 300, status: 'pending' },
+        { id: 're_c', amount: 999, status: 'failed' },
+        { id: 're_d', amount: 999, status: 'canceled' },
+      ],
+    })
+    const res = await call({ orderId: 'order-1', amount: 200, expectedRefunded: 800 })
+    expect(res.status).toBe(200)
+    expect(create).toHaveBeenCalledTimes(1)
+  })
+
+  it('a refund made meanwhile (other tab) → 409 REFUND_CONFLICT, nothing refunded, no sync', async () => {
+    // tab 2 opened with 0 refunded; tab 1's refund already exists in Stripe
+    list.mockResolvedValue({ data: [{ id: 're_tab1', amount: 200, status: 'succeeded' }] })
+    const res = await call({ orderId: 'order-1', amount: 200, expectedRefunded: 0 })
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toEqual({ code: 'REFUND_CONFLICT', message: 'The order was refunded meanwhile' })
+    expect(create).not.toHaveBeenCalled()
+    expect(syncMock).not.toHaveBeenCalled()
+  })
+
+  it('without expectedRefunded no check (other callers)', async () => {
+    list.mockResolvedValue({ data: [{ id: 're_x', amount: 200, status: 'succeeded' }] })
+    expect((await call({ orderId: 'order-1', amount: 200 })).status).toBe(200)
+  })
+
+  it('an invalid expectedRefunded → 400', async () => {
+    expect((await call({ orderId: 'order-1', expectedRefunded: -1 })).status).toBe(400)
+    expect((await call({ orderId: 'order-1', expectedRefunded: 1.5 })).status).toBe(400)
+    expect(create).not.toHaveBeenCalled()
   })
 
   it('syncs the order refunds after the refund was created', async () => {

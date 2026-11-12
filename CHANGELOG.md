@@ -29,9 +29,10 @@ same session (refund contract).
   bundle — enter the new one in the Studio's Integrations dialog too). Generate each separately for
   staging and production. `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (the Studio origin) now also sets the
   preview's `frame-ancestors`. Local frontend `.env`: add `PREVIEW_SESSION_SECRET`.
-- **`payment-refund` takes `{ orderId, amount? }`** (was `{ paymentIntentId, amount? }`) and 404s a
-  non-order id; needs core-back ≥ 6.0.0, which sends it. A same-moment duplicate refund now
-  answers 409.
+- **`payment-refund` takes `{ orderId, amount?, expectedRefunded? }`** (was
+  `{ paymentIntentId, amount? }`) and 404s a non-order id; needs core-back ≥ 6.0.0, which sends
+  it. `expectedRefunded` ≠ Stripe's live refunded total (another tab/editor refunded meanwhile) →
+  409 `REFUND_CONFLICT`, nothing refunded; a replayed idempotency key too.
 - `preview` answers without a session with a loader page (200) or 401 — draft renders need the
   Presentation flow; a direct `/api/preview/…` link no longer shows drafts.
 - After a **hash-only** pin, deploy with "Clear cache and deploy site"
