@@ -445,7 +445,7 @@ set aside as more machinery than the leak needs.
 
 ## Rollout
 
-**Release state (2026-11-12):** everything is staging-tested. core-front merges
+**Release state (2026-11-12):** everything is staging-tested; cut as core-front **5.0.0** and core-back **6.0.0**. core-front merges
 `feature/security-hardening`; core-back merges **`fix/bundle-variant-labels`** (= the security
 branch + bundle labels, withdrawal dialog fixes) — both by merge commit, the Tinhof staging pins
 must stay reachable. Same core-front release also changes the withdrawal receipt recipients

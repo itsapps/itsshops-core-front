@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased (5.0.0)
+## 5.0.0
 
 Security hardening (plan `.claude/plans/studio-auth-and-security-hardening.md`): draft preview
 behind Sanity's preview secret, refunds by order id with a server-side idempotency key,
