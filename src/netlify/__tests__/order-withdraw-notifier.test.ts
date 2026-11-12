@@ -147,7 +147,88 @@ describe('withdrawal receipt history entry', () => {
 
   it('a failed history write does not fail the send', async () => {
     vi.mocked(appendOrderHistory).mockRejectedValueOnce(new Error('409'))
-    await expect(sendWithdrawalNotifications(matched, { audience: 'both' })).resolves.toEqual({ to: 'anna@example.com' })
+    await expect(sendWithdrawalNotifications(matched, { audience: 'both' })).resolves.toEqual({
+      to: 'anna@example.com',
+      recipients: ['anna@example.com'],
+    })
     expect(sendMail).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('withdrawal receipt recipients', () => {
+  const assigned: WithdrawalRecord = { ...matched, email: 'anna.private@example.org' }
+
+  beforeEach(() => {
+    vi.mocked(fetchEmailSettings).mockResolvedValue({
+      shopName: 'Weingut Test',
+      senderName: 'Weingut Test',
+      senderEmail: 'noreply@shop.example',
+      billingAddress: { line1: 'Hauptstraße 1', line2: null, zip: '3550', city: 'Langenlois', country: 'AT' },
+      bankAccount: null,
+      orderNumberPrefix: null,
+      invoiceNumberPrefix: null,
+      returnAddress: null,
+      returnShippingBorneBy: null,
+      returnPolicyNote: null,
+      shopNotificationEmail: null,
+      company: null,
+      withdrawalPeriodStart: null,
+      withdrawalExceptions: null,
+    })
+    vi.mocked(sendMail).mockReset().mockResolvedValue({ id: 'msg-1' } as never)
+    vi.mocked(appendOrderHistory).mockReset()
+  })
+
+  it('assigned with another submitted email → two separate receipts, one history entry', async () => {
+    const result = await sendWithdrawalNotifications(assigned, { audience: 'customer' })
+    expect(result).toEqual({
+      to: 'anna@example.com',
+      recipients: ['anna@example.com', 'anna.private@example.org'],
+    })
+    const tos = vi.mocked(sendMail).mock.calls.map(([p]) => p.to)
+    expect(tos).toEqual(['anna@example.com', 'anna.private@example.org'])
+    const [first, second] = vi.mocked(sendMail).mock.calls.map(([p]) => p)
+    expect(second!.text).toBe(first!.text)
+    expect(appendOrderHistory).toHaveBeenCalledTimes(1)
+  })
+
+  it('two mails greet their own recipient; the details repeat the submitted name in both', () => {
+    const record: WithdrawalRecord = {
+      ...assigned,
+      name: 'Franz Fremd',
+      order: { ...matched.order!, customer: { ...matched.order!.customer, name: 'Anna Muster' } },
+    }
+    const { customer } = buildWithdrawalMails(record, ctx())
+    expect(customer.headline).toContain('Anna Muster')
+    expect(customer.alsoHeadline).toContain('Franz Fremd')
+    expect(customer.text).toContain('Name: Franz Fremd')
+  })
+
+  it('one mail (same address) keeps the submitted name in the greeting', () => {
+    const { customer } = buildWithdrawalMails({ ...matched, name: 'Anna M.' }, ctx())
+    expect(customer.alsoTo).toBeUndefined()
+    expect(customer.headline).toContain('Anna M.')
+  })
+
+  it('same address in other case/spacing → one receipt', async () => {
+    await sendWithdrawalNotifications({ ...matched, email: ' Anna@Example.com ' }, { audience: 'customer' })
+    expect(sendMail).toHaveBeenCalledTimes(1)
+  })
+
+  it('unmatched → only the submitted email', async () => {
+    const result = await sendWithdrawalNotifications(
+      { ...assigned, status: 'unmatched', order: null },
+      { audience: 'customer' },
+    )
+    expect(result.recipients).toEqual(['anna.private@example.org'])
+    expect(sendMail).toHaveBeenCalledTimes(1)
+  })
+
+  it('second receipt fails → throws naming both, after the first and its history entry', async () => {
+    vi.mocked(sendMail).mockResolvedValueOnce({ id: 'msg-1' } as never).mockRejectedValueOnce(new Error('bounced'))
+    await expect(sendWithdrawalNotifications(assigned, { audience: 'customer' })).rejects.toThrow(
+      'Confirmation sent to anna@example.com, but not to anna.private@example.org: bounced',
+    )
+    expect(appendOrderHistory).toHaveBeenCalledTimes(1)
   })
 })

@@ -9,6 +9,7 @@ export default defineConfig({
     index: 'src/index.ts',
     core: 'src/core/index.ts',
     preview: 'src/netlify/functions/preview.ts',
+    'preview-enable': 'src/netlify/functions/preview-enable.ts',
     'payment-create': 'src/netlify/functions/payment-create.ts',
     'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
     'payment-refund': 'src/netlify/functions/payment-refund.ts',

@@ -1,5 +1,6 @@
 import type { LoginInput, LoginResult } from '../shared/user-api'
 import { setLocalUser } from './user-store'
+import { safeRedirectPath } from '../shared/safe-redirect'
 
 export function initUserLogin(): void {
   const root = document.querySelector<HTMLElement>('[data-user-login]')
@@ -62,7 +63,7 @@ export function initUserLogin(): void {
       if (res.ok && json.user) {
         setLocalUser(json.user)
         const next = new URL(window.location.href).searchParams.get('next')
-        window.location.href = next ? decodeURIComponent(next) : `/${locale}/`
+        window.location.href = safeRedirectPath(next, window.location.origin, `/${locale}/`)
         return
       }
 

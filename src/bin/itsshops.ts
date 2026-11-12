@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { sanityApiVersion } from '../config/constants';
 
 const program = new Command();
 
@@ -237,7 +238,7 @@ function loadEnv(envFile: string = '.env') {
   }
 }
 
-// Without a perspective, apiVersion v2025-05-25 reads `published`: drafts (`drafts.…`) and release
+// Without a perspective, apiVersion (≥ v2025-02-19) reads `published`: drafts (`drafts.…`) and release
 // versions (`versions.…`) are invisible. `delete` reads `raw` so it removes them too.
 async function getSanityClient(perspective?: 'raw') {
   const { createClient } = await import('@sanity/client');
@@ -253,7 +254,7 @@ async function getSanityClient(perspective?: 'raw') {
     projectId,
     dataset,
     token,
-    apiVersion: 'v2025-05-25',
+    apiVersion: sanityApiVersion,
     useCdn: false,
     ...(perspective && { perspective }),
   });

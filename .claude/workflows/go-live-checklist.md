@@ -17,13 +17,23 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
 - [ ] `SANITY_STUDIO_URL` = the deployed Studio, scope incl. **Functions** (the shop's new-order mail
       links the order in the Studio; unset → no button).
 - [ ] Function wrappers wired: `order-withdraw` (+ `rateLimit`), `order-withdraw-notify`,
-      `order-status`, `payment-webhooks`; no `notifyEmail` / `captcha` options passed.
+      `order-status`, `payment-webhooks`, `preview` + `preview_enable`; no `notifyEmail` /
+      `captcha` options passed.
+- [ ] Production frontend: its **own** `SERVER_FUNCTIONS_SECRET` and `PREVIEW_SESSION_SECRET`
+      (Functions scope, not the staging values), `SERVER_FUNCTIONS_ALLOWED_ORIGINS` = the
+      production Studio origin, a **build hook** for `production`.
+- [ ] Production Studio project: `SANITY_STUDIO_NETLIFY_SITE_ID` = the production **frontend**
+      project; no credential in any `SANITY_STUDIO_*` var (core-back `CLAUDE.md` rule).
 - [ ] **Stripe webhook endpoint** in **test and live mode** (Developers → Webhooks):
       `https://<site>/api/payment/webhooks` (the wrapper's `path`), events
       `payment_intent.succeeded`, `charge.refunded`, `refund.updated`; its signing secret →
       `STRIPE_ENDPOINT_SECRET` (test secret on staging, live on production).
 
 ## Studio — settings
+
+- [ ] **Integrations** (toolbar plug icon, as administrator) in the **production** Studio: the
+      production `SERVER_FUNCTIONS_SECRET`, the production build hook, the Vinofact token
+      (vinofact shops). Check: Deploy → "Build requested"; a test mail from an order.
 
 - [ ] **Settings → Company:** name, address, email, phone, **VAT ID** (no placeholder), owner;
       register number + court only if registered. Shown in every mail footer and in the generated

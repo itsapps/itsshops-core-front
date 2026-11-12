@@ -123,11 +123,15 @@ Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
   Resend: `RESEND_API_KEY`. Mailgun: `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`,
   `MAILGUN_USE_EU_REGION_URL` (default **true**; `false` → US endpoint).
 - **Studio → functions** (refund, send mail, …): `SERVER_FUNCTIONS_SECRET` (shared secret in the
-  `x-server-secret` header) and `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (comma-separated CORS allowlist,
-  i.e. the studio origins). Missing → fail closed (`utils/server-auth.ts`). **Known leak:** the
-  Studio sends the secret from `SANITY_STUDIO_NETLIFY_FUNCTIONS_SECRET`, which is in its public
-  bundle, so treat the secret as public and the CORS allowlist as no protection. Fix planned:
-  `.claude/plans/studio-auth-and-security-hardening.md`.
+  `x-server-secret` header, compared in constant time) and `SERVER_FUNCTIONS_ALLOWED_ORIGINS`
+  (comma-separated CORS allowlist = the Studio origins; also the preview's `frame-ancestors`).
+  Missing → fail closed (`utils/server-auth.ts`). The Studio reads the secret from its secrets
+  document (core-back `plugin-and-config.md` → "Secrets"), so every Studio **member** can read it —
+  the endpoints validate everything themselves (refunds: `commerce-and-netlify.md` → "Refunds").
+  One value per frontend project (staging ≠ production).
+- **Draft preview:** `PREVIEW_SESSION_SECRET` (≥ 32 random bytes; signs the preview session token;
+  missing → `preview-enable` 500, `preview` 401) plus `SANITY_TOKEN` (reads drafts and Sanity's
+  preview secrets). Mechanism: `commerce-and-netlify.md` → "Draft preview".
 - **Users (Supabase):** `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_EMAIL_HOOKS_SECRET`
   (`auth-webhooks`), `SUPABASE_KEEP_ALIVE_URL` (`supabase-keep-alive`). `SKIP_AUTH_EMAILS=true`
   suppresses auth + newsletter mails (tests). `PUBLIC_URL` overrides `URL` as the base for links in

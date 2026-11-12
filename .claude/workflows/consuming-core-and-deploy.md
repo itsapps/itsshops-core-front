@@ -73,6 +73,14 @@ core installed (not `npm link`ed) does **not** refetch it. It records the new co
 old files. To actually get the new core locally: `rm -rf node_modules/@itsapps/itsshops-core-*`,
 then `npm install` (the lockfile stays unchanged).
 
+**Netlify build-cache gotcha (same trap, on Netlify):** Netlify restores the cached `node_modules`,
+so after a hash-only edit the build can keep running the **previous** core commit — the customer's
+own files (e.g. a new function wrapper) deploy, the core code behind them doesn't. Seen on Tinhof
+staging, 2026-11-12 (frontend and Studio both). After a hash-only pin, deploy with Netlify →
+Deploys → Trigger deploy → **Clear cache and deploy site** (each affected project), and check the
+deploy actually serves the new core (a changed response header, a string in the Studio bundle). A
+pin that came from a real `npm install` with changed deps rebuilt fine.
+
 ### Production — only tagged core
 
 **Rule: `production` never ships an untagged core.** `main`/`staging` may float on lockfile hashes;
@@ -186,6 +194,23 @@ After a deploy the checkout is often left on `staging` — check `git branch --s
 the next commit (see Release flow step 3).
 
 Each customer's branch names / Netlify site live in its own CLAUDE.md.
+
+### Netlify projects per customer
+
+Four Netlify projects, each with its **own** env vars (`.env*` files are gitignored and never reach
+Netlify — local runs only):
+
+| Project | Builds | Dataset | Holds |
+|---|---|---|---|
+| staging frontend | `staging` | `development` | server env (Functions scope secrets), build hook for `staging` |
+| staging Studio | `staging` | `development` | public `SANITY_STUDIO_*` only; `NETLIFY_SITE_ID` = staging **frontend** |
+| production frontend | `production` | `production` | its own secrets (never the staging values), build hook for `production` |
+| production Studio | `production` | `production` | public `SANITY_STUDIO_*` only; `NETLIFY_SITE_ID` = production **frontend** |
+
+The Studio's credentials (functions secret, build hook, Vinofact token) live **per dataset** in its
+secrets document, so `development` holds the staging values and `production` the live ones. The
+local Studio and frontend use `development` too: the local Studio's Deploy builds **staging**, and
+local refunds/mails need the local frontend's `SERVER_FUNCTIONS_SECRET` = the staging one.
 
 ### Node.js version
 

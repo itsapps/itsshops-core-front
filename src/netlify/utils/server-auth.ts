@@ -3,17 +3,31 @@
 // and an origin allowlist driven by SERVER_FUNCTIONS_ALLOWED_ORIGINS
 // (comma-separated). Both env vars are required at runtime; missing values
 // fail closed.
+import { createHash, timingSafeEqual } from 'node:crypto'
 
 const ALLOWED_HEADERS = 'content-type, x-server-secret, x-request-id'
 const ALLOWED_METHODS = 'POST, OPTIONS'
 
-function allowedOrigin(requestOrigin: string | null): string {
-  if (!requestOrigin) return 'null'
-  const allowlist = (process.env.SERVER_FUNCTIONS_ALLOWED_ORIGINS ?? '')
+/** Studio origins from SERVER_FUNCTIONS_ALLOWED_ORIGINS (CORS allowlist + preview frame-ancestors). */
+export function allowedOrigins(): string[] {
+  return (process.env.SERVER_FUNCTIONS_ALLOWED_ORIGINS ?? '')
     .split(',')
     .map(o => o.trim())
     .filter(Boolean)
-  return allowlist.includes(requestOrigin) ? requestOrigin : 'null'
+}
+
+function allowedOrigin(requestOrigin: string | null): string {
+  if (!requestOrigin) return 'null'
+  return allowedOrigins().includes(requestOrigin) ? requestOrigin : 'null'
+}
+
+/**
+ * Constant-time string comparison. Compares SHA-256 digests, because `timingSafeEqual` throws on
+ * buffers of different length.
+ */
+export function safeEqual(a: string, b: string): boolean {
+  const digest = (v: string) => createHash('sha256').update(v).digest()
+  return timingSafeEqual(digest(a), digest(b))
 }
 
 export function corsHeaders(request: Request): Record<string, string> {
@@ -57,7 +71,7 @@ export function requireServerSecret(request: Request): Response | null {
     )
   }
   const provided = request.headers.get('x-server-secret')
-  if (provided !== expected) {
+  if (provided === null || !safeEqual(provided, expected)) {
     return withCors(
       new Response(
         JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Invalid or missing server secret' } }),

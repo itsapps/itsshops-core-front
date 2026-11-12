@@ -36,6 +36,11 @@ repo secrets.
 
 ## Gotchas
 
+- **Backups contain the Studio secrets.** The secrets document (`secrets.itsshops`: functions
+  secret, build hook, Vinofact token — core-back `plugin-and-config.md` → "Secrets") is part of
+  every export, `docs` and `full`. Whoever holds the age private key can read them; after a restore
+  into another project, rotate them.
+
 - **Standalone CLI needs `--project-id`.** Outside a studio project a `sanity.cli.*` file with only
   `api.projectId` is *not* picked up (`PROJECT_ROOT_NOT_FOUND` in CI).
 - **Pin the CLI with a lockfile, not `npx @sanity/cli@<version>`.** npx pins only the CLI; its

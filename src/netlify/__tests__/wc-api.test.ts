@@ -250,3 +250,35 @@ describe('wc-api request logging', () => {
     expect(JSON.stringify(call)).not.toMatch(/ck_secret|cs_secret/)
   })
 })
+
+describe('wc-api auth and params', () => {
+  const basic = (v: string) => ({ authorization: `Basic ${v}` })
+  const call = (path: string, headers: Record<string, string> = {}) =>
+    createWcApiHandler()(new Request(`https://shop.test/wp-json/wc/v3/${path}`, { headers }), {} as never)
+
+  it('a malformed Basic header → 401, not a throw', async () => {
+    process.env.WC_CONSUMER_KEY = 'ck_x'
+    process.env.WC_CONSUMER_SECRET = 'cs_x'
+    expect((await call('system_status', basic('%%%not-base64'))).status).toBe(401)
+    expect((await call('system_status', basic(btoa('no-colon')))).status).toBe(401)
+  })
+
+  it('a secret containing ":" authenticates; a wrong one does not', async () => {
+    process.env.WC_CONSUMER_KEY = 'ck_x'
+    process.env.WC_CONSUMER_SECRET = 'cs:with:colons'
+    expect((await call('system_status', basic(btoa('ck_x:cs:with:colons')))).status).toBe(200)
+    expect((await call('system_status', basic(btoa('ck_x:cs:with')))).status).toBe(401)
+    expect((await call('system_status?consumer_key=ck_x&consumer_secret=nope')).status).toBe(401)
+  })
+
+  it('an invalid after/before date → 400 rest_invalid_param', async () => {
+    process.env.WC_CONSUMER_KEY = 'ck_x'
+    process.env.WC_CONSUMER_SECRET = 'cs_x'
+    const auth = basic(btoa('ck_x:cs_x'))
+    for (const q of ['after=not-a-date', 'before=2026-13-45T99:00:00']) {
+      const res = await call(`orders?${q}`, auth)
+      expect(res.status).toBe(400)
+      expect((await res.json()).code).toBe('rest_invalid_param')
+    }
+  })
+})

@@ -1,12 +1,17 @@
 # Plan — No secrets in the Studio bundle + security hardening (core-back + core-front)
 
-Status: **proposed** (2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
+Status: **implemented, staging-tested on Tinhof (2026-11-12)** — A–F on `feature/security-hardening`
+in both cores, docs + CHANGELOGs (core-front 5.0.0, core-back 6.0.0) written. Open: merge, cut the
+tags, Tinhof production (rollout 4–6), then Jurtschitsch and Rosi Schuster. History: proposed
+2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
 contract, D's cookie/route and the rollout corrected; refined again 2026-11-11 — A's missing-secret
 message wiring, WineTab path, D's locale/perspective handling, frame-ancestors fallback, tests for
 C/D/F against the existing test files; 2026-11-12 — spikes B1/B2/D2 done, four Netlify projects
 per customer folded into the rollout, D1 moved into implementation; refined 2026-11-12 — A's
 `@sanity/ui` bump + `SettingsView` wiring, C's idempotency key from the refund count, D's lazy
-client, preview share access off). Not started. Spans core-back and core-front;
+client, preview share access off). 2026-11-12: core-front C/D/E/F implemented on `feature/security-hardening`; D reworked after
+spike D1 (Safari drops the cookie → `sessionStorage` token + header, home-page route). Spans
+core-back and core-front;
 every shop benefits, so all of it is core. The only customer-side work is env/setup, one new
 function wrapper and token rotation.
 
@@ -97,10 +102,12 @@ core-back:
     (de/en only have `.title`) → `.title`.
   - New i18n keys (de + en) in core-back's component translations: `integrations.*` (dialog title,
     key titles/descriptions, the missing-secrets message).
-- An **"Integrations" button + `SettingsView` dialog** in `src/components/CustomToolbar.tsx` next to
-  `<DeployDialog />` (new component `IntegrationsDialog.tsx`: a `Button` + `{open && <SettingsView
-  title namespace="itsshops" keys onClose={() => setOpen(false)} />}` — no own `Dialog`, since
-  `SettingsView` brings one), rendered only when
+- An **"Integrations" button + dialog** in `src/components/CustomToolbar.tsx` next to
+  `<DeployDialog />` (`IntegrationsDialog.tsx`). **Implemented as an own dialog, not
+  `SettingsView`** (2026-11-12): `SettingsView` renders plain text inputs (values visible on screen
+  shares) and its `storeSecrets` swallows write errors. Ours reads with `useSecrets`, writes the
+  package's format itself (`createIfNotExists` + `set({ secrets })`) with saved/failed toasts, and
+  masks each value with a show/hide toggle. Rendered only when
   `useCurrentUser()?.roles.some(r => r.name === 'administrator')`. This hides it in the UI only; any
   member can still read the secrets document. Keys: `functionsSecret` and `netlifyBuildHook`
   always, `vinofactToken` only when `features.shop.vinofact.enabled`. The toolbar button is
@@ -259,6 +266,15 @@ must refuse anything the UI wouldn't do:
     non-order / `drafts.` id → 404, order without `paymentIntentId` → 404, Stripe called with the
     order's PI + derived key as 2nd arg (`{ idempotencyKey }`), same request twice → same key,
     one more refund in the list → new key; keep the sync/502 cases.
+- **Correction after the staging test (2026-11-12):** the idempotency key does **not** cover a
+  second tab confirming ~1 s later — by then the first refund exists, the count is higher, the key
+  differs, Stripe refunds again (seen twice on Tinhof staging order 000010, also with equal amounts);
+  the Studio's re-fetch misses it too (`order.refunds` syncs 2–3 s later). Added: the Studio sends
+  `expectedRefunded` (its snapshot's counted total), `payment-refund` compares it with Stripe's live
+  refunds → mismatch = 409 `REFUND_CONFLICT` (replays too) → core-back `changedMeanwhile`. The key
+  stays for truly simultaneous requests. `FrontendResponse` errors now carry core-front's `code`.
+  Re-tested on Tinhof staging (2026-11-12): two tabs ~1 s apart, equal (2 €) and different
+  (3 €/4 €) amounts → only the first refunded, the second got "changed meanwhile".
 - `order-notify`: **already guarded, no change** (checked 2026-11-11): `customerMessage` is capped
   at `CUSTOMER_MESSAGE_MAX_LENGTH = 2000`, type-checked, and rendered as React text nodes per line
   (`templates/email/components/CustomerMessage.tsx`), so no HTML/links get injected. Recipients are
@@ -276,97 +292,100 @@ string. Its error path echoes `documentType` into a `text/html` response, which 
 reflected XSS on the shop origin. Function responses don't get `_headers`/CSP.
 
 Use **Sanity's own preview secret** (Presentation `previewMode` + `@sanity/preview-url-secret`),
-the standard mechanism:
+the standard mechanism, and carry the session in the iframe's **`sessionStorage`**, sent as a
+header — **not a cookie** (spike D1, 2026-11-12, Tinhof staging: the `SameSite=None; Partitioned`
+cookie was kept by Firefox but **dropped by Safari**, which blocks every cookie in a cross-site
+iframe; `sessionStorage` is available there, partitioned per top-level site). A `?pt=` URL token was
+rejected too: Presentation reloads the iframe with the plain preview URL (its Refresh button sets
+`src = previewUrl`, document switches go through `presentation/navigate` → our overlay's
+`replaceState`), so a URL token is lost on every navigation, while `sessionStorage` stays with the
+iframe for the whole Presentation session.
+
 1. core-back `src/presentation/index.ts` (`createPresentations`): add
-   `previewUrl.previewMode: { enable: '/api/preview/enable', shareAccess: false }` next to the
-   existing `initial`
-   (`<integrations.netlify.endpoint>/api/preview/<locale>`; `enable` resolves against that origin).
-   Presentation creates a short-lived secret doc and opens
+   `previewUrl.previewMode: { enable: '/api/preview-enable', shareAccess: false }` next to the
+   existing `initial` (`<integrations.netlify.endpoint>/api/preview/<locale>`; `enable` resolves
+   against that origin). Presentation creates a short-lived secret doc and opens
    `<enable>?sanity-preview-secret=…&sanity-preview-pathname=…&sanity-preview-perspective=…`.
+   The enable path is **not** under `/api/preview/`: it would collide with the widened
+   `/api/preview/:locale` wrapper path (step 9). `mainDocuments`' `api/preview/:locale` route
+   filters to the home page (`_id == *[_type == "settings"][0].homePage._ref`).
 2. core-front **new function** `src/netlify/functions/preview-enable.ts` →
    `createPreviewEnableHandler()`; tsup entry `'preview-enable'` + `package.json` export
-   `./functions/preview-enable` (like the other factories); add `@sanity/preview-url-secret` as a
-   **direct** dependency (`^4.1.5`; today only transitive via `@sanity/visual-editing`) and raise
-   core-front's `@sanity/client` range from `^7.14.1` to `^7.26.2` (its peer range; 7.28.0 is
-   installed). It's a light
-   function — no `included_files` entry. Flow: `validatePreviewUrl(client, request.url)` with a
-   `@sanity/client` built from `SANITY_PROJECT_ID`/`SANITY_DATASET`/`SANITY_TOKEN` (the secret
-   docs need a token; `useCdn: false`) **inside the handler**, not at module load —
-   `check:functions` imports every function with no env set, and the other functions' clients are
-   lazy for that reason → `isValid` false → 401, fixed text. `validatePreviewUrl` **throws** instead
-   of returning `isValid: false` when the client has no token or the Sanity API fails (e.g. 401 for
-   a bad `SANITY_TOKEN`; spike 2026-11-11) → `try/catch`: `console.error` + 500, fixed text. Valid
-   but no `redirectTo` (no `sanity-preview-pathname`) → 400, fixed text. Valid → set cookie `itsshops_preview` =
-   `base64url(exp).hmacSHA256` (exp = now + 1 h; `PREVIEW_SESSION_SECRET`, Functions scope;
-   `HttpOnly; Secure; SameSite=None; Partitioned; Path=/api/preview`, because the preview runs in
-   the Studio's cross-site iframe) → 307 to `redirectTo` only if it starts with `/api/preview/`
-   (else 400, fixed text — the function doesn't know the locales). `redirectTo` is already
-   path-only and already carries `sanity-preview-perspective` (the library resolves the pathname
-   against a dummy origin: `//evil.com/x` → `/x`, `https://evil.com/api/preview/x` →
-   `/api/preview/x`; spike 2026-11-11), so the prefix check is the only guard needed and no
-   perspective handling is added here. Wrapper path `/api/preview/enable` doesn't clash with the preview
-   wrapper's 3-segment path (it would with a widened `/api/preview/:locale`; see route note). The cookie holds
-   **no perspective**: Presentation sends it on every URL as `sanity-preview-perspective`, which
-   `preview.ts` already reads.
-   **Share preview access:** besides the 1-hour per-session secrets, `validatePreviewUrl` also
-   accepts the singleton `sanity-preview-url-secret.share-access`, which Presentation creates when an
-   editor turns on "Share preview access". Anyone with that link then gets a preview cookie until
-   an editor turns sharing off. Presentation has a switch for it: `previewMode.shareAccess`
-   (`boolean`, in sanity 6.9.2's `PreviewUrlPreviewMode` type). **Decided:** step 1 sets
-   `previewMode: { enable: '/api/preview/enable', shareAccess: false }`, so there's no share toggle
-   and no share secret ever exists. Document it in `csp-and-headers.md`'s preview notes.
-   Shared cookie sign/verify helper in `src/netlify/utils/preview-session.ts` (Node `crypto`,
-   `timingSafeEqual`), used by both functions.
-3. `preview` function (`src/netlify/functions/preview.ts`, export `preview(props)`): before
-   anything else, no valid cookie → 401, fixed HTML "Preview session expired — reload the
-   Presentation tool in the Studio" (one `<h1>`, `lang`, no input echoed; the cookie lasts 1 h, so
-   an editor who keeps Presentation open longer hits this on the next navigation). OPTIONS stays
-   204.
-4. Validate params: `locale` matches `^[a-z]{2}$` (the configured locales live in the customer's
-   `itsshops.config.mts`, which the function doesn't load before Eleventy). Today an unknown
-   two-letter locale does **not** fall back: `config/templates.ts` `pageDoc` uses
-   `preview.locale || defaultLocale`, then `data.cms[locale][collection]` throws on `undefined`. Fix
-   there: `const locale = data.cms[l] ? l : data.coreConfig.defaultLocale`. `documentType` ∈
-   `page | post | productVariant | category` (the types `pageDoc` resolves), `documentId` matches
-   `^[A-Za-z0-9_.-]{1,128}$`. Bad locale/type/id → 400, fixed text. Perspective: `published` stays
-   `published`; anything else (missing, `drafts`, or a release stack Presentation sends when an
-   editor views a release) → `drafts`. No 400 here, because a 400 would break the preview iframe
-   while a release is selected; release previews aren't supported today either (the raw string is
-   cast to `ClientPerspective` in `config/config.ts`) — out of scope.
-5. Errors: `console.error` the details, return a generic message (today `error.message` with the
-   raw `documentType`/`documentId` goes into the `text/html` body), never echo input into HTML.
+   `./functions/preview-enable`; `@sanity/preview-url-secret` as a **direct** dependency (`^4.1.5`)
+   and core-front's `@sanity/client` range raised to `^7.26.2` (its peer range). Light function, no
+   `included_files`. Flow: `validatePreviewUrl(client, request.url)` with a `@sanity/client` built
+   from `SANITY_PROJECT_ID`/`SANITY_DATASET`/`SANITY_TOKEN` (`apiVersion: sanityApiVersion` —
+   the library overrides it with its own pinned version anyway; `useCdn: false`) **inside the
+   handler** (`check:functions` imports every function without env) → `isValid` false → 401, fixed
+   text. It **throws** on a missing token or a Sanity API error → `try/catch`, `console.error` +
+   500, fixed text. Valid but no `redirectTo` → 400; `redirectTo` not starting with
+   `/api/preview/` → 400 (`redirectTo` is path-only already: `//evil.com/x` → `/x`). Valid → **200
+   HTML page** whose inline script (CSP `default-src 'none'; script-src 'nonce-…'` +
+   `frame-ancestors`) runs `sessionStorage.setItem('itsshops_preview', <token>)` and
+   `location.replace(<redirectTo>)`. Token = `base64url(exp).hmacSHA256` (exp = now + 1 h,
+   `PREVIEW_SESSION_SECRET`, Functions scope). Values go into the script via `scriptJson()`
+   (`JSON.stringify` with `<` escaped). No perspective in the token: Presentation sends
+   `sanity-preview-perspective` on every URL.
+   **Share preview access:** `validatePreviewUrl` also accepts the singleton
+   `sanity-preview-url-secret.share-access` ("Share preview access" in Presentation). **Decided:**
+   `shareAccess: false` (step 1), so no share toggle and no share secret ever exists. Document it in
+   `csp-and-headers.md`'s preview notes.
+   Token sign/verify helper in `src/netlify/utils/preview-session.ts` (Node `crypto`,
+   `timingSafeEqual`), shared by both functions.
+3. `preview` function (`src/netlify/functions/preview.ts`, export `preview(props)`): OPTIONS stays
+   204. Validate params first (step 4). Then:
+   - **no `x-preview-session` header → loader page** (200, no draft content): an inline script
+     reads the token from `sessionStorage`, `fetch(location.href, { headers: { 'x-preview-session':
+     token }, cache: 'no-store' })` and writes the response with `document.open/write/close` (the
+     URL stays). No token → fixed "Preview session expired — reload the Presentation tool in the
+     Studio" page; network error → "Preview could not be loaded". The loader's CSP is
+     **`frame-ancestors` only**: `document.write` keeps the document and its CSP, so a stricter
+     policy would also block the rendered page's scripts (visual-editing overlay). Text in a
+     `role="status"` paragraph; messages as one `<h1>`, `lang` set.
+   - header present but invalid/expired → 401, the fixed "session expired" page (the token lasts
+     1 h, so an editor who keeps Presentation open longer hits this on the next load).
+   - valid → render. Responses carry `Vary: x-preview-session`.
+4. Validate params: `locale` matches `^[a-z]{2}$`. Unknown two-letter locale: `config/templates.ts`
+   `pageDoc` falls back (`data.cms[l] ? l : defaultLocale`). `documentType` ∈
+   `page | post | productVariant | category`, `documentId` matches `^[A-Za-z0-9_.-]{1,128}$`. Both
+   missing (`/api/preview/:locale`) → the **home page**: type `page`, empty id, and `pageDoc` takes
+   `cms[locale].settings.homePageId`. Only one of them → 400. Bad locale/type/id → 400, fixed text.
+   Perspective: `published` stays `published`; anything else → `drafts` (no 400: a release
+   stack would break the iframe while a release is selected; release previews are out of scope).
+5. Errors: `console.error` the details, return a generic message, never echo input into HTML.
 6. Headers on every preview / preview-enable response: `Content-Security-Policy: frame-ancestors
-   <studio origins>`, `X-Robots-Tag: noindex`, `Cache-Control: private, no-store`. Origins: split
-   the list parsing out of `server-auth.ts` `allowedOrigin()` into an exported
-   `allowedOrigins(): string[]` (reads `SERVER_FUNCTIONS_ALLOWED_ORIGINS`) and use it in both. Empty
-   list → `frame-ancestors 'none'` (fail closed, same as the CORS side).
-7. `process.env.PREVIEW_*` stays (an instance serves one request at a time, and after step 4 every
-   request sets all four). No refactor.
-8. Tests (`src/netlify/__tests__/`, new files): `preview-session.test.ts` (valid, expired, tampered
-   signature, wrong length, missing secret → invalid); `preview-enable.test.ts` with
-   `vi.mock('@sanity/preview-url-secret')` (invalid → 401, `redirectTo` outside `/api/preview/` →
-   400, valid → 307 + `Set-Cookie` with all attributes); `preview.test.ts` with
-   `vi.mock('@11ty/eleventy')` (no/bad cookie → 401, bad locale/type/id → 400, an Eleventy throw →
-   generic 500 body without the input, CSP header present).
+   <studio origins>`, `X-Robots-Tag: noindex`, `Cache-Control: private, no-store`
+   (`utils/preview-headers.ts`). Origins: `server-auth.ts` exports `allowedOrigins(): string[]`
+   (reads `SERVER_FUNCTIONS_ALLOWED_ORIGINS`), used by CORS and here. Empty list →
+   `frame-ancestors 'none'` (fail closed).
+7. `process.env.PREVIEW_*` stays (an instance serves one request at a time, and every request
+   sets all four). No refactor.
+8. Tests (`src/netlify/__tests__/`): `preview-session.test.ts` (valid, expired, tampered, wrong
+   length, other/missing secret, `scriptJson` escaping); `preview-enable.test.ts` with
+   `vi.mock('@sanity/preview-url-secret')` (invalid → 401, throw → 500, no/foreign `redirectTo` →
+   400, valid → 200 page with a verifiable token, `location.replace`, nonce CSP, `<` can't close the
+   script); `preview.test.ts` with `vi.mock('@11ty/eleventy')` (no header → loader without render,
+   bad header → 401, bad params → 400, home route, perspective mapping, Eleventy throw → generic
+   500, headers); `preview-loader.test.ts` (jsdom: runs the loader script — fetch with the stored
+   token + write, no token → expired, network error).
+9. **Route fix** (was out of scope; D1 showed it's the default entry): opening the Presentation
+   tool loads `initial` = `/api/preview/<locale>`, which the 3-segment wrapper path 404'd — and the
+   Netlify 404 page carries the site's `frame-ancestors 'none'`, so Firefox refuses to frame it and
+   Safari shows a blank iframe. The wrapper path widens to
+   `['/api/preview/:locale', '/api/preview/:locale/:documentType/:documentId']` and the function
+   renders the home page for the short form (step 4).
 
-Route note: the starter/Tinhof wrapper path is `/api/preview/:locale/:documentType/:documentId`
-only, so Presentation's `initial` (`/api/preview/<locale>`) 404s today and keeps doing so after the
-redirect. Not a security issue; out of scope (separate fix: widen the wrapper path, or point
-`initial` at the home page's preview URL). Same for posts: core-back offers a `post` location
-when the blog is on, but core-front ships only `templates/pages/preview/pages.njk`, so a post
-preview ignores every template → "No preview result" (after step 5: the generic 500). Keep `post`
-(and `productVariant`/`category`) in the allowlist; adding their preview templates is a separate
-fix.
+Not covered: posts — core-back offers a `post` location when the blog is on, but core-front ships
+only `templates/pages/preview/pages.njk`, so a post preview renders nothing → "No preview
+available". Keep `post` (and `productVariant`/`category`) in the allowlist; their preview templates
+are a separate fix.
 
-Spikes: [ ] Is the `Partitioned` cookie kept inside the Presentation iframe in Safari? If not,
-fallback: a short-lived signed `?pt=` token in the URL — but the location hrefs built in core-back
-`presentation/index.ts` and the `history.update` pushes in `src/preview/visual-editing.ts` don't
-carry it, so the spike must also check how Presentation navigates (iframe `src` vs history) and
-where `pt` gets re-appended. [x] Does `@sanity/preview-url-secret` load in a Netlify function?
-**Yes** (2026-11-11): it imports in plain Node 22 ESM from core-front's `node_modules` and
-works with a real `@sanity/client` 7.28.0. Findings folded into step 2 (throws on API errors,
-path-only `redirectTo`, share-access secret, peer range). Still run `npm run check:functions` on
-the real `preview-enable` build.
+Spikes: [x] D1 (2026-11-12, Tinhof staging): the `Partitioned` cookie works in Firefox, Safari
+drops it → switched to `sessionStorage` + header (above). Re-test of the new flow on Tinhof
+staging (2026-11-12): **works in Safari and Firefox** (after a "Clear cache and deploy" — the
+hash-only pin had kept the old core in Netlify's build cache). [x] D2: `@sanity/preview-url-secret` loads
+in plain Node 22 ESM and works with `@sanity/client` 7.28.0 (2026-11-11); `npm run
+check:functions` loads the real `preview-enable` build.
 
 ## E. Login redirect (#8)
 
@@ -426,6 +445,12 @@ set aside as more machinery than the leak needs.
 
 ## Rollout
 
+**Release state (2026-11-12):** everything is staging-tested. core-front merges
+`feature/security-hardening`; core-back merges **`fix/bundle-variant-labels`** (= the security
+branch + bundle labels, withdrawal dialog fixes) — both by merge commit, the Tinhof staging pins
+must stay reachable. Same core-front release also changes the withdrawal receipt recipients
+(`decisions/withdrawal-receipt-to-both-addresses.md`).
+
 **Branching (decided 2026-11-11):** Tinhof pins core-front `4.0.0` (= `main`) and core-back
 `5.4.0`. core-back `main` has unreleased menu levels, which are a no-op for Tinhof (no submenus,
 `maxDepth: 1`, no `disableSubmenus`; only jurtschitsch migrates). So there are no hotfix branches:
@@ -440,12 +465,9 @@ set aside as more machinery than the leak needs.
 - Interim until the release: optionally remove Tinhof's `payment_refund.mts` (and
   `order_notify.mts`); refunds then go through the Stripe dashboard, and the webhook syncs them.
 
-1. Spikes: B1, B2 and D2 done (2026-11-11/12, results in B and D). **D1 (Safari + `Partitioned`
-   cookie) runs as the first implementation step of D** (decided 2026-11-12, no throwaway spike):
-   build `preview-enable` + the cookie check in `preview` + core-back's `previewMode`, pin them on
-   Tinhof **staging** only, open Presentation in the staging Studio in Safari (and Chrome). Cookie
-   kept → continue D as written; dropped → switch D's cookie to the `?pt=` fallback (see D's
-   spikes) before building the rest.
+1. Spikes: B1, B2, D1 and D2 done (2026-11-11/12, results in B and D). D1 ran on Tinhof staging
+   with the first D build: Safari dropped the cookie → D now uses `sessionStorage` + header, which
+   works in Safari and Firefox on Tinhof staging (2026-11-12).
 2. core-front: C (refund by `orderId`, server-derived idempotency key, `safeEqual` in
    `requireServerSecret`), D (`preview-enable` function + export + dependency, preview guards), E,
    F. Vitest for each. `npm run build && npm run check:functions` (must load `preview-enable` in
@@ -460,8 +482,10 @@ set aside as more machinery than the leak needs.
    old Studio anyway. So per customer: frontend + backend pinned and deployed in the same session,
    staging first. Every env/hook/secret step below happens **per environment**: staging frontend +
    Studio projects with the `development` dataset, production ones with `production`. Customers must:
-   - frontend: add `netlify/functions/preview_enable.mts` (`path: '/api/preview/enable'`,
-     `export default createPreviewEnableHandler()`); Netlify env (Functions scope):
+   - frontend: add `netlify/functions/preview_enable.mts` (`path: '/api/preview-enable'`,
+     `export default createPreviewEnableHandler()`) and widen `preview.mts`'s path to
+     `['/api/preview/:locale', '/api/preview/:locale/:documentType/:documentId']` (D step 9);
+     Netlify env (Functions scope):
      `PREVIEW_SESSION_SECRET` (new, ≥ 32 random bytes) and a **new** `SERVER_FUNCTIONS_SECRET`, each
      generated separately for the staging and the production frontend project; check
      `SERVER_FUNCTIONS_ALLOWED_ORIGINS` lists that project's own Studio origin (today: own Studio
@@ -489,8 +513,8 @@ set aside as more machinery than the leak needs.
    - redeploy the Studio: it's a Netlify site, so push the backend's `staging`/`production` via the
      `user` remote (not `sanity deploy`). Old deploys stay reachable at their permalinks — that's
      why every value in them is rotated.
-   - also add the `preview_enable.mts` wrapper to itsshops-starter `base/frontend/netlify/functions/`
-     (next to `preview.mts`) so new customers get it.
+   - also add the `preview_enable.mts` wrapper and the widened `preview.mts` path to
+     itsshops-starter `base/frontend/netlify/functions/` so new customers get them.
 5. Order: **Tinhof** (live) → Jurtschitsch → Rosi Schuster. Dormant customers get it when work
    resumes (their PATs are revoked already, see top).
 6. Rotate after release: the Vinofact token (in the Tinhof, Jurtschitsch **and Rosi** bundles — all
@@ -498,7 +522,7 @@ set aside as more machinery than the leak needs.
    immediately if it can write). For Tinhof (and Jurtschitsch/Rosi once their PATs are revoked):
    check the Netlify audit log, Stripe refunds and Resend for activity nobody caused; if anything
    shows up, rotate the server keys the PAT could read (`SANITY_TOKEN`, Stripe, Supabase, Resend).
-7. Docs: core-back `plugin-and-config.md` (rule 1, secrets namespace); core-front
+7. **Done (2026-11-12).** Docs: core-back `plugin-and-config.md` (rule 1, secrets namespace); core-front
    `commerce-and-netlify.md` (refund contract), `csp-and-headers.md` (preview headers),
    `configuration.md` (env: `PREVIEW_SESSION_SECRET`), `new-customer.md` + `go-live-checklist.md`
    (build hook, Integrations dialog, no Studio secrets, `preview_enable.mts`),
@@ -520,4 +544,4 @@ set aside as more machinery than the leak needs.
   once a shop adds more members (e.g. editors).
 - Preview share access off (owner, 2026-11-12): `previewMode.shareAccess: false` in
   `createPresentations` (D step 1). No shop shares previews today, and it removes the only way to
-  get a draft-preview cookie without a Studio login. Turning it on later is one line.
+  get a draft-preview session without a Studio login. Turning it on later is one line.

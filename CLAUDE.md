@@ -16,7 +16,7 @@ this file stays the always-loaded router.
 | Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
 | CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles). Same-origin scripts, fetches (`/api/…`) and styles are always allowed; only an **external** host needs `headers.extra` — no external host, no CSP change or check | `.claude/architecture/csp-and-headers.md` |
 | The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops, `-e` env file | `.claude/architecture/cli.md` |
-| Checkout/Stripe, refunds, users/Supabase, newsletter, email, orders/tax/shipping/free shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
+| Checkout/Stripe, refunds, draft preview (`preview` + `preview-enable`, session), users/Supabase, newsletter, email, orders/tax/shipping/free shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | **Starting a new customer** (website or webshop) from scratch — intake, accounts, backend + frontend scaffold, docs, first staging deploy (command: `/itsshops-new-customer`) | `.claude/workflows/new-customer.md` |
@@ -143,7 +143,7 @@ src/
 | `src/core/index.ts` | `dist/core.js` | Sanity client only |
 | `src/bin/itsshops.ts` | `dist/itsshops.js` | CLI binary |
 | `src/config/tailwind/tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
-| `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function |
+| `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function (+ `preview-enable.ts` → `dist/preview-enable.js`, its session gate) |
 | `src/netlify/functions/<name>.ts` | `dist/<name>.js` | Function factories (`./functions/*`; catalog in `commerce-and-netlify.md`) |
 | `src/test-utils/index.ts` | `dist/test-utils.js` | Integration-test suites for customers (`./test-utils`) |
 | `src/preview/visual-editing.ts` | `dist/assets/visual-editing/` | Presentation overlay (JS + CSS, esbuild in `onSuccess`), shipped at `/assets/visual-editing/` |
@@ -159,6 +159,16 @@ customer-only feature: **exports of existing helpers** (no new behaviour, so the
 nothing) and a **flag** where core itself builds something the customer can't remove by override
 (e.g. a page core generates). Plans must state which side each part lands on. Owner's rule,
 2026-11-04; example: `.claude/plans/interest-list-and-invites.md`.
+
+## No credentials in the Studio bundle
+
+The Studio is a public SPA: every `SANITY_STUDIO_*` var and everything in a customer's
+`sanity.config.ts` is downloadable without a login. Never put a token or secret there. The Studio's
+credentials live in the dataset's secrets document (core-back `CLAUDE.md` → rule, Integrations
+dialog); a Netlify account token is not used at all (Deploy = build hook). Server functions called
+from the Studio treat the shared secret as readable by every Studio member and validate everything
+themselves (e.g. refunds load the PaymentIntent from the order). Owner's rule, 2026-11-11; why:
+core-back `decisions/studio-secrets-in-dataset.md`.
 
 ## Features that span frontend and backend
 

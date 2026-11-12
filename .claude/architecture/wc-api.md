@@ -25,7 +25,9 @@ export default createWcApiHandler({ timezone: 'Europe/Vienna' })
 - **Env:** `WC_CONSUMER_KEY` + `WC_CONSUMER_SECRET` (Netlify env, functions scope — the values given
   to the ERP), plus the usual `SANITY_PROJECT_ID` / `SANITY_DATASET` / `SANITY_TOKEN` (read+write).
 - **Auth:** `consumer_key`/`consumer_secret` as query params (wineNET does this) **or** a Basic auth
-  header. Missing env var or wrong credentials → 401 `woocommerce_rest_cannot_view`.
+  header (split at the **first** `:`, so a secret may contain `:`). Compared in constant time
+  (`safeEqual`). Missing env var, wrong credentials or a malformed Basic header → 401
+  `woocommerce_rest_cannot_view`.
 
 ## Routes
 
@@ -35,7 +37,8 @@ Anything else → 404 `woocommerce_rest_no_route`; thrown errors → 500.
   currency } }` — the ERP's connectivity check.
 - **`GET orders`** — `page`, `per_page` (≤ 100, default 10), `status` (WC status, comma list;
   unknown ones such as `pending`/`on-hold` are ignored, *only* unknown → empty list), `after` /
-  `before` (any ISO 8601 with offset, compared to `_createdAt` in UTC). Newest first;
+  `before` (any ISO 8601 with offset, compared to `_createdAt` in UTC; an unparseable date → 400
+  `rest_invalid_param`). Newest first;
   `x-wp-total` / `x-wp-totalpages` headers.
 - **`PUT orders/:id`** with `{ status }` → accepted: `processing`, `completed` (→ `shipped`),
   `cancelled` (→ `canceled`), `refunded` (→ `returned`); anything else → 400
