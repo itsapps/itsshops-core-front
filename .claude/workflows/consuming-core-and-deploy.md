@@ -178,6 +178,18 @@ pushes.
    from `main`. Frontend and backend are tagged separately; when a release needs both (schema +
    rendering), release the backend first and name the paired release in the tag message.
 4. Update the customer's `CLAUDE.md` status line if it tracks the live core version.
+5. **Verify the live shop without customer impact** (no real mails, no refunds, no test orders):
+   - *New core served:* a string or header only the new version has — e.g. fetch the Studio's
+     `/static/sanity-*.js` and grep it, or check a function's response headers. Normal builds of a
+     **tag** pin serve the new core (see "Netlify build-cache gotcha").
+   - *Shared secret right (Netlify side):* `POST` each Studio endpoint (`/api/payment/refund`,
+     `/api/order/notify`, `/api/order/withdraw-notify`) with the `x-server-secret` and an **empty
+     JSON body** — they check the secret before the body, so `400 "orderId is required"` = secret
+     accepted, `401` = wrong; nothing is read, refunded or mailed.
+   - *Mail path end to end (Studio side):* on a staff test order, set `customer.contactEmail`
+     (editable by every editor) to an own address, send a mail from the Studio, set it back. The
+     order is live-edit and read by the ERP (`wc-api`), so revert right away. Refunds on live
+     orders move real money — only when the shop wants that payment returned anyway.
 
 Netlify's deploy history covers emergency rollbacks; the tags record *what* was live.
 
