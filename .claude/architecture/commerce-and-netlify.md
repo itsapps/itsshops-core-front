@@ -226,6 +226,11 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   (the build prices every product page). A bundle's weight = its items' `resolveVariantWeight`
   (explicit weight first, wine estimated) × item qty — the same per-item weight as
   `bundleItems[].weight`, so markup = checkout.
+- **Pickup is not supported** (checked 2026-11-12): core-back's `shippingMethod.methodType` list
+  offers only `delivery` (`pickup` and `pickupFee` are commented out), so no shop can create a
+  pickup method. What exists here is leftover: the pickup branch in `resolveShippingMethods`
+  (price = `pickupFee`), the `shippingInfoModule` pickup row, `order-thanks.ts` / `OrderEmail.tsx`
+  hiding the address for pickup. Don't build on it without a plan that enables it end to end.
 - **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
   as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
   pass the same value as `itsshops.config` (Tinhof passes `stock: false` explicitly).
