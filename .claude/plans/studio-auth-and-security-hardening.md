@@ -367,9 +367,9 @@ available". Keep `post` (and `productVariant`/`category`) in the allowlist; thei
 are a separate fix.
 
 Spikes: [x] D1 (2026-11-12, Tinhof staging): the `Partitioned` cookie works in Firefox, Safari
-drops it → switched to `sessionStorage` + header (above). Re-test Safari + Firefox + Chrome on
-staging with the new flow, including the Presentation tool's start page (home), a document switch,
-the Refresh button and an edit (reload after mutation). [x] D2: `@sanity/preview-url-secret` loads
+drops it → switched to `sessionStorage` + header (above). Re-test of the new flow on Tinhof
+staging (2026-11-12): **works in Safari and Firefox** (after a "Clear cache and deploy" — the
+hash-only pin had kept the old core in Netlify's build cache). [x] D2: `@sanity/preview-url-secret` loads
 in plain Node 22 ESM and works with `@sanity/client` 7.28.0 (2026-11-11); `npm run
 check:functions` loads the real `preview-enable` build.
 
@@ -446,8 +446,8 @@ set aside as more machinery than the leak needs.
   `order_notify.mts`); refunds then go through the Stripe dashboard, and the webhook syncs them.
 
 1. Spikes: B1, B2, D1 and D2 done (2026-11-11/12, results in B and D). D1 ran on Tinhof staging
-   with the first D build: Safari dropped the cookie → D now uses `sessionStorage` + header; the
-   re-test of that flow on Tinhof staging is the next step (see D's spikes).
+   with the first D build: Safari dropped the cookie → D now uses `sessionStorage` + header, which
+   works in Safari and Firefox on Tinhof staging (2026-11-12).
 2. core-front: C (refund by `orderId`, server-derived idempotency key, `safeEqual` in
    `requireServerSecret`), D (`preview-enable` function + export + dependency, preview guards), E,
    F. Vitest for each. `npm run build && npm run check:functions` (must load `preview-enable` in

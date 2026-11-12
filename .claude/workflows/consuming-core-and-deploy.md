@@ -73,6 +73,14 @@ core installed (not `npm link`ed) does **not** refetch it. It records the new co
 old files. To actually get the new core locally: `rm -rf node_modules/@itsapps/itsshops-core-*`,
 then `npm install` (the lockfile stays unchanged).
 
+**Netlify build-cache gotcha (same trap, on Netlify):** Netlify restores the cached `node_modules`,
+so after a hash-only edit the build can keep running the **previous** core commit — the customer's
+own files (e.g. a new function wrapper) deploy, the core code behind them doesn't. Seen on Tinhof
+staging, 2026-11-12 (frontend and Studio both). After a hash-only pin, deploy with Netlify →
+Deploys → Trigger deploy → **Clear cache and deploy site** (each affected project), and check the
+deploy actually serves the new core (a changed response header, a string in the Studio bundle). A
+pin that came from a real `npm install` with changed deps rebuilt fine.
+
 ### Production — only tagged core
 
 **Rule: `production` never ships an untagged core.** `main`/`staging` may float on lockfile hashes;
