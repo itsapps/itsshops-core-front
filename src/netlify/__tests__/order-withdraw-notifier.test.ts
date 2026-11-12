@@ -192,6 +192,24 @@ describe('withdrawal receipt recipients', () => {
     expect(appendOrderHistory).toHaveBeenCalledTimes(1)
   })
 
+  it('two mails greet their own recipient; the details repeat the submitted name in both', () => {
+    const record: WithdrawalRecord = {
+      ...assigned,
+      name: 'Franz Fremd',
+      order: { ...matched.order!, customer: { ...matched.order!.customer, name: 'Anna Muster' } },
+    }
+    const { customer } = buildWithdrawalMails(record, ctx())
+    expect(customer.headline).toContain('Anna Muster')
+    expect(customer.alsoHeadline).toContain('Franz Fremd')
+    expect(customer.text).toContain('Name: Franz Fremd')
+  })
+
+  it('one mail (same address) keeps the submitted name in the greeting', () => {
+    const { customer } = buildWithdrawalMails({ ...matched, name: 'Anna M.' }, ctx())
+    expect(customer.alsoTo).toBeUndefined()
+    expect(customer.headline).toContain('Anna M.')
+  })
+
   it('same address in other case/spacing → one receipt', async () => {
     await sendWithdrawalNotifications({ ...matched, email: ' Anna@Example.com ' }, { audience: 'customer' })
     expect(sendMail).toHaveBeenCalledTimes(1)

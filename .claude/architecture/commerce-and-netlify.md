@@ -456,7 +456,9 @@ the Studio action "Bestellung zuordnen" (withdrawals are `liveEdit`; the action 
 right away). **Receipt recipients** (`buildWithdrawalMails` → `customer.to` / `alsoTo`): matched →
 the order's `contactEmail`, **plus** the submitted email as a separate mail when it differs
 (case-insensitive) — the declarant gets the return instructions at the address they gave, the buyer
-is informed at the order's verified address; unmatched → the submitted email only. One `mail`
+is informed at the order's verified address (each mail greets its own recipient — order's customer
+name vs. submitted name; the details repeat the submission in both); unmatched → the submitted email
+only. One `mail`
 history entry either way; a failed second mail throws ("sent to X, but not to Y"). Why:
 `decisions/withdrawal-receipt-to-both-addresses.md`. Processing stays manual in the Studio (core-back
 `WithdrawalActions.tsx`, guided by a next-step box with the 14-day deadline): **"Refund & close"**

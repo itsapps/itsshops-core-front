@@ -113,7 +113,12 @@ export function buildWithdrawalMails(
     to: email,
     alsoTo,
     subject: t('emails.orderWithdrawalCustomer.subject', { orderNumber }),
-    headline: t('emails.orderWithdrawalCustomer.headline', { name }),
+    // Two mails → each greets its own recipient: the order's address the buyer, the submitted
+    // address the declarant. The details below always repeat the declaration as submitted.
+    headline: t('emails.orderWithdrawalCustomer.headline', {
+      name: alsoTo ? order?.customer.name || name : name,
+    }),
+    alsoHeadline: t('emails.orderWithdrawalCustomer.headline', { name }),
     text: [
       t('emails.orderWithdrawalCustomer.intro', { date }),
       submitted.join('\n'),
@@ -176,13 +181,16 @@ export async function sendWithdrawalNotifications(
   const { customer, shop } = buildWithdrawalMails(record, ctx, options)
   const from = `${settings.senderName} <${settings.senderEmail}>`
 
-  const customerHtml = await render(
-    <SimpleEmail ctx={ctx} headline={customer.headline} text={customer.text} />,
-  )
-  const sendReceipt = (to: string) =>
-    sendMail({ from, to, subject: customer.subject, text: customer.text, html: customerHtml })
+  const sendReceipt = async (to: string, headline: string) =>
+    sendMail({
+      from,
+      to,
+      subject: customer.subject,
+      text: customer.text,
+      html: await render(<SimpleEmail ctx={ctx} headline={headline} text={customer.text} />),
+    })
 
-  await sendReceipt(customer.to)
+  await sendReceipt(customer.to, customer.headline)
 
   // The receipt is out: record it on the linked order; a failed write is logged, never thrown.
   if (record.order?._id) {
@@ -211,7 +219,7 @@ export async function sendWithdrawalNotifications(
   // order's address already; a failure here still throws, so the Studio resend reports it.
   if (customer.alsoTo) {
     try {
-      await sendReceipt(customer.alsoTo)
+      await sendReceipt(customer.alsoTo, customer.alsoHeadline)
     } catch (error) {
       throw new Error(
         `Confirmation sent to ${customer.to}, but not to ${customer.alsoTo}: ${error instanceof Error ? error.message : String(error)}`,

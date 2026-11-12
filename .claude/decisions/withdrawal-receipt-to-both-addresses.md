@@ -27,6 +27,9 @@ to the order's address).
 - The declarant gets the return instructions; the buyer is warned at the verified address.
 - An unverified address receives what the receipt shows (order number, the declarant's own reason,
   shipped or not, the shop's return address) — only after an editor assigned the record.
+- Each of the two mails greets its own recipient (order's address → the order's customer name,
+  submitted address → the submitted name); the details always repeat the declaration as submitted,
+  so the buyer sees the declarant's name — the signal that someone else may have withdrawn.
 - One `withdrawalReceipt` history entry per send; if the second mail fails, the call throws naming
   both addresses (the Studio shows it, a resend sends both again).
 - The Studio dialogs ("Bestellung zuordnen", "Bestätigung erneut senden") and toasts name both
