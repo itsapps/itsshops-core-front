@@ -14,6 +14,9 @@ alternative was rejected, a constraint discovered the hard way.
   paths; `exports` subpaths removed (postcss-import ignores `exports`).
 - [payment-permissions-policy-checkout-only.md](payment-permissions-policy-checkout-only.md) — Stripe
   Apple/Google Pay `payment` policy scoped to the checkout route (least privilege).
+- [withdrawal-receipt-to-both-addresses.md](withdrawal-receipt-to-both-addresses.md) — matched
+  withdrawal with a different submitted email: the receipt goes to the order's and the submitted
+  address (two mails).
 - [preview-session-in-sessionstorage.md](preview-session-in-sessionstorage.md) — draft-preview
   session token in the iframe's sessionStorage + header (Safari drops cross-site iframe cookies; a
   URL token is lost on Presentation reloads).

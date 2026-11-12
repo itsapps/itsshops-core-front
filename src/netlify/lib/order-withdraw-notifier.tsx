@@ -3,6 +3,12 @@
  *   1. the receipt confirmation to the consumer (always), and
  *   2. a declaration notification to the shop (only when `audience: 'both'`).
  *
+ * Receipt recipients: matched → the order's `contactEmail`, **plus** the submitted email as a
+ * separate mail when it differs (case-insensitive) — an editor assigned a record whose email
+ * didn't match: the declarant gets the receipt at the address they gave, the buyer is informed at
+ * the order's verified address. Unmatched → the submitted email only. Separate mails, so neither
+ * address sees the other.
+ *
  * Everything the mails show — date/time, name, order number, reason — comes from the
  * stored `orderWithdrawal` record (FAGG §13a / Art. 11a (3): the receipt repeats what was
  * submitted and when), never from "now" or the request.
@@ -96,8 +102,16 @@ export function buildWithdrawalMails(
     followUp = [t('emails.orderWithdrawalCustomer.notDispatched')]
   }
 
+  // Matched with a different submitted address → that one gets the same receipt too.
+  const submittedEmail = record.email?.trim() ?? ''
+  const alsoTo =
+    matched && submittedEmail && submittedEmail.toLowerCase() !== email.trim().toLowerCase()
+      ? submittedEmail
+      : undefined
+
   const customer = {
     to: email,
+    alsoTo,
     subject: t('emails.orderWithdrawalCustomer.subject', { orderNumber }),
     headline: t('emails.orderWithdrawalCustomer.headline', { name }),
     text: [
@@ -142,7 +156,7 @@ export function buildWithdrawalMails(
 export async function sendWithdrawalNotifications(
   record: WithdrawalRecord,
   options: WithdrawNotifyOptions = {},
-): Promise<{ to: string }> {
+): Promise<{ to: string; recipients: string[] }> {
   const audience = options.audience ?? 'both'
   const locale = record.order?.customer.locale || record.locale || 'de'
 
@@ -162,13 +176,13 @@ export async function sendWithdrawalNotifications(
   const { customer, shop } = buildWithdrawalMails(record, ctx, options)
   const from = `${settings.senderName} <${settings.senderEmail}>`
 
-  await sendMail({
-    from,
-    to: customer.to,
-    subject: customer.subject,
-    text: customer.text,
-    html: await render(<SimpleEmail ctx={ctx} headline={customer.headline} text={customer.text} />),
-  })
+  const customerHtml = await render(
+    <SimpleEmail ctx={ctx} headline={customer.headline} text={customer.text} />,
+  )
+  const sendReceipt = (to: string) =>
+    sendMail({ from, to, subject: customer.subject, text: customer.text, html: customerHtml })
+
+  await sendReceipt(customer.to)
 
   // The receipt is out: record it on the linked order; a failed write is logged, never thrown.
   if (record.order?._id) {
@@ -193,6 +207,18 @@ export async function sendWithdrawalNotifications(
     }
   }
 
+  // Second receipt (submitted address ≠ order's). After the history entry: the receipt reached the
+  // order's address already; a failure here still throws, so the Studio resend reports it.
+  if (customer.alsoTo) {
+    try {
+      await sendReceipt(customer.alsoTo)
+    } catch (error) {
+      throw new Error(
+        `Confirmation sent to ${customer.to}, but not to ${customer.alsoTo}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   if (audience === 'both') {
     await sendMail({
       from,
@@ -203,5 +229,5 @@ export async function sendWithdrawalNotifications(
     })
   }
 
-  return { to: customer.to }
+  return { to: customer.to, recipients: [customer.to, ...(customer.alsoTo ? [customer.alsoTo] : [])] }
 }

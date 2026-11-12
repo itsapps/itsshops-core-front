@@ -23,7 +23,10 @@ export type WithdrawNotifyRequestBody = {
 }
 
 export type WithdrawNotifyResponseBody = {
+  /** The order's address (matched) or the submitted one (unmatched). */
   to: string
+  /** Every address a receipt went to: `to`, plus the submitted email when it differs. */
+  recipients: string[]
 }
 
 export type WithdrawNotifyHandlerOptions = {
@@ -60,8 +63,9 @@ export function createWithdrawNotifyHandler(options: WithdrawNotifyHandlerOption
         )
       }
 
-      // Receipt from the stored record (original timestamp). Matched → the order's email
-      // (e.g. after an editor assigned an unmatched record); unmatched → the submitted email.
+      // Receipt from the stored record (original timestamp). Matched → the order's email, plus the
+      // submitted one when it differs (e.g. after an editor assigned an unmatched record);
+      // unmatched → the submitted email.
       const result = await sendWithdrawalNotifications(record, {
         audience: 'customer',
         baseUrl: options.baseUrl,

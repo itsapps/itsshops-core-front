@@ -66,7 +66,7 @@ describe('order-withdraw', () => {
     m.count.mockResolvedValue(0)
     m.findOpen.mockResolvedValue(null)
     m.findUnmatched.mockResolvedValue(null)
-    m.notify.mockResolvedValue({ to: 'anna@example.com' })
+    m.notify.mockResolvedValue({ to: 'anna@example.com', recipients: ['anna@example.com'] })
   })
   afterEach(() => vi.unstubAllEnvs())
 

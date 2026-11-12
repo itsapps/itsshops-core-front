@@ -38,6 +38,12 @@ same session (refund contract).
 - After a **hash-only** pin, deploy with "Clear cache and deploy site"
   (`.claude/workflows/consuming-core-and-deploy.md` → "Netlify build-cache gotcha").
 
+### Changed
+- Withdrawal receipt for a **matched** record whose submitted email differs from the order's (an
+  editor assigned it): sent to **both** addresses as two mails (before: the order's only).
+  `order-withdraw-notify` returns `recipients`. Nothing to change. Why:
+  `.claude/decisions/withdrawal-receipt-to-both-addresses.md`.
+
 ### Security
 - `preview`: session token (sessionStorage + `x-preview-session`), params allowlisted, perspective
   limited to `published`/`drafts`, no input echoed into HTML (was a reflected-XSS risk),
