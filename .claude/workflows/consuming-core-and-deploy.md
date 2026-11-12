@@ -195,6 +195,23 @@ the next commit (see Release flow step 3).
 
 Each customer's branch names / Netlify site live in its own CLAUDE.md.
 
+### Netlify projects per customer
+
+Four Netlify projects, each with its **own** env vars (`.env*` files are gitignored and never reach
+Netlify — local runs only):
+
+| Project | Builds | Dataset | Holds |
+|---|---|---|---|
+| staging frontend | `staging` | `development` | server env (Functions scope secrets), build hook for `staging` |
+| staging Studio | `staging` | `development` | public `SANITY_STUDIO_*` only; `NETLIFY_SITE_ID` = staging **frontend** |
+| production frontend | `production` | `production` | its own secrets (never the staging values), build hook for `production` |
+| production Studio | `production` | `production` | public `SANITY_STUDIO_*` only; `NETLIFY_SITE_ID` = production **frontend** |
+
+The Studio's credentials (functions secret, build hook, Vinofact token) live **per dataset** in its
+secrets document, so `development` holds the staging values and `production` the live ones. The
+local Studio and frontend use `development` too: the local Studio's Deploy builds **staging**, and
+local refunds/mails need the local frontend's `SERVER_FUNCTIONS_SECRET` = the staging one.
+
 ### Node.js version
 
 Not pinned in the repos (no `NODE_VERSION`, no `.nvmrc`; `engines` only says `>=22`). It is a

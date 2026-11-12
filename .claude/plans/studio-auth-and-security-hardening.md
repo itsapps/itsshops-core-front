@@ -1,6 +1,9 @@
 # Plan — No secrets in the Studio bundle + security hardening (core-back + core-front)
 
-Status: **proposed** (2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
+Status: **implemented, staging-tested on Tinhof (2026-11-12)** — A–F on `feature/security-hardening`
+in both cores, docs + CHANGELOGs (core-front 5.0.0, core-back 6.0.0) written. Open: merge, cut the
+tags, Tinhof production (rollout 4–6), then Jurtschitsch and Rosi Schuster. History: proposed
+2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
 contract, D's cookie/route and the rollout corrected; refined again 2026-11-11 — A's missing-secret
 message wiring, WineTab path, D's locale/perspective handling, frame-ancestors fallback, tests for
 C/D/F against the existing test files; 2026-11-12 — spikes B1/B2/D2 done, four Netlify projects
@@ -99,10 +102,12 @@ core-back:
     (de/en only have `.title`) → `.title`.
   - New i18n keys (de + en) in core-back's component translations: `integrations.*` (dialog title,
     key titles/descriptions, the missing-secrets message).
-- An **"Integrations" button + `SettingsView` dialog** in `src/components/CustomToolbar.tsx` next to
-  `<DeployDialog />` (new component `IntegrationsDialog.tsx`: a `Button` + `{open && <SettingsView
-  title namespace="itsshops" keys onClose={() => setOpen(false)} />}` — no own `Dialog`, since
-  `SettingsView` brings one), rendered only when
+- An **"Integrations" button + dialog** in `src/components/CustomToolbar.tsx` next to
+  `<DeployDialog />` (`IntegrationsDialog.tsx`). **Implemented as an own dialog, not
+  `SettingsView`** (2026-11-12): `SettingsView` renders plain text inputs (values visible on screen
+  shares) and its `storeSecrets` swallows write errors. Ours reads with `useSecrets`, writes the
+  package's format itself (`createIfNotExists` + `set({ secrets })`) with saved/failed toasts, and
+  masks each value with a show/hide toggle. Rendered only when
   `useCurrentUser()?.roles.some(r => r.name === 'administrator')`. This hides it in the UI only; any
   member can still read the secrets document. Keys: `functionsSecret` and `netlifyBuildHook`
   always, `vinofactToken` only when `features.shop.vinofact.enabled`. The toolbar button is
@@ -502,7 +507,7 @@ set aside as more machinery than the leak needs.
    immediately if it can write). For Tinhof (and Jurtschitsch/Rosi once their PATs are revoked):
    check the Netlify audit log, Stripe refunds and Resend for activity nobody caused; if anything
    shows up, rotate the server keys the PAT could read (`SANITY_TOKEN`, Stripe, Supabase, Resend).
-7. Docs: core-back `plugin-and-config.md` (rule 1, secrets namespace); core-front
+7. **Done (2026-11-12).** Docs: core-back `plugin-and-config.md` (rule 1, secrets namespace); core-front
    `commerce-and-netlify.md` (refund contract), `csp-and-headers.md` (preview headers),
    `configuration.md` (env: `PREVIEW_SESSION_SECRET`), `new-customer.md` + `go-live-checklist.md`
    (build hook, Integrations dialog, no Studio secrets, `preview_enable.mts`),

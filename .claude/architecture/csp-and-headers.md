@@ -110,3 +110,17 @@ instead of site-wide `extra`.
 
 > CSP failures are silent in the browser console (blocked, not thrown). When a third-party asset
 > doesn't load, check the console for a CSP violation and add the host to the right directive here.
+
+## Preview function responses
+
+Function responses don't get `_headers`. `preview` and `preview-enable` set their own on every
+response (`src/netlify/utils/preview-headers.ts`): `Content-Security-Policy: frame-ancestors
+<SERVER_FUNCTIONS_ALLOWED_ORIGINS>` (only the Studio may frame the preview; empty list →
+`'none'`, fail closed), `X-Robots-Tag: noindex`, `Cache-Control: private, no-store`. The
+`preview-enable` page adds `default-src 'none'; script-src 'nonce-…'`; the `preview` loader keeps
+`frame-ancestors` only, because `document.write` keeps the loader's document and CSP, so a stricter
+policy would also block the rendered page's scripts (visual-editing overlay). A URL that hits no
+function gets Netlify's static 404 with the site CSP (`frame-ancestors 'none'`) — inside
+Presentation that shows as "refused to display / blank iframe", not as a 404. Preview **share
+access** is off (`previewMode.shareAccess: false` in core-back), so no link-based draft preview
+exists. Flow: `commerce-and-netlify.md` → "Draft preview".

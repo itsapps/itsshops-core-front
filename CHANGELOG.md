@@ -4,9 +4,49 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased (4.0.1)
+## Unreleased (5.0.0)
+
+Security hardening (plan `.claude/plans/studio-auth-and-security-hardening.md`): draft preview
+behind Sanity's preview secret, refunds by order id with a server-side idempotency key,
+constant-time secret checks, a safe login redirect, wc-api input guards — plus the menu-levels
+change below. Release together with core-back 6.0.0 — per customer, frontend and backend in the
+same session (refund contract).
 
 ### Upgrading
+- **New function wrapper** `netlify/functions/preview_enable.mts`:
+  ```ts
+  import type { Config } from '@netlify/functions'
+  import { createPreviewEnableHandler } from '@itsapps/itsshops-core-front/functions/preview-enable'
+  export const config: Config = { path: '/api/preview-enable' }
+  export default createPreviewEnableHandler()
+  ```
+  and widen `preview.mts`'s path to
+  `['/api/preview/:locale', '/api/preview/:locale/:documentType/:documentId']` (the short form is
+  Presentation's start page → home page). Without them Presentation shows "Preview session
+  expired" / a blank iframe.
+- **Netlify env (Functions scope), per frontend project:** `PREVIEW_SESSION_SECRET` (new, ≥ 32
+  random bytes) and a **new** `SERVER_FUNCTIONS_SECRET` (the old one was in the public Studio
+  bundle — enter the new one in the Studio's Integrations dialog too). Generate each separately for
+  staging and production. `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (the Studio origin) now also sets the
+  preview's `frame-ancestors`. Local frontend `.env`: add `PREVIEW_SESSION_SECRET`.
+- **`payment-refund` takes `{ orderId, amount? }`** (was `{ paymentIntentId, amount? }`) and 404s a
+  non-order id; needs core-back ≥ 6.0.0, which sends it. A same-moment duplicate refund now
+  answers 409.
+- `preview` answers without a session with a loader page (200) or 401 — draft renders need the
+  Presentation flow; a direct `/api/preview/…` link no longer shows drafts.
+- After a **hash-only** pin, deploy with "Clear cache and deploy site"
+  (`.claude/workflows/consuming-core-and-deploy.md` → "Netlify build-cache gotcha").
+
+### Security
+- `preview`: session token (sessionStorage + `x-preview-session`), params allowlisted, perspective
+  limited to `published`/`drafts`, no input echoed into HTML (was a reflected-XSS risk),
+  `frame-ancestors` + `noindex` + `no-store` on every response.
+- `requireServerSecret` and `wc-api` compare credentials in constant time; `wc-api` 401s a
+  malformed Basic header (was 500), accepts secrets containing `:`, 400s an invalid
+  `after`/`before` (was 500).
+- Login `?next=` only redirects to same-origin paths (`src/shared/safe-redirect.ts`).
+
+### Upgrading (menu levels)
 - `menu.maxDepth` now counts menu **levels, top level included** (as core-back): the query
   fetches `maxDepth − 1` levels of `children`. Flat menus (default `1`) fetch none; a project
   with submenus sets `2` (jurtschitsch already does — before, `2` fetched one empty level too

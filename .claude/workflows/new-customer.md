@@ -50,8 +50,11 @@ Folder naming so far: `webshop-frontend` / `webshop-backend` for shops; keep tha
    drafts (preview); **Editor** if Claude is to write content with it (as on itsapps). CORS origins: the Studio URL, the
    frontend URL(s) and the local dev ports (`localhost:<SERVE_PORT>`, the Studio's `sanity dev`
    port) — with credentials for the Studio origins.
-3. **Netlify** (customer account): two sites — frontend and Studio — both building from the
-   deploy branch(es) (`staging`, later `production`). Node.js major in the site settings (consuming
+3. **Netlify** (customer account): a frontend and a Studio project **per environment** — staging
+   pair first (builds `staging`, dataset `development`), production pair at go-live (builds
+   `production`, dataset `production`); consuming doc → "Netlify projects per customer". On each
+   frontend project create a **build hook** for its branch (Project configuration → Build hooks) —
+   the Studio's Deploy button posts to it. Node.js major in the site settings (consuming
    doc → "Node.js version"). Plan: `netlify-plans.md`.
 4. **Shop only:** Stripe account (test mode first), email provider (`EMAIL_PROVIDER`, Resend or
    Mailgun), Supabase if `users`, VinoFact credentials if `vinofact`. Webhooks come later
@@ -72,7 +75,7 @@ strip everything customer-specific:
 | `src/structure/index.ts` | `structure: ITSStructureItem[] = []` |
 | `src/translation/{index,de,en}.ts` | `i18n` (`ui`, `fields`, `defaultLocale`, `localizedFieldTypes`, overrides) |
 | `netlify.toml` | Studio SPA: `npm run build` → `dist`, `/* → /` 200 rewrite |
-| `.env` (gitignored) | `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_*` (deploy button), shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_*`, `SANITY_STUDIO_VINOFACT_*`. **Every `SANITY_STUDIO_*` value is public** (bundled); the token/secret ones are a known leak until `.claude/plans/studio-auth-and-security-hardening.md` ships. Until then, leave `SANITY_STUDIO_NETLIFY_ACCESS_TOKEN` empty (deploy from Netlify) |
+| `.env` (gitignored) | public values only: `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_SITE_ID` (the **frontend** project of that environment — deploy-status badge) / `_PROJECT_NAME`, shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_ENDPOINT`, `SANITY_STUDIO_VINOFACT_API_URL` / `_PROFILE_SLUG`. **Every `SANITY_STUDIO_*` value is public** (bundled) — never a token or secret there (core-back `CLAUDE.md` rule). Credentials go into the Studio's **Integrations dialog** (step 7). Test-only: `VINOFACT_API_TOKEN` (no prefix → not bundled) |
 | `tests/`, `vitest.config.ts`, `tsconfig.json`, `.gitignore` | as the sibling |
 
 Schema/structure details: core-back `CLAUDE.md` + `.claude/architecture/` (schema-authoring,
@@ -93,7 +96,7 @@ Create `web/<customer>/<…>-frontend`, `git init`, copy from the sibling:
 | `src/assets/images/favicon/*` | favicon set (served at `/`) |
 | `src/assets/scripts/index.ts` | customer client JS entry (may be empty) |
 | `src/_includes/overridable/` | **only** the templates this design really overrides (header, footer, modules) — start with none and add as needed (`templates-and-assets.md` → "Template system") |
-| `netlify/functions/preview.mts` | the preview wrapper (identical in every customer); shop: the function wrappers its features need (catalog: `commerce-and-netlify.md`; Tinhof/Jurtschitsch show the set) |
+| `netlify/functions/preview.mts` + `preview_enable.mts` | the preview wrappers (identical in every customer; paths: `commerce-and-netlify.md` → "Draft preview"); shop: the function wrappers its features need (catalog: `commerce-and-netlify.md`; Tinhof/Jurtschitsch show the set) |
 | `netlify.toml` | `npx itsshops init` writes the default; Rosi Schuster's adds `!node_modules/…` excludes to keep the preview function small — copy those if the bundle gets large |
 | `tests/` + `vitest.config.ts` | `setup.ts` (dotenv), `utils/sanity.ts`, `dataset/menu.test.ts`, `unit/eleventy-run.test.ts`, `unit/translators.test.ts` — as the sibling |
 | `.gitignore` | as the sibling (`.env*`, `dist`, `node_modules`, `src/_includes/css`, `src/_includes/scripts` — generated) |
@@ -136,7 +139,12 @@ order, `prefers-reduced-motion`.
 
 - `origin` → customer repo (your own user, `main`); `user` → same repo with the customer PAT
   (`staging`/`production`). Push `main` via `origin`.
-- Netlify env vars for **all scopes** (functions too); `SHOP_FORMALITY` before the first deploy.
+- Netlify env vars for **all scopes** (functions too) — except the secrets (`SERVER_FUNCTIONS_SECRET`,
+  `PREVIEW_SESSION_SECRET`, generated per frontend project): **Functions** scope only;
+  `SHOP_FORMALITY` before the first deploy.
+- Studio → toolbar **Integrations** (plug icon, administrators only), once per dataset: that
+  environment's `SERVER_FUNCTIONS_SECRET`, its frontend's build hook URL, and the Vinofact token
+  (vinofact shops).
 - "release <customer> staging" (consuming doc → "Release flow"): pin core commit hashes, move
   `staging`, hand over the `! git -C <repo> push user staging` lines — `user` pushes are the
   user's.
@@ -150,4 +158,5 @@ order, `prefers-reduced-motion`.
 - [ ] Feature flags match between frontend `Config` and backend `ItsshopsConfig`.
 - [ ] Lighthouse accessibility checked on every page type (go-live checklist → "Tests").
 - [ ] Both `CLAUDE.md`s written; ecosystem table updated.
-- [ ] Staging deployed from the `user` remote; Studio deploy button builds the frontend.
+- [ ] Staging deployed from the `user` remote; Studio deploy button builds the frontend (build hook
+      entered in Integrations); Presentation shows the home page (Safari too).

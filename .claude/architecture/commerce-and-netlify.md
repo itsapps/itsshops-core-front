@@ -42,10 +42,11 @@ Rules of thumb:
 
 | Subpath `@itsapps/itsshops-core-front/functions/…` | Factory | Purpose |
 |---|---|---|
-| `preview` | (default preview handler) | Sanity visual-editing preview render (overlay script: `templates-and-assets.md` → "Static assets") |
+| `preview` | `preview` (wrapper calls `preview({ request, context })`) | Sanity Presentation draft render, session-gated — see "Draft preview" below (overlay script: `templates-and-assets.md` → "Static assets") |
+| `preview-enable` | `createPreviewEnableHandler` | Validates Presentation's preview secret, hands out the preview session — see "Draft preview" below |
 | `payment-create` | `createPaymentHandler` | Create a Stripe payment / checkout intent |
 | `payment-webhooks` | `createWebhookHandler` | Stripe webhook receiver (order fulfilment, customer confirmation + shop new-order mail) |
-| `payment-refund` | `createRefundHandler` | Refund a payment |
+| `payment-refund` | `createRefundHandler` | Studio refund of a shop **order** (by order id) |
 | `order-notify` | `createNotifyHandler` | Studio-triggered order mails (status change / manual send, optional customer message) |
 | `order-withdraw` | `createOrderWithdrawHandler` | Process a right-of-withdrawal request |
 | `order-status` | `createOrderStatusHandler` | `GET /api/order/status?payment_intent=pi_…` → order number only (thanks page, pending-payment cart cleanup) |
@@ -142,7 +143,8 @@ HTTP entry points, one file per endpoint:
 - **users/auth**: `user-register.ts`, `user-login.ts`, `user-logout.ts`, `user-confirm.ts`,
   `user-recover.ts`, `user-reset.ts`, `auth-webhooks.ts`
 - **newsletter**: `newsletter-subscribe.ts`, `newsletter-confirm.ts`, `newsletter-unsubscribe.ts`
-- **misc**: `preview.ts` (Sanity preview, built to `dist/preview.js`), `wc-api.ts`,
+- **misc**: `preview.ts` + `preview-enable.ts` (Sanity preview, built to `dist/preview.js` /
+  `dist/preview-enable.js`), `wc-api.ts`,
   `supabase-keep-alive.ts`, `order-meta-cleanup.ts`
 
 ## Business logic (`src/netlify/lib/`) — unit-tested
@@ -246,7 +248,9 @@ key is the only one surfaced client-side.
 
 ## Utils & types (`src/netlify/utils/`, `src/netlify/types/`)
 
-`utils/`: `response.ts`, `retry.ts`, `server-auth.ts`, `captcha.ts`, `i18n.ts`, `logger.ts`,
+`utils/`: `response.ts`, `retry.ts`, `server-auth.ts` (CORS + `requireServerSecret` +
+`allowedOrigins()` + constant-time `safeEqual`), `preview-session.ts` / `preview-headers.ts` (draft
+preview), `captcha.ts`, `i18n.ts`, `logger.ts`,
 `validation.ts`, helpers. `types/`: `api.ts`, `checkout.ts`, `config.ts`, `errors.ts`,
 `orderTransitions.ts` (order state machine).
 
@@ -320,13 +324,54 @@ Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; i
 wrapper (`netlify/functions/order_status.mts`) for the order number; why the summary comes from
 sessionStorage: `decisions/order-thanks-summary-from-session-snapshot.md`.
 
+### Draft preview (`preview` + `preview-enable`)
+
+Sanity Presentation renders drafts through the shop's own functions; without a session nobody gets
+draft content. Flow (core-back `presentation/index.ts` sets `previewMode: { enable:
+'/api/preview-enable', shareAccess: false }`):
+
+1. Presentation creates a short-lived secret doc (needs a Studio login) and loads
+   `/api/preview-enable?sanity-preview-secret=…&sanity-preview-pathname=…` in its iframe.
+2. `preview-enable` validates it with `@sanity/preview-url-secret` (`validatePreviewUrl`; client
+   from `SANITY_PROJECT_ID`/`SANITY_DATASET`/`SANITY_TOKEN`, built per request — it **throws** on a
+   bad token or API error → 500). Invalid → 401; no or non-`/api/preview/` `redirectTo` → 400.
+   Valid → a tiny page whose nonce'd script stores the signed token
+   (`base64url(exp).hmacSHA256`, 1 h, `PREVIEW_SESSION_SECRET`; `utils/preview-session.ts`) in
+   **`sessionStorage`** (`itsshops_preview`) and `location.replace`s the preview path.
+3. `preview` validates params first (`locale` `^[a-z]{2}$`, type ∈ page/post/productVariant/category,
+   id `^[A-Za-z0-9_.-]{1,128}$`; `/api/preview/:locale` alone = the **home page** via
+   `settings.homePageId`) → 400. **No `x-preview-session` header → loader page** (no draft content):
+   it reads the token, re-fetches the same URL with the header and `document.write`s the result;
+   no token → "Preview session expired — reload the Presentation tool". Invalid/expired header →
+   401. Valid → Eleventy render (`process.env.PREVIEW_*`; perspective `published` stays, anything
+   else → `drafts`). Errors → fixed text, never input echoed into the HTML.
+
+Why `sessionStorage` + header and not a cookie: Safari drops every cookie in a cross-site iframe
+(`Partitioned` too), and a URL token is lost on Presentation's reloads —
+`decisions/preview-session-in-sessionstorage.md`. Response headers (`frame-ancestors` etc.):
+`csp-and-headers.md` → "Preview function responses". Wrappers: `preview_enable.mts` (`path:
+'/api/preview-enable'` — not under `/api/preview/`, it would collide) and `preview.mts` (`path:
+['/api/preview/:locale', '/api/preview/:locale/:documentType/:documentId']`). Only `pages.njk`
+exists as a preview template, so post/product/category previews render nothing yet.
+
 ### Refunds (Studio order action → `payment-refund`)
 
 Triggered only from core-back's "Status aktualisieren" (core-back `studio-components.md` →
 Document actions) and the withdrawal "Refund & close". `payment-refund` (`x-server-secret`) takes
-`{ paymentIntentId, amount? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
-refund = the rest — and calls `stripe.refunds.create` with `metadata.itsshopsSource = 'studio'`
-(the function is only called from the Studio). The Studio then patches `paymentStatus`; the
+`{ orderId, amount? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
+refund = the rest. The **PaymentIntent comes from the order** (`fetchOrderById`), never from the
+request, so only a shop order can be refunded: unknown id, a `drafts.` id, a non-`order` document or
+an order without `paymentIntentId` → 404 `ORDER_NOT_FOUND` (fixed text). No amount cap of our own —
+Stripe rejects more than what's left. It calls `stripe.refunds.create` with
+`metadata.itsshopsSource = 'studio'` (the function is only called from the Studio) and a
+server-derived **idempotency key** `refund:<orderId>:<refundCount>:<amount|full>` (`refundCount` =
+`listRefunds(pi).length`, which only grows): two confirms at the same moment share the key → one
+refund (the in-flight twin gets Stripe's 409 → `REFUND_FAILED` 502); a same-key request after the
+first finished is **replayed** by Stripe (`lastResponse.headers['idempotent-replayed']`) → we
+answer 409 "Refund already processed" (sync still runs), so the second tab patches nothing and
+mails nobody. Not the charge's `amount_refunded`: an asynchronously failed refund drops out of it
+and a retry would replay the failed one. The secret is readable by every Studio member (core-back
+secrets document), which is why the server validates all of this. The Studio then patches `paymentStatus`; the
 `charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
 (`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
 entry (`source: 'stripe'`, on every run — a Studio refund therefore has an `admin` and a `stripe`

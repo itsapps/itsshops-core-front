@@ -14,6 +14,9 @@ alternative was rejected, a constraint discovered the hard way.
   paths; `exports` subpaths removed (postcss-import ignores `exports`).
 - [payment-permissions-policy-checkout-only.md](payment-permissions-policy-checkout-only.md) — Stripe
   Apple/Google Pay `payment` policy scoped to the checkout route (least privilege).
+- [preview-session-in-sessionstorage.md](preview-session-in-sessionstorage.md) — draft-preview
+  session token in the iframe's sessionStorage + header (Safari drops cross-site iframe cookies; a
+  URL token is lost on Presentation reloads).
 - [preview-fetches-all-documents.md](preview-fetches-all-documents.md) — preview fetches every doc
   (for cross-ref resolution) but renders only the previewed one.
 - [visual-editing-bundled-not-cdn.md](visual-editing-bundled-not-cdn.md) — Presentation overlay
