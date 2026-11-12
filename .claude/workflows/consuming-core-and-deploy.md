@@ -79,7 +79,9 @@ own files (e.g. a new function wrapper) deploy, the core code behind them doesn'
 staging, 2026-11-12 (frontend and Studio both). After a hash-only pin, deploy with Netlify →
 Deploys → Trigger deploy → **Clear cache and deploy site** (each affected project), and check the
 deploy actually serves the new core (a changed response header, a string in the Studio bundle). A
-pin that came from a real `npm install` with changed deps rebuilt fine.
+pin that came from a real `npm install` with changed deps rebuilt fine. A **tag** pin with a new version
+(`5.0.0` replacing `4.0.0`) rebuilds fine without clearing too — verified on Tinhof production,
+2026-11-12 (core-front 5.0.0 / core-back 6.0.0, normal builds served the new core).
 
 ### Production — only tagged core
 
