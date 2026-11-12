@@ -1,8 +1,9 @@
 # Plan — No secrets in the Studio bundle + security hardening (core-back + core-front)
 
-Status: **implemented, staging-tested on Tinhof (2026-11-12)** — A–F on `feature/security-hardening`
-in both cores, docs + CHANGELOGs (core-front 5.0.0, core-back 6.0.0) written. Open: merge, cut the
-tags, Tinhof production (rollout 4–6), then Jurtschitsch and Rosi Schuster. History: proposed
+Status: **released — core-front 5.0.0 / core-back 6.0.0; Tinhof live (frontend 1.15.0, backend
+1.11.0) since 2026-11-12.** Open: Tinhof rollout step 6 (rotate the Vinofact token, check the
+Netlify/Stripe/Resend logs); then Jurtschitsch and Rosi Schuster (rollout 4–6 each, same checklist —
+their Netlify PATs are revoked already). History: proposed
 2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
 contract, D's cookie/route and the rollout corrected; refined again 2026-11-11 — A's missing-secret
 message wiring, WineTab path, D's locale/perspective handling, frame-ancestors fallback, tests for
@@ -515,7 +516,9 @@ must stay reachable. Same core-front release also changes the withdrawal receipt
      why every value in them is rotated.
    - also add the `preview_enable.mts` wrapper and the widened `preview.mts` path to
      itsshops-starter `base/frontend/netlify/functions/` so new customers get them.
-5. Order: **Tinhof** (live) → Jurtschitsch → Rosi Schuster. Dormant customers get it when work
+5. Order: **Tinhof** (live — **done 2026-11-12**; production verified without customer impact:
+   empty-body secret check against the three Studio endpoints → 400 not 401, one mail to an own
+   address on a staff test order, Presentation, Deploy, Vinofact) → Jurtschitsch → Rosi Schuster. Dormant customers get it when work
    resumes (their PATs are revoked already, see top).
 6. Rotate after release: the Vinofact token (in the Tinhof, Jurtschitsch **and Rosi** bundles — all
    three have `SANITY_STUDIO_VINOFACT_API_TOKEN`; ask Vinofact what it allows, and rotate
