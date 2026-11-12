@@ -16,6 +16,7 @@
  */
 import { createClient } from '@sanity/client'
 import { validatePreviewUrl } from '@sanity/preview-url-secret'
+import { sanityApiVersion } from '../../config/constants'
 import { createPreviewSession, previewSessionCookie } from '../utils/preview-session'
 import { previewSecurityHeaders } from '../utils/preview-headers'
 
@@ -37,7 +38,8 @@ export function createPreviewEnableHandler() {
         projectId: process.env.SANITY_PROJECT_ID,
         dataset: process.env.SANITY_DATASET,
         token: process.env.SANITY_TOKEN,
-        apiVersion: '2025-02-19',
+        // validatePreviewUrl queries with its own pinned apiVersion (withConfig); ours is the default.
+        apiVersion: sanityApiVersion,
         useCdn: false,
       })
       // Throws (instead of isValid: false) on a missing token or a Sanity API error.
