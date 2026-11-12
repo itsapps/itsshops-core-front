@@ -273,6 +273,8 @@ must refuse anything the UI wouldn't do:
   `expectedRefunded` (its snapshot's counted total), `payment-refund` compares it with Stripe's live
   refunds → mismatch = 409 `REFUND_CONFLICT` (replays too) → core-back `changedMeanwhile`. The key
   stays for truly simultaneous requests. `FrontendResponse` errors now carry core-front's `code`.
+  Re-tested on Tinhof staging (2026-11-12): two tabs ~1 s apart, equal (2 €) and different
+  (3 €/4 €) amounts → only the first refunded, the second got "changed meanwhile".
 - `order-notify`: **already guarded, no change** (checked 2026-11-11): `customerMessage` is capped
   at `CUSTOMER_MESSAGE_MAX_LENGTH = 2000`, type-checked, and rendered as React text nodes per line
   (`templates/email/components/CustomerMessage.tsx`), so no HTML/links get injected. Recipients are
