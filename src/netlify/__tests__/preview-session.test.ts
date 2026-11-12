@@ -1,11 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  createPreviewSession,
-  verifyPreviewSession,
-  previewSessionCookie,
-  readCookie,
-  PREVIEW_COOKIE_NAME,
-} from '../utils/preview-session'
+import { createPreviewSession, verifyPreviewSession, scriptJson } from '../utils/preview-session'
 
 const NOW = Date.UTC(2026, 10, 12, 12, 0, 0)
 
@@ -51,18 +45,8 @@ describe('preview-session', () => {
     expect(() => createPreviewSession(NOW)).toThrow(/PREVIEW_SESSION_SECRET/)
   })
 
-  it('builds a cross-site iframe cookie scoped to the preview path', () => {
-    const cookie = previewSessionCookie('v')
-    expect(cookie).toMatch(/^itsshops_preview=v; /)
-    for (const attr of ['Max-Age=3600', 'Path=/api/preview', 'HttpOnly', 'Secure', 'SameSite=None', 'Partitioned']) {
-      expect(cookie).toContain(attr)
-    }
-  })
-
-  it('reads a cookie by name', () => {
-    const request = new Request('https://shop.example/', { headers: { cookie: `x=1; ${PREVIEW_COOKIE_NAME}=abc.def ; y=2` } })
-    expect(readCookie(request, PREVIEW_COOKIE_NAME)).toBe('abc.def')
-    expect(readCookie(request, 'missing')).toBeNull()
-    expect(readCookie(new Request('https://shop.example/'), PREVIEW_COOKIE_NAME)).toBeNull()
+  it('scriptJson escapes < so a value cannot close a script element', () => {
+    expect(scriptJson('</script><b>')).toBe('"\\u003c/script>\\u003cb>"')
+    expect(JSON.parse(scriptJson('</script>'))).toBe('</script>')
   })
 })

@@ -12,10 +12,10 @@ import { preview } from '../functions/preview'
 import { createPreviewSession } from '../utils/preview-session'
 
 const params = { locale: 'de', documentType: 'page', documentId: 'abc-123' }
-const call = (opts: { cookie?: string | null; params?: Record<string, string>; query?: string } = {}) => {
+const call = (opts: { token?: string | null; params?: Record<string, string>; query?: string } = {}) => {
   const headers: Record<string, string> = {}
-  const cookie = opts.cookie === undefined ? `itsshops_preview=${createPreviewSession()}` : opts.cookie
-  if (cookie) headers.cookie = cookie
+  const token = opts.token === undefined ? createPreviewSession() : opts.token
+  if (token !== null) headers['x-preview-session'] = token
   return preview({
     request: new Request(`https://shop.example/api/preview/de/page/abc-123${opts.query ?? ''}`, { headers }),
     context: { params: opts.params ?? params } as unknown as Context,
@@ -34,14 +34,21 @@ describe('preview', () => {
     vi.restoreAllMocks()
   })
 
-  it('no cookie → 401', async () => {
-    const res = await call({ cookie: null })
-    expect(res.status).toBe(401)
+  it('no header → the loader page, no render', async () => {
+    const res = await call({ token: null })
+    expect(res.status).toBe(200)
+    const html = await res.text()
+    expect(html).toContain('sessionStorage.getItem("itsshops_preview")')
+    expect(html).toContain('"x-preview-session":t')
+    expect(html).toContain('role="status"')
     expect(toJSON).not.toHaveBeenCalled()
+    expect(res.headers.get('content-security-policy')).toBe('frame-ancestors https://studio.example')
   })
 
-  it('bad cookie → 401', async () => {
-    expect((await call({ cookie: 'itsshops_preview=forged.sig' })).status).toBe(401)
+  it('invalid or empty header → 401', async () => {
+    expect((await call({ token: 'forged.sig' })).status).toBe(401)
+    expect((await call({ token: '' })).status).toBe(401)
+    expect(toJSON).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -50,6 +57,7 @@ describe('preview', () => {
     { ...params, documentType: 'order' },
     { ...params, documentId: 'a b' },
     { ...params, documentId: 'x'.repeat(129) },
+    { locale: 'de', documentType: 'page' },
   ])('bad params → 400 (%o)', async (p) => {
     const res = await call({ params: p })
     expect(res.status).toBe(400)
@@ -62,7 +70,16 @@ describe('preview', () => {
     expect(await res.text()).toBe('<p>ok</p>')
     expect(res.headers.get('content-security-policy')).toBe('frame-ancestors https://studio.example')
     expect(res.headers.get('x-robots-tag')).toBe('noindex')
+    expect(res.headers.get('cache-control')).toBe('private, no-store')
     expect(process.env.PREVIEW_PERSPECTIVE).toBe('drafts')
+    expect(process.env.PREVIEW_ID).toBe('abc-123')
+  })
+
+  it('/api/preview/:locale renders the home page (type page, no id)', async () => {
+    const res = await call({ params: { locale: 'de' } })
+    expect(res.status).toBe(200)
+    expect(process.env.PREVIEW_TYPE).toBe('page')
+    expect(process.env.PREVIEW_ID).toBe('')
   })
 
   it('keeps published, maps anything else to drafts', async () => {
@@ -82,7 +99,7 @@ describe('preview', () => {
     expect(res.headers.get('content-security-policy')).toContain('frame-ancestors')
   })
 
-  it('OPTIONS → 204 without a cookie', async () => {
+  it('OPTIONS → 204', async () => {
     const res = await preview({
       request: new Request('https://shop.example/api/preview/de/page/x', { method: 'OPTIONS' }),
       context: { params } as unknown as Context,

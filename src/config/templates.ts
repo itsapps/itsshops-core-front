@@ -113,7 +113,10 @@ export const loadTemplates = (ctx: CoreContext) => {
                 docType === 'category'       ? 'categories' :
                 docType === 'post'           ? 'posts'      : null
               if (!collection) return null
-              return data.cms[locale][collection].find((d: any) => d._id === data.coreConfig.preview.documentId) ?? null
+              // No id (`/api/preview/:locale`) → the home page.
+              const id = data.coreConfig.preview.documentId || (docType === 'page' ? data.cms[locale].settings?.homePageId : null)
+              if (!id) return null
+              return data.cms[locale][collection].find((d: any) => d._id === id) ?? null
             },
           }
         }
