@@ -445,6 +445,12 @@ set aside as more machinery than the leak needs.
 
 ## Rollout
 
+**Release state (2026-11-12):** everything is staging-tested. core-front merges
+`feature/security-hardening`; core-back merges **`fix/bundle-variant-labels`** (= the security
+branch + bundle labels, withdrawal dialog fixes) — both by merge commit, the Tinhof staging pins
+must stay reachable. Same core-front release also changes the withdrawal receipt recipients
+(`decisions/withdrawal-receipt-to-both-addresses.md`).
+
 **Branching (decided 2026-11-11):** Tinhof pins core-front `4.0.0` (= `main`) and core-back
 `5.4.0`. core-back `main` has unreleased menu levels, which are a no-op for Tinhof (no submenus,
 `maxDepth: 1`, no `disableSubmenus`; only jurtschitsch migrates). So there are no hotfix branches:
