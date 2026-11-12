@@ -18,6 +18,7 @@ import type { Context } from '@netlify/functions'
 import { sanityClient } from '../services/sanity'
 import { sendOrderNotification, type SendOrderNotificationOptions } from '../lib/order-notifier'
 import { log } from '../utils/logger'
+import { safeEqual } from '../utils/server-auth'
 import { splitNameForExport } from '../utils/name'
 import { paymentMethodLabel } from '../lib/payment-method'
 import { serverT } from '../utils/i18n'
@@ -266,15 +267,24 @@ function authenticate(request: Request): boolean {
   const qKey = url.searchParams.get('consumer_key')
   const qSecret = url.searchParams.get('consumer_secret')
   if (qKey && qSecret) {
-    return qKey === expectedKey && qSecret === expectedSecret
+    return safeEqual(qKey, expectedKey) && safeEqual(qSecret, expectedSecret)
   }
 
-  // Try Authorization: Basic header
+  // Try Authorization: Basic header (runs before the handler's try: must never throw)
   const authHeader = request.headers.get('authorization')
   if (authHeader?.startsWith('Basic ')) {
-    const decoded = atob(authHeader.slice(6))
-    const [user, pass] = decoded.split(':')
-    return user === expectedKey && pass === expectedSecret
+    let decoded: string
+    try {
+      decoded = atob(authHeader.slice(6))
+    } catch {
+      return false
+    }
+    // Split at the first ':' only — the secret may contain ':'
+    const sep = decoded.indexOf(':')
+    if (sep === -1) return false
+    const keyOk = safeEqual(decoded.slice(0, sep), expectedKey)
+    const secretOk = safeEqual(decoded.slice(sep + 1), expectedSecret)
+    return keyOk && secretOk
   }
 
   return false
@@ -542,13 +552,14 @@ async function handleListOrders(
     filters.push('status in $statuses')
     params.statuses = internalStatuses
   }
-  if (after) {
-    filters.push('_createdAt > $after')
-    params.after = new Date(after).toISOString()
-  }
-  if (before) {
-    filters.push('_createdAt < $before')
-    params.before = new Date(before).toISOString()
+  for (const [name, value, op] of [['after', after, '>'], ['before', before, '<']] as const) {
+    if (!value) continue
+    const date = new Date(value)
+    if (isNaN(date.getTime())) {
+      return wcError('rest_invalid_param', `Invalid parameter(s): ${name}`, 400)
+    }
+    filters.push(`_createdAt ${op} $${name}`)
+    params[name] = date.toISOString()
   }
 
   const start = (page - 1) * perPage
