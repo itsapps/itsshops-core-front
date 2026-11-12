@@ -103,7 +103,9 @@ export const loadTemplates = (ctx: CoreContext) => {
         if (dir === 'preview') {
           templateData.eleventyComputed = {
             pageDoc: (data: any) => {
-              const locale = data.coreConfig.preview.locale || data.coreConfig.defaultLocale
+              // Unknown locale (the preview function only checks the shape) → default locale.
+              const requested = data.coreConfig.preview.locale
+              const locale = requested && data.cms[requested] ? requested : data.coreConfig.defaultLocale
               const docType = data.coreConfig.preview.documentType
               const collection =
                 docType === 'page'           ? 'pages'      :
