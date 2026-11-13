@@ -162,6 +162,11 @@ Variant filter attributes accumulate during `resolveVariants` and `buildFilterGr
 `FilterGroup[]`. Each group has a `key`, `label`, and sorted `values` (`{value,label,count}`). Sort is
 key-aware: `vintage` descending, `volume` numeric, `category` by `sortOrder`, else by label. These
 drive the product-list filter UI (`src/scripts/product-filter.ts`, `filterGroupsForProducts` filter).
+**Bundles** have no wine data of their own, so after all variants are resolved
+`mergeBundleFilterAttributes` gives each bundle the union of its items' attributes (wine fields and
+option groups; "contains a red") on top of its own — categories stay the bundle's own. Each gained
+value counts once. Without it any non-price filter hid every bundle. No flag (owner, 2026-11-13);
+add one only if a shop wants bundles out of attribute filters. Tests: `bundle-filters.test.ts`.
 
 ## Portable text (`src/data/portableText.ts`)
 

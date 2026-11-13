@@ -26,6 +26,9 @@ shipping 0 for it.
   after `productPrice` (import it from `macros/product.njk`); a card override that replaces
   `product_card_price`: add it with `class="product-card__bundle-total"`. Style
   `.product__bundle-total` / `.product-card__bundle-total`.
+- Bundles match the product-list filters by their items' attributes (colour, grape, vintage, size,
+  option groups — "contains a …"; categories stay the bundle's own). Before, any non-price filter
+  hid every bundle. No template change.
 - Nothing else: without flagged variants and bundles nothing changes.
 
 ## 5.0.0

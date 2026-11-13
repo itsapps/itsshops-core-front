@@ -4,7 +4,7 @@ import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from
 import type { ResolvedCategory, ResolvedVariant } from '../../types/data'
 import { resolveString } from '../localizers'
 import { formatVolumeMl } from '../../filters'
-import { buildFilterAttributes, accumulateFilterGroups, type FilterAccumulator } from './filters'
+import { buildFilterAttributes, accumulateFilterGroups, mergeBundleFilterAttributes, type FilterAccumulator } from './filters'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -261,7 +261,7 @@ export function resolveVariants(
   const variantUrlMap = new Map(withSlugs.map(({ variant, url }) => [variant._id, url]))
 
   // Second pass: fully resolve
-  return withSlugs.map(({ variant, product, slug, url }) => {
+  const resolvedVariants = withSlugs.map(({ variant, product, slug, url }): ResolvedVariant => {
     const rawCategories: any[] = variant.categories?.length
       ? variant.categories
       : (product.categories ?? [])
@@ -509,4 +509,7 @@ export function resolveVariants(
 
     return resolved
   })
+
+  mergeBundleFilterAttributes(resolvedVariants, filterAcc)
+  return resolvedVariants
 }
