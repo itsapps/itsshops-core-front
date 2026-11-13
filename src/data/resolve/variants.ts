@@ -202,6 +202,33 @@ export function effectiveStatus(
   return unpriced ? 'unavailable' : status
 }
 
+/**
+ * A bundle's items at their single prices (item variant's price, else its product's) × quantity —
+ * only when that is more than the bundle's price. `null` for other kinds, a bundle without items,
+ * a missing or unpriced item. Shown as "Summe der Einzelpreise" (`productBundleItemsTotal`), not as
+ * a former price: the bundle never cost this.
+ */
+export function bundleItemsTotal(
+  raw: any,
+  bundlePrice: number,
+  rawVariantMap: Map<string, any>,
+  productMap: Map<string, any>,
+): number | null {
+  const kind = stegaClean(raw.kind ?? productMap.get(raw.productId)?.kind)
+  if (kind !== 'bundle') return null
+  const items: any[] = raw.bundleItems ?? []
+  if (items.length === 0) return null
+  let total = 0
+  for (const b of items) {
+    const item = rawVariantMap.get(b.variantId)
+    if (!item) return null
+    const price: number | null | undefined = hasPrice(item.price) ? item.price : productMap.get(item.productId)?.price
+    if (!hasPrice(price)) return null
+    total += (price as number) * (b.quantity ?? 1)
+  }
+  return total > bundlePrice ? total : null
+}
+
 // ---------------------------------------------------------------------------
 // Resolver
 // ---------------------------------------------------------------------------
@@ -403,6 +430,7 @@ export function resolveVariants(
       kind,
       price:          variant.price ?? product.price ?? 0,
       compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
+      bundleItemsTotal: bundleItemsTotal(variant, variant.price ?? product.price ?? 0, rawVariantMap, productMap),
       image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
       productImage:   ctx.resolveLocaleAltImage(product.image),
       seo:            ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),

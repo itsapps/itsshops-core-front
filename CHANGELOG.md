@@ -20,6 +20,12 @@ shipping 0 for it.
 - A card override that replaces `product_card_price`: add
   `{{ productFreeShipping(product, class="product-card__free-shipping") }}` (import it from
   `macros/product.njk`; gate on `coreConfig.features.shop.checkout`).
+- Bundles show "Summe der Einzelpreise: €X" under the price when their items cost more singly
+  (`bundleItemsTotal`, macro `productBundleItemsTotal`; hidden when `compareAtPrice` is set). A
+  full `overridable/product/container.njk` override: add `{{ productBundleItemsTotal(product) }}`
+  after `productPrice` (import it from `macros/product.njk`); a card override that replaces
+  `product_card_price`: add it with `class="product-card__bundle-total"`. Style
+  `.product__bundle-total` / `.product-card__bundle-total`.
 - Nothing else: without flagged variants nothing changes.
 
 ## 5.0.0

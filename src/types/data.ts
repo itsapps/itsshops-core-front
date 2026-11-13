@@ -325,6 +325,9 @@ export type ResolvedVariant = {
   /** Explicit shipping weight (grams) — the variant's, else the product's; null when unset (wines
    *  are then estimated from the volume, see `resolveVariantWeight`). */
   weight: number | null
+  /** Bundles only: the items at their single prices × quantity, when more than the bundle's price;
+   *  else null. Not a former price — rendered by `productBundleItemsTotal`, never struck through. */
+  bundleItemsTotal: number | null
   /** The whole order ships free when the cart holds this variant (false for digital / unset). */
   grantsFreeShipping: boolean
   wine: ResolvedWine | null

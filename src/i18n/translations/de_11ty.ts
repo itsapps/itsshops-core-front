@@ -64,6 +64,7 @@ export default {
   product: {
     taxShippingInfoText: "Inkl. MwSt. / Exkl. Versandkosten",
     taxFreeShippingInfoText: "Inkl. MwSt. / Versandkostenfrei",
+    bundleItemsTotal: "Summe der Einzelpreise: {{amount}}",
     freeShipping: "Versandkostenfrei",
     cartButton: {
       addToCart: "In den Warenkorb",

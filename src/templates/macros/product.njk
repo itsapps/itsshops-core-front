@@ -4,7 +4,8 @@
  #   {% from "macros/product.njk" import productPrice, productStatus,
  #      productSiblings, productVariantSelector, productWineDetails,
  #      productBundleItems, productOptions, productCategories,
- #      productManufacturers, productFreeShipping, qtyControl, addToCartButton %}
+ #      productManufacturers, productFreeShipping, productBundleItemsTotal, qtyControl,
+ #      addToCartButton %}
  #
  #}
 
@@ -32,6 +33,21 @@
     <span class="{{ class }}-per-liter">({{ (product.price / product.wine.volume * 1000) | round | formatPrice(product.locale) }}/l)</span>
   {%- endif %}
 </div>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Bundle: sum of single prices ────────────────────────────────────────────
+ # "Summe der Einzelpreise: €54,00" when a bundle's items cost more bought singly. Its own line,
+ # not a strikethrough: the bundle never cost this (a "was" price would announce a reduction).
+ # Hidden when an editor set compareAtPrice (that one is shown by productPrice).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__bundle-total")
+ #}
+{% macro productBundleItemsTotal(product, class="product__bundle-total") %}
+{%- if product.bundleItemsTotal and not product.compareAtPrice %}
+<p class="{{ class }}">{{ 'product.bundleItemsTotal' | trans({ lng: product.locale, amount: product.bundleItemsTotal | formatPrice(product.locale) }) }}</p>
 {%- endif %}
 {% endmacro %}
 

@@ -1,4 +1,4 @@
-{% from "macros/product.njk" import productPrice, productFreeShipping, productStatus, qtyControl, addToCartButton %}
+{% from "macros/product.njk" import productPrice, productBundleItemsTotal, productFreeShipping, productStatus, qtyControl, addToCartButton %}
 
 <article class="product-card">
   {% block product_card_inner %}
@@ -22,6 +22,7 @@
       {% endblock %}
       {% block product_card_price %}
         {{ productPrice(product, class="product-card__price", perLiter=true) }}
+        {{ productBundleItemsTotal(product, class="product-card__bundle-total") }}
         {%- if coreConfig.features.shop.checkout %}
         {{ productFreeShipping(product, class="product-card__free-shipping") }}
         {%- endif %}

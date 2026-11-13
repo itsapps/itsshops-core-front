@@ -1,4 +1,4 @@
-{% from "macros/product.njk" import addToCartButton, productPrice, productStatus, qtyControl, productSiblings,
+{% from "macros/product.njk" import addToCartButton, productPrice, productBundleItemsTotal, productStatus, qtyControl, productSiblings,
   productWineDetails, productDescription, productSpecifications, productBundleItems, productOptions,
   productCategories, productManufacturers %}
 
@@ -29,6 +29,7 @@
 
     <div class="product__purchase">
       {{ productPrice(product, perLiter=true) }}
+      {{ productBundleItemsTotal(product) }}
 
       {% block product_cart_control %}
       {%- if coreConfig.features.shop.checkout -%}

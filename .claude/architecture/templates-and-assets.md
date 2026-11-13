@@ -423,6 +423,18 @@ put only the fonts needed above the fold there.
 image shortcodes/filters that wrap `src/image/`, and `src/schema/` schema.org output. Full catalog:
 [filters-and-shortcodes.md](filters-and-shortcodes.md).
 
+### Bundle: sum of single prices
+
+`ResolvedVariant.bundleItemsTotal` (`bundleItemsTotal()` in `src/data/resolve/variants.ts`): a
+bundle's items at their single prices (variant's, else product's) × quantity, set only when more
+than the bundle's price (null for a missing/unpriced item). Rendered by the macro
+`productBundleItemsTotal(product, class)` ("Summe der Einzelpreise: €X", `product.bundleItemsTotal`)
+as its own muted line under the price — **not** in `productPrice` and not struck through: the
+bundle never cost this, so a "was" price would announce a reduction it isn't. Hidden when the
+editor set `compareAtPrice`. Core calls it on the product page and in the card's
+`product_card_price` block; a full `product/container.njk` override must add the call. Updates
+with the next build (item price changes included).
+
 ### Product free shipping in templates
 
 A variant with `grantsFreeShipping` (core-front `commerce-and-netlify.md` → "Product free

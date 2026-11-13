@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { stegaEncodeSourceMap } from '@sanity/client/stega'
-import { effectiveStatus, resolveVariants } from '../resolve/variants'
+import { bundleItemsTotal, effectiveStatus, resolveVariants } from '../resolve/variants'
 
 const product = (id: string, over: Record<string, unknown> = {}) => ({ _id: id, kind: 'wine', title: null, price: null, ...over })
 const variant = (id: string, productId: string, over: Record<string, unknown> = {}) => ({
@@ -100,5 +100,23 @@ describe('resolveVariants — grantsFreeShipping', () => {
     expect(resolve(variant('m', 'pm')).grantsFreeShipping).toBe(false)
     expect(resolve(variant('n', 'pn', { grantsFreeShipping: null })).grantsFreeShipping).toBe(false)
     expect(resolve(variant('d', 'pd', { kind: 'digital', wine: null, grantsFreeShipping: true })).grantsFreeShipping).toBe(false)
+  })
+})
+
+describe('bundleItemsTotal', () => {
+  // items: a = €15 (own price), b = €9 (product price); bundle = 2 × a + 1 × b = €39
+  it('sums the items at their single prices × quantity when more than the bundle price', () => {
+    expect(bundleItemsTotal(bundle(), 3000, rawMap, products)).toBe(3900)
+  })
+  it('null when not more than the bundle price', () => {
+    expect(bundleItemsTotal(bundle(), 3900, rawMap, products)).toBeNull()
+    expect(bundleItemsTotal(bundle(), 4500, rawMap, products)).toBeNull()
+  })
+  it('null for a missing or unpriced item, no items, or another kind', () => {
+    expect(bundleItemsTotal(bundle({ bundleItems: [{ quantity: 1, variantId: 'gone' }] }), 100, rawMap, products)).toBeNull()
+    const unpriced = new Map([...rawMap, ['c', variant('c', 'pa', { price: null })]])
+    expect(bundleItemsTotal(bundle({ bundleItems: [{ quantity: 1, variantId: 'c' }] }), 100, unpriced, products)).toBeNull()
+    expect(bundleItemsTotal(bundle({ bundleItems: [] }), 100, rawMap, products)).toBeNull()
+    expect(bundleItemsTotal(items[0], 100, rawMap, products)).toBeNull()
   })
 })
