@@ -4,6 +4,24 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+Products that make the whole order ship free (plan `.claude/plans/product-free-shipping.md`; pairs
+with core-back's `shop.productFreeShipping`): a variant with `grantsFreeShipping` makes every
+delivery method free for the whole order; the order stores why shipping was free
+(`fulfillment.freeShippingReason`: `product` / `threshold` / `coupon`); cards show
+"Versandkostenfrei", the product page's tax line reads "Inkl. MwSt. / Versandkostenfrei", the
+"Versand & Zahlung" module adds a sentence while such a variant is active; schema.org publishes
+shipping 0 for it.
+
+### Upgrading
+- A full `overridable/product/container.njk` override: switch the tax line to
+  `{{ ('product.taxFreeShippingInfoText' if product.grantsFreeShipping else 'product.taxShippingInfoText') | trans }}`.
+- A card override that replaces `product_card_price`: add
+  `{{ productFreeShipping(product, class="product-card__free-shipping") }}` (import it from
+  `macros/product.njk`; gate on `coreConfig.features.shop.checkout`).
+- Nothing else: without flagged variants nothing changes.
+
 ## 5.0.0
 
 Security hardening (plan `.claude/plans/studio-auth-and-security-hardening.md`): draft preview

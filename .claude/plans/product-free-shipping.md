@@ -1,7 +1,10 @@
 # Plan — products that make the whole order ship free
 
-Status: **planned** (2026-11-12), nothing implemented. Refined 2026-11-12 against core-front 5.0.0 /
-core-back 6.0.0 (paths, reason flow via `orderMeta`, product-page tax line, pickup check).
+Status: **implemented in core** (2026-11-12, core-front + core-back `main`, unreleased; Tinhof
+frontend override + card style done) — open: rollout steps 2 (Tinhof backend flag) and 4–5.
+Planned 2026-11-12. Refined 2026-11-12 against core-front 5.0.0 /
+core-back 6.0.0 (paths, reason flow via `orderMeta`, product-page tax line, pickup check); second
+refine same day (typegen step, card-note gating, flag-off behaviour, test fixtures).
 Spans **core-back** (variant field, feature flag, order snapshot field, Studio display) and
 **core-front** (shipping logic, cart validation, order snapshot, product note, shipping info text).
 Tinhof is the first user (bundles go on sale soon). The trigger is generic, so it lives in core:
@@ -44,6 +47,15 @@ Refinement decisions (owner, 2026-11-12):
   reason (`freeShippingReason` is only written for delivery, step 10). Revisit when pickup is
   properly supported.
 - Ignored on `digital` variants (they don't ship; the field is hidden there).
+- **The data is the switch in core-front.** core-front reads `grantsFreeShipping` whatever the
+  core-back flag says. Turning `shop.productFreeShipping` off only hides the field — variants that
+  still carry `true` keep waiving shipping. To switch the rule off: unset the field on every
+  variant first (`*[_type == "productVariant" && grantsFreeShipping == true]`, patch `unset`),
+  then turn the flag off.
+- **Checkout vs. static pages:** checkout reads published variants live (`CHECKOUT_QUERY`), so
+  shipping is free as soon as the variant is published; the card note, the product-page tax line,
+  the "Versand & Zahlung" sentence and schema.org change only with the next build (Studio
+  "Deploy").
 - Quantity doesn't matter: one line with qty ≥ 1 is enough.
 - **Packaging is still computed**: `packagingLines` stay on the order (fulfillment needs the boxes),
   only the price is 0. A method that can't pack the cart (size not covered) is still not offered.
@@ -85,9 +97,12 @@ Refinement decisions (owner, 2026-11-12):
      checkout, Rosi Schuster has `checkout: false` and no coupons (checked 2026-11-12).
      CHANGELOG: "coupons now need checkout".
 2. **Variant field** `grantsFreeShipping` (`boolean`, `initialValue: false`) in
-   `schemas/documents/productVariant.ts`, in the `pricing` group after `compareAtPrice`, added
-   only when `ctx.featureRegistry.isFeatureEnabled('shop.productFreeShipping')` (same pattern as
-   `stockEnabled` there), `hidden: ({ document }) => document?.kind === 'digital'`.
+   `schemas/documents/productVariant.ts`: next to `stockEnabled` (line ~26) add `const
+   freeShippingOn = ctx.featureRegistry.isFeatureEnabled('shop.productFreeShipping')`; in the
+   `pricing` group's `fields` array, after the `compareAtPrice` `priceField`, spread
+   `...(freeShippingOn ? [f('grantsFreeShipping', 'boolean', { initialValue: false, hidden: ({
+   document }) => document?.kind === 'digital' })] : [])` (the group wrapper assigns the group,
+   as for `compareAtPrice`).
    Title/description in `localization/resources/fields_de.ts` / `fields_en.ts` under
    `productVariant.fields` (variant-only field, so not in the shared top-level `fields` where
    `compareAtPrice` lives): "Versandkostenfrei" / "Macht die ganze
@@ -110,8 +125,10 @@ Refinement decisions (owner, 2026-11-12):
    durch Produkt" / "Free shipping (product)", `threshold` "Versandkostenfrei ab Bestellwert" /
    "Free shipping (order value)", `coupon` "Versandkostenfrei durch Gutschein" / "Free shipping
    (coupon)". Orders without the field show as before.
-5. Regenerate `sanity.types.ts` (core-back's usual typegen) and copy it to core-front
-   (`src/types/sanity.types.ts`).
+5. Regenerate core-back's types: `npm run types` (extract + typegen → `src/types/sanity.types.ts`;
+   the root workspace runs with the full feature superset, so `allFeatures()` from step 1 puts the
+   field in). core-front has **no** generated types file — its types are hand-written (steps 6, 7,
+   10).
 
 ## Steps — core-front
 
@@ -160,8 +177,12 @@ Refinement decisions (owner, 2026-11-12):
     `templates/macros/product.njk` (add to the usage comment at the top): when
     `product.grantsFreeShipping`, `<p class="{{ class }}">{{ 'product.freeShipping' | trans({ lng:
     product.locale }) }}</p>`. Plain text, not icon-only; an added icon is `aria-hidden`. Use it
-    in `core/components/product/card.njk` inside the `product_card_price` block, after
-    `productPrice` (`class="product-card__free-shipping"`), so customer cards that `extend` core and
+    in `core/components/product/card.njk` (add `productFreeShipping` to its `{% from
+    "macros/product.njk" import … %}` line) inside the `product_card_price` block, after
+    `productPrice`: `{% if coreConfig.features.shop.checkout %}{{ productFreeShipping(product,
+    class="product-card__free-shipping") }}{% endif %}` — gated at the call site because the macros
+    are imported without context (no `coreConfig` inside), and a shop without checkout has no
+    shipping to waive. Customer cards that `extend` core and
     don't override that block (Tinhof's) get it with no change. It sits inside the card link, so
     it becomes part of the link name ("… €49,00 Versandkostenfrei") — fine.
 13. **Product page:** in `core/components/product/container.njk` (line ~35) the tax line becomes
@@ -197,8 +218,15 @@ Refinement decisions (owner, 2026-11-12):
   delivery at shipping 0; no reason input → no field.
 - `src/schema/__tests__/schema.test.ts`: flagged variant → shipping rate 0 for every delivery
   method.
-- Data layer (`src/data/__tests__/`): resolved `grantsFreeShipping` false for digital / missing;
-  `hasFreeShippingProducts` only for an active flagged variant.
+- Data layer (`src/data/__tests__/bundle-status.test.ts` already calls `resolveVariants` — add the
+  cases there or in a new `variants.test.ts` with the same setup): resolved `grantsFreeShipping`
+  false for digital / missing. `hasFreeShippingProducts` is one inline expression in `resolver.ts`
+  (no unit test; checked on staging, rollout step 4).
+- Fixtures: `grantsFreeShipping` is required on `ValidatedCartItem` (and so on `ShippingCartItem`),
+  so the item helpers in `shipping.test.ts`, `totals.test.ts`, `tax.test.ts` and
+  `order-builder.test.ts` get `grantsFreeShipping: false` (vitest doesn't type-check, but keep them
+  valid for the editor). Production code that builds these items: only `cart-validator.ts` (step 7)
+  and `src/schema/shipping.ts` (step 11) — tsup's `dts` build fails if one is missed.
 
 ## Docs
 
@@ -217,7 +245,7 @@ backend `CLAUDE.md` when it ships (flag on, which variants carry it).
    treats a missing field as `false`; core-back first lets editors set the flag before the
    frontend uses it.
 2. Tinhof backend: `features.shop.productFreeShipping: true`; pin core-back (commit for staging).
-   Set the flag on each bundle in **development** for staging.
+   Set the flag on each bundle in **development** for staging, then trigger the staging build.
 3. Tinhof frontend: in its full override `overridable/product/container.njk` (line ~66) switch the
    tax line as in step 13. `overridable/product/card.njk` extends core and leaves
    `product_card_price` alone → gets the note automatically; style `.product-card__free-shipping`
@@ -230,7 +258,8 @@ backend `CLAUDE.md` when it ships (flag on, which variants carry it).
    wines → reason `coupon`; Apple Pay / express checkout shows shipping 0; wc-api shipping line 0;
    product page tax line "Inkl. MwSt. / Versandkostenfrei"; "Versand & Zahlung" shows the sentence.
 5. Production (`release tinhof`): core semver tags + CHANGELOGs, pin tags, set the flag on the
-   bundles in **production**; Rich Results Test on a bundle page (shipping €0); tell the owner how
+   bundles in **production** and run the Studio "Deploy" (static pages change only with a
+   build); Rich Results Test on a bundle page (shipping €0); tell the owner how
    the flag works (per variant, whole order, every delivery method).
 
 ## Open decisions

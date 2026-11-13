@@ -218,6 +218,23 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   used by the schema.org shipping details and the `cms` settings. Coupons are gross as well
   (`coupon.ts`: percent of the gross subtotal, `minSubtotal` against it); the discount is spread
   proportionally over the items for the VAT breakdown (`totals.ts`).
+- **Product free shipping** (plan `.claude/plans/product-free-shipping.md`): a variant with
+  `grantsFreeShipping` (core-back flag `shop.productFreeShipping` shows the field; core-front reads
+  the field whatever the flag — the data is the switch) makes **every delivery method** cost 0 for
+  the **whole order**, other items included, whatever the subtotal or `freeShippingCalculation`.
+  Only the line's own flag counts (`CHECKOUT_QUERY` reads it on the top-level variant, not on
+  bundle children); `cart-validator.ts` sets `ValidatedCartItem.grantsFreeShipping` from the server
+  variant (false for digital). `resolveShippingMethods` still computes the boxes
+  (`packagingLines` stay on the order) and still drops a method that can't pack the cart; pickup
+  is untouched. To switch the rule off: unset the field on every variant first, then the flag.
+- **Why shipping was free** → `fulfillment.freeShippingReason` (`product` / `threshold` /
+  `coupon`, Studio order view only; checkout, mails, invoice unchanged). `resolveShippingMethods`
+  sets `freeReason` (`product` > `threshold`, server only — `payment-create.ts` maps the client
+  response field by field) on free delivery methods; `freeShippingReason(selected,
+  couponZeroShipping)` in `shipping.ts` adds the coupon as the last resort, and `buildOrderMeta`
+  stores it only for delivery at shipping 0. A `freeShipping` coupon in a cart that already ships
+  free stays applied with 0 discount (`zeroShipping` is false then). The order copies it from
+  `orderMeta.fulfillment`.
 - **Shipping weight** (grams): `resolveVariantWeight` (physical: variant/product `weight`; wine: the
   same, else estimated from the volume) and `resolveBundleWeight` in `shipping.ts`, used by
   `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the

@@ -249,6 +249,12 @@ describe('shipping details', () => {
     expect(shippingDetails[0].shippingRate.value).toBe(17)
   })
 
+  it('variant that grants free shipping → rate 0 for every delivery method', () => {
+    const { shippingDetails } = main(productPage(variant({ grantsFreeShipping: true }))).offers
+    expect(shippingDetails).toHaveLength(2)
+    expect(shippingDetails.map((d: any) => d.shippingRate.value)).toEqual([0, 0])
+  })
+
   it('free-shipping threshold → rate 0', () => {
     const shopData = shop({ shippingMethods: [method({ freeShippingThreshold: 1000 })] })
     expect(main(productPage(variant(), { shopData })).offers.shippingDetails[0].shippingRate.value).toBe(0)

@@ -17,6 +17,8 @@ export type SanityVariantResult = {
   price: number | null
   weight: number | null
   stock: number | null
+  /** The whole order ships free when the cart holds this variant (top-level lines only). */
+  grantsFreeShipping?: boolean | null
   productId: string | null
   taxCategoryCode: string | null
   productTitle: LocaleString[] | null
@@ -162,6 +164,8 @@ export type ValidatedCartItem = {
   wine: { vintage: string | null; volume: number | null } | null
   options: { groupTitle: string; optionTitle: string }[] | null
   bundleItems: ValidatedBundleItem[] | null
+  /** From the server variant (never the client); false for digital. Makes every delivery method free. */
+  grantsFreeShipping: boolean
 }
 
 /**
@@ -212,6 +216,8 @@ export type AvailableShippingMethod = {
   methodType: 'delivery' | 'pickup'
   price: number
   isFree: boolean
+  /** Server only (never sent to the client): why a delivery method is free. */
+  freeReason?: 'product' | 'threshold'
   taxCategoryCode: string | null
   packagingLines?: Array<{ volumes: number[]; packSize: number; quantity: number; price: number }>
 }
@@ -314,6 +320,8 @@ export type OrderPaymentMethod = {
   wallet?: string
 }
 
+export type FreeShippingReason = 'product' | 'threshold' | 'coupon'
+
 export type Fulfillment = {
   _type: 'fulfillment'
   methodTitle: string
@@ -321,6 +329,8 @@ export type Fulfillment = {
   deliveryTime?: string
   methodType: 'delivery' | 'pickup'
   shippingCost: number
+  /** Why a delivery method cost 0 (only set then) — shown in the Studio order view. */
+  freeShippingReason?: FreeShippingReason
   taxSnapshot: VatBreakdownItem & { _type: 'vatBreakdownItem' }
   method: { _type: 'reference'; _ref: string; _weak: true }
   packagingLines?: FulfillmentPackagingLine[]

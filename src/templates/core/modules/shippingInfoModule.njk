@@ -82,6 +82,9 @@
       {%- endif %}
     </section>
     {%- endfor %}
+    {%- if cms[_locale].hasFreeShippingProducts %}
+    <p class="shipping-info__product-free">{{ 'shippingInfo.productFreeShipping' | trans }}</p>
+    {%- endif %}
     <p class="shipping-info__note">{{ 'shippingInfo.pricesGross' | trans }}</p>
   </section>
 

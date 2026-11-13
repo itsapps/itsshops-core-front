@@ -19,6 +19,7 @@ function makeInput(overrides: Partial<BuildOrderMetaInput> = {}): BuildOrderMeta
     wine: { vintage: '2023', volume: 750 },
     options: null,
     bundleItems: null,
+    grantsFreeShipping: false,
   }]
 
   const selectedShipping: AvailableShippingMethod = {
@@ -166,6 +167,7 @@ describe('buildOrderMeta', () => {
           { groupTitle: 'Color', optionTitle: 'Red' },
         ],
         bundleItems: null,
+        grantsFreeShipping: false,
       }],
     })
     const meta = buildOrderMeta(input)
@@ -176,13 +178,38 @@ describe('buildOrderMeta', () => {
   })
 })
 
+describe('buildOrderMeta — free shipping reason', () => {
+  const free = (o: Partial<BuildOrderMetaInput> = {}) => {
+    const base = makeInput(o)
+    return makeInput({
+      selectedShipping: { ...base.selectedShipping, price: 0, isFree: true },
+      totals: { ...base.totals, shipping: 0 },
+      ...o,
+    })
+  }
+  it('stores the reason for a delivery method at shipping 0', () => {
+    expect(buildOrderMeta(free({ freeShippingReason: 'product' })).fulfillment.freeShippingReason).toBe('product')
+  })
+  it('no reason input → no field', () => {
+    expect(buildOrderMeta(free()).fulfillment).not.toHaveProperty('freeShippingReason')
+  })
+  it('ignores a reason when shipping is charged', () => {
+    expect(buildOrderMeta(makeInput({ freeShippingReason: 'coupon' })).fulfillment).not.toHaveProperty('freeShippingReason')
+  })
+  it('ignores a reason for pickup', () => {
+    const base = free()
+    const meta = buildOrderMeta({ ...base, selectedShipping: { ...base.selectedShipping, methodType: 'pickup' }, freeShippingReason: 'threshold' })
+    expect(meta.fulfillment).not.toHaveProperty('freeShippingReason')
+  })
+})
+
 describe('buildOrderMeta — bundle contents', () => {
   it('stores the items with per-bundle quantity and the VAT split', () => {
     const meta = buildOrderMeta(makeInput({
       items: [{
         variantId: 'b1', productId: 'pb', kind: 'bundle', title: 'Box', subtitle: '2× Wein, 1× Saft',
         sku: 'BOX', price: 3000, weight: 3500, quantity: 2, taxCategoryCode: '', vatRate: 13,
-        vatAmount: 552 + 200, wine: null, options: null,
+        vatAmount: 552 + 200, wine: null, options: null, grantsFreeShipping: false,
         bundleItems: [
           { key: 'ka', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: '2023 · 750 ml', sku: 'W', quantity: 2, kind: 'wine', weight: 1250, wine: { volume: 750 }, price: 2400, vatRate: 13, vatAmount: 552 },
           { key: 'kb', variantId: 'j', productId: 'pj', title: 'Saft', subtitle: null, sku: null, quantity: 1, kind: 'physical', weight: 1000, wine: null, price: 600, vatRate: 20, vatAmount: 200 },

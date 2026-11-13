@@ -130,6 +130,8 @@ export function validateCart(
       wine,
       options,
       bundleItems,
+      // Only the line's own flag counts (a bundle's children don't).
+      grantsFreeShipping: variant.kind !== 'digital' && variant.grantsFreeShipping === true,
     }
 
     validatedItems.push(item)

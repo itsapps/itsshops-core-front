@@ -414,6 +414,7 @@ export function resolveVariants(
       taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
       stock: variant.stock ?? null,
       weight: variant.weight ?? product.weight ?? null,
+      grantsFreeShipping: kind !== 'digital' && variant.grantsFreeShipping === true,
       wine,
       options: (variant.options ?? [])
         // guard against an option with an unset/dangling group ref (group is

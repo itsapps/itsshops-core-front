@@ -63,6 +63,8 @@ export default {
   },
   product: {
     taxShippingInfoText: "Incl. VAT / Excl. shipping costs",
+    taxFreeShippingInfoText: "Incl. VAT / Free shipping",
+    freeShipping: "Free shipping",
     cartButton: {
       addToCart: "Add to cart",
       addedToCart: "In cart",
@@ -537,6 +539,7 @@ export default {
     free: "free",
     freeShipping: "Free shipping",
     freeShippingFrom: "from an order value of {{amount}}",
+    productFreeShipping: "Products marked as free shipping make the whole order ship free.",
     packagingCaption: "Shipping costs for wine ({{volume}} bottles), per case",
     packagingShared: "{{count}} bottles of {{volume}} count as one bottle.",
     package: "Case",

@@ -15,7 +15,7 @@ import type { SanityCheckoutQueryResult, AppliedCouponSnapshot } from '../types/
 import { fetchCheckoutData, createOrderMeta, updateOrderMeta, fetchOrderMeta } from '../services/sanity'
 import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
-import { resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
+import { freeShippingReason, resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
 import { calculateTotals, type CouponDiscount } from '../lib/totals'
 import { dominantItemVatRate } from '../lib/tax'
 import { buildOrderMeta } from '../lib/order-builder'
@@ -266,6 +266,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       locale: req.locale,
       paymentIntentId: '',
       appliedCoupons: appliedCouponSnapshots,
+      freeShippingReason: freeShippingReason(selectedShipping, !!couponDiscount?.zeroShipping),
     })
 
     if (req.orderMetaId) {

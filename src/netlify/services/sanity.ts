@@ -48,7 +48,7 @@ export const sanityClient = new Proxy({} as SanityClient, {
 
 const CHECKOUT_QUERY = `{
   "variants": *[_type == "productVariant" && _id in $variantIds]{
-    _id, status, kind, title, sku, price, weight, stock,
+    _id, status, kind, title, sku, price, weight, stock, grantsFreeShipping,
     "productId": product._ref,
     "taxCategoryCode": taxCategory->code.current,
     "productTitle": product->title,

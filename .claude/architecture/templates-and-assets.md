@@ -423,6 +423,18 @@ put only the fonts needed above the fold there.
 image shortcodes/filters that wrap `src/image/`, and `src/schema/` schema.org output. Full catalog:
 [filters-and-shortcodes.md](filters-and-shortcodes.md).
 
+### Product free shipping in templates
+
+A variant with `grantsFreeShipping` (core-front `commerce-and-netlify.md` → "Product free
+shipping"): the product page's tax line (`core/components/product/container.njk`) reads
+`product.taxFreeShippingInfoText` ("Inkl. MwSt. / Versandkostenfrei") instead of
+`product.taxShippingInfoText` — a full `product/container.njk` override must switch the same line.
+Cards get the macro `productFreeShipping(product, class)` (`macros/product.njk`, plain text inside
+the card link) in the `product_card_price` block, gated on `features.shop.checkout` at the call
+site; a card override that replaces that block must add it. The "Versand & Zahlung" module adds
+one sentence when `cms[locale].hasFreeShippingProducts` (any active flagged variant). All of this
+changes only with a build; checkout reads the flag live.
+
 ### schema.org (JSON-LD, `src/schema/`)
 
 `core/head/schemas.njk` emits, on every non-noindex page, `WebSite` + `Organization` (only when
@@ -449,7 +461,8 @@ Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only
   (numbers: "2 – 5 Werktage"; unparseable → omitted, and Google ignores the entry). Weight: the
   variant's or product's `weight`, wines estimated from the volume (`resolveVariantWeight` /
   `resolveBundleWeight` in `netlify/lib/shipping.ts`, shared with checkout). Rates without
-  `maxWeight` aren't published.
+  `maxWeight` aren't published. A variant with `grantsFreeShipping` publishes rate 0 for every
+  method (`variantToCartItem` passes the flag), as checkout charges.
 - **`hasMerchantReturnPolicy`** on the `Organization` **and on each offer** (Google's Rich Results
   Test doesn't apply the Organization's policy to offers — checked live 2026-10-19): 14 days
   by mail to the union of the delivery methods' countries, `returnPolicyCountry` = return address

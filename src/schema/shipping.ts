@@ -53,6 +53,7 @@ export function variantToCartItem(variant: ResolvedVariant): ShippingCartItem {
     quantity: 1,
     weight: children ? resolveBundleWeight(children) : resolveVariantWeight({ kind, weight: variant.weight, wine }),
     wine,
+    grantsFreeShipping: variant.grantsFreeShipping,
     // Same per-child weights as checkout's `bundleItems[].weight` (explicit first, wine estimated)
     bundleItems: children?.map(c => ({ ...c, weight: resolveVariantWeight(c) })) ?? null,
   }

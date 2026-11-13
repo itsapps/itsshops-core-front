@@ -79,3 +79,26 @@ describe('resolveVariants follows the effective status', () => {
     expect(w22.siblings[0].status).toBe('unavailable')
   })
 })
+
+describe('resolveVariants — grantsFreeShipping', () => {
+  const ctx = {
+    locale: 'de', defaultLocale: 'de', units: { volume: 'ml' },
+    resolveString: (v: unknown) => (typeof v === 'string' ? v : ''),
+    resolveLocaleAltImage: () => null,
+    resolveSeo: () => ({}),
+    translate: (k: string) => k,
+  }
+  const permalinks = { de: { product: 'produkt' } }
+  const resolve = (v: Record<string, unknown>) => {
+    const raw = [v]
+    const prods = new Map([[v.productId as string, product(v.productId as string, { kind: v.kind })]])
+    return resolveVariants(raw, prods, ctx as never, permalinks as never, new Map(), new Map([[v.productId as string, raw]]), new Map())[0]
+  }
+
+  it('true only when set on a non-digital variant', () => {
+    expect(resolve(variant('f', 'pf', { grantsFreeShipping: true })).grantsFreeShipping).toBe(true)
+    expect(resolve(variant('m', 'pm')).grantsFreeShipping).toBe(false)
+    expect(resolve(variant('n', 'pn', { grantsFreeShipping: null })).grantsFreeShipping).toBe(false)
+    expect(resolve(variant('d', 'pd', { kind: 'digital', wine: null, grantsFreeShipping: true })).grantsFreeShipping).toBe(false)
+  })
+})

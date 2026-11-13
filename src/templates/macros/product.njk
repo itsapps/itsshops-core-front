@@ -4,7 +4,7 @@
  #   {% from "macros/product.njk" import productPrice, productStatus,
  #      productSiblings, productVariantSelector, productWineDetails,
  #      productBundleItems, productOptions, productCategories,
- #      productManufacturers, qtyControl, addToCartButton %}
+ #      productManufacturers, productFreeShipping, qtyControl, addToCartButton %}
  #
  #}
 
@@ -32,6 +32,20 @@
     <span class="{{ class }}-per-liter">({{ (product.price / product.wine.volume * 1000) | round | formatPrice(product.locale) }}/l)</span>
   {%- endif %}
 </div>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Free shipping note ──────────────────────────────────────────────────────
+ # "Versandkostenfrei" when the variant makes the whole order ship free. Plain text (part of the
+ # card link's name). Callers gate it on checkout (macros are imported without context).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__free-shipping")
+ #}
+{% macro productFreeShipping(product, class="product__free-shipping") %}
+{%- if product.grantsFreeShipping %}
+<p class="{{ class }}">{{ 'product.freeShipping' | trans({ lng: product.locale }) }}</p>
 {%- endif %}
 {% endmacro %}
 

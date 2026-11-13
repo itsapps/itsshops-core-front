@@ -63,6 +63,8 @@ export default {
   },
   product: {
     taxShippingInfoText: "Inkl. MwSt. / Exkl. Versandkosten",
+    taxFreeShippingInfoText: "Inkl. MwSt. / Versandkostenfrei",
+    freeShipping: "Versandkostenfrei",
     cartButton: {
       addToCart: "In den Warenkorb",
       addedToCart: "Im Warenkorb",
@@ -537,6 +539,7 @@ export default {
     free: "kostenlos",
     freeShipping: "Versandkostenfrei",
     freeShippingFrom: "ab einem Bestellwert von {{amount}}",
+    productFreeShipping: "Als versandkostenfrei gekennzeichnete Produkte machen die ganze Bestellung versandkostenfrei.",
     packagingCaption: "Versandkosten für Wein ({{volume}} Flaschen), je Karton",
     packagingShared: "{{count}} Flaschen à {{volume}} zählen als eine Flasche.",
     package: "Karton",

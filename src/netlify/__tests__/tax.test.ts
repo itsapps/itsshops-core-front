@@ -18,6 +18,7 @@ function makeItem(overrides: Partial<ValidatedCartItem> = {}): ValidatedCartItem
     vatAmount: 167,
     wine: null,
     options: null,
+    grantsFreeShipping: false,
     bundleItems: null,
     ...overrides,
   }

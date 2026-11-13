@@ -107,6 +107,7 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   price,
   compareAtPrice,
   weight,
+  grantsFreeShipping,
   ${proj.i18nAltImageField('image')},
   seo ${proj.seo},
   ${proj.specificationsField()},

@@ -8,6 +8,7 @@ import type {
   OrderCustomer,
   OrderTotals,
   Fulfillment,
+  FreeShippingReason,
   AddressStrict,
   OrderStatusHistoryEntry,
   AppliedCouponSnapshot,
@@ -121,6 +122,7 @@ function buildFulfillment(
   selectedShipping: AvailableShippingMethod,
   shippingVatRate: number,
   shippingCost: number,
+  freeShippingReason?: FreeShippingReason,
 ): Fulfillment {
   const vat = shippingVatRate > 0
     ? Math.round(shippingCost - shippingCost / (1 + shippingVatRate / 100))
@@ -150,6 +152,9 @@ function buildFulfillment(
       _weak: true,
     },
     ...(packagingLines?.length && { packagingLines }),
+    ...(freeShippingReason && selectedShipping.methodType === 'delivery' && shippingCost === 0 && {
+      freeShippingReason,
+    }),
   }
 }
 
@@ -164,6 +169,8 @@ export type BuildOrderMetaInput = {
   locale: string
   paymentIntentId: string
   appliedCoupons?: AppliedCouponSnapshot[]
+  /** Why shipping is free (`freeShippingReason()` in `shipping.ts`); stored only for delivery at 0. */
+  freeShippingReason?: FreeShippingReason
 }
 
 export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
@@ -183,6 +190,7 @@ export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
       input.selectedShipping,
       input.shippingVatRate,
       input.totals.shipping,
+      input.freeShippingReason,
     ),
     ...(input.appliedCoupons?.length && { appliedCoupons: input.appliedCoupons }),
   }

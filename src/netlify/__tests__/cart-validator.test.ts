@@ -186,6 +186,35 @@ describe('validateCart', () => {
     ])
   })
 
+  describe('grantsFreeShipping', () => {
+    const validate = (variant: SanityVariantResult, cartItem: Record<string, unknown> = {}) =>
+      validateCart([{ variantId: 'v1', quantity: 1, ...cartItem } as never], [variant], taxRules, 'de').items[0]
+
+    it('takes the flag from the server variant', () => {
+      expect(validate(makeVariant({ grantsFreeShipping: true })).grantsFreeShipping).toBe(true)
+      expect(validate(makeVariant({ grantsFreeShipping: null })).grantsFreeShipping).toBe(false)
+      expect(validate(makeVariant()).grantsFreeShipping).toBe(false)
+    })
+
+    it('ignores a client-sent flag', () => {
+      expect(validate(makeVariant(), { grantsFreeShipping: true }).grantsFreeShipping).toBe(false)
+    })
+
+    it('is false for digital variants', () => {
+      const digital = makeVariant({ kind: 'digital', wine: null, grantsFreeShipping: true })
+      expect(validate(digital).grantsFreeShipping).toBe(false)
+    })
+
+    it('a flagged bundle flags its line; a flagged child does not', () => {
+      const child = bundleItem('child1', 2)
+      const flaggedChild = { ...child, variant: { ...child.variant!, grantsFreeShipping: true } as never }
+      const bundle = (flag: boolean, items: SanityBundleItemResult[]) =>
+        makeVariant({ kind: 'bundle', wine: null, price: 3000, grantsFreeShipping: flag, bundleItems: items })
+      expect(validate(bundle(true, [child])).grantsFreeShipping).toBe(true)
+      expect(validate(bundle(false, [flaggedChild])).grantsFreeShipping).toBe(false)
+    })
+  })
+
   it('resolves bundle items and aggregates child weights', () => {
     const result = validateCart(
       [{ variantId: 'v1', quantity: 1 }],

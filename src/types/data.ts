@@ -325,6 +325,8 @@ export type ResolvedVariant = {
   /** Explicit shipping weight (grams) — the variant's, else the product's; null when unset (wines
    *  are then estimated from the volume, see `resolveVariantWeight`). */
   weight: number | null
+  /** The whole order ships free when the cart holds this variant (false for digital / unset). */
+  grantsFreeShipping: boolean
   wine: ResolvedWine | null
   options: ResolvedOption[]
   /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
@@ -383,6 +385,9 @@ export type CmsLocaleData = {
   shopSettings: ResolvedShopSettings | null
   /** Shipping methods (shop only) — rendered by the shippingInfoModule. */
   shippingMethods: ResolvedShippingMethod[]
+  /** Any active variant makes the whole order ship free (`grantsFreeShipping`) — the "Versand &
+   *  Zahlung" module then says so. Follows the content, not a config flag. */
+  hasFreeShippingProducts: boolean
   /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
   urlMap: Record<string, string>
   /** Sanity _id → resolved document (variant, category, page, or post) for the current locale. */

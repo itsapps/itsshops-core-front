@@ -182,6 +182,7 @@ export async function buildCmsData(
       settings,
       shopSettings,
       shippingMethods: resolveShippingMethods(rawShippingMethods, ctx, shopSettings?.defaultCountry?.countryCode),
+      hasFreeShippingProducts: products.some(v => v.grantsFreeShipping && v.status === 'active'),
       urlMap,
       docMap,
       homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,

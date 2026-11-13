@@ -32,7 +32,7 @@
 
       {% block product_cart_control %}
       {%- if coreConfig.features.shop.checkout -%}
-        <p class="product__tax-info">{{ 'product.taxShippingInfoText' | trans }}</p>
+        <p class="product__tax-info">{{ ('product.taxFreeShippingInfoText' if product.grantsFreeShipping else 'product.taxShippingInfoText') | trans }}</p>
         
         <div class="product__actions" data-product-actions>
         {%- if product.status == "active" %}
