@@ -1,7 +1,7 @@
 # Plan — products that make the whole order ship free
 
 Status: **released** (2026-11-13: core-front 5.1.0, core-back 6.1.0; Tinhof frontend 1.16.0 /
-backend 1.12.0 — staging tests skipped by the owner). Open: rollout step 5 content (flag on the
+backend 1.12.0; free shipping + stored reason tested on staging by the owner). Open: rollout step 5 content (flag on the
 production bundles + Deploy, Rich Results Test, tell the owner). Planned 2026-11-12. Refined 2026-11-12 against core-front 5.0.0 /
 core-back 6.0.0 (paths, reason flow via `orderMeta`, product-page tax line, pickup check); second
 refine same day (typegen step, card-note gating, flag-off behaviour, test fixtures).
