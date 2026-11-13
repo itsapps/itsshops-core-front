@@ -4,10 +4,10 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 5.1.0
 
 Products that make the whole order ship free (plan `.claude/plans/product-free-shipping.md`; pairs
-with core-back's `shop.productFreeShipping`): a variant with `grantsFreeShipping` makes every
+with core-back 6.1.0's `shop.productFreeShipping`): a variant with `grantsFreeShipping` makes every
 delivery method free for the whole order; the order stores why shipping was free
 (`fulfillment.freeShippingReason`: `product` / `threshold` / `coupon`); cards show
 "Versandkostenfrei", the product page's tax line reads "Inkl. MwSt. / Versandkostenfrei", the

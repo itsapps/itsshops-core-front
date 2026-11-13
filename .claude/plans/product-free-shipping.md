@@ -1,8 +1,8 @@
 # Plan — products that make the whole order ship free
 
-Status: **implemented in core** (2026-11-12, core-front + core-back `main`, unreleased; Tinhof
-frontend override + card style done) — open: rollout steps 2 (Tinhof backend flag) and 4–5.
-Planned 2026-11-12. Refined 2026-11-12 against core-front 5.0.0 /
+Status: **released** (2026-11-13: core-front 5.1.0, core-back 6.1.0; Tinhof frontend 1.16.0 /
+backend 1.12.0 — staging tests skipped by the owner). Open: rollout step 5 content (flag on the
+production bundles + Deploy, Rich Results Test, tell the owner). Planned 2026-11-12. Refined 2026-11-12 against core-front 5.0.0 /
 core-back 6.0.0 (paths, reason flow via `orderMeta`, product-page tax line, pickup check); second
 refine same day (typegen step, card-note gating, flag-off behaviour, test fixtures).
 Spans **core-back** (variant field, feature flag, order snapshot field, Studio display) and
