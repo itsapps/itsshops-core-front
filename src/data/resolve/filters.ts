@@ -124,8 +124,8 @@ export function accumulateFilterGroups(
 
 /**
  * A bundle matches a filter when one of its items does ("contains a red"): it takes the union of
- * its items' filter attributes — wine fields and option groups — on top of its own. Categories stay
- * the bundle's own (a category is an editor's assignment, the same as on the category page).
+ * its items' filter attributes — wine fields, option groups and categories — on top of its own.
+ * Filters only: category pages still list a bundle by its own categories (`filterByCategory`).
  * Runs after all variants are resolved; each value a bundle gains counts once in `acc`.
  */
 export function mergeBundleFilterAttributes(
@@ -144,7 +144,6 @@ export function mergeBundleFilterAttributes(
       const child = byId.get(item.variant._id)
       if (!child || child.kind === 'bundle') continue
       for (const [key, values] of Object.entries(child.filterAttributes)) {
-        if (key === 'category') continue
         const own = bundle.filterAttributes[key] ??= []
         for (const value of values) {
           if (own.includes(value)) continue

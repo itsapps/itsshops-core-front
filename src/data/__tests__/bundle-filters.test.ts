@@ -7,7 +7,7 @@ const v = (_id: string, kind: string, filterAttributes: Record<string, string[]>
 })
 
 describe('mergeBundleFilterAttributes', () => {
-  it('a bundle takes the union of its items\' attributes, keeping its own categories', () => {
+  it('a bundle takes the union of its items\' attributes, categories included', () => {
     const variants = [
       v('red', 'wine', { color: ['rot'], vintage: ['2022'], volume: ['750'], category: ['rotwein'] }),
       v('white', 'wine', { color: ['weiss'], vintage: ['2022'], volume: ['750'], category: ['weisswein'] }),
@@ -15,7 +15,7 @@ describe('mergeBundleFilterAttributes', () => {
     ]
     mergeBundleFilterAttributes(variants)
     expect(variants[2].filterAttributes).toEqual({
-      category: ['pakete'], color: ['rot', 'weiss'], vintage: ['2022'], volume: ['750'],
+      category: ['pakete', 'rotwein', 'weisswein'], color: ['rot', 'weiss'], vintage: ['2022'], volume: ['750'],
     })
   })
 

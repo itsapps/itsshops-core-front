@@ -27,8 +27,8 @@ shipping 0 for it.
   `product_card_price`: add it with `class="product-card__bundle-total"`. Style
   `.product__bundle-total` / `.product-card__bundle-total`.
 - Bundles match the product-list filters by their items' attributes (colour, grape, vintage, size,
-  option groups — "contains a …"; categories stay the bundle's own). Before, any non-price filter
-  hid every bundle. No template change.
+  option groups, categories — "contains a …"). Category pages still list a bundle by its own
+  categories. Before, any non-price filter hid every bundle. No template change.
 - Nothing else: without flagged variants and bundles nothing changes.
 
 ## 5.0.0
