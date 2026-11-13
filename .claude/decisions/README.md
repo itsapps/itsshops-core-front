@@ -97,3 +97,10 @@ alternative was rejected, a constraint discovered the hard way.
   fixed label + `aria-pressed`, own `themeBgColorDark`, scrollbar colours only in `theme.css`.
 - [focus-ring-customer-owned.md](focus-ring-customer-owned.md) — the global `:focus-visible` ring
   is customer CSS (starter), not core: it's design, and a layered core rule couldn't enforce it.
+- [product-free-shipping-variant-flag.md](product-free-shipping-variant-flag.md) — a variant flag
+  makes the whole order ship free (every delivery method); core-front follows the data; reason
+  stored as product > threshold > coupon.
+- [bundle-items-total-not-compare-at.md](bundle-items-total-not-compare-at.md) — a bundle's sum of
+  single prices is its own line (`productBundleItemsTotal`), never a struck-through "was" price.
+- [bundle-filters-by-contents.md](bundle-filters-by-contents.md) — bundles match filters by their
+  items' attributes and categories; category pages keep the bundle's own categories.

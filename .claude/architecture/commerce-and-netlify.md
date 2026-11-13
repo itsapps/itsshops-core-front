@@ -227,6 +227,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   variant (false for digital). `resolveShippingMethods` still computes the boxes
   (`packagingLines` stay on the order) and still drops a method that can't pack the cart; pickup
   is untouched. To switch the rule off: unset the field on every variant first, then the flag.
+  Why: ADR `product-free-shipping-variant-flag.md`.
 - **Why shipping was free** → `fulfillment.freeShippingReason` (`product` / `threshold` /
   `coupon`, Studio order view only; checkout, mails, invoice unchanged). `resolveShippingMethods`
   sets `freeReason` (`product` > `threshold`, server only — `payment-create.ts` maps the client

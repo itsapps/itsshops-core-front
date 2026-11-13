@@ -433,7 +433,7 @@ as its own muted line under the price — **not** in `productPrice` and not stru
 bundle never cost this, so a "was" price would announce a reduction it isn't. Hidden when the
 editor set `compareAtPrice`. Core calls it on the product page and in the card's
 `product_card_price` block; a full `product/container.njk` override must add the call. Updates
-with the next build (item price changes included).
+with the next build (item price changes included). Why: ADR `bundle-items-total-not-compare-at.md`.
 
 ### Product free shipping in templates
 

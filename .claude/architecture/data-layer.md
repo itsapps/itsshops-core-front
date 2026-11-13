@@ -95,7 +95,11 @@ The largest resolver. `resolveVariants` does, per variant:
 - **Vinofact merge**: when the variant's `wine.vinofactWineId` is in `vinofactMap`, the VinoFact
   fields (locale-resolved) are merged onto the resolved wine.
 - **Filter attributes**: accumulated into `filterAcc` (`buildFilterAttributes` / `accumulateFilterGroups`)
-  to later form `filterGroups`.
+  to later form `filterGroups`; bundles then take their items' attributes (see "Filter groups").
+- **Free shipping / bundle total**: `grantsFreeShipping` (variant field, false for digital or unset —
+  `commerce-and-netlify.md` → "Product free shipping"); `bundleItemsTotal` (`bundleItemsTotal()`:
+  bundles only, items' single prices × quantity when above the bundle price, else null —
+  `templates-and-assets.md` → "Bundle: sum of single prices").
 - **Description**: `description` (core-back `i18nText`, any kind) → plain string or `null`, variant's
   else product's. Rendered by the `productDescription` macro with the `paragraphs` filter; for wines
   it beats `wine.description` (VinoFact), which is the macro's fallback. Also the first fallback for
@@ -121,7 +125,8 @@ each derived from `urlMap`, `permalinks`, or `userPaths`, and **feature-gated to
 - withdrawal: `orderWithdrawUrl`, `orderWithdrawSuccessUrl` (when shop).
 - `shippingInfoUrl` (`shopSettings.shippingInfoPage`, `'#'` when unset); `cms[locale].shippingMethods`
   (`resolveShippingMethods`: title, delivery time, enabled countries, weight rates, packaging prices —
-  gross cents, the checkout's own data).
+  gross cents, the checkout's own data); `hasFreeShippingProducts` (any active variant with
+  `grantsFreeShipping` — the `shippingInfoModule` sentence follows the content, no config flag).
 Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read these directly
 (e.g. `cms[locale].checkoutUrl`) instead of constructing URLs.
 
@@ -169,6 +174,7 @@ Filters only: category pages and the Wein-page grid list a bundle by its **own**
 (`filterByCategory`) — otherwise a mixed pack would appear on every category it touches; an editor
 adds a category to the bundle to put it on that page. Without it any non-price filter hid every bundle. No flag (owner, 2026-11-13);
 add one only if a shop wants bundles out of attribute filters. Tests: `bundle-filters.test.ts`.
+Why: ADR `bundle-filters-by-contents.md`.
 
 ## Portable text (`src/data/portableText.ts`)
 
