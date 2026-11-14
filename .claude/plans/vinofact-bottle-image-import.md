@@ -11,7 +11,16 @@ VinoFact URL env vars optional with default `https://www.vinofact.com`, owner's 
 stored `InternationalizedArrayString` shape; then, owner's call: config fields
 `shop.vinofact.integration` / `integrations.vinofact` removed (env only), no extra endpoint
 validation, Studio builds the URL in `fetchData`). **Steps 9–10 done 2026-11-14** (core-front,
-unreleased; Tinhof local build byte-identical to the old core); core-back steps 1–8 not started.
+unreleased; Tinhof local build byte-identical to the old core); **core-back steps 1–8 implemented 2026-11-14** on branch
+`feature/vinofact-bottle-import` (not released; Studio UI not yet clicked through — needs the
+Schuster Integrations entries, Rollout step 2). As built, differing from the text below:
+`vinofactLocaleKey` / `VINOFACT_LOCALES` / `vinofactLocaleKeys` live in `src/external/vinofact.ts`
+(the client needs them; the helper imports them); `bottleImageTargets` (draft-vs-published choice)
+is in `lib/shop/vinofactImage.ts`, tested; the background import after a Product Manager submit is
+the hook `useBackgroundBottleImport` (`components/products/useBottleImageImport.ts`, with the
+summary toast); the summary string needs no plurals ("{{imported}} übernommen, …" reads right for
+every count); `useProductTransaction` became `.tsx` (JSX in the toast); `ProductCreator` wraps
+`commitTransaction` in `commitProduct` (link + persistent card for all kinds).
 Spans **core-back** (Studio: import button, bulk action, ProductManager option, toast link, dated
 API) and **core-front** (dated API — vino-facts plan 924 §6 — and drop the schema.org bottle-image
 fallback).
@@ -433,7 +442,8 @@ is loaded from i.vinofact.com at page view.
    (5.0.0)** — pulling this release crosses core-back **6.0.0** (secrets document): before testing,
    do its CHANGELOG 6.0.0 migration for Schuster (`vinofactToken` via the Integrations dialog,
    remove `SANITY_STUDIO_VINOFACT_API_TOKEN` from `.env` — it is still there — and the Studio's
-   Netlify env; rotate the token afterwards), otherwise `vinofactClient` is undefined and every
+   Netlify env; rotate the token afterwards — **code side done 2026-11-14**, backend `251b894`,
+   frontend `139021b`; open: Integrations dialog entries, Netlify env, token rotation), otherwise `vinofactClient` is undefined and every
    import shows `vinofact.notInitialized`. Then test (step 3 field button, step 4 action on a product with a draft
    variant + one without, step 5 on a new product), then release core-back → Schuster backend pin:
    import all bottle images (bulk action per product), editors check crops. Update Schuster

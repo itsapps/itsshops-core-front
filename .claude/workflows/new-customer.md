@@ -75,7 +75,7 @@ strip everything customer-specific:
 | `src/structure/index.ts` | `structure: ITSStructureItem[] = []` |
 | `src/translation/{index,de,en}.ts` | `i18n` (`ui`, `fields`, `defaultLocale`, `localizedFieldTypes`, overrides) |
 | `netlify.toml` | Studio SPA: `npm run build` → `dist`, `/* → /` 200 rewrite |
-| `.env` (gitignored) | public values only: `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_SITE_ID` (the **frontend** project of that environment — deploy-status badge) / `_PROJECT_NAME`, shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_ENDPOINT`, `SANITY_STUDIO_VINOFACT_API_URL` / `_PROFILE_SLUG`. **Every `SANITY_STUDIO_*` value is public** (bundled) — never a token or secret there (core-back `CLAUDE.md` rule). Credentials go into the Studio's **Integrations dialog** (step 7). Test-only: `VINOFACT_API_TOKEN` (no prefix → not bundled) |
+| `.env` (gitignored) | public values only: `SANITY_STUDIO_PROJECT`, `SANITY_STUDIO_DATASET`, `SANITY_STUDIO_WORKSPACE_NAME`, `SANITY_STUDIO_NETLIFY_SITE_ID` (the **frontend** project of that environment — deploy-status badge) / `_PROJECT_NAME`, shop: `SANITY_STUDIO_NETLIFY_FUNCTIONS_ENDPOINT`, `SANITY_STUDIO_VINOFACT_PROFILE_SLUG` (`SANITY_STUDIO_VINOFACT_API_URL` only to point at another VinoFact, e.g. a dev server — default `https://www.vinofact.com`). **Every `SANITY_STUDIO_*` value is public** (bundled) — never a token or secret there (core-back `CLAUDE.md` rule). Credentials go into the Studio's **Integrations dialog** (step 7). Test-only: `VINOFACT_API_TOKEN` (no prefix → not bundled) |
 | `tests/`, `vitest.config.ts`, `tsconfig.json`, `.gitignore` | as the sibling |
 
 Schema/structure details: core-back `CLAUDE.md` + `.claude/architecture/` (schema-authoring,
