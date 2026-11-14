@@ -4,7 +4,6 @@ import type {
   ResolvedShopSettings, ResolvedShippingMethod,
 } from '../types/data'
 import type { CoreConfig } from '../types'
-import { vinofactImageUrl } from '../image'
 import { offerAvailability, buildShippingDetails, type ShippingContext } from './shipping'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -173,11 +172,9 @@ function buildProductSchema(variant: ResolvedVariant, ctx: SchemaContext): strin
     || ''
 
   const _variantImg = variant.seo?.shareImage || variant.image
-  const image = _variantImg
-    ? imageUrl(_variantImg, 1200)
-    : variant.wine?.bottleImage?.url
-      ? vinofactImageUrl(variant.wine.bottleImage.url, 1200, 1200)
-      : undefined
+  // Sanity images only (variant.image already falls back to the product image) — no VinoFact
+  // bottle image: editors import it into the variant's own image in the Studio.
+  const image = _variantImg ? imageUrl(_variantImg, 1200) : undefined
 
   const brand = buildBrand(variant, settings)
 

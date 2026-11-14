@@ -198,11 +198,12 @@ function resolveCspDirectives(input: CspDirectives | undefined): ResolvedCspDire
 
 function resolveFeatures(input: ItsshopsFeatures | undefined, env: ReturnType<typeof readEnv>, hasSearchConfig = false): Features {
   const vinofactInput = input?.shop?.vinofact
-  const vinofactIntegration = vinofactInput?.integration ?? (
-    env.vinofact.endpoint && env.vinofact.accessToken && env.vinofact.profileSlug
+  // Env only. `VINOFACT_API_URL` is an optional origin override (default www.vinofact.com, see
+  // `vinofactEndpoint`); token and profile slug are required.
+  const vinofactIntegration =
+    env.vinofact.accessToken && env.vinofact.profileSlug
       ? { endpoint: env.vinofact.endpoint, accessToken: env.vinofact.accessToken, profileSlug: env.vinofact.profileSlug }
       : undefined
-  )
 
   return {
     shop: {

@@ -106,6 +106,17 @@ describe('brand', () => {
   })
 })
 
+describe('image', () => {
+  it('uses the Sanity image', () => {
+    expect(main(productPage(variant({ image: { asset: { _ref: 'x' } } } as any))).image).toBe('https://img.example/x.jpg')
+  })
+
+  it('never falls back to the VinoFact bottle image', () => {
+    const v = variant({ wine: { volume: 750, vintage: '2022', bottleImage: { url: 'https://i.vinofact.com/r/{{width}}x{{height}}/a.jpg', alt: null } } } as any)
+    expect(main(productPage(v))).not.toHaveProperty('image')
+  })
+})
+
 describe('offer', () => {
   it('has no priceValidUntil', () => {
     const p = main(productPage(variant()))

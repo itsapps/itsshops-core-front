@@ -3,6 +3,23 @@ import type { VinofactConfig, VinofactField } from '../types'
 const BASE_FIELDS = 'id slug title'
 
 /**
+ * VinoFact's date-versioned GraphQL API this core speaks (vino-facts `.claude/graphql/versioning.md`).
+ * The query shape lives in this file, so the version does too — never in an env var. Bump it
+ * (together with core-back's constant) when VinoFact releases a change this core needs; never to a
+ * date after that VinoFact release (a future date answers 400).
+ */
+export const VINOFACT_API_VERSION = '2026-11-14'
+export const VINOFACT_DEFAULT_ORIGIN = 'https://www.vinofact.com'
+
+/**
+ * The dated GraphQL endpoint. `endpoint` (`VINOFACT_API_URL`, optional) only overrides the origin,
+ * e.g. for a local VinoFact dev server — any path is ignored. An invalid value throws `Invalid URL`.
+ */
+export function vinofactEndpoint(endpoint?: string): string {
+  return `${new URL(endpoint || VINOFACT_DEFAULT_ORIGIN).origin}/api/graphql/v${VINOFACT_API_VERSION}/`
+}
+
+/**
  * Vinofact returns localized strings as a typed `LocalizedString` object.
  * Each query must select the locales it wants as sub-fields, e.g. `name { de en }`.
  * Locale codes with hyphens (only `zh-cn` today) are exposed as camelCase fields
@@ -33,9 +50,9 @@ function fieldSelections(L: string): Record<VinofactField, string> {
     varietals:           `varietals { id varietalId name ${L} amount trainingSystem ${L} }`,
     classifications:     `classifications { id classificationId name ${L} }`,
     qualityGrades:       `qualityGrades { id qualityGradeId name ${L} }`,
-    certificates:        `certificates { name ${L} url description ${L} image { url alt } }`,
+    certificates:        `certificates { name ${L} url description ${L} image { url alt ${L} } }`,
     awards:              `awards { name ${L} value ${L} }`,
-    bottleImage:         'bottleImage { url alt }',
+    bottleImage:         `bottleImage { url alt ${L} }`,
     terroir:             `terroir { id name ${L} description ${L} soils { id name ${L} } }`,
     factsheetPdfUrl:     'factsheetPdfUrl',
     factsheetHtmlUrl:    'factsheetHtmlUrl',
@@ -126,22 +143,24 @@ export async function fetchVinofactWines(
   `
   const body = JSON.stringify({ query, variables: { profileSlug, ids: wineIds } })
 
+  const url = vinofactEndpoint(endpoint)
+
   const fail = (err: unknown, attempts: number) => new Error([
     `[itsshops] VinoFact request failed${attempts > 1 ? ` after ${attempts} attempts` : ''} — aborting the build so the shop isn't published without wine data.`,
-    `  Endpoint: ${endpoint}`,
+    `  Endpoint: ${url}`,
     `  Profile:  ${profileSlug}`,
     `  Error:    ${(err as Error)?.message ?? String(err)}`,
   ].join('\n'), { cause: err })
 
   let wines: any[]
   try {
-    wines = await requestWines(endpoint, accessToken, body)
+    wines = await requestWines(url, accessToken, body)
   } catch (err) {
     if (!(err instanceof TransientVinofactError)) throw fail(err, 1)
     console.warn(`[itsshops] VinoFact ${err.message} — retrying in ${retryDelayMs / 1000}s…`)
     await new Promise((r) => setTimeout(r, retryDelayMs))
     try {
-      wines = await requestWines(endpoint, accessToken, body)
+      wines = await requestWines(url, accessToken, body)
     } catch (err2) {
       throw fail(err2, 2)
     }

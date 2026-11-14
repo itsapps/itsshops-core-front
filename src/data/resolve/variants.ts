@@ -113,7 +113,8 @@ function isLocaleKey(k: string): boolean {
   return /^[a-z]{2}([A-Z][a-z]+)?$/.test(k)
 }
 
-function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string): unknown {
+/** Exported for tests only (not re-exported from the package). */
+export function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string): unknown {
   if (value === null || value === undefined) return value
   if (Array.isArray(value)) {
     return value.map(item => resolveLocaleMaps(item, locale, defaultLocale))

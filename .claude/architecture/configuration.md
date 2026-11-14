@@ -29,7 +29,7 @@ Omitting `shop` disables the shop; sub-flags default to `false`.
 ```ts
 features: {
   shop?: { checkout?, manufacturer?, stock?, category?, coupons?, checkoutAgeConfirmation?,
-           vinofact?: { enabled, fields?, integration? } },
+           vinofact?: { enabled, fields? } },
   blog?: boolean,
   users?: boolean | { registrationFields?: UserRegistrationField[] },
   newsletter?: boolean | { captcha?: boolean },   // captcha default true
@@ -43,7 +43,9 @@ site-wide hCaptcha CSP, privacy policy lists only the user forms); register/reco
 texts); core-back's `features.shop.checkout` must match (it hides the checkout-only shop settings). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`; an
 unknown name — e.g. the old `normClassifications`, now `qualityGrades` — is dropped silently, and
 the Eleventy build doesn't typecheck the config, so run `tsc` in the customer repo);
-`integration` falls back to `VINOFACT_API_*` env. Backend feature flags are a superset — keep both
+the connection comes from env only — `VINOFACT_API_TOKEN` + `VINOFACT_PROFILE_SLUG` (required),
+`VINOFACT_API_URL` (optional, only its origin counts, default `https://www.vinofact.com`; for a
+local VinoFact dev server). Backend feature flags are a superset — keep both
 repos' configs aligned.
 
 ### i18n & URLs

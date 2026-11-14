@@ -10,7 +10,8 @@ VinoFact URL env vars optional with default `https://www.vinofact.com`, owner's 
 `ITSCoreProvider` / `IntegrationsDialog`, step 9 tests made concrete, D11 merge checked against the
 stored `InternationalizedArrayString` shape; then, owner's call: config fields
 `shop.vinofact.integration` / `integrations.vinofact` removed (env only), no extra endpoint
-validation, Studio builds the URL in `fetchData`). Not started.
+validation, Studio builds the URL in `fetchData`). **Steps 9–10 done 2026-11-14** (core-front,
+unreleased; Tinhof local build byte-identical to the old core); core-back steps 1–8 not started.
 Spans **core-back** (Studio: import button, bulk action, ProductManager option, toast link, dated
 API) and **core-front** (dated API — vino-facts plan 924 §6 — and drop the schema.org bottle-image
 fallback).
@@ -422,6 +423,11 @@ is loaded from i.vinofact.com at page view.
    `itsshops sanity query 'count(*[_type == "productVariant" && kind == "wine" && !(_id in
    path("drafts.**")) && !defined(image.asset) && !defined(product->image.asset)])'`.
    Jurtschitsch (not live) is the one that may rely on the fallback.
+   **Done 2026-11-14:** production has **no** gaps — Tinhof 0 of 106 wine variants, Jurtschitsch 0
+   of 6, Schuster's production dataset has no wine variants yet. Development only (test data, all
+   with a VinoFact id, so the import can fill them): Tinhof 2 of 95 (Feuersteig 2015, 2013),
+   Schuster 2 of 7 (Ried Lamer Blaufränkisch 2023, 2024), Jurtschitsch 2 of 7 (Chardonnay
+   classic 2024, Ried Käferberg 2024). → Step 10 needs no wait.
 2. Toast/persistent link (step 6) and the import ship together (#922/#924 are live). Feature branch in core-back (`feature/vinofact-bottle-import`), test against the
    Schuster backend via `npm link`. **Schuster's backend floats core-back on commit `0ad40d8`
    (5.0.0)** — pulling this release crosses core-back **6.0.0** (secrets document): before testing,

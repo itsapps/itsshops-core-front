@@ -4,6 +4,25 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased (minor)
+
+VinoFact on its dated API (plan `.claude/plans/vinofact-bottle-image-import.md`, steps 9–10):
+- VinoFact: dated API `v2026-11-14` (alts per language). The build requests
+  `<origin>/api/graphql/v2026-11-14/` (`VINOFACT_API_VERSION` in `src/data/vinofact.ts`); image
+  `alt`s (certificates, bottle image) are selected per locale and resolved to the page locale's
+  string, `null` when VinoFact has none (`VinofactImage.alt: string | null`).
+- `VINOFACT_API_URL` is optional — only its origin is used, default `https://www.vinofact.com`.
+  The integration needs `VINOFACT_API_TOKEN` + `VINOFACT_PROFILE_SLUG`.
+- The unused config field `features.shop.vinofact.integration` is removed — the connection comes
+  from env only (type `VinofactInput` = `{ enabled, fields? }`).
+- schema.org no longer falls back to the VinoFact bottle image: product `image` =
+  `seo.shareImage` → variant image → product image, else none.
+
+### Upgrading
+- Nothing to change. Existing `VINOFACT_API_URL` values keep working (their path is ignored); remove
+  them from the env once this version is live there (plan → Rollout step 5). No live shop queries
+  `bottleImage`; every production wine variant has a Sanity image (checked 2026-11-14).
+
 ## 5.1.0
 
 Products that make the whole order ship free (plan `.claude/plans/product-free-shipping.md`; pairs

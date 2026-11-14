@@ -460,6 +460,10 @@ changes only with a build; checkout reads the flag live.
 | Category | `ItemList` of plain `ListItem`s (`name` = title + label; no `Product` — product markup belongs on product pages) |
 | Page / post | `WebPage` / `BlogPosting` |
 
+Product `image` = `seo.shareImage` → variant `image` (which already falls back to the product
+image) → none. No VinoFact bottle-image fallback (removed in 5.2.0) — a variant without any Sanity
+image gets no `image`; editors import the bottle shot into the variant in the Studio.
+
 Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only with
 `features.shop.checkout`):
 - **brand:** first manufacturer, else `settings.siteTitle`, else `company.name` (brand instead of

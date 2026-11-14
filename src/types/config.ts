@@ -117,12 +117,19 @@ export type VinofactConfig = {
    * fields: ['color', 'alcohol', 'year', 'varietals', 'awards']
    */
   fields?: VinofactField[]
+  /**
+   * Resolved from env only (`VINOFACT_API_TOKEN` + `VINOFACT_PROFILE_SLUG`, optional
+   * `VINOFACT_API_URL` = origin override) — not part of the customer input.
+   */
   integration?: {
-    endpoint: string
+    endpoint?: string
     accessToken: string
     profileSlug: string
   }
 }
+
+/** Customer input for `features.shop.vinofact` — the integration always comes from env. */
+export type VinofactInput = Omit<VinofactConfig, 'integration'>
 
 // ─── Features ────────────────────────────────────────────────────────────────
 
@@ -163,7 +170,7 @@ export type ItsshopsFeatures = {
     category?: boolean
     coupons?: boolean
     checkoutAgeConfirmation?: boolean
-    vinofact?: VinofactConfig
+    vinofact?: VinofactInput
   }
   blog?: boolean
   users?: boolean | {

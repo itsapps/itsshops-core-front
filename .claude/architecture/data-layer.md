@@ -14,7 +14,8 @@ Pipeline:
 2. `extensions.onRawDataFetched?(raw)` debug hook fires.
 3. **Pre-compute shared maps:** `productMap` (`_id`→product) and `siblingsMap` (`productId`→variants).
 4. **Vinofact:** collect `wine.vinofactWineId`s off the variants and `fetchVinofactWines(...)` into a
-   `vinofactMap` (only when `shop.vinofact.integration` is set).
+   `vinofactMap` (only when `shop.vinofact.integration` is set, i.e. `VINOFACT_API_TOKEN` +
+   `VINOFACT_PROFILE_SLUG` are in env).
 5. **Per-locale loop** (see below) → builds each `cms[locale]` and pushes into the flat arrays.
 6. After the loop: `cms.sitemaps = buildSitemaps(...)`, `cms.llms = buildLlmsTxt(...)`, then
    `extensions.onCmsBuilt?(cms)`.
@@ -201,8 +202,18 @@ the customer's named `imageSizes`), and `formatVolume`. Also generates a per-loc
 
 ## Vinofact (`src/data/vinofact.ts`)
 
-When `shop.vinofact.integration` is configured, `fetchVinofactWines` pulls wine data from the
-VinoFact API (one GraphQL request for all IDs) and merges it onto variants. **A failed request
+When `shop.vinofact.integration` is set (env token + profile slug), `fetchVinofactWines` pulls
+wine data from the VinoFact API (one GraphQL request for all IDs) and merges it onto variants.
+**Dated API:** the request goes to `<origin>/api/graphql/v<VINOFACT_API_VERSION>/`
+(`vinofactEndpoint`; `VINOFACT_API_VERSION` and `VINOFACT_DEFAULT_ORIGIN` =
+`https://www.vinofact.com` in `src/data/vinofact.ts`). `VINOFACT_API_URL` only overrides the
+origin (path ignored). The version lives in code because the query shape does: bump it (same date
+as core-back's constant) when VinoFact ships a change this core needs — never to a date after that
+VinoFact release (a future date answers 400). Localized fields, image `alt`s included, are
+`LocalizedString`s selected per locale (`alt { de en }`); `resolveLocaleMaps`
+(`resolve/variants.ts`) turns them into the page locale's string (fallback default locale, then
+`null`). `bottleImage` is for customer templates only — core renders none (schema.org uses Sanity
+images; the Studio imports the bottle shot into the variant's `image`). **A failed request
 fails the build** — a shop without wine data must not be published; the last good deploy stays
 live. Transient failures (network, 30 s timeout, 429, 5xx, bad JSON) are retried once after 3 s;
 401/4xx/GraphQL errors throw immediately. IDs the API doesn't return only warn. Tests:

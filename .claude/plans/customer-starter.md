@@ -560,8 +560,8 @@ inserts `shop: { checkout: %%checkout%%, category: %%category%%, coupons: %%coup
 backend `sanity.config.ts` (backend: plus `enabled: true`), always with every flag written out —
 core-back defaults `checkout` **on** (`FeatureConfig`, core-back `src/types/config.ts`) while
 core-front defaults it off, so an omitted flag differs between the stacks. `vinofact` package:
-`vinofact: { enabled: true }` in both configs + `VINOFACT_API_URL`, `VINOFACT_API_TOKEN`,
-`VINOFACT_PROFILE_SLUG` in the frontend `.env-sample`; needs `shop`. **Gallery** (needs `shop`; verified 2026-11-10 against jurtschitsch's
+`vinofact: { enabled: true }` in both configs + `VINOFACT_API_TOKEN`, `VINOFACT_PROFILE_SLUG`
+in the frontend `.env-sample` (`VINOFACT_API_URL` is optional from core-front 5.2.0 — omit it); needs `shop`. **Gallery** (needs `shop`; verified 2026-11-10 against jurtschitsch's
 `overridable/product/container.njk`, `extensions.mts`, backend `schema/extensions.ts`, and core's
 `gallery/{main,thumbs}.njk` + `gallery.ts`): more than one product image is **not core data** —
 core's product/variant carry one `image`. jurtschitsch adds it as a customer extension, so the

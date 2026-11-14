@@ -56,7 +56,8 @@ export type VinofactTerroir = {
 
 export type VinofactImage = {
   url: string
-  alt: string
+  /** Per locale (dated API `LocalizedString`, resolved to the page locale); `null` when VinoFact has none. */
+  alt: string | null
   /** Original image dimensions — present only if the Vinofact API exposes them.
    *  Used to derive aspect-ratio-aware heights for null-height PictureSize entries. */
   width?: number | null

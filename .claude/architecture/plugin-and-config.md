@@ -49,8 +49,10 @@ newsletter: { enabled, captcha }
 ```
 
 - `shop.enabled` = truthiness of `config.features.shop`; sub-flags default `false`.
-- `shop.vinofact.integration` falls back to env (`VINOFACT_API_URL` + `_TOKEN` + `PROFILE_SLUG`) when
-  not given in config — all three must be present or it's `undefined`.
+- `shop.vinofact.integration` comes from env only (not part of the customer config):
+  `VINOFACT_API_TOKEN` + `VINOFACT_PROFILE_SLUG` set → defined, else `undefined` (no VinoFact
+  fetch). `VINOFACT_API_URL` is an optional override — only its origin is used, default
+  `https://www.vinofact.com` (dated API, [data-layer.md](data-layer.md) → Vinofact).
 - `users`, `newsletter` and `shop` accept either a boolean or an object (object form carries extra
   fields like `registrationFields`, `captcha`).
 
