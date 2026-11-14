@@ -209,7 +209,7 @@ wine data from the VinoFact API (one GraphQL request for all IDs) and merges it 
 `https://www.vinofact.com` in `src/data/vinofact.ts`). `VINOFACT_API_URL` only overrides the
 origin (path ignored). The version lives in code because the query shape does: bump it (same date
 as core-back's constant) when VinoFact ships a change this core needs — never to a date after that
-VinoFact release (a future date answers 400). Localized fields, image `alt`s included, are
+VinoFact release (a future date answers 400). Why: ADR `vinofact-dated-api-version-in-code.md`. Localized fields, image `alt`s included, are
 `LocalizedString`s selected per locale (`alt { de en }`); `resolveLocaleMaps`
 (`resolve/variants.ts`) turns them into the page locale's string (fallback default locale, then
 `null`). `bottleImage` is for customer templates only — core renders none (schema.org uses Sanity

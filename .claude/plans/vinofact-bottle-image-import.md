@@ -11,9 +11,9 @@ VinoFact URL env vars optional with default `https://www.vinofact.com`, owner's 
 stored `InternationalizedArrayString` shape; then, owner's call: config fields
 `shop.vinofact.integration` / `integrations.vinofact` removed (env only), no extra endpoint
 validation, Studio builds the URL in `fetchData`). **Steps 9–10 done 2026-11-14** (core-front,
-unreleased; Tinhof local build byte-identical to the old core); **core-back steps 1–8 implemented 2026-11-14** on branch
-`feature/vinofact-bottle-import` (not released; Studio UI not yet clicked through — needs the
-Schuster Integrations entries, Rollout step 2). As built, differing from the text below:
+unreleased; Tinhof local build byte-identical to the old core); **core-back steps 1–8 implemented 2026-11-14**, Studio flows tested on Schuster by the owner
+(2026-11-14); **released: core-front 5.2.0, core-back 6.2.0** (2026-11-14). Open: Rollout steps
+2 (Schuster backend pin + import), 3 (Tinhof staging → release), 4, 5; step 13 (vino-facts contracts). As built, differing from the text below:
 `vinofactLocaleKey` / `VINOFACT_LOCALES` / `vinofactLocaleKeys` live in `src/external/vinofact.ts`
 (the client needs them; the helper imports them); `bottleImageTargets` (draft-vs-published choice)
 is in `lib/shop/vinofactImage.ts`, tested; the background import after a Product Manager submit is

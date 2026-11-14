@@ -104,3 +104,5 @@ alternative was rejected, a constraint discovered the hard way.
   single prices is its own line (`productBundleItemsTotal`), never a struck-through "was" price.
 - [bundle-filters-by-contents.md](bundle-filters-by-contents.md) — bundles match filters by their
   items' attributes and categories; category pages keep the bundle's own categories.
+- [vinofact-dated-api-version-in-code.md](vinofact-dated-api-version-in-code.md) — VinoFact's API
+  date is a constant in each core; `VINOFACT_API_URL` only overrides the origin; no config field.
