@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased (minor)
+## 5.2.0
 
 VinoFact on its dated API (plan `.claude/plans/vinofact-bottle-image-import.md`, steps 9–10):
 - VinoFact: dated API `v2026-11-14` (alts per language). The build requests
