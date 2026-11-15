@@ -1,6 +1,9 @@
 # Plan — import VinoFact bottle images into Sanity (+ product link in the ProductManager toast)
 
-Status: **planned** (2026-11-13), refined twice (2026-11-13: checked against core-back, core-front
+Status: **done** (2026-11-15) — released as core-front 5.2.0 / core-back 6.2.0; Tinhof live
+(1.17.0 / 1.13.0), Schuster and Jurtschitsch on staging; VinoFact URL vars removed, editors told.
+Jurtschitsch's production steps belong to its go-live (its `CLAUDE.md`). History: planned
+(2026-11-13), refined twice (2026-11-13: checked against core-back, core-front
 and the vino-facts API; 2nd pass: helper deps, release-version filter, Schuster's core-back 6.0.0
 migration, CLI syntax; 3rd pass 2026-11-14: toast description, i18n path, schema flag, checkbox
 place; 4th pass 2026-11-14: VinoFact #922 live, #924 dated API with localized alt → D4/D10;
