@@ -1,10 +1,10 @@
 # Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **In progress** — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
+Status: **Done** (2026-11-15; step 10 optional, open) — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
 active customer since moved on to core-front 5.2.0 / core-back 6.2.0 (`main` + `staging`; tinhof and
 itsapps also `production`); starter repo `itsshops-starter` has base, feature/module packages,
-manifest + intake, demo datasets and the v1 variants. **Remaining: step 9** (starter tag `1.0.0`; steps 7–8 done
-2026-11-15, uncommitted). History: parts A–E refined several rounds
+manifest + intake, demo datasets and the v1 variants. Steps 7–8 done 2026-11-15, step 9: starter
+tagged `1.0.0` 2026-11-15. History: parts A–E refined several rounds
 on 2026-11-10 (A/B against `menu.ts`, `css.ts`, `core.css`, the customers' headers/CSS/wrappers;
 C–E against wrappers, default header/footer, itsapps modules, intake limits); open questions
 1–9 decided by the owner the same day. **Refined 2026-11-15** against core-front 5.2.0 / core-back
@@ -1165,7 +1165,7 @@ commit only when asked; fix `new-customer.md` (or the starter) when the recipe p
    **Customer pins done** (checked 2026-11-15): tinhof, jurtschitsch, rosi_schuster, itsapps are
    on core-front 5.2.0 / core-back 6.2.0 on `main` + `staging` (tinhof + itsapps also
    `production`; jurtschitsch + rosi_schuster production waits for their go-live, not this
-   plan). Remaining: starter tag `1.0.0` once steps 7–8 are done.
+   plan). **Starter tagged `1.0.0` 2026-11-15** (`CHANGELOG.md` in the starter).
    Push core before any customer
    pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
