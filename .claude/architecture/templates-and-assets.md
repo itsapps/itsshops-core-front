@@ -180,7 +180,7 @@ split into `base`/`carousel`/`shop` in 4.0.0 (CHANGELOG → "Upgrading"). Import
 @import '@itsapps/itsshops-core-front/dist/tailwind-utilities.css';
 ```
 
-**Cascade layers** (the four active customers from 4.0.0; the starter's default): importing core files with `layer(reset)` /
+**Cascade layers** (every active customer since 2026-11-15 — Tinhof, fem, Schuster, Jurtschitsch, itsapps; the starter's default): importing core files with `layer(reset)` /
 `layer(core)` makes every unlayered customer rule beat core, whatever the order or specificity.
 Verified 2026-11-10 through `css.ts`'s plugin chain incl. cssnano: the `@layer` order statement
 stays first, relative imports inside a layered file inherit the layer, `@custom-media` from customer
