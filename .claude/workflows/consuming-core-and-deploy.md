@@ -257,6 +257,9 @@ branch:
 - **`staging` / `production`** → pushed via the **`user`** remote, authenticated with the **customer
   account's Personal Access Token (PAT)**. The pusher then matches the Netlify account → the build
   triggers.
+- **Exception — itsapps** (the agency's own site): GitHub and Netlify are the developer's own
+  account, so there is **no `user` remote** and no `staging` branch; `production` is pushed via
+  `origin`, and that push deploys — hand it to the owner like a `user` push.
 
 This is about **push authentication**, *not* commit authorship — a separate thing. (The repo's local
 `.git/config` happens to set `user.name`/`user.email` to the customer, e.g. `Admin` /

@@ -188,11 +188,13 @@ customer extension only for customer-specific data. After a core-back change, ru
 | core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
 | core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
 | itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer`, never installed (private `itsapps/itsshops-starter`; in progress — `.claude/plans/customer-starter.md`) |
-| Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine) |
-| Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | customer (wine) |
-| itsapps | `~/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | customer (webpage) |
+| Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine shop), staging only |
+| Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | **live** customer (wine shop) |
+| Rosi Schuster | `~/Documents/programming/web/rosi_schuster/{itsshops_backend,itsshops_frontend}` | active customer (wine, catalog without checkout), staging only |
+| fem_innenarchitektur | `~/Documents/programming/web/fem_innenarchitektur/{backend,frontend}` | **live** customer (content site, no shop) |
+| itsapps | `~/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | the agency's own site (content, no shop); deploys via `origin` — no `user` remote |
 | grass-art | `~/Documents/programming/web/grass-art/{webshop-backend,webshop-frontend}` | customer |
-| others | `~/Documents/programming/web/{fem_innenarchitektur,yogamax,rosi_schuster,…}` | customers (varying feature sets) |
+| others | `~/Documents/programming/web/{yogamax,…}` | dormant customers (varying feature sets) |
 
 Customers consume core via `npm link`. A customer frontend registers the plugin in
 `eleventy.config.mts` and configures it via `itsshops.config.mts` (type `Config`).

@@ -12,7 +12,10 @@ running `npm run dev` there.
 ## 1. Two builds side by side
 
 - **Old core:** `git worktree add --detach <scratch>/core-old <tag>` in core-front, symlink
-  core's `node_modules` into it, `npm run build` there (`dist/` is not in git).
+  core's `node_modules` into it, `npm run build` there (`dist/` is not in git). With today's
+  `node_modules` an old tag's build can fail in the type-declaration step ("DTS Build error",
+  seen with 3.4.1) — the JS, CSS and templates in `dist/` are still built and enough for the
+  comparison.
 - **Customer "before":** `git worktree add --detach <scratch>/before main` in the customer repo.
   Its `node_modules/`: a folder of symlinks to every entry of the customer's `node_modules`
   except `@itsapps/`, plus `@itsapps/itsshops-core-front` → the old core worktree. Copy `.env`.

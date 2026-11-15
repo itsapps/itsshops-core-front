@@ -26,6 +26,10 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       project (check: the Deploy dialog's badge shows, not a broken image); no credential in any
       `SANITY_STUDIO_*` var — Netlify env **and** the backend's local `.env` / `.env.production`
       (`sanity build` reads it; core-back `CLAUDE.md` rule).
+      `SANITY_STUDIO_NETLIFY_FUNCTIONS_ENDPOINT` = the site's **primary domain** (the one Netlify
+      redirects the others to, e.g. `https://www.…`): Presentation opens its preview there and
+      connects only to that origin — after a redirect it shows "preview URL origin does not match"
+      and visual editing stays off (fem, 2026-11-15). Check with `curl -sI <endpoint>` (no 301).
 - [ ] **Stripe webhook endpoint** in **test and live mode** (Developers → Webhooks):
       `https://<site>/api/payment/webhooks` (the wrapper's `path`), events
       `payment_intent.succeeded`, `charge.refunded`, `refund.updated`; its signing secret →
