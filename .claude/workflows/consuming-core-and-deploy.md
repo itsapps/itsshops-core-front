@@ -143,6 +143,17 @@ pushes.
    (e.g. core-back 5.4.0: no `orderWithdrawal` drafts, raw perspective). **Reading a production
    dataset is the user's call:** Claude Code's auto-mode classifier blocks it like a `user` push —
    ask the user to allow one read (it then applies to that read only) or to run the query in Vision.
+   **Then the starter** (`~/Documents/programming/jamstack/itsshops-starter`, own user, `main`) —
+   after **every** core tag, so a new customer always starts on current core (owner, 2026-11-15):
+   pin the new tag(s) in the root `package.json` and `base/{frontend,backend}/package.json`
+   (`npm install` in the root), work through the new versions' CHANGELOG entries — "Upgrading"
+   applies to the starter's base and packages like to a customer; new markup or classes core
+   renders need starter CSS (the drift test only catches the reverse); new options a customer
+   picks at setup may need an intake option or placeholder; on a new major also bump
+   `manifest.json` → `core` and the core majors in the starter's `CLAUDE.md` — then `npm test` +
+   `npm run smoke` green, `CHANGELOG.md` entry, tag (patch: only re-pinned; minor: new or changed
+   packages, options, CSS; major: the answers file or manifest format changed incompatibly) and
+   push with the tag. Starter release rules: the starter's `CLAUDE.md` → "Git".
 2. **Customer — pin the tag(s):** `npm install 'github:itsapps/itsshops-core-<front|back>#<tag>'`
    in the frontend and/or backend; in the **frontend** then also `npx update-browserslist-db@latest`
    (refreshes `caniuse-lite` in the lockfile — it's frozen there, and autoprefixer/cssnano print

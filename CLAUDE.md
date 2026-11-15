@@ -21,7 +21,7 @@ this file stays the always-loaded router.
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
 | **Starting a new customer** (website or webshop) from scratch — starter check, intake, assembly from `itsshops-starter`, design, accounts, docs, first staging deploy (command: `/itsshops-new-customer`) | `.claude/workflows/new-customer.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches, Node.js version) | `.claude/workflows/consuming-core-and-deploy.md` |
-| **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
+| **"release <customer>"** — cut core version(s), catch up + tag the starter, pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
 | Which Netlify / Sanity plan a site needs (credits, costs, rate-limit rule caps, public vs. private dataset) | `.claude/workflows/netlify-plans.md` |
 | Checking that a customer still renders the same after a core CSS change (side-by-side builds, HTML + computed-style diff, dead rules) | `.claude/workflows/compare-customer-builds.md` |
