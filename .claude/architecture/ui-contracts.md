@@ -165,6 +165,9 @@ Look classes core emits but never styles (core's only rule: `.form .btn { align-
 - **`btn--secondary`** — next to `btn` on a button that isn't the view's main action (the checkout's
   coupon apply/remove).
 
+The starter's `tests/look-classes.test.ts` keeps a copy of this list (base must style each one,
+core must still render it). If you add a class here or remove one, change that test too.
+
 Both `<button>` and `<a>` carry them — style both alike. States to cover:
 
 - hover, `:focus-visible`, `:disabled`.

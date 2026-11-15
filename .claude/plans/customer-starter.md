@@ -3,8 +3,8 @@
 Status: **In progress** — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
 active customer since moved on to core-front 5.2.0 / core-back 6.2.0 (`main` + `staging`; tinhof and
 itsapps also `production`); starter repo `itsshops-starter` has base, feature/module packages,
-manifest + intake, demo datasets and the v1 variants. **Remaining: steps 7–9** (starter catch-up
-with core 5.x/6.x + checks, the command, starter tag). History: parts A–E refined several rounds
+manifest + intake, demo datasets and the v1 variants. **Remaining: step 9** (starter tag `1.0.0`; steps 7–8 done
+2026-11-15, uncommitted). History: parts A–E refined several rounds
 on 2026-11-10 (A/B against `menu.ts`, `css.ts`, `core.css`, the customers' headers/CSS/wrappers;
 C–E against wrappers, default header/footer, itsapps modules, intake limits); open questions
 1–9 decided by the owner the same day. **Refined 2026-11-15** against core-front 5.2.0 / core-back
@@ -1119,6 +1119,17 @@ commit only when asked; fix `new-customer.md` (or the starter) when the recipe p
      `.env` has `SANITY_WRITE_TOKEN` (passed as `SANITY_AUTH_TOKEN`).
    - Documented in the starter `CLAUDE.md` → "Smoke builds" (replacing the manual commands
      there), plus a root `package.json` script `"smoke": "node scripts/smoke.mjs"`.
+   **7a + 7b done 2026-11-15** (starter, uncommitted): pins 5.2.0 / 6.2.0, `typescript` in the
+   backend, vinofact URL lines gone, 5.1.0 shop CSS, `productFreeShipping` option + `productKinds`
+   question (`collect`, new marker `starter:schema-settings`, `needsValues` checked by
+   `assemble.mjs`), root `package-lock.json` added. Checks: 129 tests pass. A mutation check
+   (stray class, `outline: none`) makes drift + focus fail. Deviations: drift also resolves
+   interpolated classes (`{{ class }}__row` + a literal head; `teaser--{{ _layout }}` + a quoted
+   value in a library template/backend schema), so the allowlist stays empty; the contract test
+   strips `{# #}` comments (hero's comment names `<h1>`); `documents validate` runs on the first
+   locale workspace (same dataset). `npm run smoke` (pinned tags, no `--link`): site, shop, all
+   pass (frontend build + tests, Studio build, schema + documents validate 0/0, `tsc`, one
+   `@sanity/ui` 4.4.12; `all` without VinoFact in the frontend).
 8. Part D: rewrite `workflows/new-customer.md` (sections: D.0 starter check, D.1 intake,
    D.2 plan, D.3 assemble, D.4 wishes, D.5 design, then the kept 1 accounts / 4 first content /
    6 docs / 7 remotes + staging as in D.6, "Done when" as in D.6) and the command file (D →
@@ -1128,6 +1139,11 @@ commit only when asked; fix `new-customer.md` (or the starter) when the recipe p
    command up to D.3 into the scratchpad for one site and one shop intake and diff each
    assembly against `smoke.mjs`'s from the matching fixture (must be identical apart from
    names). `/itsshops-update-docs` (core-front, starter).
+   **Done 2026-11-15** (uncommitted): `new-customer.md` rewritten (D.0–D.7 + "Done when"), the
+   command file, core-front `CLAUDE.md` routing + ecosystem rows. Dry run: the intake applied to
+   `manifest.json` (a script choosing option ids, `when`/`needs`/`collect` as the command
+   does) → answers → `assemble.mjs` for one site and one shop. Diffed against the smoke's
+   `site`/`shop`, the output is identical apart from names (and build artifacts).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
    `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (if the site
    renders the cart sidebar, the withdrawal/shipping modules or a modal filter panel); compact

@@ -19,7 +19,7 @@ this file stays the always-loaded router.
 | Checkout/Stripe, refunds, draft preview (`preview` + `preview-enable`, session), users/Supabase, newsletter, email, orders/tax/shipping/free shipping/coupons (Netlify functions + client scripts); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
 | WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
 | Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
-| **Starting a new customer** (website or webshop) from scratch — intake, accounts, backend + frontend scaffold, docs, first staging deploy (command: `/itsshops-new-customer`) | `.claude/workflows/new-customer.md` |
+| **Starting a new customer** (website or webshop) from scratch — starter check, intake, assembly from `itsshops-starter`, design, accounts, docs, first staging deploy (command: `/itsshops-new-customer`) | `.claude/workflows/new-customer.md` |
 | How customers consume core (git dep + lockfile pin) and deploy (Netlify branches, Node.js version) | `.claude/workflows/consuming-core-and-deploy.md` |
 | **"release <customer>"** — cut core version(s), pin tags, release the customer to production | `.claude/workflows/consuming-core-and-deploy.md` → "Release flow" |
 | What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
@@ -187,7 +187,7 @@ customer extension only for customer-specific data. After a core-back change, ru
 |---|---|---|
 | core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
 | core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
-| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer`, never installed (private `itsapps/itsshops-starter`; in progress — `.claude/plans/customer-starter.md`) |
+| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer` (assembled with its `scripts/assemble.mjs`), never installed (private `itsapps/itsshops-starter`; no release tag yet — `1.0.0` follows plan step 9; fits core-front 5.x / core-back 6.x) |
 | Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine shop), staging only |
 | Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | **live** customer (wine shop) |
 | Rosi Schuster | `~/Documents/programming/web/rosi_schuster/{itsshops_backend,itsshops_frontend}` | active customer (wine, catalog without checkout), staging only |
