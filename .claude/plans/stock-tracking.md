@@ -3,7 +3,7 @@
 Status: **parked** (2026-11-06), nothing implemented. No shop enables stock today
 (`features.shop.stock` is off in every backend, so `stock` is hidden and empty = unlimited). Pick it
 up when the first shop wants to turn stock on. One decision open (E, end of file). Split off from
-`bundle-checkout.md` on 2026-11-06; its bundle parts build on the order snapshot
+the bundle checkout work (core-front 3.9.0) on 2026-11-06; its bundle parts build on the order snapshot
 `orderItemBundle.items` (shipped with the bundle work, `commerce-and-netlify.md` → Order snapshot).
 
 Spans core-back (`stock` field) and core-front (cart validation, webhook, resolver/schema.org).

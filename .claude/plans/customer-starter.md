@@ -913,7 +913,7 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      (backend; `disableSubmenus` removed — redundant with `maxDepth`, owner 2026-11-11) and `menu.maxDepth: 2` (frontend); the smoke fixtures pick it.
      **Built 2026-11-11:** core-back `feature/menu-levels` (`menuItemTypes`, `baseName`, tests,
      CHANGELOG "Unreleased"; merged to `main` 2026-11-11), migration script moved to the
-     jurtschitsch backend `scripts/migrate-menu-item-levels.mjs` (one customer → not core; env as
+     jurtschitsch backend `scripts/migrate-menu-item-levels.mjs` (deleted after use 2026-11-15; one customer → not core; env as
      `itsshops sanity`; dry run on `development`: 4 + 6 draft items), core-front `queries.ts`
      (`maxDepth − 1` child levels, tests, CHANGELOG 4.0.1 "Upgrading"), starter `637190f`. Checked:
      migration on the demo `development` menu (2 items relabelled, re-run 0); both demo datasets

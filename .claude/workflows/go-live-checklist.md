@@ -23,7 +23,9 @@ Not legal advice — the owner confirms the legal choices (WKO templates / lawye
       (Functions scope, not the staging values), `SERVER_FUNCTIONS_ALLOWED_ORIGINS` = the
       production Studio origin, a **build hook** for `production`.
 - [ ] Production Studio project: `SANITY_STUDIO_NETLIFY_SITE_ID` = the production **frontend**
-      project; no credential in any `SANITY_STUDIO_*` var (core-back `CLAUDE.md` rule).
+      project (check: the Deploy dialog's badge shows, not a broken image); no credential in any
+      `SANITY_STUDIO_*` var — Netlify env **and** the backend's local `.env` / `.env.production`
+      (`sanity build` reads it; core-back `CLAUDE.md` rule).
 - [ ] **Stripe webhook endpoint** in **test and live mode** (Developers → Webhooks):
       `https://<site>/api/payment/webhooks` (the wrapper's `path`), events
       `payment_intent.succeeded`, `charge.refunded`, `refund.updated`; its signing secret →

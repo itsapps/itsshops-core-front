@@ -6,7 +6,7 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 
 ## 5.2.0
 
-VinoFact on its dated API (plan `.claude/plans/vinofact-bottle-image-import.md`, steps 9–10):
+VinoFact on its dated API (ADR `decisions/vinofact-dated-api-version-in-code.md`):
 - VinoFact: dated API `v2026-11-14` (alts per language). The build requests
   `<origin>/api/graphql/v2026-11-14/` (`VINOFACT_API_VERSION` in `src/data/vinofact.ts`); image
   `alt`s (certificates, bottle image) are selected per locale and resolved to the page locale's

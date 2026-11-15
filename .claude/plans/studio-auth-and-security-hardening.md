@@ -1,9 +1,11 @@
 # Plan — No secrets in the Studio bundle + security hardening (core-back + core-front)
 
-Status: **released — core-front 5.0.0 / core-back 6.0.0; Tinhof live (frontend 1.15.0, backend
-1.11.0) since 2026-11-12.** Open: Tinhof rollout step 6 (rotate the Vinofact token, check the
-Netlify/Stripe/Resend logs); then Jurtschitsch and Rosi Schuster (rollout 4–6 each, same checklist —
-their Netlify PATs are revoked already). History: proposed
+Status: **done** (2026-11-15) — released as core-front 5.0.0 / core-back 6.0.0; Tinhof live since
+2026-11-12 incl. rollout step 6 (Vinofact token rotated, logs checked); Rosi Schuster and
+Jurtschitsch migrated on staging 2026-11-15 (secrets in the Integrations dialog, credentials out of
+env and `.env*`, Vinofact token rotated). Their production follows at go-live via
+`workflows/go-live-checklist.md`. Kept for option B (deploy proxy), which core-back's
+`studio-components.md` names as the upgrade path. History: proposed
 2026-11-11; refined 2026-11-11 against the code — A's client wiring, C's
 contract, D's cookie/route and the rollout corrected; refined again 2026-11-11 — A's missing-secret
 message wiring, WineTab path, D's locale/perspective handling, frame-ancestors fallback, tests for
