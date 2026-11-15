@@ -35,8 +35,9 @@ config fields `features.shop.vinofact.integration` (core-front) and `integration
 
 - Query shape and API version can't drift apart per shop; a pinned core keeps working whatever the
   env says.
-- Each dated version a core uses is registered as a consumer contract in vino-facts
-  (`src/vino_facts/api/tests/consumers/`), so a later VinoFact change can't silently break it.
+- A dated version stays valid because VinoFact freezes each version's whole schema
+  (`api/graphql_schema/v<date>.graphql`, checked by its tests) and ships changes only under a new
+  date — no per-consumer contract files for the cores (owner, 2026-11-15).
 - After a release the URL vars can be deleted from the shops' env — only once that environment runs
   the new core (an old core without a URL builds without VinoFact data).
 - core-back re-copies `VINOFACT_LOCALES` from VinoFact's `LocalizedString` when bumping (an unknown

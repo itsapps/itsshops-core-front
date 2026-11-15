@@ -13,7 +13,7 @@ stored `InternationalizedArrayString` shape; then, owner's call: config fields
 validation, Studio builds the URL in `fetchData`). **Steps 9–10 done 2026-11-14** (core-front,
 unreleased; Tinhof local build byte-identical to the old core); **core-back steps 1–8 implemented 2026-11-14**, Studio flows tested on Schuster by the owner
 (2026-11-14); **released: core-front 5.2.0, core-back 6.2.0** (2026-11-14). Open: Rollout steps
-2 (Schuster backend pin + import), 3 (Tinhof staging → release), 4, 5; step 13 (vino-facts contracts). As built, differing from the text below:
+2 (Schuster backend pin + import), 3 (Tinhof staging → release), 4, 5 (step 13 dropped). As built, differing from the text below:
 `vinofactLocaleKey` / `VINOFACT_LOCALES` / `vinofactLocaleKeys` live in `src/external/vinofact.ts`
 (the client needs them; the helper imports them); `bottleImageTargets` (draft-vs-published choice)
 is in `lib/shop/vinofactImage.ts`, tested; the background import after a Product Manager submit is
@@ -410,19 +410,13 @@ is loaded from i.vinofact.com at page view.
 
 12. ~~#922 released to prod~~ — done 2026-11-14 (prerequisite for steps 3–5). There is no VinoFact
     stage server, so test the import against prod images.
-13. Register both cores as consumers of the dated API in vino-facts (Heini's repo, review there),
-    so a later dated change can't silently break them: contract files in
-    `src/vino_facts/api/tests/consumers/` — `core-front-v2026-11-14.graphql` (the step 9 query with
-    every field, `{ de en }`; vino-facts `versioning.md` already asks for it "when core-front
-    moves") and `core-back-v2026-11-14.graphql` (`getWines`, `getBottleImages` with
-    `alt { de en }`) — and update `.claude/graphql/versioning.md` → "Known consumers" (core-front
-    row: endpoint now dated; new core-back Studio row). Keep `core-front-v1.graphql` while a pinned
-    old core-front still calls `/api/v1/graphql`. Retiring a date: VinoFact's access-log rule is
-    enough for us (owner, 2026-11-14) — only active customers use VinoFact (Tinhof, Schuster,
-    Jurtschitsch; no dormant project has it in its config), each builds on every Studio Deploy, so
-    its date keeps showing in the log; a retired date would fail the build loudly
-    (`fetchVinofactWines`), never publish without wine data. The contract files name the dates our
-    cores use.
+13. ~~Consumer contract files in vino-facts~~ — **dropped (owner, 2026-11-15).** VinoFact protects
+    every consumer, known or not, by freezing each version's whole schema
+    (`api/graphql_schema/v<date>.graphql`, test `test_committed_schema_files_match_the_code`) and
+    by shipping changes only under a new date; per-consumer query files add little on top.
+    Retiring a date: VinoFact's access-log rule is enough for us (owner, 2026-11-14) — each active
+    shop builds on every Studio Deploy, so its date keeps showing in the log; a retired date would
+    fail the build loudly (`fetchVinofactWines`), never publish without wine data.
 
 ## Rollout
 
