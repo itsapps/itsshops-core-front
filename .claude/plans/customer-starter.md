@@ -1,21 +1,23 @@
 # Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **In progress** (2026-11-10; step 1 spike done, `layer()` confirmed; **step 2 built** the same day on `feature/customer-starter` — A, A.2, A.3, B.1–B.4 + tests + docs; verified by itsapps + tinhof scratch builds against the linked core; owner discussion in the itsapps session; refined once, then
-reworked the same day from "one starter + `itsshops init` generator" to "starter repo with a
-variant library, assembled by the command"). Nothing built yet. Parts A + B verified against the
-code 2026-11-10; parts C–E refined once the same day (wrappers, default header/footer, itsapps
-modules, intake limits checked; A.3 added from it). A.3 refined 2026-11-10 against `menu.ts`,
-core's `header.njk`/`footer.njk` in full and every active customer header (resize fix made
-concrete and widened to the itsapps/rosi_schuster overlay bug; four header/footer a11y fixes
-added). Open question 7 decided the same day (two datasets; owner created `development-shop`).
-Part B + Part C's feature packages refined 2026-11-10 against `src/config/css.ts`,
-`tsup.config.ts`, `core.css` in full, the four active customers' `global.css`, `utilities/`,
-backend `page.modules` and every `netlify/functions` wrapper (B.4 customer table made concrete,
-checkout/newsletter wrapper options and rate-limit count added). Part A "Classes the customer
-must style" + A.3 button hierarchy + Part D intake refined 2026-11-10 against every `btn` in
-`src/templates`, the form scripts' submit handling, `checkout.ts`/`checkout-coupon.ts`,
-core-back's `FeatureConfig` (intake → manifest mapping made concrete; gallery moved to shop
-with its product-container override; open questions 8 + 9 added, then decided by the owner the same day: own button classes, `product_image` block).
+Status: **In progress** — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
+active customer since moved on to core-front 5.2.0 / core-back 6.2.0 (`main` + `staging`; tinhof and
+itsapps also `production`); starter repo `itsshops-starter` has base, feature/module packages,
+manifest + intake, demo datasets and the v1 variants. **Remaining: steps 7–9** (starter catch-up
+with core 5.x/6.x + checks, the command, starter tag). History: parts A–E refined several rounds
+on 2026-11-10 (A/B against `menu.ts`, `css.ts`, `core.css`, the customers' headers/CSS/wrappers;
+C–E against wrappers, default header/footer, itsapps modules, intake limits); open questions
+1–9 decided by the owner the same day. **Refined 2026-11-15** against core-front 5.2.0 / core-back
+6.2.0 (CHANGELOGs 4.0.1–5.2.0 / 5.4.0–6.2.0 "Upgrading", the starter's base, manifest and shop
+packages, the customers' lockfile pins): step 7 gained a catch-up part (7a), part C/D/E details
+corrected, open question 10 added. **Second refine 2026-11-15** against the starter's
+`scripts/assemble.mjs`, `tests/fixtures/*`, `manifest.json` (packages, intake), base
+`package.json`s / `.env-sample`s / `global.css` / `global-styles.css`, `workflows/new-customer.md`
+and `~/.claude/commands/itsshops-new-customer.md` (all read in full): step 7b made concrete (smoke
+script: shared install, datasets, vinofact off, env), focus test given its `main:focus`
+exception, part D reworked (starter check, assembler use, core pin, section mapping, the
+command's new text); open questions 10–12 decided by the owner the same day (free-shipping
+option, product-kinds question → 7a; the command runs `assemble.mjs`).
 
 **Goal:** `/itsshops-new-customer` asks the owner a few basic questions (site or shop, features,
 which header/menu/cart/footer style, layout, modules) and assembles a working project from
@@ -44,9 +46,10 @@ records (why the starter is copied, not imported; why variants live outside core
      library** per part, feature and module packages, and a manifest. Core repos carry no
      starter files.
 - **The command assembles** (part D): intake → copy base + chosen variants + features + modules
-  per the manifest → fill tokens → checks. **No generator script** (`itsshops init` keeps doing
-  only `netlify.toml`); add one later on top of the same manifest only if manual assembly proves
-  error-prone.
+  per the manifest → fill tokens → checks. **Assembly runs the starter's `scripts/assemble.mjs`**
+  (owner, 2026-11-15, open question 12 — replaces "no generator script"): the same code the smoke
+  tests, a copy tool only (no prompts, no design); intake, plan, names, design and accounts stay
+  with the command. `itsshops init` keeps doing only `netlify.toml`.
 - **Wishes outside the library** are built by Claude **from the part's contract**; a variant that
   proves itself in a project may be added back to the library.
 - **Copied, not imported:** default styling (look and the CSS the JS states need) lands in the
@@ -418,11 +421,13 @@ itsshops-starter/
   base/                          always copied
     frontend/   package.json  eleventy.config.mts  itsshops.config.mts  netlify.toml
                 tsconfig.json  vitest.config.ts  .gitignore  .env-sample  CLAUDE.md
-                netlify/functions/preview.mts
+                netlify/functions/preview.mts  preview_enable.mts
                 src/_config/{colors,fonts,text-sizes,extensions}.mts
-                src/assets/css/global/global.css + global/{fonts,variables,base}.css
+                src/assets/css/global/global.css + global/{fonts,variables,global-styles}.css
                 src/assets/css/global/blocks/{page,buttons,locale-switcher,error-page,maintenance}.css
-                src/assets/css/global/blocks/modules/_shared.css
+                src/assets/css/global/blocks/modules/{_shared,carousel,youtube,privacyPolicyModule}.css
+                (as built: `global-styles.css`, not `base.css`; `utilities.css` is imported
+                after the block globs, not before `fonts.css` as in the B.1 sketch)
                 src/assets/scripts/index.ts   (imports core's scripts + a commented guarded
                                                lazy-import example)
                 src/assets/images/favicon/*   (names core's head links: favicon.ico,
@@ -510,10 +515,14 @@ replaces them in step D.3.
 **Feature packages** — function wrappers with file names and `config.path` matching core's
 fixed `/api/…` routes (`commerce-and-netlify.md`). Verified 2026-11-10 against every active
 customer's `netlify/functions/`:
-- **base** `netlify/functions/preview.mts` — itsapps' and jurtschitsch's are identical but full
-  of commented-out leftovers; the starter ships it clean: `config.path:
-  '/api/preview/:locale/:documentType/:documentId'`, `export default (request, context) =>
-  preview({ request, context })`.
+- **base** `netlify/functions/preview.mts` + `preview_enable.mts` (core-front 5.0.0; shipped in
+  starter `207bc6a`): `preview.mts` `config.path: ['/api/preview/:locale',
+  '/api/preview/:locale/:documentType/:documentId']`, `export default (request, context) =>
+  preview({ request, context })`; `preview_enable.mts` `config.path: '/api/preview-enable'`,
+  `export default createPreviewEnableHandler()` (from `…/functions/preview-enable`). Frontend
+  `.env-sample`: `PREVIEW_SESSION_SECRET`, `SERVER_FUNCTIONS_ALLOWED_ORIGINS` (base),
+  `SERVER_FUNCTIONS_SECRET` (checkout insert). Backend `.env-sample` holds public values only;
+  credentials go into the Studio's Integrations dialog (core-back 6.0.0).
 - **checkout** — jurtschitsch's set (tinhof's is identical except `invoices: false` in
   `order_notify` — wineNET-only, not in the library): `payment_create` (`/api/payment/create`),
   `payment_webhooks` (`/api/payment/webhooks`), `payment_refund` (`/api/payment/refund`),
@@ -560,8 +569,12 @@ inserts `shop: { checkout: %%checkout%%, category: %%category%%, coupons: %%coup
 backend `sanity.config.ts` (backend: plus `enabled: true`), always with every flag written out —
 core-back defaults `checkout` **on** (`FeatureConfig`, core-back `src/types/config.ts`) while
 core-front defaults it off, so an omitted flag differs between the stacks. `vinofact` package:
-`vinofact: { enabled: true }` in both configs + `VINOFACT_API_TOKEN`, `VINOFACT_PROFILE_SLUG`
-in the frontend `.env-sample` (`VINOFACT_API_URL` is optional from core-front 5.2.0 — omit it); needs `shop`. **Gallery** (needs `shop`; verified 2026-11-10 against jurtschitsch's
+`vinofact: { enabled: true }` in both configs (no `integration` field — removed in core-front
+5.2.0 / core-back 6.2.0) + `VINOFACT_API_TOKEN`, `VINOFACT_PROFILE_SLUG` in the frontend
+`.env-sample`, `SANITY_STUDIO_VINOFACT_PROFILE_SLUG` + test-only `VINOFACT_API_TOKEN` in the
+backend's; the Studio's token goes into Integrations. **No `VINOFACT_API_URL` /
+`SANITY_STUDIO_VINOFACT_API_URL`** (optional since 5.2.0 / 6.2.0, default
+`https://www.vinofact.com` — the manifest still writes both, fixed in 7a); needs `shop`. **Gallery** (needs `shop`; verified 2026-11-10 against jurtschitsch's
 `overridable/product/container.njk`, `extensions.mts`, backend `schema/extensions.ts`, and core's
 `gallery/{main,thumbs}.njk` + `gallery.ts`): more than one product image is **not core data** —
 core's product/variant carry one `image`. jurtschitsch adds it as a customer extension, so the
@@ -626,8 +639,18 @@ customers' `.gitignore` ignores `.env*` except `!.env-sample`).
 
 ## Part D — the command `/itsshops-new-customer`
 
-Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-customer.md`:
+Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-customer.md`. Today
+both describe the **sibling-copy** flow (command step 2: "ask every open decision in **one**
+`AskUserQuestion` round … name the sibling you'd copy from"; workflow sections 0–7 + "Done
+when") — read in full 2026-11-15; the sibling-copy path goes away entirely.
 
+0. **Starter check** (first, before the intake): the local checkout
+   `~/Documents/programming/jamstack/itsshops-starter` exists (else hand the owner `! git clone
+   git@github.com:itsapps/itsshops-starter.git ~/Documents/programming/jamstack/itsshops-starter`
+   — private repo, own GitHub user), `git status --porcelain` is empty, and `git describe --tags
+   --exact-match` names a release tag (else say which commit it is on and ask whether to go on).
+   `manifest.json` → `core` must match the core majors on core-front/core-back `main`; on a
+   mismatch, stop and say so (the starter needs a catch-up like 7a first).
 1. **Intake**, with `AskUserQuestion` — limits: 1–4 questions per call, **2–4 options per
    question** (an "Other" free-text option is added automatically), previews only on
    single-select questions. So a long feature list is split into several multi-select
@@ -640,16 +663,21 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
      read it too; nothing in the backend); extras, multi-select (newsletter, users, blog, dark
      mode).
    - Round 2 — only for a shop: shop features, multi-select (checkout, category, coupons,
-     vinofact); more shop, multi-select (stock, manufacturer, age gate; search dropped from v1); product
-     gallery (yes / no).
-   - Round 3 — look: footer (`simple` / `columns`, with previews); cart button (`count` /
-     `text-count`, **only with checkout** — without it core renders no cart toggle, A.3);
-     content width (narrow / medium / wide, part C → "Layout").
+     vinofact); more shop, multi-select (stock, manufacturer, age gate; search dropped from v1;
+     free-shipping products as a 4th option, `needs: checkout` — open question 10); product kinds (open question 11); product gallery (yes / no). Coupons, stock
+     `needs: checkout` (core-back 6.1.0 also turns coupons off without checkout).
+   - Round 3 — look (as built, `manifest.json` → `intake`, at its 4-question limit): menus
+     (`flat` / `submenus` → `maxDepth: 2` in both stacks); content width (narrow / medium / wide,
+     part C → "Layout"); cart button (`count` / `text-count`, **only with checkout** — without it
+     core renders no cart toggle, A.3); footer (`simple` / `columns`).
    - Round 4 — content: modules, multi-select (stdContent, hero, teaser, faq).
    - Names (folder, repo, domain, company) as free text in the plan step.
+   - Not asked (were in the old section 0): `invoices` (wineNET-only, not in the library — a
+     project adds it by hand), newsletter captcha (library default `captcha: false`; captcha
+     wiring is not in the library), sibling choice (gone).
+     Accounts → the plan step's owner steps.
    **Manifest `intake[]`:** rounds → questions (`id`, `header` ≤ 12 chars, `question`,
-   `multiSelect`, optional `when`: an expression over earlier answers, e.g. `kind == shop`,
-   `checkout`) → options (`label`, `description`, optional `preview`, and what choosing it does:
+   `multiSelect`, optional `when`: structured `{ answer, is }` / `{ package }`, as built in 5f) → options (`label`, `description`, optional `preview`, and what choosing it does:
    `packages: [...]` and/or `values: { placeholder: value }`). Unchosen options set their
    `values` to the declared default (`false` for `stock`, `coupons`, …), so every placeholder is
    filled either way. Coupons and stock also `needs: checkout` (server-side only; the
@@ -658,32 +686,81 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
 2. **Plan + go-ahead:** the package list resolved from the manifest (with `needs` checked,
    e.g. a package requiring `shop`), paths, owner steps, and the summed rate-limit rules →
    Netlify plan (Personal ≤ 2, Pro ≤ 5).
-3. **Assemble:** copy `base/` → `web/<customer>/<…>-frontend|backend`, then each package's
-   files; apply the inserts; remove the markers; fill the `%%…%%` placeholders; set
-   name/locales/tokens. Then `grep -r '%%[a-zA-Z]*%%\|starter:'` over both folders must find
-   nothing.
+3. **Assemble** with the starter's assembler (open question 12):
+   - Write the intake as an answers file in the fixtures' format (`{ packages: [...], values:
+     {...} }`: chosen options' `packages` + `values`, plus `projectName`, `projectTitle`,
+     `sanityProjectId`, `starterVersion` = the starter tag, `createdAt` = today; locales from
+     "Other" as a TS array literal + prose list) to the scratchpad, run `node
+     <starter>/scripts/assemble.mjs --answers <file> --out <scratch>/<customer>` — it resolves
+     `includes`, fails on a missing `needs`, a file collision, a missing marker or an unfilled
+     placeholder, and prints the rate-limit sum. **`--out` is wiped first** (`fs.rmSync`), so
+     never point it at `web/`; move `<out>/frontend` → `web/<customer>/<…>-frontend` and
+     `<out>/backend` → `…-backend` (folder names: `webshop-*` for shops; sites as the owner names
+     them in the plan step — siblings vary: `webpage_*`, `frontend`/`backend`), refusing if a
+     target exists.
+   - Then `grep -rn '%%[a-zA-Z]*%%\|starter:'` over both folders must find nothing.
+   - `.env` in both from their `.env-sample` (keys already right; `SANITY_DATASET` /
+     `SANITY_STUDIO_DATASET` = `development` until go-live; secrets filled by the owner or
+     generated — `PREVIEW_SESSION_SECRET` with `openssl rand -base64 48`, never printed).
+   - **Core pin:** the assembled `package.json`s carry the tag the starter fits (`#5.2.0` /
+     `#6.2.0` after 7a) — keep it; `npm install` pins that tag's commit. A tag pin is fine for
+     staging; only when a staging deploy needs unreleased core, switch once to floating
+     (consuming doc → "Back from a tag to floating"). This replaces the old section 4's "no
+     committish while not live".
 4. **Wishes outside the library:** build from `ui-contracts.md` for that part, same CSS rules;
    note in the customer `CLAUDE.md` that it isn't a library variant.
 5. **Design pass:** `frontend-design` skill for palette/fonts/details on top of the plain
    defaults.
 6. Accounts, Sanity, Netlify, first content, remotes, first staging deploy — as in today's
-   `new-customer.md` sections 1, 4, 6, 7 (kept).
+   `new-customer.md` sections 1 (accounts), 4 (core dependency & first run), 6 (customer docs),
+   7 (remotes & first staging deploy) — kept, including what 5.0.0 / 6.0.0 added there: Netlify
+   env `PREVIEW_SESSION_SECRET` + `SERVER_FUNCTIONS_SECRET` (Functions scope, one per
+   environment), the Studio's **Integrations** dialog once per dataset (functions secret, build
+   hook URL, Vinofact token), `SANITY_STUDIO_NETLIFY_SITE_ID` = the frontend project, and the
+   "Done when" check that Presentation shows the home page. Sections 0 (intake), 2, 3 (backend /
+   frontend from a sibling) and 5 (design) are replaced by D.1–D.5. What they held that is
+   still needed moves: the env-key tables of sections 2/3 → "the base `.env-sample`s hold the
+   keys" (verified: backend `SANITY_STUDIO_PROJECT|DATASET|WORKSPACE_NAME`,
+   `…_NETLIFY_FUNCTIONS_ENDPOINT|PROJECT_NAME|SITE_ID`; frontend Sanity, preview secret,
+   allowed origins, `URL`, `SUPPORT_EMAIL`, `SHOP_FORMALITY`; packages add theirs); the backend
+   `package.json`'s `sanity dev --port <free port>` → a D.3 step (base has plain `sanity dev`);
+   section 4's first content (Settings with company data, home, privacy page, menus) stays.
+   Section 6 shrinks: both `CLAUDE.md`s come assembled (features filled via
+   `starter:claude-features`); add "Status" (core pins, starter tag) and "Deploy", the ecosystem
+   row and the "Active customers" line. "Done when": "no sibling leftovers" becomes "no
+   `%%`/`starter:` left, no unused package"; add "built from starter `<tag>`" in both
+   `CLAUDE.md`s.
 7. **Checks** (below) and the "Done when" list.
+
+**The command file** (`~/.claude/commands/itsshops-new-customer.md`, stays short — the recipe
+lives in `new-customer.md`): read `new-customer.md` + `<starter>/CLAUDE.md` + `manifest.json`;
+D.0 starter check; intake rounds from `manifest.json` → `intake` (skip what `$ARGUMENTS`
+answers, apply `when`); plan + go-ahead; assemble; then sections in order; owner-only steps as
+`! …` lines, never print secrets or `git remote -v`; stop at "Done when" and report each item;
+commit only when asked; fix `new-customer.md` (or the starter) when the recipe proves wrong.
 
 ## Part E — checks
 
-- **In the starter repo** (vitest; the repo's own `package.json` has
-  `@itsapps/itsshops-core-front` as a devDependency — git dep, `npm link` while core's 4.0
-  branch is unreleased): manifest integrity (every file exists, every insert marker exists in
+- **In the starter repo** (vitest; the repo's root `package.json` has both cores as
+  devDependencies — git deps pinned to the tag the starter fits, 7a; `npm link` only while
+  testing an unreleased core): manifest integrity (every file exists, every insert marker exists in
   base, `needs` names real packages or answers, every intake option has `packages` or
   `values` and names only existing packages/placeholders, every question has 2–4 options and a
   `header` ≤ 12 chars, every `%%…%%` placeholder in a package file is declared in its
-  manifest entry and filled by some intake answer or a default); **contract
-  test** — every template the library ships (v1: `cart-toggle` partial, module templates)
-  contains its part's required hooks (`[data-cart-toggle]` with `aria-controls` +
-  `aria-expanded`, `[data-cart-count]`, …); **drift test** — every class selector in the
+  manifest entry and filled by some intake answer or a default, every `when` names an existing
+  question/option id or package, option `needs` name real packages, and no package ships or
+  inserts into a `package.json` — the smoke shares one install per side); **contract
+  test** — every template the library ships (v1: 7, `find base features variants modules -name
+  '*.njk'`) keeps its part's contract: `variants/cart-button/text-count/…/partials/cart-toggle.njk`
+  has `data-cart-toggle`, `aria-controls="cart-sidebar"`, `aria-expanded="false"`,
+  `data-cart-count` and the `coreConfig.features.shop.checkout` + `checkoutUrl` condition (A.3);
+  `features/gallery/…/product/container.njk` extends `core/components/product/container.njk`,
+  defines only `{% block product_image %}`, has exactly one `data-gallery` and includes
+  `gallery/main.njk` + `gallery/thumbs.njk`; the five module templates contain no `<h1` (the
+  page owns the h1). A template added later fails the test until it gets an entry; **drift test** — every class selector in the
   library's CSS occurs in core's `dist/templates/**/*.njk`, `dist/scripts/**` (copied `.ts`
-  sources) or the library's own templates, plus a short allowlist in the test for classes core
+  sources; skip `dist/scripts/__tests__/`, a class only a test names isn't used) or the
+  library's own templates, plus a short allowlist in the test for classes core
   builds in TS from a prefix (`src/gallery/render.ts`: `${cls}__trigger`, default `gallery`),
   which no text search finds — empty in v1 (no package styles the lightbox), the mechanism is
   for when one does; **look-class test** (the reverse direction) — every class in `ui-contracts.md`
@@ -692,12 +769,17 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
   in core's `dist/templates/**` (so a class core drops fails the test too); **focus test** —
   the base CSS has the `:focus-visible` rule above (parsed with postcss, not a text match), and
   no library CSS sets `outline: none`/`0` in a rule without a `:focus-visible` replacement for
-  the same selector.
+  the same selector — except an allowlist in the test with a reason per entry; v1: `main:focus`
+  (base `global-styles.css`: the skip link's `tabindex="-1"` target, not a control). Comments
+  are not rules (`form-base.css` only *mentions* core's `outline: none`).
 - **Assembly smoke** (starter repo script, run before a library release and by the command at
   the end): assemble a content site (all modules, each footer variant once) and a shop
   (checkout, coupons, stock, newsletter, gallery; no vinofact) into a scratch dir, `npm link` core, build
   against its demo dataset — content site → `development`, shop → `development-shop` (open
   questions 2, 7; `SANITY_DATASET` set per build) — also checks every package's inserts land.
+  Backend of each assembly: `sanity build`, `sanity schema validate` per workspace, `tsc`, and
+  `npm ls @sanity/ui` shows **one** version (`@sanity/studio-secrets` needs `^4.4.10`, core-back
+  6.0.0).
 - **Demo content:** create it once per dataset in the assembled Studio (content-site Studio →
   `development`, shop Studio → `development-shop`), then `npx sanity dataset export` per
   dataset → `seed/development.tar.gz` + `seed/development-shop.tar.gz` in the starter repo (commands:
@@ -963,8 +1045,89 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    Fixtures: site + all → `simple`, shop → `columns`. Checked: links ≥ 29 px high, outside focus
    ring, dark mode (site), no horizontal scroll at 390 px; site + shop build, tests pass.
    **Step 6 done.**
-7. Starter checks (manifest, contract, drift, look classes) + assembly smoke.
-8. Part D: command + `new-customer.md`; `/itsshops-update-docs` (core-front, starter).
+7. Starter catch-up with core 5.x / 6.x, then the checks + assembly smoke.
+   **7a — catch-up** (steps 5–6 were built and checked against core-front 4.0.x / core-back 5.4;
+   `207bc6a` already took over 5.0.0 / 6.0.0's preview wrappers, secrets and env split). In the
+   starter repo:
+   - Pins: `base/frontend/package.json` core-front `#4.0.0` → `#5.2.0`;
+     `base/backend/package.json` core-back `#5.4.0` → `#6.2.0`; same in the root `package.json`
+     devDependencies; `manifest.json` → `core` `{ front: "5.x", back: "6.x" }`; `CLAUDE.md`
+     "Fits core-front 4.x and core-back 5.x" → 5.x / 6.x. Root `npm install` (its
+     `node_modules` has no `@itsapps/*` today — the checks below read core's `dist/`; core-front's
+     `prepare` script builds `dist/` on a git install, `dist/scripts/` + `dist/templates/` included).
+   - `base/backend/package.json`: add `typescript` as a devDependency — the backend `tsc` check
+     works today only because `sanity` pulls `tsc` in transitively (hoisting).
+   - `vinofact` package: drop `VINOFACT_API_URL=` (frontend insert) and
+     `SANITY_STUDIO_VINOFACT_API_URL=` (backend insert); backend `CLAUDE.md` line → "VinoFact on
+     (`SANITY_STUDIO_VINOFACT_PROFILE_SLUG` in `.env`, token in Integrations)".
+   - `shop` package CSS for the classes core 5.1.0 renders on default markup (core styles none
+     of them; plain `<p>`s): `.product__bundle-total`, `.product__free-shipping` in
+     `blocks/product.css`; `.product-card__bundle-total`, `.product-card__free-shipping` in
+     `blocks/product-card.css` — muted secondary text (`--color-muted`, AA on `--color-bg` and
+     `--color-surface`), no colour-only meaning (the text says it). The gallery package needs
+     nothing: it overrides only `{% block product_image %}`, not the tax line 5.1.0 changed.
+     `.shipping-info__product-free` is covered by core's `shop.css` `.shipping-info*` rules.
+   - **Free-shipping products** (open question 10): option `productFreeShipping` in round 2's
+     `shopMore` question (label "Free-shipping products", `needs: [checkout]`, `values: {
+     productFreeShipping: true }`); placeholder `productFreeShipping` (source intake, default
+     `false`) in `manifest.json` → `placeholders` and the shop package's `placeholders`; line
+     `productFreeShipping: %%productFreeShipping%%,` in the shop package's **backend**
+     `sanity.config.ts` insert only (core-front has no flag — it reads the variant's
+     `grantsFreeShipping`). Fixture `all` → `true`.
+   - **Product kinds** (open question 11): base `sanity.config.ts` gets a marker
+     `// starter:schema-settings` inside `schemaSettings` (listed in `manifest.json` →
+     `markers`); the shop package inserts `productKinds: %%productKinds%%,` there; placeholder
+     `productKinds` (source intake, TS array literal, default `['physical']`). New round-2
+     question `productKinds` (header "Products", multiSelect, options `wine` / `physical` /
+     `digital` / `bundle`, each `values` contributing its kind — the command joins the chosen
+     ones into one literal; none chosen → default). Round 2 then has its 4 questions. VinoFact
+     needs wine: new generic package field `needsValues` (`vinofact`: `{ "productKinds": "wine"
+     }`), checked by `assemble.mjs` (the value's text must contain the string, else fail) and by
+     the manifest test (names a declared placeholder). Fixtures: `shop` → `['physical']` (the
+     demo products are all `kind: 'physical'`, `seed/demo-content.mjs`), `all` → `['physical',
+     'wine']`. Document both fields in the starter `CLAUDE.md` → Layout/Rules.
+   - Re-run the three fixture assemblies (`site`, `shop`, `all`) with the new pins: frontend
+     build, assembled test suites, backend checks as in part E → "Assembly smoke". Expect no
+     template change (core's templates changed since 4.0.0 only in the product card/container,
+     `macros/product.njk` and `shippingInfoModule.njk`).
+   **7b — checks** in the starter root: `vitest.config.ts` with `include: ['tests/*.test.ts']`
+   (the default would pick up `base/**/tests` and `.scratch/**`, step 6 note); one file per
+   check of part E: `tests/manifest.test.ts`, `contract.test.ts`, `drift.test.ts`,
+   `look-classes.test.ts`, `focus.test.ts` (`postcss` is a devDependency already). Assembly
+   smoke as `scripts/smoke.mjs [--link] [fixture…]` (default: `site`, `shop`, `all`), exit
+   non-zero on the first failure:
+   - **Deps, once per side:** no package touches `package.json` (manifest test), so every
+     assembly has the same dependencies. Install into `.scratch/_deps/{frontend,backend}` from
+     the assembled base `package.json` (placeholders filled with `starter-deps`), re-install
+     only when that `package.json` changed (compare to a saved copy); symlink `node_modules` into
+     each assembly (as done by hand in steps 5–6: `.scratch/shop/*/node_modules →
+     ../../site/*/node_modules`). `--link`: `npm link @itsapps/itsshops-core-front` /
+     `-core-back` in `_deps` (unreleased core); without it the pinned tags.
+   - **Per fixture:** `node scripts/assemble.mjs --answers tests/fixtures/<f>.json --out
+     .scratch/<f>`; write `frontend/.env` (`SANITY_PROJECT_ID` from the root `.env`,
+     `SANITY_DATASET` = `development` for `site`, `development-shop` for `shop` + `all`) and
+     `backend/.env` (`SANITY_STUDIO_PROJECT`/`DATASET` likewise) — the assembled
+     `tests/setup.ts` reads `.env` via dotenv.
+   - **VinoFact (`all`):** unless the root `.env` has `VINOFACT_API_TOKEN` +
+     `VINOFACT_PROFILE_SLUG`, replace `vinofact: { enabled: true }` with `enabled: false` in the
+     assembled frontend `itsshops.config.mts` before the build and print "vinofact: frontend
+     build without VinoFact" (the build fetches the live API — open question 2; `.scratch/all-novf`
+     was this edit by hand). The backend keeps it on.
+   - **Frontend:** `npx itsshops eleventy`, `npm test`. **Backend:** `npx sanity build`,
+     `npx sanity schema validate --workspace <locale>` per fixture locale, `npx tsc --noEmit`,
+     `npm ls @sanity/ui` (one version); `npx sanity documents validate` only when the root
+     `.env` has `SANITY_WRITE_TOKEN` (passed as `SANITY_AUTH_TOKEN`).
+   - Documented in the starter `CLAUDE.md` → "Smoke builds" (replacing the manual commands
+     there), plus a root `package.json` script `"smoke": "node scripts/smoke.mjs"`.
+8. Part D: rewrite `workflows/new-customer.md` (sections: D.0 starter check, D.1 intake,
+   D.2 plan, D.3 assemble, D.4 wishes, D.5 design, then the kept 1 accounts / 4 first content /
+   6 docs / 7 remotes + staging as in D.6, "Done when" as in D.6) and the command file (D →
+   "The command file"); core-front `CLAUDE.md` routing row for `new-customer.md` and its
+   ecosystem row for the starter ("in progress" → the starter tag); `~/.claude/CLAUDE.md` →
+   "New customer" line needs no change (it points at the command). Then a dry run: run the
+   command up to D.3 into the scratchpad for one site and one shop intake and diff each
+   assembly against `smoke.mjs`'s from the matching fixture (must be identical apart from
+   names). `/itsshops-update-docs` (core-front, starter).
 9. Release: CHANGELOG core-front **4.0.0** — "Upgrading": replace `dist/core.css` with
    `base.css` + `carousel.css` (if the carousel module is used) + `shop.css` (if the site
    renders the cart sidebar, the withdrawal/shipping modules or a modal filter panel); compact
@@ -982,9 +1145,11 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    cart toggle markup (no `aria-label`, sr-only label) — customers styling `.cart-toggle`
    from core's markup check it; the cart sidebar's checkout link now also has `btn` (core-only
    template) — customers whose `.btn` rules don't suit it adjust `.cart-sidebar__checkout`.
-   **Core 4.0.0 tagged 2026-11-11** (owner asked ahead of steps 5–8, which don't change core);
-   tinhof pinned it on `staging` for review. Remaining: tinhof production, jurtschitsch,
-   rosi_schuster, itsapps pins; starter tag once steps 5–8 are done.
+   **Core 4.0.0 tagged 2026-11-11** (owner asked ahead of steps 5–8, which don't change core).
+   **Customer pins done** (checked 2026-11-15): tinhof, jurtschitsch, rosi_schuster, itsapps are
+   on core-front 5.2.0 / core-back 6.2.0 on `main` + `staging` (tinhof + itsapps also
+   `production`; jurtschitsch + rosi_schuster production waits for their go-live, not this
+   plan). Remaining: starter tag `1.0.0` once steps 7–8 are done.
    Push core before any customer
    pins it; the four customers pin it with their step-3 change (`release <customer>` flow).
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
@@ -1032,3 +1197,11 @@ Rewrite `~/.claude/commands/itsshops-new-customer.md` and `workflows/new-custome
    Also decided: every core form/flow button carries `btn` **and** its own class (A.3 table).
 9. ~~Product gallery without copying core's container?~~ — decided (owner, 2026-11-10): core
    adds `{% block product_image %}` (A.3); the gallery package overrides only that block.
+10. ~~Free-shipping products in the intake?~~ — decided (owner, 2026-11-15): **yes**, a 4th
+    option in round 2's "More shop" question, `needs: checkout`, backend flag only (7a).
+11. ~~Product kinds in the intake?~~ — decided (owner, 2026-11-15): **yes**, a round-2
+    multi-select (wine / physical / digital / bundle, default `['physical']`) filling
+    `schemaSettings.productKinds` in the backend; core-back's default is all four
+    (`src/config/mapper.ts`). VinoFact requires wine (`needsValues`, 7a).
+12. ~~Command assembles by hand or runs `scripts/assemble.mjs`?~~ — decided (owner,
+    2026-11-15): **the assembler** ("Decided" amended, D.3).
