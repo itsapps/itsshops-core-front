@@ -106,6 +106,9 @@ starter's CSS rules (colour roles only, AA contrast, `:focus-visible` ring kept,
 `prefers-reduced-motion: no-preference`, every contract state styled). A sibling under `web/` may
 serve as reference — copy the idea, not its leftovers. Note in the customer `CLAUDE.md` that it
 isn't a library variant. One that proves itself may go back into the starter as a plain variant.
+A new page module follows the starter's frontend layout (starter `CLAUDE.md` → "Frontend
+layout": `_config/modules/<type>.mts` + template + CSS of the same name, presets in
+`image-sizes.mts`, strings in `translations.mts`).
 
 The newsletter **footer dialog** is such a wish: core's footer has no slot, so build it from the
 newsletter-dialog contract (rosi_schuster has one); the newsletter package keeps its CSS.

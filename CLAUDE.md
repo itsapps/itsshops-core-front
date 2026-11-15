@@ -187,7 +187,7 @@ customer extension only for customer-specific data. After a core-back change, ru
 |---|---|---|
 | core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
 | core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
-| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer` (assembled with its `scripts/assemble.mjs`), never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `1.0.0`, fits core-front 5.x / core-back 6.x) |
+| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer` (assembled with its `scripts/assemble.mjs`), never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `1.1.0`, fits core-front 5.x / core-back 6.x) |
 | Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine shop), staging only |
 | Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | **live** customer (wine shop) |
 | Rosi Schuster | `~/Documents/programming/web/rosi_schuster/{itsshops_backend,itsshops_frontend}` | active customer (wine, catalog without checkout), staging only |

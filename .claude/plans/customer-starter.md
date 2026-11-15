@@ -1,6 +1,6 @@
 # Plan — new customer projects: UI contracts, core CSS split, starter repo with variants
 
-Status: **Done** (2026-11-15; step 10 optional, open) — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
+Status: **Done** (2026-11-15, step 10 included) — steps 1–6 done (2026-11-10/11), core-front 4.0.0 released and every
 active customer since moved on to core-front 5.2.0 / core-back 6.2.0 (`main` + `staging`; tinhof and
 itsapps also `production`); starter repo `itsshops-starter` has base, feature/module packages,
 manifest + intake, demo datasets and the v1 variants. Steps 7–8 done 2026-11-15, step 9: starter
@@ -1171,6 +1171,9 @@ commit only when asked; fix `new-customer.md` (or the starter) when the recipe p
    Starter repo: tag `1.0.0`, its `CLAUDE.md` names the core major it fits.
 10. Optional, separate: split itsapps' 899-line `blocks/modules.css` into
     `blocks/modules/*.css`.
+    **Done 2026-11-15** (itsapps `3aed39b`), together with the per-module config split
+    (`_config/modules/<type>.mts`, `image-sizes.mts`, `translations.mts`) — the starter took the
+    same layout (starter `CLAUDE.md` → "Frontend layout").
 
 ## Open questions
 
