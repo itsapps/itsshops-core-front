@@ -373,9 +373,14 @@ function buildStaticPictureHtml(
 
   const primaryFormat = (Object.values(metadata) as any[][])[0]
   const srcset = primaryFormat.map((entry: any) => `${entry.url} ${entry.width}w`).join(', ')
-  const [fw, fhSpec] = size.sizes[0]
-  const fh = fhSpec ?? primaryFormat[0].height
-  const src = primaryFormat[primaryFormat.length - 1].url
+  // width/height must describe one and the same image, else the aspect ratio is wrong and the
+  // layout shifts once the file loads. eleventy-img lists the entries smallest first and drops
+  // widths above the source, so the largest entry is the widest file there really is.
+  const largest = primaryFormat[primaryFormat.length - 1]
+  const [presetW, presetH] = size.sizes[0]
+  const fw = presetH == null ? largest.width : presetW
+  const fh = presetH ?? largest.height
+  const src = largest.url
 
   const attrs = [
     `src="${src}"`,

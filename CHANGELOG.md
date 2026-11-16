@@ -9,9 +9,14 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 - Theme switch: no layout shift on load. The button is no longer rendered `hidden` and revealed by
   the deferred bundle; the inline head script sets `data-theme-js` on `<html>` before paint and
   `theme.css` hides `.theme-toggle` without it.
+- `staticImage`: `width`/`height` now describe the same file. With a `null` preset height the
+  height came from the *smallest* srcset entry and the width from the largest, so the browser
+  reserved a wrong aspect ratio and the layout shifted once the image loaded (CLS; e.g. a header
+  logo). A preset wider than the source now reports the source size.
 
 ### Upgrading
-- Nothing to change for headers that include `overridable/partials/theme-toggle.njk`. An own
+- Nothing to change for `staticImage` (its `width`/`height` attributes just become right) or for
+  headers that include `overridable/partials/theme-toggle.njk`. An own
   toggle markup with `hidden` still works but still shifts — drop `hidden` and keep the
   `.theme-toggle` class.
 
