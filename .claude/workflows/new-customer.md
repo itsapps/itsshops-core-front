@@ -126,6 +126,13 @@ block CSS), then block CSS, then overrides. Accessibility is mandatory (core-fro
 "Accessibility"): AA contrast for every role pairing that carries text (light, dark, bands),
 the base `:focus-visible` ring stays, headings in order (the page owns the `<h1>`).
 
+**Favicon:** the starter's `src/assets/images/favicon/` is a placeholder (blue tile, white dot) —
+replace all six files (`favicon.svg`, `favicon.ico` 16/32/48, `favicon-96x96.png`,
+`apple-touch-icon.png` 180, `web-app-manifest-192x192.png` / `-512x512.png`); names are fixed
+by core's `head/favicons.njk` and `site.webmanifest`. Must read at 16 px (a monogram, not the
+logo's detail); the manifest icons and `apple-touch-icon` full-bleed with the mark inside the
+central 80 % (core marks the manifest icons `maskable`). Example: Lichtenau's `CLAUDE.md` → Favicon.
+
 ## D.6 Accounts, first content, docs, staging
 
 ### 1. Accounts & services (owner or Claude, in this order)
