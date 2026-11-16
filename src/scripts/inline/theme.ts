@@ -7,8 +7,12 @@
 //    they follow the system again via their `media`. It watches data-theme, so any toggle that
 //    sets it (core's theme-toggle.ts or a customer's) is followed. The tags come earlier in the
 //    head (core/head/favicons.njk), so they exist here.
+// 3. marks <html> with data-theme-js: the switch only works with JS, and theme.css hides it
+//    without this mark. Set before paint, so the switch takes its place in the first layout
+//    (revealing it later from the deferred bundle shifted the header).
 ;(function () {
   const root = document.documentElement
+  root.setAttribute('data-theme-js', '')
   const metas = Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"][media]'))
   const original = metas.map(m => m.getAttribute('content') ?? '')
   const colorFor: Record<string, string> = {}

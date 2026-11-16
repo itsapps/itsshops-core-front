@@ -113,10 +113,12 @@ it.
   `--to-light`. Override that file for other icons, keep the classes.
 - **States:** the choice lives in localStorage `theme` (`light`|`dark`) and as `data-theme` on
   `<html>`. No choice = follow the system (`prefers-color-scheme`), the button only mirrors it.
-  The button starts `hidden` (JS only) and is revealed by the script. `aria-pressed="true"` =
-  dark.
-- **Before paint** (inline script, CSP hash computed by `config/headers.ts`): applies the stored
-  choice, and keeps the two `theme-color` meta tags (browser chrome: Safari's tab bar, mobile
+  The button works with JS only: `theme.css` hides it (`display: none !important`) until the
+  inline head script marks `<html>` with `data-theme-js` — before paint, so it is in the first
+  layout. Never render it `hidden` and reveal it from the deferred bundle: that shifts the header
+  after load (Lichtenau, 2026-11-16). `aria-pressed="true"` = dark.
+- **Before paint** (inline script, CSP hash computed by `config/headers.ts`): sets
+  `data-theme-js` on `<html>`, applies the stored choice, and keeps the two `theme-color` meta tags (browser chrome: Safari's tab bar, mobile
   toolbars) on the page's theme. With `data-theme` both tags get that theme's colour, without it
   they follow the system. It watches `data-theme`, so any toggle that sets it is followed. Colours:
   `manifest.themeBgColor` (light) / `manifest.themeBgColorDark` (dark); `themeColor` is only the

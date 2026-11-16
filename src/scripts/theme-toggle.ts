@@ -7,7 +7,8 @@
  * paint on the next page and keeps the `theme-color` meta tags in sync. Without a stored choice
  * the page follows the system setting through CSS alone, and the button only mirrors it.
  *
- * The button is rendered `hidden` (it only works with JS) and revealed here. A toggle button with
+ * The button is shown by CSS once the inline script marked <html> (theme.css); an override that
+ * still renders it `hidden` is revealed here. A toggle button with
  * a fixed label: `aria-pressed` carries the state ("Dunkles Design, gedrückt").
  */
 const KEY = 'theme'

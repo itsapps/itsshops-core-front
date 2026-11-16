@@ -35,8 +35,14 @@ afterEach(() => { vi.restoreAllMocks() })
 describe('inline theme script', () => {
   beforeEach(() => {
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-theme-js')
     localStorage.clear()
     setupHead()
+  })
+
+  it('marks <html> so theme.css shows the switch before paint', async () => {
+    await runInline()
+    expect(document.documentElement.hasAttribute('data-theme-js')).toBe(true)
   })
 
   it('without a stored choice leaves the meta tags on their system colours', async () => {

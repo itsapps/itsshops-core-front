@@ -6,6 +6,13 @@
  * Contract: .claude/architecture/ui-contracts.md → "Theme switch".
  * ─────────────────────────────────────────────────────────────────────────── */
 
+/* The switch only works with JS: hidden until the inline head script (scripts/inline/theme.ts)
+ * marks <html> with data-theme-js — before paint, so showing it never shifts the layout.
+ * !important: this file sits in layer(core), the customer's unlayered .theme-toggle sets display. */
+:root:not([data-theme-js]) .theme-toggle {
+  display: none !important;
+}
+
 /* Toggle icons: show what a click switches to (moon while light, sun while dark). */
 .theme-toggle[aria-pressed='true'] .theme-toggle__icon--to-dark,
 .theme-toggle[aria-pressed='false'] .theme-toggle__icon--to-light {

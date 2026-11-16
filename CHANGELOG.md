@@ -4,6 +4,17 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## Unreleased
+
+- Theme switch: no layout shift on load. The button is no longer rendered `hidden` and revealed by
+  the deferred bundle; the inline head script sets `data-theme-js` on `<html>` before paint and
+  `theme.css` hides `.theme-toggle` without it.
+
+### Upgrading
+- Nothing to change for headers that include `overridable/partials/theme-toggle.njk`. An own
+  toggle markup with `hidden` still works but still shifts — drop `hidden` and keep the
+  `.theme-toggle` class.
+
 ## 5.2.0
 
 VinoFact on its dated API (ADR `decisions/vinofact-dated-api-version-in-code.md`):
