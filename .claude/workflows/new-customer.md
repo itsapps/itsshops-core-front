@@ -97,6 +97,11 @@ Show, then wait for the go-ahead before creating anything:
    tag pin is fine for staging; only when a staging deploy needs unreleased core, switch once to
    floating (consuming doc → "Back from a tag to floating"). For local work on core, `npm link`
    (consuming doc → "Local development").
+8. Until the customer's `development` dataset exists, builds and dataset tests fail ("Dataset not
+   found"). To check the assembly anyway, build a scratchpad copy of the frontend (node_modules
+   symlinked, `vinofact: { enabled: false }`) against the starter's public smoke dataset
+   (`pdsm6m17` / `development-shop`) and run its `npm test` — as the starter's `smoke.mjs` does.
+   The owner's Sanity CLI login may not see the customer's project (another account/org).
 
 ## D.4 Wishes outside the library
 
