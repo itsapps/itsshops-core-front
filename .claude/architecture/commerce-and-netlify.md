@@ -37,6 +37,19 @@ Rules of thumb:
   See core-back `CLAUDE.md` → "Config".)
 - `netlify.toml` controls bundling: the preview function declares `included_files` and excludes the
   bundler/React/Stripe node_modules it doesn't need (see the customer's `netlify.toml`).
+- **pdfkit's standard fonts must be shipped by hand** (`@react-pdf/renderer` ≥ 4.9, which uses
+  upstream `pdfkit` 0.20 instead of `@react-pdf/pdfkit`): pdfkit loads the font metrics
+  (Helvetica, … — `InvoicePdf.tsx` uses Helvetica) from `pdfkit/js/standard-fonts/*.cjs` via a
+  `createRequire` + `#standard-fonts/*` subpath import that Netlify's file tracer doesn't follow,
+  and the renderer's font store loads Helvetica **on import**. So every function that imports
+  `lib/order-notifier.tsx` (`payment-webhooks`, `order-notify`, `wc-api`) crashes on every call —
+  with or without a PDF — with `Cannot find module …/pdfkit/js/standard-fonts/Helvetica.cjs`.
+  Fix per customer `netlify.toml`, for each of those functions it has:
+  `[functions.payment_webhooks] included_files = ["node_modules/pdfkit/js/standard-fonts/**"]`
+  (the whole folder: the font files require a hashed `chunks/standardGlyphNames-*.cjs`). Shipped by
+  the starter's checkout package; a lockfile still on renderer 4.4 (`@react-pdf/pdfkit`, fonts
+  built in — Tinhof, 2026-11-16) doesn't need it — add it before that lockfile moves to ≥ 4.9.
+  `check:functions` can't catch this (it runs against a full `node_modules`).
 
 ### Function catalog (subpath → factory)
 

@@ -190,7 +190,7 @@ customer extension only for customer-specific data. After a core-back change, ru
 | itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest); read by `/itsshops-new-customer` (assembled with its `scripts/assemble.mjs`), never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `1.1.0`, fits core-front 5.x / core-back 6.x) |
 | Jurtschitsch | `~/Documents/programming/web/jurtschitsch/{webshop-backend,webshop-frontend}` | active customer (wine shop), staging only |
 | Tinhof | `~/Documents/programming/web/tinhof/{webshop-backend,webshop-frontend}` | **live** customer (wine shop) |
-| Lichtenau | `~/Documents/programming/web/lichtenau/{webshop-backend,webshop-frontend}` | new customer (wine shop, checkout + VinoFact), setup in progress — not deployed |
+| Lichtenau | `~/Documents/programming/web/lichtenau/{webshop-backend,webshop-frontend}` | new customer (wine shop, checkout + VinoFact), setup in progress — staging only |
 | Rosi Schuster | `~/Documents/programming/web/rosi_schuster/{itsshops_backend,itsshops_frontend}` | active customer (wine, catalog without checkout), staging only |
 | fem_innenarchitektur | `~/Documents/programming/web/fem_innenarchitektur/{backend,frontend}` | **live** customer (content site, no shop) |
 | itsapps | `~/Documents/programming/web/itsapps/{webpage_backend,webpage_frontend}` | the agency's own site (content, no shop); deploys via `origin` — no `user` remote |

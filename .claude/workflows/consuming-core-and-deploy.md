@@ -237,6 +237,12 @@ secrets document, so `development` holds the staging values and `production` the
 local Studio and frontend use `development` too: the local Studio's Deploy builds **staging**, and
 local refunds/mails need the local frontend's `SERVER_FUNCTIONS_SECRET` = the staging one.
 
+**Domains:** `itsapps.at` is on **Netlify DNS in the itsapps team**, and Netlify refuses to attach a
+domain (or any subdomain of one) that another team manages with Netlify DNS. The projects live in
+the customer's team, so no `*.itsapps.at` name works for them (hit 2026-11-16 with
+`lichtenau-studio.itsapps.at`). Use the `*.netlify.app` names or a domain whose DNS is not on
+Netlify (e.g. the customer's own, CNAME to the project).
+
 ### Node.js version
 
 Not pinned in the repos (no `NODE_VERSION`, no `.nvmrc`; `engines` only says `>=22`). It is a

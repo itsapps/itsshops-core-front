@@ -66,6 +66,14 @@ exactly 2 — the Personal limit. A third rate-limited endpoint needs Pro.
 - Observability: Personal 1 day; Pro 30-day analytics/metrics.
 - Pro is the team plan (unlimited members); Personal is meant for one person — fine, since the
   customer account only deploys via the `user` remote PAT.
+- **Free injects a "Powered by Netlify" badge** (seen 2026-11-16): Netlify's edge adds
+  `/.netlify/scripts/hud` (`data-account-tier="free"`), an `<iframe>` fixed bottom right
+  (`#nl-badge-frame`; `#nl-hud-frame` when logged in to Netlify). On Free it can't be dismissed —
+  the script says the badge is "part of the plan", so don't hide it. In a **Studio** it covers the
+  publish/actions bar: move it with **Snippet injection** (Project configuration → Build & deploy
+  → Post processing, before `</head>`):
+  `<style>#nl-badge-frame,#nl-hud-frame{left:0!important;right:auto!important}</style>`, and
+  remove the snippet once the team is on a paid plan. A frontend with core's CSP never loads it.
 
 ## Per shop
 
