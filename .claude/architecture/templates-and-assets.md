@@ -108,6 +108,10 @@ group: a customer array **replaces** that group, it isn't merged. The
 `itsshops.config.mts` (Jurtschitsch keeps them in `src/_config/{colors,fonts,text-sizes,spacing}.mts`),
 not by rewriting CSS. The token → CSS-custom-property system also powers the shared form system and
 CSS-mask cart icons.
+**Gotcha — font family names:** the tailwind plugin writes `--font-<name>` by joining the stack
+unquoted (`src/config/tailwind/tailwind.config.ts`). A name with a digit (`Source Sans 3`) is then
+invalid CSS and the browser drops the whole stack (falls back to Times) — quote such names in the
+config value itself: `"'Source Sans 3'"`.
 
 What the directives emit (plugins in `tailwind.config.ts`):
 - **`@tailwind components`** = one `:root {…}` block of raw tokens, `--color-*`, `--space-*`,
@@ -254,6 +258,10 @@ path. If you ever move a customer to a bundler that honors `exports`, you'd re-a
   3:2, `card` 3:2, `thumb` 1:1. Customer `imageSizes` are merged over them (override a key or add
   new ones). `PictureSize` = `{ sizes: [w, h | null][], widths, format?, quality?, fit? }` — `null`
   height keeps the natural aspect ratio (of the editor crop, if any; with `fit` the whole image, since `fit` ignores crop + hotspot — `sourceDimensions()`); fixed heights keep layouts stable.
+  For very tall or wide images (bottle cut-outs, ~1:3.5) a `null` height is a trap: the width
+  descriptor drives the request, so a 600 px-wide entry loads ~2000 px for a 300 px box. Give the
+  preset the shown box (×2) with `fit: 'max'` instead — the whole image fits into it (Lichtenau's
+  `card`/`product`/`cart`/`shelf` presets).
 - **Input type:** the image functions take `SanityImageInput` (`src/types/data.ts`) — a
   `ResolvedImage` or a raw query image whose asset has `_id` instead of `_ref` (dereferenced
   `asset->{ _id, … }`, e.g. portable-text image blocks passed straight to `image()` in a
