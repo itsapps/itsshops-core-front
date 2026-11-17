@@ -132,6 +132,9 @@ export class CheckoutExpress {
       const available = (e as { availablePaymentMethods?: Record<string, boolean> }).availablePaymentMethods
       const hasAny = available ? Object.values(available).some(Boolean) : false
       if (hasAny) this.config.onReady?.({ availablePaymentMethods: available })
+      // No wallet in this browser (e.g. Firefox desktop: no Klarna, Apple/Google Pay only with
+      // 'always'): drop the element so its iframe doesn't keep a blank box on the page.
+      else this.destroy()
     })
     element.on('click', e => this.handleClick(e))
     element.on('shippingaddresschange', e => this.handleShippingAddressChange(e))

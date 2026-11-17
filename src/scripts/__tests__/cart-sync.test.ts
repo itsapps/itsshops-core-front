@@ -136,7 +136,7 @@ describe('CheckoutExpress', () => {
   async function setup(over: Record<string, unknown> = {}) {
     const { CheckoutExpress } = await import('../checkout-express')
     const handlers: Record<string, (e: any) => any> = {}
-    const element = { mount: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
+    const element = { mount: vi.fn(), unmount: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
     const calc = { totals: { grandTotal: 4321 }, shippingMethods: [], selectedShippingMethodId: null, items: [], appliedCoupons: [] }
     const updateAmount = vi.fn()
     const onCreatePayment = vi.fn(async () => ({ error: 'stop' }))
@@ -162,8 +162,22 @@ describe('CheckoutExpress', () => {
       paymentFailed: vi.fn(),
     }
     const addressEvent = () => ({ address: { country: 'AT', city: 'C', postal_code: '1010' }, resolve: vi.fn(), reject: vi.fn() })
-    return { handlers, calc, updateAmount, onCreatePayment, onCancel, confirmEvent, addressEvent }
+    return { handlers, element, calc, updateAmount, onCreatePayment, onCancel, confirmEvent, addressEvent }
   }
+
+  it('ready with a wallet → onReady; without one (e.g. Firefox desktop) → element unmounted', async () => {
+    const onReady = vi.fn()
+    const withWallet = await setup({ onReady })
+    withWallet.handlers.ready({ availablePaymentMethods: { applePay: true, klarna: false } })
+    expect(onReady).toHaveBeenCalledTimes(1)
+    expect(withWallet.element.unmount).not.toHaveBeenCalled()
+
+    const onReadyNone = vi.fn()
+    const none = await setup({ onReady: onReadyNone })
+    none.handlers.ready({ availablePaymentMethods: undefined })
+    expect(onReadyNone).not.toHaveBeenCalled()
+    expect(none.element.unmount).toHaveBeenCalledTimes(1)
+  })
 
   it('sets the Elements amount to the sheet\'s total before answering it', async () => {
     const { handlers, updateAmount, addressEvent } = await setup()

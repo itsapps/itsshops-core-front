@@ -78,8 +78,10 @@
       </div>
     </div>
 
-    {# Express checkout (Apple Pay / Google Pay) — mounts after first calculate #}
-    <div data-checkout-express class="checkout-express"></div>
+    {# Express checkout (Apple Pay / Google Pay / Klarna) — mounts after the first calculate, hidden
+       until Stripe reports at least one available method (none, e.g. Firefox desktop → stays
+       hidden, no empty box). #}
+    <div data-checkout-express class="checkout-express" hidden></div>
 
     {# "— or —" divider between express and manual checkout. Hidden until express mounts. #}
     <div data-checkout-or-divider class="checkout__or-divider" role="separator" aria-hidden="true" hidden>

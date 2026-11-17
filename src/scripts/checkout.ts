@@ -399,6 +399,7 @@ export async function initCheckout(): Promise<void> {
         }
       },
       onReady: () => {
+        expressEl.hidden = false
         if (orDividerEl) orDividerEl.hidden = false
       },
       onError: (message) => showValidationError(message),
