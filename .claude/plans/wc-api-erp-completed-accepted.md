@@ -1,7 +1,9 @@
 # Plan — wc-api: an ERP's `completed` can mean "accepted", not "shipped"
 
 Status: **built** (2026-11-18) on branch `feat/wc-api-erp-accepted` in core-front + core-back
-(steps 1–7 + tests done); Rollout not started. Refined 2026-11-18 (round 1, 90/100; checked against `wc-api.ts`,
+(steps 1–7 + tests done), merged to `main` (core-front `cc7fe57`, core-back `4c6284e`).
+Rollout: 1 done; 2 done on Tinhof staging (2026-11-18, order 000019 — PUT, both filters,
+repeat PUT; Studio check by the owner open); 3–5 wait — released together with store pickup. Refined 2026-11-18 (round 1, 90/100; checked against `wc-api.ts`,
 core-back order schema / `OrderView.tsx` / history labels). Spans **core-front** (wc-api option, status
 mapping, list filter) and **core-back** (order field, history entry, Studio display). Tinhof
 (wineNET) is the first user. **Prerequisite for store pickup** (`store-pickup.md`, decision 10):
