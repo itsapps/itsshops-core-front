@@ -83,6 +83,9 @@ alternative was rejected, a constraint discovered the hard way.
   tax category; its price is split over its items by single prices, each share at the item's rate.
 - [wc-api-bundles-as-item-lines.md](wc-api-bundles-as-item-lines.md) — the wc-api sends a bundle as
   its items (loose `product_id`s), not WC Product Bundles' parent + €0 children.
+- [wc-api-erp-completed-reported-back.md](wc-api-erp-completed-reported-back.md) — with
+  `completedMeans: 'accepted'` an ERP's `completed` keeps the order `processing` internally but is
+  reported back as `completed` (no re-import by the ERP's poll).
 - [checkout-reports-cart-changes.md](checkout-reports-cart-changes.md) — no auto-deploy on publish;
   checkout syncs the cart, reports changes and re-asks before paying.
 - [invoices-issued-elsewhere-switch.md](invoices-issued-elsewhere-switch.md) — `invoices: false`

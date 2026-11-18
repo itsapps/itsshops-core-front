@@ -110,7 +110,8 @@ Owner, 2026-11-17/18 (1–5 and 7–9 confirmed 2026-11-18):
     `CLAUDE.md` → wineNET), i.e. a pickup order would turn "Abholbereit" early, without a mail,
     and its deadline would start then — **prerequisite:** plan
     `wc-api-erp-completed-accepted.md` (wc-api option `completedMeans: 'accepted'`) is live for
-    Tinhof before it takes pickup orders.
+    Tinhof before it takes pickup orders — built and on Tinhof staging (2026-11-18), released
+    together with pickup.
 11. **Express checkout is always offered, also for pickup** (owner, 2026-11-18): when pickup is
     chosen on the page, the wallet sheet opens without a shipping address (billing address +
     email instead). Stripe supports this: `expressCheckoutElement.update()` takes
