@@ -21,7 +21,10 @@ export default createWcApiHandler({ timezone: 'Europe/Vienna' })
   `system_status`), `version` (reported WC version, default `9.0.0`), `notify` (if set, a PUT to
   shipped sends the `orderShipping` mail via `sendOrderNotification`; omit it for no mail — **omit
   it for wineNET**, see "wineNET behaviour"). `notify: {}` = on with defaults; the object takes
-  `SendOrderNotificationOptions` (`src/netlify/lib/order-notifier.tsx`).
+  `SendOrderNotificationOptions` (`src/netlify/lib/order-notifier.tsx`). `completedMeans`
+  (`'shipped'` default | `'accepted'`): what the ERP's `PUT completed` means — see "ERP accepted
+  (`completedMeans: 'accepted'`)" below; **`'accepted'` for wineNET**. In `accepted` mode `notify`
+  is ignored for `completed`.
 - **Env:** `WC_CONSUMER_KEY` + `WC_CONSUMER_SECRET` (Netlify env, functions scope — the values given
   to the ERP), plus the usual `SANITY_PROJECT_ID` / `SANITY_DATASET` / `SANITY_TOKEN` (read+write).
 - **Auth:** `consumer_key`/`consumer_secret` as query params (wineNET does this) **or** a Basic auth
@@ -45,7 +48,8 @@ Anything else → 404 `woocommerce_rest_no_route`; thrown errors → 500.
   `woocommerce_rest_invalid_status`. Sets the internal `status`, appends an `orderStatusHistory`
   entry (`source: 'wc-api'`), returns the mapped order. **Write guard:** `completed` on a refunded,
   withdrawn (open withdrawal) or cancelled order → **409** `woocommerce_rest_order_not_fulfillable`
-  (a poll→ship race; no status change, no shipping mail).
+  (a poll→ship race; no status change, no shipping mail). In `accepted` mode `completed` and
+  `processing` behave differently — see "Status" → "ERP accepted".
 
 ## IDs and dates
 
@@ -73,6 +77,32 @@ Internal → WC: `created`/`processing` → `processing`, `shipped`/`delivered` 
    `cancelled`, so the ERP drops it from its ship queue.
 
 Partial refunds are **not** overridden — such orders may still ship.
+
+### ERP accepted (`completedMeans: 'accepted'`)
+
+For an ERP whose `completed` means "I took the order over", not "shipped" (wineNET, see below).
+The ERP keeps seeing its own status, so its poll never gets the order back (whatever its
+de-duplication does); internally the order stays undispatched and the shop ships it in the Studio
+(status dialog → `shipped`, tracking code, shipping mail). Plan (done):
+`.claude/plans/wc-api-erp-completed-accepted.md`.
+- **`PUT completed`:** same 409 guard (refunded / open withdrawal / `canceled`); `created` →
+  `processing`, every other status stays (`shipped`, `delivered`, … are never moved);
+  `setIfMissing({ erpAcceptedAt: now })` on the order. History only on the first accept:
+  `{ type: 'erp', status: 'accepted' }` (+ `fulfillment/processing` when it was `created`); a
+  repeat PUT appends nothing. **No mail**, even with `notify`. Response reports `completed`.
+- **`PUT processing`:** the ERP took it back → `unset(['erpAcceptedAt'])` + status as usual.
+  `cancelled` / `refunded`: as in `shipped` mode (`erpAcceptedAt` stays, irrelevant there).
+- **Read override** (between 1. and 2. above): `erpAcceptedAt` set and status
+  `created`/`processing` → `completed` — before the withdrawal rule, since the list filter keeps
+  such an order out of the ERP's `processing` poll anyway; a withdrawal on an accepted order is
+  cancelled in the ERP by hand.
+- **List filter** follows the reported status (`statusFilter()`, unit-tested): `status=processing`
+  leaves out accepted undispatched orders, `status=completed` includes them. `shipped` mode keeps
+  the plain `status in $statuses`.
+- Studio (core-back ≥ the matching release): read-only `erpAcceptedAt`, the order view shows "In
+  der Warenwirtschaft übernommen am …" while undispatched, history "Warenwirtschaft - Übernommen".
+- No migration: orders the ERP moved to `shipped` before the switch stay `shipped` (reported
+  `completed` either way).
 
 ## Order shape
 
@@ -144,7 +174,9 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 ## wineNET behaviour (observed)
 
 - **Polling:** hourly, `status=pending,processing,on-hold`, `after` ≈ now − 48 h, `before` ≈ now −
-  10 min, `per_page=100`. A new order reaches wineNET within 1–2 h.
+  10 min, `per_page=100` (confirmed in the log of 2026-11-17). A new order reaches wineNET within
+  1–2 h. Whether it de-duplicates by order id is unknown (asked 2026-10-23, no answer) — so an
+  order it marked `completed` must not come back as `processing`.
 - **VAT rate per line = tax ÷ net, rounded to 1 decimal**, matched against its rates — it does not
   follow `taxes[].id` → `tax_lines[].rate_id` → `rate_percent` (in WC, `taxes[].id` is the tax
   *rate* id = `tax_lines[].rate_id`; `tax_lines[].id` is the tax line's own item id). With
@@ -157,8 +189,9 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   `PUT orders/:id {status: completed}` — automatic, the shop can't choose a status (Tinhof,
   2026-10-23; user agent = the operator's browser). So `completed` means "accepted", not shipped:
   with `notify` set the customer gets the shipping mail before dispatch and without tracking code.
-  Don't pass `notify` for wineNET shops; send the shipping mail from the Studio. Open (asked
-  wineNET): a configurable status, or an option here mapping `completed` → `processing`.
+  Handled by `completedMeans: 'accepted'` (above): the order stays `processing` with
+  `erpAcceptedAt`, wineNET keeps seeing `completed`, the shop sets "Versendet" in the Studio.
+  Without that option: don't pass `notify`, send the shipping mail via Studio "Send mail".
 - **Does not send `dp`** (request log, checked 2026-10-14), so supporting `dp` alone changes nothing
   for wineNET.
 - **Coupons** (per wineNET, 2026-10-21): it distinguishes *Rabatt-Gutscheine* — a discount on the

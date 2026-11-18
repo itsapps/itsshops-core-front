@@ -16,8 +16,16 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 - Checkout: the express area (`[data-checkout-express]`) starts `hidden` and is shown with the
   "— or —" divider only once Stripe reports an available wallet; with none (e.g. Firefox desktop)
   the element is unmounted. Before, a blank box stayed above the form.
+- wc-api: `createWcApiHandler({ completedMeans: 'accepted' })` for an ERP whose `completed` means
+  "accepted", not "shipped" (wineNET on Auftrag). The order stays/becomes `processing`, gets
+  `erpAcceptedAt` + an `erp/accepted` history entry, no mail; the wc-api keeps reporting it
+  `completed` (list filter included), so the ERP sees its own status. `PUT processing` clears
+  `erpAcceptedAt`. Default `'shipped'` = unchanged. `.claude/architecture/wc-api.md` → "ERP
+  accepted". Needs core-back's `erpAcceptedAt` field / `erp` history type to show in the Studio.
 
 ### Upgrading
+- wc-api: nothing to change (opt-in). wineNET shops: set `completedMeans: 'accepted'` and pin a
+  core-back with `erpAcceptedAt`.
 - Nothing to change for `staticImage` (its `width`/`height` attributes just become right) or for
   headers that include `overridable/partials/theme-toggle.njk`. An own
   toggle markup with `hidden` still works but still shifts — drop `hidden` and keep the

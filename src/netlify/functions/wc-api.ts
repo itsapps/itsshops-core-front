@@ -27,16 +27,29 @@ import type { OrderPaymentMethod } from '../types/checkout'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * What the ERP's `PUT {status: completed}` means:
+ * - `'shipped'` (default): the order was dispatched → status `shipped` (+ `notify` mail).
+ * - `'accepted'`: the ERP took the order over (e.g. wineNET when a Vormerkung becomes an
+ *   Auftrag), dispatch comes later. The order stays/becomes `processing`, `erpAcceptedAt` is
+ *   stored and the wc-api keeps reporting `completed` for it, so the ERP sees its own status;
+ *   the shop sets `shipped` in the Studio. `notify` is ignored for `completed` in this mode.
+ */
+export type WcApiCompletedMeans = 'shipped' | 'accepted'
+
 type WcApiConfig = {
   timezone?: string
   version?: string
   /** If provided, sends an orderShipping email when status changes to shipped. */
   notify?: SendOrderNotificationOptions
+  /** See `WcApiCompletedMeans`. Default `'shipped'`. */
+  completedMeans?: WcApiCompletedMeans
 }
 
 type ResolvedWcApiConfig = {
   timezone: string
   version: string
+  completedMeans: WcApiCompletedMeans
 }
 
 export type SanityOrder = {
@@ -51,6 +64,8 @@ export type SanityOrder = {
   payment: OrderPaymentMethod | null
   /** True when an open (received|processing) withdrawal references this order. */
   hasOpenWithdrawal: boolean
+  /** When the ERP accepted the order (`completedMeans: 'accepted'`), else null. */
+  erpAcceptedAt: string | null
   customer: {
     contactEmail: string
     locale: string
@@ -254,6 +269,35 @@ const STATUS_FROM_WC: Record<string, string> = {
 
 const VALID_INTERNAL_STATUSES = new Set(Object.keys(STATUS_TO_WC))
 
+/** Internal statuses before dispatch. */
+const PRE_DISPATCH = ['created', 'processing']
+
+/**
+ * GROQ filter for the requested WC statuses (`GET orders?status=…`), or null for no filter.
+ * Unknown WC statuses (e.g. "pending", "on-hold") are ignored — they have no equivalent in our
+ * system and must not block known statuses; only unknown ones → `false` (nothing, not all).
+ * In `accepted` mode the filter follows the *reported* status: an undispatched order the ERP
+ * accepted is reported `completed`, so it leaves `processing` and joins `completed`.
+ */
+export function statusFilter(
+  requestedWcStatuses: string[],
+  completedMeans: WcApiCompletedMeans,
+): { filter: string | null; params: Record<string, unknown> } {
+  if (requestedWcStatuses.length === 0) return { filter: null, params: {} }
+  const statuses = [...new Set(
+    Object.entries(STATUS_TO_WC)
+      .filter(([, wc]) => requestedWcStatuses.includes(wc))
+      .map(([internal]) => internal),
+  )]
+  if (statuses.length === 0) return { filter: 'false', params: {} }
+  if (completedMeans === 'shipped') return { filter: 'status in $statuses', params: { statuses } }
+  const accepted = `defined(erpAcceptedAt) && status in ${JSON.stringify(PRE_DISPATCH)}`
+  return {
+    filter: `((status in $statuses && !(${accepted})) || ($wantsCompleted && ${accepted}))`,
+    params: { statuses, wantsCompleted: requestedWcStatuses.includes('completed') },
+  }
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 function authenticate(request: Request): boolean {
@@ -321,7 +365,7 @@ function stableId(s: string): number {
   return (hash % 2_000_000_000) + 1
 }
 
-export function mapOrder(order: SanityOrder, tz: string) {
+export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCompletedMeans = 'shipped') {
   const id = orderNumberToId(order.orderNumber)
   const t = order.totals
   const f = order.fulfillment
@@ -331,14 +375,20 @@ export function mapOrder(order: SanityOrder, tz: string) {
   //   1. Fully refunded → `refunded`. A refund sets paymentStatus only (fulfillment
   //      status stays e.g. `created`), so without this a refunded-but-unshipped
   //      order would keep reporting `processing` and get shipped anyway.
-  //   2. Open withdrawal on a still-undispatched order → `cancelled`, so the ERP
+  //   2. `completedMeans: 'accepted'`: a still-undispatched order the ERP accepted →
+  //      `completed`, the status the ERP set itself. Before the withdrawal rule: the list
+  //      filter keeps accepted orders out of the ERP's processing poll, so a `cancelled`
+  //      would never reach it (a withdrawal is cancelled in the ERP by hand).
+  //   3. Open withdrawal on a still-undispatched order → `cancelled`, so the ERP
   //      (which polls pending/processing/on-hold) drops it from its ship queue.
-  //   3. Otherwise → the normal fulfillment-status mapping.
+  //   4. Otherwise → the normal fulfillment-status mapping.
   // Partial refunds are intentionally not overridden — such orders may still ship.
-  const isPreDispatch = order.status === 'created' || order.status === 'processing'
+  const isPreDispatch = PRE_DISPATCH.includes(order.status)
   let reportedStatus: string
   if (order.paymentStatus === 'refunded') {
     reportedStatus = 'refunded'
+  } else if (completedMeans === 'accepted' && order.erpAcceptedAt && isPreDispatch) {
+    reportedStatus = 'completed'
   } else if (order.hasOpenWithdrawal && isPreDispatch) {
     reportedStatus = 'cancelled'
   } else {
@@ -491,7 +541,7 @@ export function mapOrder(order: SanityOrder, tz: string) {
 
 const ORDER_PROJECTION = `{
   _id, _createdAt,
-  orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId, payment,
+  orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId, payment, erpAcceptedAt,
   "hasOpenWithdrawal": count(*[_type == "orderWithdrawal" && orderRef._ref == ^._id && status in ["received", "processing"]]) > 0,
   customer { contactEmail, locale, billingAddress, shippingAddress },
   totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },
@@ -525,33 +575,16 @@ async function handleListOrders(
   const url = new URL(request.url)
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10))
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') ?? '10', 10)))
-  const statusFilter = url.searchParams.get('status') ?? ''
+  const statusParam = url.searchParams.get('status') ?? ''
   const after = url.searchParams.get('after') ?? ''
   const before = url.searchParams.get('before') ?? ''
 
-  // Map WC status (or comma-separated list) to internal statuses for GROQ filter.
-  // Unknown WC statuses (e.g. "pending", "on-hold") are silently ignored — they
-  // have no equivalent in our system and should not block known statuses in the list.
-  const requestedWcStatuses = statusFilter ? statusFilter.split(',').map(s => s.trim()) : []
-  const internalStatuses = requestedWcStatuses.length > 0
-    ? [...new Set(
-        Object.entries(STATUS_TO_WC)
-          .filter(([, wc]) => requestedWcStatuses.includes(wc))
-          .map(([internal]) => internal)
-      )]
-    : []
-
-  // Build GROQ filter
+  // WC status (or comma-separated list) → GROQ filter
+  const requestedWcStatuses = statusParam ? statusParam.split(',').map(s => s.trim()) : []
+  const status = statusFilter(requestedWcStatuses, config.completedMeans)
   const filters = ['_type == "order"']
-  const params: Record<string, unknown> = {}
-
-  if (requestedWcStatuses.length > 0 && internalStatuses.length === 0) {
-    // All requested statuses are unknown — return nothing rather than all orders
-    filters.push('false')
-  } else if (internalStatuses.length > 0) {
-    filters.push('status in $statuses')
-    params.statuses = internalStatuses
-  }
+  const params: Record<string, unknown> = { ...status.params }
+  if (status.filter) filters.push(status.filter)
   for (const [name, value, op] of [['after', after, '>'], ['before', before, '<']] as const) {
     if (!value) continue
     const date = new Date(value)
@@ -579,7 +612,7 @@ async function handleListOrders(
   log.debug('List orders', {
     page,
     perPage,
-    statusFilter,
+    statusFilter: statusParam,
     after,
     before,
     total,
@@ -587,7 +620,7 @@ async function handleListOrders(
     orders: orders.length,
   })
 
-  const mapped = orders.map(o => mapOrder(o, config.timezone))
+  const mapped = orders.map(o => mapOrder(o, config.timezone, config.completedMeans))
 
   return new Response(JSON.stringify(mapped), {
     status: 200,
@@ -642,8 +675,9 @@ async function handleUpdateOrder(
   // cancelled. The read side already drops such orders from the ERP's poll, but
   // a poll→ship race could still PUT `completed`; refusing it here prevents both
   // the bad status change and a shipping email to a withdrawn/refunded customer.
+  // In `accepted` mode the same applies to the ERP accepting it (an Auftrag for a withdrawn order).
   if (
-    internalStatus === 'shipped' &&
+    wcStatus === 'completed' &&
     (order.paymentStatus === 'refunded' || order.hasOpenWithdrawal || order.status === 'canceled')
   ) {
     log.warn('Update order: refused ship transition on non-fulfillable order', {
@@ -660,13 +694,18 @@ async function handleUpdateOrder(
     )
   }
 
-  const historyEntry = {
+  const now = new Date().toISOString()
+  const historyEntry = (type: 'fulfillment' | 'erp', status: string) => ({
     _type: 'orderStatusHistory',
     _key: crypto.randomUUID(),
-    type: 'fulfillment',
-    status: internalStatus,
-    timestamp: new Date().toISOString(),
+    type,
+    status,
+    timestamp: now,
     source: 'wc-api',
+  })
+
+  if (config.completedMeans === 'accepted' && wcStatus === 'completed') {
+    return acceptOrder(order, now, historyEntry, config)
   }
 
   log.debug('Update order', {
@@ -675,11 +714,14 @@ async function handleUpdateOrder(
     internalStatus,
   })
 
-  await sanityClient
+  const patch = sanityClient
     .patch(order._id)
     .set({ status: internalStatus })
-    .append('statusHistory', [historyEntry])
-    .commit()
+    .append('statusHistory', [historyEntry('fulfillment', internalStatus)])
+  // The ERP took its acceptance back
+  const erpTookBack = config.completedMeans === 'accepted' && wcStatus === 'processing'
+  if (erpTookBack) patch.unset(['erpAcceptedAt'])
+  await patch.commit()
 
   if (internalStatus === 'shipped' && notify) {
     context.waitUntil(
@@ -693,7 +735,47 @@ async function handleUpdateOrder(
     )
   }
 
-  return json(mapOrder({ ...order, status: internalStatus }, config.timezone))
+  return json(mapOrder(
+    { ...order, status: internalStatus, ...(erpTookBack && { erpAcceptedAt: null }) },
+    config.timezone,
+    config.completedMeans,
+  ))
+}
+
+/**
+ * `PUT completed` in `accepted` mode: the ERP took the order over, it isn't shipped. `created`
+ * → `processing`, every other status stays; `erpAcceptedAt` is set once (a repeat changes
+ * nothing and appends no history). Never sends a mail. Reported back as `completed`.
+ */
+async function acceptOrder(
+  order: SanityOrder,
+  now: string,
+  historyEntry: (type: 'fulfillment' | 'erp', status: string) => Record<string, unknown>,
+  config: ResolvedWcApiConfig,
+): Promise<Response> {
+  const newStatus = order.status === 'created' ? 'processing' : order.status
+  const entries = [
+    ...(order.erpAcceptedAt ? [] : [historyEntry('erp', 'accepted')]),
+    ...(newStatus !== order.status ? [historyEntry('fulfillment', newStatus)] : []),
+  ]
+
+  log.debug('Update order: accepted by ERP', {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    newStatus,
+    repeat: Boolean(order.erpAcceptedAt),
+  })
+
+  const patch = sanityClient.patch(order._id).setIfMissing({ erpAcceptedAt: now })
+  if (newStatus !== order.status) patch.set({ status: newStatus })
+  if (entries.length) patch.append('statusHistory', entries)
+  await patch.commit()
+
+  return json(mapOrder(
+    { ...order, status: newStatus, erpAcceptedAt: order.erpAcceptedAt ?? now },
+    config.timezone,
+    config.completedMeans,
+  ))
 }
 
 // ── Main handler factory ─────────────────────────────────────────────────────
@@ -702,6 +784,7 @@ export function createWcApiHandler(userConfig: WcApiConfig = {}) {
   const config: ResolvedWcApiConfig = {
     timezone: userConfig.timezone ?? process.env.WC_TIMEZONE ?? 'Europe/Vienna',
     version: userConfig.version ?? '9.0.0',
+    completedMeans: userConfig.completedMeans ?? 'shipped',
   }
 
   return async (request: Request, context: Context): Promise<Response> => {

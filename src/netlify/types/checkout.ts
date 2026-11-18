@@ -341,8 +341,8 @@ export type Fulfillment = {
 export type OrderStatusHistoryEntry = {
   _key: string
   _type: 'orderStatusHistory'
-  type: 'payment' | 'fulfillment' | 'mail'
-  /** Payment / fulfillment state, or the `MailType` of a `mail` entry (`withdrawalReceipt` for the withdrawal receipt). */
+  type: 'payment' | 'fulfillment' | 'mail' | 'erp'
+  /** Payment / fulfillment state, the `MailType` of a `mail` entry (`withdrawalReceipt` for the withdrawal receipt), or `accepted` for an `erp` entry (wc-api `completedMeans: 'accepted'`). */
   status: string
   timestamp: string
   source: string

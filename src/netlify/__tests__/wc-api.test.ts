@@ -1,11 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../services/sanity', () => ({ sanityClient: {} }))
+const sanity = vi.hoisted(() => ({ client: {} as Record<string, unknown> }))
+vi.mock('../services/sanity', () => ({ sanityClient: sanity.client }))
 vi.mock('../lib/order-notifier', () => ({ sendOrderNotification: vi.fn() }))
 vi.mock('../utils/logger', () => ({ log: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() } }))
 
-import { createWcApiHandler, mapOrder, type SanityOrder } from '../functions/wc-api'
+import { createWcApiHandler, mapOrder, statusFilter, type SanityOrder } from '../functions/wc-api'
 import { log } from '../utils/logger'
+import { sendOrderNotification } from '../lib/order-notifier'
 import { calculateTotals } from '../lib/totals'
 import { extractVat } from '../lib/tax'
 
@@ -30,6 +32,7 @@ function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0, c
     paymentIntentId: 'pi_1',
     payment: null,
     hasOpenWithdrawal: false,
+    erpAcceptedAt: null,
     customer: {
       contactEmail: 'a@b.at', locale: 'de', billingAddress: null,
       shippingAddress: country ? { country } as never : null,
@@ -280,5 +283,130 @@ describe('wc-api auth and params', () => {
       expect(res.status).toBe(400)
       expect((await res.json()).code).toBe('rest_invalid_param')
     }
+  })
+})
+
+describe('wc-api completedMeans: accepted — reported status', () => {
+  const base = order([{ price: 1500, quantity: 1, vatRate: 13 }])
+  const accepted = { ...base, erpAcceptedAt: '2026-11-17T10:00:00Z' }
+  const status = (o: SanityOrder, mode?: 'shipped' | 'accepted') => mapOrder(o, 'Europe/Vienna', mode).status
+
+  it('an accepted undispatched order reports completed, also with an open withdrawal', () => {
+    expect(status({ ...accepted, status: 'created' }, 'accepted')).toBe('completed')
+    expect(status({ ...accepted, status: 'processing' }, 'accepted')).toBe('completed')
+    expect(status({ ...accepted, status: 'processing', hasOpenWithdrawal: true }, 'accepted')).toBe('completed')
+  })
+
+  it('fully refunded still wins', () => {
+    expect(status({ ...accepted, paymentStatus: 'refunded' }, 'accepted')).toBe('refunded')
+  })
+
+  it('without erpAcceptedAt, or in shipped mode, as before', () => {
+    expect(status({ ...base, status: 'processing' }, 'accepted')).toBe('processing')
+    expect(status({ ...accepted, status: 'processing' }, 'shipped')).toBe('processing')
+    expect(status({ ...accepted, status: 'processing' })).toBe('processing')
+    expect(status({ ...accepted, hasOpenWithdrawal: true })).toBe('cancelled')
+    expect(status({ ...accepted, status: 'canceled' }, 'accepted')).toBe('cancelled')
+  })
+})
+
+describe('wc-api statusFilter', () => {
+  const poll = ['pending', 'processing', 'on-hold']
+
+  it('shipped mode keeps the plain filter', () => {
+    expect(statusFilter(poll, 'shipped')).toEqual({
+      filter: 'status in $statuses', params: { statuses: ['created', 'processing'] },
+    })
+    expect(statusFilter([], 'shipped')).toEqual({ filter: null, params: {} })
+    expect(statusFilter(['pending'], 'accepted')).toEqual({ filter: 'false', params: {} })
+  })
+
+  it('accepted mode: processing excludes accepted undispatched orders, completed includes them', () => {
+    const p = statusFilter(poll, 'accepted')
+    expect(p.filter).toBe(
+      '((status in $statuses && !(defined(erpAcceptedAt) && status in ["created","processing"])) '
+      + '|| ($wantsCompleted && defined(erpAcceptedAt) && status in ["created","processing"]))',
+    )
+    expect(p.params).toEqual({ statuses: ['created', 'processing'], wantsCompleted: false })
+    expect(statusFilter(['completed'], 'accepted').params)
+      .toEqual({ statuses: ['shipped', 'delivered'], wantsCompleted: true })
+  })
+})
+
+describe('wc-api PUT orders/:id', () => {
+  type Chain = Record<'set' | 'setIfMissing' | 'unset' | 'append' | 'commit', ReturnType<typeof vi.fn>>
+  let chain: Chain
+
+  beforeEach(() => {
+    process.env.WC_CONSUMER_KEY = 'ck_x'
+    process.env.WC_CONSUMER_SECRET = 'cs_x'
+    chain = {} as Chain
+    for (const k of ['set', 'setIfMissing', 'unset', 'append'] as const) chain[k] = vi.fn(() => chain)
+    chain.commit = vi.fn(async () => ({}))
+    sanity.client.patch = vi.fn(() => chain)
+    vi.mocked(sendOrderNotification).mockReset().mockResolvedValue(undefined as never)
+  })
+
+  async function put(o: Partial<SanityOrder>, wcStatus: string, completedMeans?: 'shipped' | 'accepted') {
+    sanity.client.fetch = vi.fn(async () => ({ ...order([{ price: 1500, quantity: 1, vatRate: 13 }]), ...o }))
+    const handler = createWcApiHandler({ completedMeans, notify: {} as never })
+    const res = await handler(new Request('https://shop.test/wp-json/wc/v3/orders/1', {
+      method: 'PUT',
+      headers: { authorization: `Basic ${btoa('ck_x:cs_x')}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ status: wcStatus }),
+    }), { waitUntil: vi.fn() } as never)
+    return { res, body: await res.json() }
+  }
+  const appended = () => chain.append.mock.calls.flatMap(([, entries]) => entries as Array<{ type: string; status: string }>)
+    .map(e => `${e.type}/${e.status}`)
+
+  it('accepted: completed on created → processing + erpAcceptedAt, no mail, reported completed', async () => {
+    const { res, body } = await put({ status: 'created' }, 'completed', 'accepted')
+    expect(res.status).toBe(200)
+    expect(chain.set).toHaveBeenCalledWith({ status: 'processing' })
+    expect(chain.setIfMissing).toHaveBeenCalledWith({ erpAcceptedAt: expect.any(String) })
+    expect(appended()).toEqual(['erp/accepted', 'fulfillment/processing'])
+    expect(sendOrderNotification).not.toHaveBeenCalled()
+    expect(body.status).toBe('completed')
+  })
+
+  it('accepted: completed on a shipped order → status untouched, only the erp entry', async () => {
+    const { body } = await put({ status: 'shipped' }, 'completed', 'accepted')
+    expect(chain.set).not.toHaveBeenCalled()
+    expect(appended()).toEqual(['erp/accepted'])
+    expect(body.status).toBe('completed')
+  })
+
+  it('accepted: a repeat PUT appends nothing', async () => {
+    const { body } = await put({ status: 'processing', erpAcceptedAt: '2026-11-17T10:00:00Z' }, 'completed', 'accepted')
+    expect(chain.set).not.toHaveBeenCalled()
+    expect(chain.append).not.toHaveBeenCalled()
+    expect(chain.setIfMissing).toHaveBeenCalled()
+    expect(body.status).toBe('completed')
+  })
+
+  it('accepted: refunded / withdrawn / canceled → 409', async () => {
+    for (const o of [{ paymentStatus: 'refunded' }, { hasOpenWithdrawal: true }, { status: 'canceled' }]) {
+      const { res } = await put(o, 'completed', 'accepted')
+      expect(res.status).toBe(409)
+    }
+    expect(chain.commit).not.toHaveBeenCalled()
+  })
+
+  it('accepted: processing takes the acceptance back', async () => {
+    const { body } = await put({ status: 'processing', erpAcceptedAt: '2026-11-17T10:00:00Z' }, 'processing', 'accepted')
+    expect(chain.unset).toHaveBeenCalledWith(['erpAcceptedAt'])
+    expect(chain.set).toHaveBeenCalledWith({ status: 'processing' })
+    expect(body.status).toBe('processing')
+  })
+
+  it('shipped (default): completed still ships and notifies', async () => {
+    const { body } = await put({ status: 'processing' }, 'completed')
+    expect(chain.set).toHaveBeenCalledWith({ status: 'shipped' })
+    expect(chain.setIfMissing).not.toHaveBeenCalled()
+    expect(chain.unset).not.toHaveBeenCalled()
+    expect(appended()).toEqual(['fulfillment/shipped'])
+    expect(sendOrderNotification).toHaveBeenCalledOnce()
+    expect(body.status).toBe('completed')
   })
 })
