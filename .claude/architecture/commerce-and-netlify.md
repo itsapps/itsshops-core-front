@@ -261,7 +261,8 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   offers only `delivery` (`pickup` and `pickupFee` are commented out), so no shop can create a
   pickup method. What exists here is leftover: the pickup branch in `resolveShippingMethods`
   (price = `pickupFee`), the `shippingInfoModule` pickup row, `order-thanks.ts` / `OrderEmail.tsx`
-  hiding the address for pickup. Don't build on it without a plan that enables it end to end.
+  hiding the address for pickup. Don't build on it without a plan that enables it end to end —
+  that plan: `.claude/plans/store-pickup.md` (planned, not started).
 - **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
   as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
   pass the same value as `itsshops.config` (Tinhof passes `stock: false` explicitly).
@@ -342,7 +343,16 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    the Elements amount to the sheet's total before answering (Stripe refuses line items above the
    amount — the sheet hung on "IntegrationError: The amount … is less than the total amount of the
    line items"), any failure rejects the event; cancel restores the page's amount (`onCancel`).
-   Re-submitting reuses `orderMetaId` (same PaymentIntent).
+   Re-submitting reuses `orderMetaId` (same PaymentIntent). **Express availability:**
+   `[data-checkout-express]` starts `hidden` and is shown together with the "— or —" divider only
+   when the element's `ready` event reports at least one method; with none, `CheckoutExpress`
+   unmounts the element (no blank box). Which wallets a browser gets is Stripe's per-browser
+   table ([docs](https://docs.stripe.com/elements/express-checkout-element#supported-browsers)):
+   e.g. Firefox desktop gets **none** with core's options (no Klarna; Apple/Google Pay only with
+   `paymentMethods.*: 'always'`, which core doesn't set), Firefox on iOS only Apple Pay, Safari /
+   Chrome on iOS Apple Pay + Klarna. Klarna shows wherever it's enabled in the Stripe dashboard
+   (core only sets `amazonPay`/`link`/`paypal: 'never'`). Apple Pay needs a registered HTTPS
+   domain — never on `localhost`; test it on staging.
 7. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
    never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
    visitor's view and cart). Delayed methods (SEPA, `processing`) have no order/email/stock

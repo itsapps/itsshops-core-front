@@ -13,6 +13,9 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   height came from the *smallest* srcset entry and the width from the largest, so the browser
   reserved a wrong aspect ratio and the layout shifted once the image loaded (CLS; e.g. a header
   logo). A preset wider than the source now reports the source size.
+- Checkout: the express area (`[data-checkout-express]`) starts `hidden` and is shown with the
+  "— or —" divider only once Stripe reports an available wallet; with none (e.g. Firefox desktop)
+  the element is unmounted. Before, a blank box stayed above the form.
 
 ### Upgrading
 - Nothing to change for `staticImage` (its `width`/`height` attributes just become right) or for
