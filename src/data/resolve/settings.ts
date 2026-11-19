@@ -47,12 +47,38 @@ function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions):
 /** Methods serving the shop's home country (`shopSettings.defaultCountry`) come first; otherwise
  *  creation order is kept. */
 export function resolveShippingMethods(raw: any[], ctx: ResolveContext, homeCountry?: string | null): ResolvedShippingMethod[] {
-  const methods: ResolvedShippingMethod[] = (raw ?? []).map((m: any) => ({
+  const methods: ResolvedShippingMethod[] = (raw ?? []).map((m: any) => resolveShippingMethod(m, ctx))
+  if (!homeCountry) return methods
+  const servesHome = (m: ResolvedShippingMethod) => (m.countries.includes(homeCountry) ? 0 : 1)
+  return methods.sort((a, b) => servesHome(a) - servesHome(b))
+}
+
+function resolveShippingMethod(m: any, ctx: ResolveContext): ResolvedShippingMethod {
+  const isPickup = m.methodType === 'pickup'
+  const addr = m.pickupAddress
+  const base = {
     _id:          m._id,
     title:        ctx.resolveString(m.title),
     deliveryTime: ctx.resolveString(m.deliveryTime) || null,
-    methodType:   m.methodType === 'pickup' ? 'pickup' as const : 'delivery' as const,
+    methodType:   isPickup ? 'pickup' as const : 'delivery' as const,
     pickupFee:    m.pickupFee ?? null,
+    pickupAddress: isPickup && addr?.line1 ? {
+      line1:   addr.line1 ?? '',
+      line2:   addr.line2 ?? '',
+      zip:     addr.zip ?? '',
+      city:    ctx.resolveString(addr.city),
+      country: addr.country ?? '',
+    } satisfies ResolvedAddress : null,
+    pickupInstructions: isPickup ? ctx.resolveString(m.pickupInstructions) || null : null,
+    pickupHoldDays: isPickup ? m.pickupHoldDays ?? null : null,
+  }
+  // A pickup method has no countries, rates, packaging or threshold — values left over from
+  // before a type switch in the Studio are ignored (as the checkout does).
+  if (isPickup) {
+    return { ...base, freeShippingThreshold: null, countries: [], rates: [], packagingGroups: [] }
+  }
+  return {
+    ...base,
     freeShippingThreshold: m.freeShippingThreshold ?? null,
     countries:    (m.countries ?? [])
       .filter((c: any) => c?.enabled && c.countryCode)
@@ -75,10 +101,7 @@ export function resolveShippingMethods(raw: any[], ctx: ResolveContext, homeCoun
           .map((p: any) => ({ places: p.places, price: p.price })),
       }))
       .filter((g: any) => g.bottles.length && g.packages.length),
-  }))
-  if (!homeCountry) return methods
-  const servesHome = (m: ResolvedShippingMethod) => (m.countries.includes(homeCountry) ? 0 : 1)
-  return methods.sort((a, b) => servesHome(a) - servesHome(b))
+  }
 }
 
 export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {

@@ -64,7 +64,7 @@ describe('validateAddress', () => {
     expect(validateAddress({ ...validAddress, phone: '+43 664 1234567' }, 'shipping')).toEqual({ valid: true })
     const long = validateAddress({ ...validAddress, phone: '1'.repeat(41) }, 'shipping')
     expect(long.valid).toBe(false)
-    expect(long.details).toHaveProperty(['shipping.phone'])
+    expect(long.valid === false && long.details).toHaveProperty(['shipping.phone'])
   })
 
   it('rejects null', () => {

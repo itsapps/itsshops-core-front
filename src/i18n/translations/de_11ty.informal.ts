@@ -12,6 +12,10 @@ export default {
       intro: "Dein Warenkorb wurde aktualisiert:",
       reconfirm: "Bitte prüfe die Bestellung und bestätige erneut.",
     },
+    fulfillment: {
+      holdPeriod: "Wir bewahren Deine Bestellung ab unserer Benachrichtigung {days} Tage für Dich auf.",
+      pickupSelected: "Abholung ausgewählt. Die Adresse ist jetzt Deine Rechnungsadresse.",
+    },
   },
   ageGate: {
     title: "Bist du mindestens {{age}} Jahre alt?",
@@ -70,6 +74,7 @@ export default {
       processingEmail: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung an {{email}} – das kann einige Werktage dauern.",
       summary: "Deine Bestellung",
       nextSteps: "Sobald Deine Bestellung versendet wird, schicken wir Dir eine Versandbestätigung per E-Mail.",
+      nextStepsPickup: "Sobald Deine Bestellung abholbereit ist, benachrichtigen wir Dich per E-Mail.",
       nextStepsAgeRestricted: "Bitte beachte: Wir liefern nur an Personen ab 18 Jahren. Bei der Zustellung kann ein Altersnachweis verlangt werden.",
     },
     orderWithdraw: {
@@ -134,7 +139,7 @@ export default {
       text: "Die Inhalte dieser Website verwalten wir mit {{provider}}. Bilder werden direkt von Sanitys Bildserver (cdn.sanity.io) geladen; dabei erhält Sanity Deine IP-Adresse und die Browser-Kennung. Rechtsgrundlage ist unser berechtigtes Interesse an einer schnellen und zuverlässigen Bereitstellung der Bilder (Art. 6 Abs. 1 lit. f DSGVO). Sanity verarbeitet die Daten als Auftragsverarbeiter, auch in den USA; die Übermittlung ist durch EU-Standardvertragsklauseln abgesichert.",
     },
     orders: {
-      text: "Wenn Du bestellst, verarbeiten wir Deinen Namen, Deine E-Mail-Adresse, Rechnungs- und Lieferadresse, die bestellten Artikel und den Zahlungsstatus, um den Vertrag zu erfüllen (Art. 6 Abs. 1 lit. b DSGVO) und unsere gesetzlichen Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Die Bestelldaten speichern wir bei {{provider}} (Auftragsverarbeiter). Bestellungen bewahren wir sieben Jahre ab Ende des Kalenderjahres auf (§ 132 BAO). Daten eines begonnenen, aber nicht bezahlten Bestellvorgangs löschen wir nach {{days}} Tagen.",
+      text: "Wenn Du bestellst, verarbeiten wir Deinen Namen, Deine E-Mail-Adresse, die Rechnungsadresse und, bei Versand, die Lieferadresse, falls angegeben Deine Telefonnummer, die bestellten Artikel und den Zahlungsstatus, um den Vertrag zu erfüllen (Art. 6 Abs. 1 lit. b DSGVO) und unsere gesetzlichen Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Die Bestelldaten speichern wir bei {{provider}} (Auftragsverarbeiter). Bestellungen bewahren wir sieben Jahre ab Ende des Kalenderjahres auf (§ 132 BAO). Daten eines begonnenen, aber nicht bezahlten Bestellvorgangs löschen wir nach {{days}} Tagen.",
       carrier: "Für den Versand geben wir Deinen Namen und die Lieferadresse an das beauftragte Paketdienstleistungsunternehmen weiter, das sie als eigener Verantwortlicher verarbeitet (Art. 6 Abs. 1 lit. b DSGVO). Deine E-Mail-Adresse geben wir nicht weiter.",
     },
     payment: {
@@ -174,7 +179,7 @@ export default {
       none: "Wir setzen keine Cookies und speichern keine Daten in Deinem Browser.",
     },
     required: {
-      text: "Für eine Bestellung benötigen wir Name, Rechnungs- und Lieferadresse sowie Deine E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",
+      text: "Für eine Bestellung benötigen wir Name, Rechnungsadresse und, bei Versand, Lieferadresse sowie Deine E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",
     },
     automated: {
       stripe: "Stripe prüft Zahlungen automatisiert auf Betrug und kann eine Zahlung dabei ablehnen (siehe „Zahlung“); wende Dich in diesem Fall an uns.",

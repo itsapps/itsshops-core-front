@@ -156,6 +156,32 @@ grid/list toggle.
 | Age gate (`age-gate.ts` + inline) | `[data-age-gate]`, `[data-age-gate-confirm|deny]`, `[data-age-gate-denied-msg]` | `html[data-age-gate-state="pending|open"]`; structure in `age-gate.css`, the buttons' look is customer CSS |
 | Checkout (`checkout.ts`) | `[data-checkout]` + `[data-checkout-*]` regions | `data-checkout-state`, `aria-busy` on the container; `checkout.css` |
 
+## Fulfillment choice (`checkout-fulfillment.ts`, store pickup)
+
+Hooks in `core/components/checkout.njk` (core template, no override):
+
+| Hook | Role |
+|---|---|
+| `[data-checkout-fulfillment]` | `<fieldset hidden>` before the address fieldset; shown only while the calculation lists a pickup method. Legend "Versand oder Abholung" |
+| `[data-checkout-fulfillment-options]` | radios `name="fulfillment"`: `delivery` + one per pickup (`.checkout-shipping__option` look, `is-selected`) |
+| `[data-checkout-pickup-details]` (`id="checkout-pickup-details"`) | address, instructions, "Abholbereit in", hold period of the chosen pickup; each pickup radio's `aria-describedby` |
+| `[data-checkout-fulfillment-status]` | `role="status"` `sr-only` `<p>` **outside** the fieldset, never hidden — announces mode switches |
+| `[data-checkout-address-legend]` | legend text swaps `data-t-address-delivery` ↔ `data-t-address-billing` |
+| `[data-checkout-billing-section]` / `[data-checkout-shipping-section]` | whole fieldsets `hidden` in pickup mode (not their inner divs — a styled `.checkout__section` would stay as an empty box) |
+
+Pickup mode: the main address fields are the billing address (sent as `address.shipping`, no
+`billing`), the billing fields aren't validated, the country select lists every ISO country (tax
+countries first); back on "Versand" a country outside the tax list is cleared and flagged
+(no focus move). A response with pickups but no delivery method switches to pickup once per
+country and announces it; "Versand" then shows "Versand in dieses Land ist nicht möglich."
+The totals label reads "Abholung" (`CheckoutSummary.setShippingLabel`). Express: `setPickup()`
+→ `element.update({ shippingAddressRequired: false, billingAddressRequired: true })`; the sheet
+gets the page's calculation (no shipping rates) and the order the billing address; in delivery
+mode the sheet lists delivery methods only (none → the address event is rejected).
+The billing fieldset's name is an `sr-only` first-child `<legend>`; its visible heading is
+`<p class="checkout__billing-heading" aria-hidden="true">` — customers that style
+`.checkout__section legend` style that class too.
+
 ## Classes the customer must style
 
 Look classes core emits but never styles (core's only rule: `.form .btn { align-self }` in

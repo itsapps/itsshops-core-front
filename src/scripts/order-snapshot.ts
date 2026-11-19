@@ -8,7 +8,8 @@ import type { TotalsData } from './order-totals'
  *
  * Holds personal data (email, name, address), so:
  * - sessionStorage only (per tab, gone when the tab closes), never localStorage
- * - minimal fields: no phone, no billing address, no client secret, no orderMetaId
+ * - minimal fields: no phone, no billing address, no client secret, no orderMetaId; for pickup
+ *   no customer address at all (the page shows the pickup location instead)
  * - only read back for the matching PaymentIntent, within MAX_AGE_MS, and deleted on read
  * - the page renders it via textContent only
  */
@@ -25,6 +26,9 @@ export type OrderSnapshot = {
   items: CartItemDisplay[]
   summary: TotalsData
   shippingMethod?: { title: string; methodType: 'delivery' | 'pickup' }
+  /** Pickup only: the pickup location (from the calculate response) — country as a name. */
+  pickupAddress?: { line1: string; line2?: string; zip: string; city: string; country: string }
+  pickupInstructions?: string
   shippingAddress?: {
     name: string
     line1: string
@@ -55,7 +59,15 @@ export function buildOrderSnapshot(input: {
 
   const methodId = input.shippingMethodId ?? response.selectedShippingMethodId
   const method = response.shippingMethods.find(m => m._id === methodId)
-  const country = response.supportedCountries.find(c => c.code === address.country)?.title ?? address.country
+  // Any ISO country (pickup accepts every country) → its localized name, else the code.
+  const countryTitle = (code: string): string => {
+    try {
+      return new Intl.DisplayNames([document.documentElement.lang || 'de'], { type: 'region' }).of(code) ?? code
+    } catch {
+      return response.supportedCountries.find(c => c.code === code)?.title ?? code
+    }
+  }
+  const isPickup = method?.methodType === 'pickup'
 
   return {
     v: 1,
@@ -78,14 +90,23 @@ export function buildOrderSnapshot(input: {
     }),
     summary: { totals: response.totals, appliedCoupons: response.appliedCoupons },
     ...(method && { shippingMethod: { title: method.title, methodType: method.methodType } }),
-    shippingAddress: {
-      name: address.name,
-      line1: address.line1,
-      ...(address.line2 && { line2: address.line2 }),
-      zip: address.zip,
-      city: address.city,
-      country,
-    },
+    ...(isPickup
+      ? {
+          ...(method.pickupAddress && {
+            pickupAddress: { ...method.pickupAddress, country: countryTitle(method.pickupAddress.country) },
+          }),
+          ...(method.pickupInstructions && { pickupInstructions: method.pickupInstructions }),
+        }
+      : {
+          shippingAddress: {
+            name: address.name,
+            line1: address.line1,
+            ...(address.line2 && { line2: address.line2 }),
+            zip: address.zip,
+            city: address.city,
+            country: countryTitle(address.country),
+          },
+        }),
   }
 }
 

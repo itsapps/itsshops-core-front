@@ -45,6 +45,11 @@ export class CheckoutSummary {
     }
   }
 
+  /** The totals' shipping row label ("Versand" / "Abholung"); used by the next `renderTotals`. */
+  setShippingLabel(label: string): void {
+    this.labels = { ...this.labels, shipping: label }
+  }
+
   setEvents(events: SummaryEvents): void {
     this.events = events
   }

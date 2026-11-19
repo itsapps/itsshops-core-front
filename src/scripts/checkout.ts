@@ -16,6 +16,8 @@ import { mustReconfirm, expressMustReconfirm, renderChanges, changeMessages, typ
 import { calculatePayment, createPayment, CheckoutValidationError, CheckoutIOError } from './checkout-api'
 import { CheckoutForm } from './checkout-form'
 import { CheckoutShipping } from './checkout-shipping'
+import { CheckoutFulfillment } from './checkout-fulfillment'
+import { COUNTRY_CODES } from '../shared/countries'
 import { CheckoutSummary } from './checkout-summary'
 import { CheckoutStripe } from './checkout-stripe'
 import { CheckoutExpress } from './checkout-express'
@@ -42,6 +44,17 @@ export async function initCheckout(): Promise<void> {
   const t = {
     subtotal: container.dataset.tSubtotal ?? 'Subtotal',
     shipping: container.dataset.tShipping ?? 'Shipping',
+    pickup: container.dataset.tPickup ?? 'Pickup',
+    addressDelivery: container.dataset.tAddressDelivery ?? 'Delivery',
+    addressBilling: container.dataset.tAddressBilling ?? 'Billing address',
+    fulfillmentDelivery: container.dataset.tFulfillmentDelivery ?? 'Delivery',
+    fulfillmentFree: container.dataset.tFulfillmentFree ?? 'free',
+    fulfillmentReadyIn: container.dataset.tFulfillmentReadyIn ?? 'Ready for pickup in: {time}',
+    fulfillmentHoldPeriod: container.dataset.tFulfillmentHoldPeriod ?? "We'll hold your order for {days} days.",
+    deliveryUnavailable: container.dataset.tFulfillmentDeliveryUnavailable ?? "Delivery to this country isn't possible – pickup selected.",
+    deliveryUnavailableShort: container.dataset.tFulfillmentDeliveryUnavailableShort ?? "Delivery to this country isn't possible.",
+    pickupSelected: container.dataset.tFulfillmentPickupSelected ?? 'Pickup selected.',
+    deliverySelected: container.dataset.tFulfillmentDeliverySelected ?? 'Delivery selected.',
     total: container.dataset.tTotal ?? 'Total',
     vat: container.dataset.tVat ?? 'VAT',
     vatExempt: container.dataset.tVatExempt ?? 'VAT exempt',
@@ -101,6 +114,8 @@ export async function initCheckout(): Promise<void> {
   const billingCountrySelect = container.querySelector<HTMLSelectElement>('[data-checkout-billing-country]')
   const couponEl = container.querySelector<HTMLElement>('[data-checkout-coupon]')
   const changesEl = container.querySelector<HTMLElement>('[data-checkout-changes]')
+  const fulfillmentEl = container.querySelector<HTMLElement>('[data-checkout-fulfillment]')
+  const fulfillmentStatusEl = container.querySelector<HTMLElement>('[data-checkout-fulfillment-status]')
 
   if (!formEl || !itemsEl || !totalsEl || !shippingEl || !paymentEl || !submitBtn) {
     console.error('[checkout] Missing required DOM elements')
@@ -129,6 +144,16 @@ export async function initCheckout(): Promise<void> {
     country: t.errorCountry,
   })
   const shipping = new CheckoutShipping(shippingEl)
+  const fulfillment = fulfillmentEl
+    ? new CheckoutFulfillment(fulfillmentEl, {
+        delivery: t.fulfillmentDelivery,
+        free: t.fulfillmentFree,
+        readyIn: t.fulfillmentReadyIn,
+        holdPeriod: t.fulfillmentHoldPeriod,
+      })
+    : null
+  /** The method the request asks for: the chosen pickup, else the chosen delivery method. */
+  const selectedMethodId = (): string | undefined => fulfillment?.getPickupId() ?? shipping.getSelectedId()
   const summary = new CheckoutSummary(itemsEl, totalsEl, locale, currency, currencyLabel, {
     subtotal: t.subtotal,
     shipping: t.shipping,
@@ -247,7 +272,7 @@ export async function initCheckout(): Promise<void> {
     if (recalcTimer) clearTimeout(recalcTimer)
     recalcTimer = setTimeout(() => {
       const country = form.getCountry() || lastResponse?.selectedCountry
-      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+      calculate({ country, shippingMethodId: selectedMethodId() })
     }, 400)
   }
 
@@ -256,12 +281,12 @@ export async function initCheckout(): Promise<void> {
     onApply(code) {
       setAppliedCouponCode(code)
       const country = form.getCountry() || lastResponse?.selectedCountry
-      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+      calculate({ country, shippingMethodId: selectedMethodId() })
     },
     onRemove() {
       clearAppliedCouponCode()
       const country = form.getCountry() || lastResponse?.selectedCountry
-      calculate({ country, shippingMethodId: shipping.getSelectedId() })
+      calculate({ country, shippingMethodId: selectedMethodId() })
     },
   })
 
@@ -345,8 +370,9 @@ export async function initCheckout(): Promise<void> {
     }
   }
 
-  function populateCountrySelect(select: HTMLSelectElement | null, countries: SupportedCountry[], selected: string): void {
-    if (!select || select.options.length > 1) return
+  /** Fill a country select once (`force`: replace its options, e.g. on a mode switch). */
+  function populateCountrySelect(select: HTMLSelectElement | null, countries: SupportedCountry[], selected: string, force = false): void {
+    if (!select || (!force && select.options.length > 1)) return
     select.innerHTML = ''
     for (const country of countries) {
       const option = document.createElement('option')
@@ -362,6 +388,98 @@ export async function initCheckout(): Promise<void> {
     populateCountrySelect(billingCountrySelect, countries, selected)
   }
 
+  /**
+   * Pickup accepts customers from any country: the tax countries first (as for delivery), then
+   * every other ISO country by its localized name.
+   */
+  function allCountries(taxCountries: SupportedCountry[]): SupportedCountry[] {
+    let names: Intl.DisplayNames | null = null
+    try { names = new Intl.DisplayNames([locale], { type: 'region' }) } catch { /* code only */ }
+    const taxCodes = new Set(taxCountries.map(c => c.code))
+    const rest = COUNTRY_CODES
+      .filter(code => !taxCodes.has(code))
+      .map(code => ({ code, title: names?.of(code) ?? code }))
+      .sort((a, b) => a.title.localeCompare(b.title, locale))
+    return [...taxCountries, ...rest]
+  }
+
+  // ── Delivery or pickup ────────────────────────────────────────────────
+  let pickupMode = false
+  /** The country the page last switched to pickup for by itself (no delivery there). */
+  let autoPickupCountry: string | null = null
+
+  function announce(text: string): void {
+    if (!fulfillmentStatusEl) return
+    // Clear first so the same text is announced again.
+    fulfillmentStatusEl.textContent = ''
+    window.setTimeout(() => { fulfillmentStatusEl.textContent = text }, 50)
+  }
+
+  /**
+   * Switch the page between delivery and pickup: form sections + legend, totals label, wallet
+   * sheet options and the country list (pickup: all countries; delivery: the tax countries — a
+   * country outside them is cleared and flagged as required).
+   */
+  function applyMode(pickup: boolean): void {
+    if (pickup === pickupMode) return
+    pickupMode = pickup
+    form.setPickupMode(pickup)
+    summary.setShippingLabel(pickup ? t.pickup : t.shipping)
+    const taxCountries = lastResponse?.supportedCountries ?? []
+    const current = form.getCountry()
+    if (pickup) {
+      populateCountrySelect(countrySelect, allCountries(taxCountries), current, true)
+    } else {
+      const known = taxCountries.some(c => c.code === current)
+      populateCountrySelect(countrySelect, taxCountries, known ? current : '', true)
+      if (!known && countrySelect) {
+        // The tax-country list has no empty option; show the "country required" state.
+        const none = document.createElement('option')
+        none.value = ''
+        none.textContent = ''
+        none.selected = true
+        countrySelect.prepend(none)
+        form.markError('shipping.country', t.errorCountry)
+      }
+    }
+  }
+
+  fulfillment?.setOnChange((pickupId) => {
+    applyMode(!!pickupId)
+    announce(pickupId ? t.pickupSelected : t.deliverySelected)
+    expressCheckout?.setPickup(pickupId ?? null)
+    const country = form.getCountry() || (pickupId ? lastResponse?.selectedCountry : undefined)
+    calculate({ country, shippingMethodId: pickupId ?? shipping.getSelectedId() })
+  })
+
+  /** Render the fulfillment choice + delivery methods for a response; `true` = recalculating. */
+  function renderShippingChoice(response: CalculateResponse): boolean {
+    const fmt = summary.formatPrice.bind(summary)
+    const previousPickup = fulfillment?.getPickupId()
+    fulfillment?.render(response.shippingMethods, previousPickup, fmt)
+    shipping.render(response.shippingMethods, response.selectedShippingMethodId, fmt, t.deliveryUnavailableShort)
+
+    const pickups = response.shippingMethods.filter(m => m.methodType === 'pickup')
+    const hasDelivery = response.shippingMethods.some(m => m.methodType === 'delivery')
+    // The chosen pickup is gone (unpublished meanwhile) → back to delivery.
+    if (pickupMode && !fulfillment?.getPickupId()) applyMode(false)
+
+    // No delivery to this country but a pickup: switch to pickup once per country (choosing
+    // "Versand" again for the same country stays there and shows the "not possible" note).
+    if (fulfillment && !pickupMode && !hasDelivery && pickups.length > 0
+      && autoPickupCountry !== response.selectedCountry) {
+      autoPickupCountry = response.selectedCountry
+      fulfillment.select(pickups[0]._id)
+      applyMode(true)
+      announce(t.deliveryUnavailable)
+      expressCheckout?.setPickup(pickups[0]._id)
+      void calculate({ country: response.selectedCountry, shippingMethodId: pickups[0]._id })
+      return true
+    }
+    expressCheckout?.setPickup(fulfillment?.getPickupId() ?? null)
+    return false
+  }
+
   // ── Express checkout (Apple Pay / Google Pay) ─────────────────────────
   let expressCheckout: CheckoutExpress | null = null
 
@@ -372,13 +490,13 @@ export async function initCheckout(): Promise<void> {
       container: expressEl,
       returnUrl,
       allowedCountries: initial.supportedCountries.map(c => c.code),
-      labels: { shipping: t.shipping },
+      labels: { shipping: t.shipping, pickup: t.pickup },
       getLatest: () => lastResponse,
       onAddressChange: async (partial) => {
         try {
           return await calculatePayment(apiUrl, cartItems, locale, {
             country: partial.country,
-            shippingMethodId: shipping.getSelectedId(),
+            shippingMethodId: selectedMethodId(),
             appliedCouponCode: getAppliedCouponCode() ?? undefined,
           })
         } catch {
@@ -429,7 +547,7 @@ export async function initCheckout(): Promise<void> {
           if (expressMustReconfirm(shownCalculation, response)) {
             showChanges(changes, { reconfirm: true, focus: true })
             const message = [...changeMessages(changes, changeLabels, summary.formatPrice.bind(summary)), changeLabels.reconfirm].join(' ')
-            void calculate({ country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: shipping.getSelectedId() }, { keepNotice: true })
+            void calculate({ country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: selectedMethodId() }, { keepNotice: true })
             return { error: message }
           }
           // Order summary for the thanks page (read back after the Stripe redirect).
@@ -445,6 +563,8 @@ export async function initCheckout(): Promise<void> {
       },
     })
     expressCheckout.mount()
+    // The page may already be in pickup mode (auto-switch on the first calculation).
+    expressCheckout.setPickup(fulfillment?.getPickupId() ?? null)
   }
 
   // ── Calculate ─────────────────────────────────────────────────────────
@@ -483,10 +603,12 @@ export async function initCheckout(): Promise<void> {
 
       coupon?.render(response.appliedCoupons, response.couponError)
 
+      populateCountries(response.supportedCountries, response.selectedCountry)
+      // May switch the mode (and its totals label) — before the totals render.
+      const recalculating = renderShippingChoice(response)
       summary.renderItems(response.items, localCartMap)
       summary.renderTotals(response)
-      shipping.render(response.shippingMethods, response.selectedShippingMethodId, summary.formatPrice.bind(summary))
-      populateCountries(response.supportedCountries, response.selectedCountry)
+      if (recalculating) return
 
       if (!stripeCheckout.hasPaymentElement()) {
         stripeCheckout.initElements(response.totals.grandTotal, response.currency.toLowerCase(), locale)
@@ -509,7 +631,7 @@ export async function initCheckout(): Promise<void> {
 
   // ── Event handlers ────────────────────────────────────────────────────
   form.setOnCountryChange((country) => {
-    calculate({ country, shippingMethodId: shipping.getSelectedId() })
+    calculate({ country, shippingMethodId: selectedMethodId() })
   })
 
   shipping.setOnSelect((methodId) => {
@@ -553,7 +675,7 @@ export async function initCheckout(): Promise<void> {
           contactEmail: form.getEmail(),
         },
         {
-          shippingMethodId: shipping.getSelectedId(),
+          shippingMethodId: selectedMethodId(),
           orderMetaId,
           appliedCouponCode: getAppliedCouponCode() ?? undefined,
         },
@@ -571,7 +693,7 @@ export async function initCheckout(): Promise<void> {
         lastResponse = response
         summary.renderItems(response.items, localCartMap)
         summary.renderTotals(response)
-        shipping.render(response.shippingMethods, response.selectedShippingMethodId, summary.formatPrice.bind(summary))
+        renderShippingChoice(response)
         stripeCheckout.updateAmount(response.totals.grandTotal)
         showChanges(changes, { reconfirm: true, focus: true })
         return
@@ -584,7 +706,7 @@ export async function initCheckout(): Promise<void> {
         localCart: localCartMap,
         email: form.getEmail(),
         address: form.getShippingAddress(),
-        shippingMethodId: shipping.getSelectedId(),
+        shippingMethodId: selectedMethodId(),
       }))
       savePendingPayment(paymentIntentIdFromSecret(response.clientSecret))
 

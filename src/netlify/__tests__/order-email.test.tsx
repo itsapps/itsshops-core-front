@@ -507,3 +507,138 @@ describe('shop new-order notification', () => {
     expect((await sent()).to).toBe('noreply@shop.example')
   })
 })
+
+describe('pickup orders', () => {
+  const pickupFulfillment = (over: Partial<OrderDocument['fulfillment']> = {}): OrderDocument['fulfillment'] => ({
+    _type: 'fulfillment',
+    methodTitle: 'Abholung im Weingut',
+    methodType: 'pickup',
+    deliveryTime: '1–2 Werktage',
+    shippingCost: 0,
+    taxSnapshot: { _type: 'vatBreakdownItem', rate: 0, net: 0, vat: 0 },
+    method: { _type: 'reference', _ref: 'pu1', _weak: true },
+    pickupAddress: { line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' },
+    pickupInstructions: 'Mo–Fr 9–17 Uhr\nBitte Ausweis mitbringen',
+    ...over,
+  })
+  const billing = { ...address, name: 'Max Muster', line1: 'Bahnhofstr. 1', zip: '8001', city: 'Zürich', country: 'CH' }
+  const pickupOrder = (over: Partial<OrderDocument> = {}, f: Partial<OrderDocument['fulfillment']> = {}) => order({
+    customer: { _type: 'orderCustomer', locale: 'de', contactEmail: 'max@example.com', billingAddress: billing },
+    totals: { ...order().totals, shipping: 0 },
+    fulfillment: pickupFulfillment(f),
+    ...over,
+  })
+  const shippedAt = (timestamp: string) => ({
+    _key: 's', _type: 'orderStatusHistory' as const, type: 'fulfillment' as const, status: 'shipped', timestamp, source: 'admin',
+  })
+
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.stubEnv('SHOP_FORMALITY', '')
+    vi.stubEnv('SHOP_TIMEZONE', '')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('confirmation: pickup text + hold period (HTML and text), billing + pickup location, no shipping address', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({}, { pickupHoldDays: 14 }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const { html, text } = await sent()
+    const visible = textOf(html)
+    expect(visible).toContain('sobald sie zur Abholung bereit ist')
+    expect(visible).toContain('14 Tage für Sie auf')
+    expect(text).toContain('sobald sie zur Abholung bereit ist')
+    expect(text).toContain('14 Tage für Sie auf')
+    expect(visible).toContain('Rechnungsadresse')
+    expect(visible).toContain('Abholort')
+    expect(visible).toContain('Eisenstätter Straße 10')
+    expect(visible).toContain('Bitte Ausweis mitbringen')
+    expect(visible).toContain('Schweiz')
+    expect(visible).not.toContain('Lieferadresse')
+    expect(visible).toContain('Abholung: Abholung im Weingut')
+    expect(visible).toContain('Abholbereit in: 1–2 Werktage')
+  })
+
+  it('confirmation without hold days: no period line', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder())
+    await sendOrderNotification('o1', 'orderConfirmation')
+    expect(textOf((await sent()).html)).not.toContain('Tage für Sie auf')
+  })
+
+  it('ready mail: pickup subject, text and the deadline (latest shipped entry + days, with weekday)', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder(
+      { status: 'shipped', statusHistory: [shippedAt('2026-11-18T09:00:00Z')] },
+      { pickupHoldDays: 7 },
+    ))
+    await sendOrderNotification('o1', 'orderShipping')
+    const { subject, html, text } = await sent()
+    expect(subject).toBe('Bestellung 000042 ist abholbereit 🛍️')
+    expect(textOf(html)).toContain('liegt für Sie zur Abholung bereit')
+    expect(textOf(html)).toContain('bis Mittwoch, 25. November 2026 ab')
+    expect(text).toContain('bis Mittwoch, 25. November 2026 ab')
+    expect(textOf(html)).not.toContain('Sendungsnummer')
+  })
+
+  it('ready mail without hold days: no deadline', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({ status: 'shipped', statusHistory: [shippedAt('2026-11-18T09:00:00Z')] }))
+    await sendOrderNotification('o1', 'orderShipping')
+    expect(textOf((await sent()).html)).not.toContain('Bitte holen Sie')
+  })
+
+  it('collected mail and processing text', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder())
+    await sendOrderNotification('o1', 'orderDelivered')
+    expect((await sent()).subject).toBe('Bestellung 000042 abgeholt 🛍️')
+    await sendOrderNotification('o1', 'orderProcessing')
+    expect(textOf((await sent()).html)).toContain('sobald sie zur Abholung bereit ist')
+  })
+
+  it('totals say "Abholung"; a delivery order keeps "Versand"', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder())
+    await sendOrderNotification('o1', 'orderConfirmation')
+    expect(textOf((await sent()).html)).toMatch(/Abholung\s+€\s?0,00|Abholung\s+0,00/)
+    vi.mocked(fetchOrderById).mockResolvedValue(order())
+    await sendOrderNotification('o1', 'orderConfirmation')
+    expect(textOf((await sent()).html)).toContain('Versand')
+  })
+
+  it('cancel mail: generic text without "Falls"; not-collected text after "ready" (with / without period)', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({ status: 'canceled' }))
+    await sendOrderNotification('o1', 'orderCanceled')
+    let visible = textOf((await sent()).html)
+    expect(visible).not.toContain('Falls')
+    expect(visible).toContain('Den bezahlten Betrag erstatten wir Ihnen')
+
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({ status: 'canceled' }))
+    await sendOrderNotification('o1', 'orderCanceled')
+    expect(textOf((await sent()).html)).not.toContain('nicht abgeholt')
+
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder(
+      { status: 'canceled', statusHistory: [shippedAt('2026-11-10T09:00:00Z')] }, { pickupHoldDays: 7 },
+    ))
+    await sendOrderNotification('o1', 'orderCanceled')
+    visible = textOf((await sent()).html)
+    expect(visible).toContain('nicht innerhalb der Abholfrist abgeholt')
+
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder(
+      { status: 'canceled', statusHistory: [shippedAt('2026-11-10T09:00:00Z')] },
+    ))
+    await sendOrderNotification('o1', 'orderCanceled')
+    visible = textOf((await sent()).html)
+    expect(visible).toContain('Da Sie Ihre Bestellung nicht abgeholt haben')
+    expect(visible).not.toContain('Abholfrist')
+  })
+
+  it('shop mail: pickup banner first (HTML and text), no shipping address needed', async () => {
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings({ shopNotificationEmail: 'orders@shop.example' }))
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({
+      customer: { _type: 'orderCustomer', locale: 'de', contactEmail: 'max@example.com', billingAddress: { ...billing, phone: '+41 44 1234567' } },
+    }))
+    await sendShopOrderNotification('o1', { locale: 'de' })
+    const { html, text } = await sent()
+    expect(textOf(html)).toContain('ABHOLUNG – nicht versenden')
+    expect(textOf(html)).toContain('+41 44 1234567')
+    expect(text.startsWith('ABHOLUNG – nicht versenden')).toBe(true)
+  })
+})

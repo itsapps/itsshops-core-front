@@ -62,6 +62,8 @@ export class CheckoutStripe {
    * Confirm with explicit billing details and shipping. Used by express checkout
    * where Stripe Elements does not collect address fields itself — we pass
    * the address harvested from the express element (Apple Pay, Google Pay).
+   * `withShipping: false` (pickup): the address is the billing address only — the
+   * PaymentIntent carries no delivery address.
    */
   async confirmPaymentWithDetails(
     clientSecret: string,
@@ -79,6 +81,7 @@ export class CheckoutStripe {
         state?: string
       }
     },
+    { withShipping = true }: { withShipping?: boolean } = {},
   ): Promise<{ error?: { message: string } }> {
     if (!this.elements) return { error: { message: 'Payment not initialized' } }
     const shipping = {
@@ -99,7 +102,7 @@ export class CheckoutStripe {
             address: details.address,
           },
         },
-        shipping,
+        ...(withShipping && { shipping }),
       },
     })
     return result.error ? { error: { message: result.error.message ?? 'Payment failed' } } : {}

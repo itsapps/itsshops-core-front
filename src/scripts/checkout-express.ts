@@ -17,10 +17,11 @@ import type { CheckoutStripe } from './checkout-stripe'
 // Stripe ExpressCheckout shapes (subset).
 type LineItem = { name: string; amount: number }
 type StripeShippingRate = { id: string; amount: number; displayName: string }
-type ResolvedClickPayload = { lineItems: LineItem[]; shippingRates: StripeShippingRate[] }
+type ResolvedClickPayload = { lineItems: LineItem[]; shippingRates?: StripeShippingRate[] }
 
 export type ExpressLabels = {
   shipping: string  // e.g. 'Versand'
+  pickup?: string   // e.g. 'Abholung'
 }
 
 export type ExpressCheckoutConfig = {
@@ -83,20 +84,33 @@ export function buildLineItems(
   return lines
 }
 
+/** The wallet's shipping rates: delivery methods only — a pickup is chosen on the page. */
 export function buildShippingRates(methods: ShippingMethodResponse[]): StripeShippingRate[] {
-  return methods.map(m => ({
+  return methods.filter(m => m.methodType === 'delivery').map(m => ({
     id: m._id,
     amount: m.price,
     displayName: m.title,
   }))
 }
 
-function buildPayloadFromCalculation(calc: CalculateResponse, shippingLabel: string): ResolvedClickPayload {
-  const selected = calc.shippingMethods.find(m => m._id === calc.selectedShippingMethodId)
+/** Delivery-mode sheet payload; `null` when no delivery method serves the wallet's address. */
+export function buildPayloadFromCalculation(calc: CalculateResponse, shippingLabel: string): ResolvedClickPayload | null {
+  const shippingRates = buildShippingRates(calc.shippingMethods)
+  if (shippingRates.length === 0) return null
+  const selected = calc.shippingMethods.find(m => m._id === calc.selectedShippingMethodId && m.methodType === 'delivery')
   return {
     lineItems: buildLineItems(calc.items, selected, shippingLabel, calc.appliedCoupons),
-    shippingRates: buildShippingRates(calc.shippingMethods),
+    shippingRates,
   }
+}
+
+/**
+ * Pickup-mode click payload: the page's calculation (its total doesn't depend on the wallet's
+ * billing country — pickup is taxed by the pickup location), no shipping rates.
+ */
+export function buildPickupPayload(calc: CalculateResponse, pickupId: string, pickupLabel: string): ResolvedClickPayload {
+  const method = calc.shippingMethods.find(m => m._id === pickupId)
+  return { lineItems: buildLineItems(calc.items, method, pickupLabel, calc.appliedCoupons) }
 }
 
 // ── Class ────────────────────────────────────────────────────────────────────
@@ -107,6 +121,8 @@ export class CheckoutExpress {
   private lastAddress: { country: string; city?: string; zip?: string; state?: string } | null = null
   /** The calculation the wallet sheet last showed (address or rate change); reset on cancel. */
   private shownCalculation: CalculateResponse | null = null
+  /** The pickup method chosen on the page (pickup mode: no shipping address in the sheet). */
+  private pickupId: string | null = null
 
   constructor(config: ExpressCheckoutConfig) {
     this.config = config
@@ -156,11 +172,31 @@ export class CheckoutExpress {
     return this.lastAddress?.country ?? null
   }
 
+  /**
+   * Pickup chosen on the page (`methodId`) or delivery (`null`): the sheet then asks for the
+   * billing address instead of a shipping address. Both flags are set explicitly — the billing
+   * flag defaults to off because the element is created with other options.
+   */
+  setPickup(methodId: string | null): void {
+    const changed = (methodId === null) !== (this.pickupId === null)
+    this.pickupId = methodId
+    if (!changed || !this.element) return
+    this.element.update(methodId
+      ? { shippingAddressRequired: false, billingAddressRequired: true }
+      : { shippingAddressRequired: true, billingAddressRequired: false })
+  }
+
   // ── Event handlers ──────────────────────────────────────────────────────
 
   private handleClick(event: StripeExpressCheckoutElementClickEvent): void {
     const calc = this.config.getLatest()
     if (!calc) return
+    if (this.pickupId) {
+      // No address/rate events follow in pickup mode — what the sheet shows is this calculation.
+      event.resolve(buildPickupPayload(calc, this.pickupId, this.config.labels.pickup ?? this.config.labels.shipping))
+      this.shownCalculation = calc
+      return
+    }
     // Pass line items without shipping — the shippingaddresschange event fires
     // immediately with the user's actual wallet address and recalculates the
     // correct shipping methods for their country.
@@ -207,9 +243,15 @@ export class CheckoutExpress {
       event.reject()
       return
     }
+    const payload = buildPayloadFromCalculation(calc, this.config.labels.shipping)
+    if (!payload) {
+      // Only pickup methods for this address: the wallet can't deliver there.
+      event.reject()
+      return
+    }
     try {
       this.config.stripe.updateAmount(calc.totals.grandTotal)
-      event.resolve(buildPayloadFromCalculation(calc, this.config.labels.shipping))
+      event.resolve(payload)
       this.shownCalculation = calc
     } catch (err) {
       console.error('[checkout] express calculation could not be shown', err)
@@ -218,27 +260,31 @@ export class CheckoutExpress {
   }
 
   private async handleConfirm(event: StripeExpressCheckoutElementConfirmEvent): Promise<void> {
-    const shippingAddress = event.shippingAddress
+    const pickupId = this.pickupId
     const email = event.billingDetails?.email
-    const shippingRateId = event.shippingRate?.id
+    // Delivery: the shipping address + rate; pickup: the billing address + the page's pickup.
+    const source = pickupId ? event.billingDetails : event.shippingAddress
+    const shippingRateId = pickupId ?? event.shippingRate?.id
+    const sourceAddress = source?.address
 
-    if (!shippingAddress || !email || !shippingRateId) {
+    if (!source?.name || !sourceAddress?.line1 || !sourceAddress.country || !email || !shippingRateId) {
       event.paymentFailed({ reason: 'fail' })
       return
     }
 
     // Wallets only provide the full name. Don't guess first/last name here — orders only need
     // `name`; the Winenet export splits it when needed (netlify/utils/name.ts).
-    const name = shippingAddress.name
+    const name = source.name
 
     const address: AddressInput = {
       name,
-      line1: shippingAddress.address.line1,
-      ...(shippingAddress.address.line2 && { line2: shippingAddress.address.line2 }),
-      city: shippingAddress.address.city,
-      country: shippingAddress.address.country,
-      zip: shippingAddress.address.postal_code,
-      ...(shippingAddress.address.state && { state: shippingAddress.address.state }),
+      line1: sourceAddress.line1,
+      ...(sourceAddress.line2 && { line2: sourceAddress.line2 }),
+      city: sourceAddress.city ?? '',
+      country: sourceAddress.country,
+      zip: sourceAddress.postal_code ?? '',
+      ...(sourceAddress.state && { state: sourceAddress.state }),
+      ...(pickupId && event.billingDetails?.phone && { phone: event.billingDetails.phone }),
     }
 
     const result = await this.config.onCreatePayment({
@@ -270,6 +316,7 @@ export class CheckoutExpress {
           ...(address.state && { state: address.state }),
         },
       },
+      { withShipping: !pickupId },
     )
 
     if (confirmResult.error) {

@@ -22,7 +22,8 @@
     margin-block-end: var(--space-s-m);
   }
 
-  &__section legend {
+  &__section legend,
+  &__billing-heading {          /* the billing fields' visible heading (its legend is sr-only) */
     padding: 0;                 /* UA default 2px inline padding */
     font-weight: bold;
     margin-block-end: var(--space-xs);
@@ -159,6 +160,22 @@
 
 .checkout-shipping__title {
   flex: 1;
+}
+
+/* Delivery or pickup (`data-checkout-fulfillment`): same look as the shipping options. */
+.checkout-fulfillment__details {
+  margin-block-start: var(--space-xs);
+  white-space: pre-line;
+}
+.checkout-fulfillment__details > * + * {
+  margin-block-start: var(--space-3xs);
+}
+.checkout-shipping__empty {
+  margin: 0;
+}
+
+.order-thanks__pickup-instructions {
+  white-space: pre-line;
 }
 
 .checkout-payment {

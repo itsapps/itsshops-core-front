@@ -223,6 +223,19 @@ export default {
     },
     subtotal: "Zwischensumme",
     shipping: "Versand",
+    pickup: "Abholung",
+    // Delivery or pickup choice. Single-brace placeholders are filled in by the checkout script.
+    fulfillment: {
+      legend: "Versand oder Abholung",
+      delivery: "Versand",
+      free: "kostenlos",
+      readyIn: "Abholbereit in: {time}",
+      holdPeriod: "Wir bewahren Ihre Bestellung ab unserer Benachrichtigung {days} Tage für Sie auf.",
+      deliveryUnavailable: "Versand in dieses Land ist nicht möglich – Abholung ausgewählt.",
+      deliveryUnavailableShort: "Versand in dieses Land ist nicht möglich.",
+      pickupSelected: "Abholung ausgewählt. Die Adresse ist jetzt Ihre Rechnungsadresse.",
+      deliverySelected: "Versand ausgewählt.",
+    },
     total: "Gesamt",
     vat: "MwSt.",
     vatExempt: "Steuerfrei",
@@ -354,8 +367,10 @@ export default {
       summary: "Ihre Bestellung",
       orderNumber: "Bestellnummer",
       delivery: "Lieferung",
+      pickup: "Abholung",
       nextStepsTitle: "Wie geht es weiter?",
       nextSteps: "Sobald Ihre Bestellung versendet wird, schicken wir Ihnen eine Versandbestätigung per E-Mail.",
+      nextStepsPickup: "Sobald Ihre Bestellung abholbereit ist, benachrichtigen wir Sie per E-Mail.",
       nextStepsAgeRestricted: "Bitte beachten Sie: Wir liefern nur an Personen ab 18 Jahren. Bei der Zustellung kann ein Altersnachweis verlangt werden.",
       withdraw: "Vertrag widerrufen",
     },
@@ -431,6 +446,7 @@ export default {
       },
       phone: {
         label: "Telefon",
+        labelOptional: "Telefon (optional)",
         errorMessage: "Telefonnummer darf nicht leer sein",
       },
       name: {
@@ -537,6 +553,10 @@ export default {
     deliveryTime: "Lieferzeit",
     countries: "Lieferländer",
     pickupFee: "Gebühr",
+    pickupAddress: "Abholadresse",
+    pickupReadyTime: "Abholbereit in",
+    pickupHoldPeriod: "Abholfrist",
+    pickupHoldDays: "{{days}} Tage ab unserer Benachrichtigung",
     free: "kostenlos",
     freeShipping: "Versandkostenfrei",
     freeShippingFrom: "ab einem Bestellwert von {{amount}}",
@@ -581,7 +601,7 @@ export default {
     },
     orders: {
       heading: "Bestellungen",
-      text: "Wenn Sie bestellen, verarbeiten wir Ihren Namen, Ihre E-Mail-Adresse, Rechnungs- und Lieferadresse, die bestellten Artikel und den Zahlungsstatus, um den Vertrag zu erfüllen (Art. 6 Abs. 1 lit. b DSGVO) und unsere gesetzlichen Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Die Bestelldaten speichern wir bei {{provider}} (Auftragsverarbeiter). Bestellungen bewahren wir sieben Jahre ab Ende des Kalenderjahres auf (§ 132 BAO). Daten eines begonnenen, aber nicht bezahlten Bestellvorgangs löschen wir nach {{days}} Tagen.",
+      text: "Wenn Sie bestellen, verarbeiten wir Ihren Namen, Ihre E-Mail-Adresse, die Rechnungsadresse und, bei Versand, die Lieferadresse, falls angegeben Ihre Telefonnummer, die bestellten Artikel und den Zahlungsstatus, um den Vertrag zu erfüllen (Art. 6 Abs. 1 lit. b DSGVO) und unsere gesetzlichen Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Die Bestelldaten speichern wir bei {{provider}} (Auftragsverarbeiter). Bestellungen bewahren wir sieben Jahre ab Ende des Kalenderjahres auf (§ 132 BAO). Daten eines begonnenen, aber nicht bezahlten Bestellvorgangs löschen wir nach {{days}} Tagen.",
       carrier: "Für den Versand geben wir Ihren Namen und die Lieferadresse an das beauftragte Paketdienstleistungsunternehmen weiter, das sie als eigener Verantwortlicher verarbeitet (Art. 6 Abs. 1 lit. b DSGVO). Ihre E-Mail-Adresse geben wir nicht weiter.",
     },
     payment: {
@@ -642,7 +662,7 @@ export default {
     },
     required: {
       heading: "Pflichtangaben",
-      text: "Für eine Bestellung benötigen wir Name, Rechnungs- und Lieferadresse sowie Ihre E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",
+      text: "Für eine Bestellung benötigen wir Name, Rechnungsadresse und, bei Versand, Lieferadresse sowie Ihre E-Mail-Adresse; ohne diese Angaben können wir den Vertrag nicht abschließen oder erfüllen. Weitere Felder sind freiwillig.",
     },
     automated: {
       heading: "Automatisierte Entscheidungen",

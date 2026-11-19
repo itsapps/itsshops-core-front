@@ -136,8 +136,17 @@ describe('CheckoutExpress', () => {
   async function setup(over: Record<string, unknown> = {}) {
     const { CheckoutExpress } = await import('../checkout-express')
     const handlers: Record<string, (e: any) => any> = {}
-    const element = { mount: vi.fn(), unmount: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
-    const calc = { totals: { grandTotal: 4321 }, shippingMethods: [], selectedShippingMethodId: null, items: [], appliedCoupons: [] }
+    const element = { mount: vi.fn(), unmount: vi.fn(), update: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
+    const calc = {
+      totals: { grandTotal: 4321 },
+      shippingMethods: [
+        { _id: 'sm1', title: 'DPD', methodType: 'delivery', price: 590, isFree: false },
+        { _id: 'pu1', title: 'Abholung', methodType: 'pickup', price: 0, isFree: true },
+      ],
+      selectedShippingMethodId: 'sm1',
+      items: [],
+      appliedCoupons: [],
+    }
     const updateAmount = vi.fn()
     const onCreatePayment = vi.fn(async () => ({ error: 'stop' }))
     const onCancel = vi.fn()
@@ -205,5 +214,83 @@ describe('CheckoutExpress', () => {
     expect(onCancel).toHaveBeenCalled()
     await handlers.confirm(confirmEvent)
     expect(onCreatePayment).toHaveBeenLastCalledWith(expect.objectContaining({ shownCalculation: null }))
+  })
+})
+
+describe('CheckoutExpress — pickup', () => {
+  async function setup() {
+    const { CheckoutExpress } = await import('../checkout-express')
+    const handlers: Record<string, (e: any) => any> = {}
+    const element = { mount: vi.fn(), unmount: vi.fn(), update: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
+    const calc = {
+      totals: { grandTotal: 3000 },
+      shippingMethods: [
+        { _id: 'sm1', title: 'DPD', methodType: 'delivery', price: 590, isFree: false },
+        { _id: 'pu1', title: 'Abholung im Weingut', methodType: 'pickup', price: 0, isFree: true },
+      ],
+      selectedShippingMethodId: 'pu1',
+      items: [{ variantId: 'a', title: 'Wein', subtitle: null, price: 1500, quantity: 2 }],
+      appliedCoupons: [],
+    }
+    const onCreatePayment = vi.fn(async (_input: any) => ({ error: 'stop' }))
+    const express = new CheckoutExpress({
+      stripe: { createExpressCheckoutElement: () => element, updateAmount: vi.fn() } as never,
+      container: document.createElement('div'),
+      returnUrl: '/thanks',
+      allowedCountries: ['AT'],
+      labels: { shipping: 'Versand', pickup: 'Abholung' },
+      getLatest: () => calc as never,
+      onAddressChange: async () => calc as never,
+      onRateChange: async () => calc as never,
+      onCreatePayment,
+    })
+    express.mount()
+    return { express, handlers, element, calc, onCreatePayment }
+  }
+
+  it('setPickup updates both address flags (only on a mode change)', async () => {
+    const { express, element } = await setup()
+    express.setPickup('pu1')
+    expect(element.update).toHaveBeenLastCalledWith({ shippingAddressRequired: false, billingAddressRequired: true })
+    express.setPickup('pu1')
+    expect(element.update).toHaveBeenCalledTimes(1)
+    express.setPickup(null)
+    expect(element.update).toHaveBeenLastCalledWith({ shippingAddressRequired: true, billingAddressRequired: false })
+  })
+
+  it('pickup click: no shipping rates, pickup line, and the shown calculation is set', async () => {
+    const { express, handlers, calc, onCreatePayment } = await setup()
+    express.setPickup('pu1')
+    const click = { resolve: vi.fn() }
+    handlers.click(click)
+    const payload = click.resolve.mock.calls[0][0]
+    expect(payload).not.toHaveProperty('shippingRates')
+    expect(payload.lineItems.at(-1)).toEqual({ name: 'Abholung (Abholung im Weingut)', amount: 0 })
+    // confirm with the billing address → the page's calculation was shown (not refused)
+    await handlers.confirm({
+      billingDetails: { name: 'Max Muster', email: 'm@x.ch', phone: '+41 1', address: { line1: 'Bahnhofstr. 1', city: 'Zürich', country: 'CH', postal_code: '8001' } },
+      paymentFailed: vi.fn(),
+    })
+    const input = onCreatePayment.mock.calls[0][0]
+    expect(input.shownCalculation).toBe(calc)
+    expect(input.shippingMethodId).toBe('pu1')
+    expect(input.address).toMatchObject({ name: 'Max Muster', line1: 'Bahnhofstr. 1', country: 'CH', zip: '8001', phone: '+41 1' })
+  })
+
+  it('pickup confirm without a billing address fails', async () => {
+    const { express, handlers, onCreatePayment } = await setup()
+    express.setPickup('pu1')
+    const paymentFailed = vi.fn()
+    await handlers.confirm({ billingDetails: { email: 'm@x.ch' }, paymentFailed })
+    expect(paymentFailed).toHaveBeenCalled()
+    expect(onCreatePayment).not.toHaveBeenCalled()
+  })
+
+  it('delivery mode: the sheet lists no pickup rate; only pickups → rejected', async () => {
+    const { buildPayloadFromCalculation } = await import('../checkout-express')
+    const { calc } = await setup()
+    const payload = buildPayloadFromCalculation({ ...calc, selectedShippingMethodId: 'sm1' } as never, 'Versand')!
+    expect(payload.shippingRates).toEqual([{ id: 'sm1', amount: 590, displayName: 'DPD' }])
+    expect(buildPayloadFromCalculation({ ...calc, shippingMethods: [calc.shippingMethods[1]] } as never, 'Versand')).toBeNull()
   })
 })

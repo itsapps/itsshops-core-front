@@ -257,12 +257,50 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   (the build prices every product page). A bundle's weight = its items' `resolveVariantWeight`
   (explicit weight first, wine estimated) × item qty — the same per-item weight as
   `bundleItems[].weight`, so markup = checkout.
-- **Pickup is not supported** (checked 2026-11-12): core-back's `shippingMethod.methodType` list
-  offers only `delivery` (`pickup` and `pickupFee` are commented out), so no shop can create a
-  pickup method. What exists here is leftover: the pickup branch in `resolveShippingMethods`
-  (price = `pickupFee`), the `shippingInfoModule` pickup row, `order-thanks.ts` / `OrderEmail.tsx`
-  hiding the address for pickup. Don't build on it without a plan that enables it end to end —
-  that plan: `.claude/plans/store-pickup.md` (planned, not started).
+- **Store pickup** (click & collect; plan `.claude/plans/store-pickup.md`). A pickup location is a
+  `shippingMethod` with `methodType: 'pickup'` (core-back: `pickupFee`, `pickupAddress`,
+  `pickupInstructions`, `pickupHoldDays`). **No feature flag — the data is the switch:** a
+  published pickup method makes the checkout offer it.
+  - **Offered for any address country.** `CHECKOUT_QUERY` returns delivery methods of the address
+    country + every pickup method, and `pickupTaxCountries` (rules of the pickup countries + the
+    default country). `payment-create` rejects a non-ISO country (`isCountryCode`,
+    `src/shared/countries.ts` — the one country list, also behind the `countryList` filter); an
+    address country that is no tax country is possible only for pickup (methods = pickups only).
+  - **VAT = the pickup location's country** (place of supply; `pickupAddress.country`, fallback
+    `shopSettings.defaultCountry`), decided from the raw methods before `validateCart`. A pickup
+    whose country has no enabled tax country is dropped with a warning. ADR
+    `decisions/pickup-tax-country-is-pickup-location.md`.
+  - **Only ever chosen explicitly:** `selectShippingMethod` picks a pickup only by its requested
+    id; without a delivery method it returns `null` (a calculate answers
+    `selectedShippingMethodId: null`, a `createPayment` without a pickup id fails with
+    `SHIPPING_UNAVAILABLE`). No weight/packaging limit, no threshold or product free shipping;
+    a `freeShipping` coupon waives a pickup fee (0 discount on a free pickup).
+  - **Address:** the form's main fields (still `address.shipping` on the wire) are the billing
+    address; the order stores **no** `customer.shippingAddress` (optional in the types —
+    `buildOrderMeta` writes it only for delivery and throws for a delivery without one). The
+    pickup location is snapshotted as `fulfillment.pickupAddress` / `pickupInstructions` /
+    `pickupHoldDays` (`buildFulfillment`; throws for a pickup method without address).
+  - **States reused** (ADR `decisions/pickup-reuses-shipped-delivered-states.md`): `shipped` =
+    "Abholbereit", `delivered` = "Abgeholt". `isHandedOver()` (`src/shared/pickup.ts`) is true for
+    pickup only at `delivered`: a full refund (webhook `updateOrderPaymentStatus`) auto-cancels an
+    "Abholbereit" order, and the withdrawal receipt says "not collected, nothing to return"
+    (`emails.orderWithdrawalCustomer.notCollected`). The wc-api's `PRE_DISPATCH` is unchanged.
+  - **Mails:** `templates/email/mail-keys.ts` — `mailKey()` takes `emails.pickup.<mailType>.<part>`
+    for the parts in `PICKUP_MAIL_KEYS` (confirmation/processing text, ready/collected
+    subject+preview+text, cancel text "not collected" once the order was "Abholbereit");
+    `pickupExtraLines()` adds the hold period (confirmation) and the deadline (ready mail:
+    `pickupDeadline()` = latest `fulfillment/shipped` entry + `pickupHoldDays`, calendar days in
+    `SHOP_TIMEZONE`) to the HTML body **and** the plain text. Addresses: billing + "Abholort"
+    (`PickupBlock`); totals/invoice row "Abholung"; the shop mail starts with "ABHOLUNG – nicht
+    versenden". The cancel mail's generic text no longer says "falls Sie bereits bezahlt haben".
+  - **Thanks page:** the snapshot keeps the pickup location instead of the customer's address;
+    heading/totals say "Abholung", next steps "sobald abholbereit". **Info page:** pickup facts
+    (address, ready in, hold period, instructions); leftover rates/countries are ignored.
+  - Client side (fulfillment choice, pickup mode, express without shipping address):
+    `ui-contracts.md` → "Fulfillment choice"; wc-api mapping: `wc-api.md` → "Pickup orders".
+- **Phone** (optional, every shop): `shipping.phone` / `billing.phone` fields in the checkout
+  (`type="tel"`, max 40 chars, checked by `validateAddress`), printed in the mails' address
+  blocks. Express doesn't ask for it.
 - **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
   as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
   pass the same value as `itsshops.config` (Tinhof passes `stock: false` explicitly).

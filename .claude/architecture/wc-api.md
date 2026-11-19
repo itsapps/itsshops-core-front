@@ -116,7 +116,7 @@ de-duplication does); internally the order stays undispatched and the shop ships
 | `line_items` | `orderItems[]` — see Rounding |
 | `tax_lines` | one per rate: `tax_total` = item taxes, `shipping_tax_total` = shipping tax; `id` = 1, 2, … (the line's own id), `rate_id` = stable hash of tax country + rate, `rate_code` = `AT-20` (`TAX-20` without a country) |
 | `line_items[].taxes[].id` / `shipping_lines[].taxes[].id` | the `rate_id` (as in WC), not `tax_lines[].id` |
-| `shipping_lines` | one line: `method_id` = `methodType`, `method_title`, net total, tax |
+| `shipping_lines` | one line: `method_id` = `methodType` (pickup: `pickup_location`), `method_title`, net total, tax |
 | `fee_lines` | always `[]` (packaging is part of the shipping price) |
 | `payment_method` / `_title` | stored Stripe type (`card`, `link`, `eps`, …) + German label; `stripe`/`Stripe` on old orders |
 | `transaction_id` | `paymentIntentId` |
@@ -124,6 +124,17 @@ de-duplication does); internally the order stays undispatched and the shop ships
 
 Money is a decimal string with 2 places (`"12.34"`, Sanity stores cents) — except line-item
 `price`, an unrounded number.
+
+### Pickup orders
+
+Shaped like a WooCommerce block-checkout **Local Pickup** order (checked in WC `trunk`,
+2026-11-18): `shipping_lines[0].method_id` = `pickup_location`, line `meta_data`
+`pickup_location` (method title), `pickup_address` (one line, `", "`-joined) and
+`pickup_details` (instructions) — WC's own keys, `id`s via `stableId`. The order's `shipping`
+address is a **copy of billing** (pickup orders store no shipping address; WC does the same), the
+tax country (`rate_id`s, `rate_code`) is the pickup location's country. The status mapping is
+unchanged: "Abholbereit" (`shipped`) is `completed`; an open withdrawal on it stays `completed`
+(it has left the ERP's queue — cancel it there by hand).
 
 ## Rounding (mirrors WooCommerce)
 

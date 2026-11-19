@@ -109,3 +109,7 @@ alternative was rejected, a constraint discovered the hard way.
   items' attributes and categories; category pages keep the bundle's own categories.
 - [vinofact-dated-api-version-in-code.md](vinofact-dated-api-version-in-code.md) — VinoFact's API
   date is a constant in each core; `VINOFACT_API_URL` only overrides the origin; no config field.
+- [pickup-tax-country-is-pickup-location.md](pickup-tax-country-is-pickup-location.md) — pickup
+  orders taxed by the pickup location's country; pickup open to every address country.
+- [pickup-reuses-shipped-delivered-states.md](pickup-reuses-shipped-delivered-states.md) — pickup
+  `shipped` = "Abholbereit", `delivered` = "Abgeholt"; `isHandedOver()` where it matters.

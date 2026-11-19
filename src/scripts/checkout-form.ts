@@ -87,6 +87,35 @@ export class CheckoutForm {
     })
   }
 
+  private pickup = false
+
+  isPickup(): boolean {
+    return this.pickup
+  }
+
+  /**
+   * Pickup mode: the address fields are the billing address — the legend says so, and the
+   * billing toggle fieldset and the shipping-method fieldset hide as a whole (an empty
+   * `.checkout__section` box would remain otherwise). Back on delivery the billing fields
+   * follow the "same as shipping" box again.
+   */
+  setPickupMode(pickup: boolean): void {
+    this.pickup = pickup
+    const legend = this.form.querySelector<HTMLElement>('[data-checkout-address-legend]')
+    const root = this.form.closest<HTMLElement>('[data-checkout]')
+    const text = pickup ? root?.dataset.tAddressBilling : root?.dataset.tAddressDelivery
+    if (legend && text) legend.textContent = text
+
+    const billingSection = this.form.querySelector<HTMLElement>('[data-checkout-billing-section]')
+    if (billingSection) billingSection.hidden = pickup
+    const billingFields = this.form.querySelector<HTMLElement>('[data-checkout-billing-fields]')
+    const checkbox = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    if (!pickup && billingFields && checkbox) billingFields.hidden = checkbox.checked
+
+    const shippingSection = this.form.querySelector<HTMLElement>('[data-checkout-shipping-section]')
+    if (shippingSection) shippingSection.hidden = pickup
+  }
+
   private bindCountryListener(): void {
     const countrySelect = this.form.querySelector<HTMLSelectElement>('[data-checkout-country]')
     countrySelect?.addEventListener('change', () => {
@@ -120,6 +149,8 @@ export class CheckoutForm {
   }
 
   getBillingAddress(): AddressInput | undefined {
+    // Pickup: the main fields are the billing address (sent as `address.shipping`).
+    if (this.pickup) return undefined
     const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
     if (useShippingAsBilling?.checked !== false) return undefined
 
@@ -149,9 +180,9 @@ export class CheckoutForm {
 
     this.validateAddressFields('shipping', errors)
 
-    // Validate billing if separate
+    // Validate billing if separate (never in pickup mode — its fields are hidden then)
     const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
-    if (useShippingAsBilling?.checked === false) {
+    if (!this.pickup && useShippingAsBilling?.checked === false) {
       this.validateAddressFields('billing', errors)
     }
 
@@ -203,6 +234,16 @@ export class CheckoutForm {
       firstInput?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       firstInput?.focus()
     }
+  }
+
+  /** Mark one field invalid without moving focus (e.g. after a mode switch from a radio). */
+  markError(field: string, message: string): void {
+    const errorEl = this.form.querySelector<HTMLElement>(`[data-checkout-error="${field}"]`)
+    if (errorEl) {
+      errorEl.textContent = message
+      errorEl.setAttribute('aria-live', 'polite')
+    }
+    this.form.querySelector<HTMLElement>(`[name="${field}"]`)?.classList.add('is-invalid')
   }
 
   clearErrors(): void {

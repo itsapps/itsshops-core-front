@@ -75,10 +75,34 @@ describe('buildOrderSnapshot', () => {
   })
 
   it('prefers the explicitly selected method (express checkout); no guessed first name', () => {
-    const s = build({ shippingMethodId: 'pick', address: { ...address, prename: undefined, lastname: undefined, name: 'Maria von Trapp' } })!
-    expect(s.shippingMethod).toEqual({ title: 'Abholung im Weingut', methodType: 'pickup' })
+    const s = build({ shippingMethodId: 'ship', address: { ...address, prename: undefined, lastname: undefined, name: 'Maria von Trapp' } })!
+    expect(s.shippingMethod).toEqual({ title: 'Post', methodType: 'delivery' })
     expect(s.firstName).toBeUndefined()
     expect(s.shippingAddress?.name).toBe('Maria von Trapp')
+  })
+
+  it('pickup: the pickup location instead of the customer address', () => {
+    const pickupResponse = {
+      ...response,
+      shippingMethods: [
+        response.shippingMethods[0],
+        {
+          ...response.shippingMethods[1],
+          pickupAddress: { line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' },
+          pickupInstructions: 'Mo–Fr 9–17',
+        },
+      ],
+    } as CreatePaymentResponse
+    const s = build({ response: pickupResponse, shippingMethodId: 'pick', address: { ...address, country: 'CH' } })!
+    expect(s.shippingMethod).toEqual({ title: 'Abholung im Weingut', methodType: 'pickup' })
+    expect(s).not.toHaveProperty('shippingAddress')
+    expect(s.pickupAddress).toMatchObject({ line1: 'Eisenstätter Straße 10', city: 'Trausdorf' })
+    expect(s.pickupInstructions).toBe('Mo–Fr 9–17')
+    expect(JSON.stringify(s)).not.toContain('Hauptstraße')
+  })
+
+  it('a non-tax country gets its localized name', () => {
+    expect(build({ address: { ...address, country: 'CH' } })!.shippingAddress?.country).not.toBe('CH')
   })
 })
 

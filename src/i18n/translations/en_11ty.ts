@@ -223,6 +223,19 @@ export default {
     },
     subtotal: "Subtotal",
     shipping: "Shipping",
+    pickup: "Pickup",
+    // Delivery or pickup choice. Single-brace placeholders are filled in by the checkout script.
+    fulfillment: {
+      legend: "Delivery or pickup",
+      delivery: "Delivery",
+      free: "free",
+      readyIn: "Ready for pickup in: {time}",
+      holdPeriod: "We'll hold your order for {days} days from our notification.",
+      deliveryUnavailable: "Delivery to this country isn't possible – pickup selected.",
+      deliveryUnavailableShort: "Delivery to this country isn't possible.",
+      pickupSelected: "Pickup selected. The address is now your billing address.",
+      deliverySelected: "Delivery selected.",
+    },
     total: "Total",
     vat: "VAT",
     vatExempt: "VAT exempt",
@@ -354,8 +367,10 @@ export default {
       summary: "Your order",
       orderNumber: "Order number",
       delivery: "Delivery",
+      pickup: "Pickup",
       nextStepsTitle: "What happens next?",
       nextSteps: "As soon as your order ships, we'll send you a shipping confirmation by email.",
+      nextStepsPickup: "As soon as your order is ready for pickup, we'll let you know by email.",
       nextStepsAgeRestricted: "Please note: we only deliver to persons aged 18 or over. Proof of age may be requested on delivery.",
       withdraw: "Withdraw from contract here",
     },
@@ -431,6 +446,7 @@ export default {
       },
       phone: {
         label: "Phone",
+        labelOptional: "Phone (optional)",
         errorMessage: "Phone number must not be empty",
       },
       name: {
@@ -537,6 +553,10 @@ export default {
     deliveryTime: "Delivery time",
     countries: "Delivery countries",
     pickupFee: "Fee",
+    pickupAddress: "Pickup address",
+    pickupReadyTime: "Ready for pickup in",
+    pickupHoldPeriod: "Hold period",
+    pickupHoldDays: "{{days}} days from our notification",
     free: "free",
     freeShipping: "Free shipping",
     freeShippingFrom: "from an order value of {{amount}}",
@@ -581,7 +601,7 @@ export default {
     },
     orders: {
       heading: "Orders",
-      text: "When you place an order, we process your name, email address, billing and shipping address, the items ordered and the payment status in order to perform the contract (Art. 6(1)(b) GDPR) and to meet our statutory retention obligations (Art. 6(1)(c) GDPR). Order data is stored with {{provider}} (processor). We keep orders for seven years from the end of the calendar year (§ 132 BAO). Data from a checkout that was started but not paid is deleted after {{days}} days.",
+      text: "When you place an order, we process your name, email address, billing address and, for delivery, shipping address, your phone number if given, the items ordered and the payment status in order to perform the contract (Art. 6(1)(b) GDPR) and to meet our statutory retention obligations (Art. 6(1)(c) GDPR). Order data is stored with {{provider}} (processor). We keep orders for seven years from the end of the calendar year (§ 132 BAO). Data from a checkout that was started but not paid is deleted after {{days}} days.",
       carrier: "To ship your order, we pass your name and shipping address to the parcel service we use, which processes them as an independent controller (Art. 6(1)(b) GDPR). We do not pass on your email address.",
     },
     payment: {
@@ -642,7 +662,7 @@ export default {
     },
     required: {
       heading: "Required data",
-      text: "To place an order we need your name, billing and shipping address and your email address; without them we cannot conclude or perform the contract. Other fields are optional.",
+      text: "To place an order we need your name, billing address and, for delivery, shipping address and your email address; without them we cannot conclude or perform the contract. Other fields are optional.",
     },
     automated: {
       heading: "Automated decisions",

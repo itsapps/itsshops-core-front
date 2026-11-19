@@ -1,6 +1,6 @@
 # Plan — store pickup (click & collect) as a shipping method
 
-Status: **planned** (2026-11-17), nothing built; refined 2026-11-18 (round 1, 80/100), 2026-11-18 (round 2, 86/100), 2026-11-18 (round 3, 90/100), 2026-11-18 (round 4, 91/100), 2026-11-18 (round 5, 93/100), 2026-11-18 (round 6, 94/100), 2026-11-18 (round 7, 95/100), 2026-11-19 (round 8, 96/100). All decisions are the
+Status: **built, on branches `feat/store-pickup`** (core-back, core-front, Tinhof frontend; 2026-11-19), not on staging yet — Rollout 2 onward. Refined 2026-11-18/19 (8 rounds, last 96/100). All decisions are the
 owner's (1–5, 7–9 confirmed 2026-11-18). Spans **core-back** (shipping method fields, order snapshot, status labels)
 and **core-front** (checkout UI, tax country, order snapshot, mails, thanks page, wc-api, info
 page). Tinhof is the first user ("Abholung im Weingut", Eisenstätter Straße 10, 7061 Trausdorf —
@@ -758,6 +758,21 @@ Owner, 2026-11-17/18 (1–5 and 7–9 confirmed 2026-11-18):
 - ADR `decisions/pickup-tax-country-is-pickup-location.md` (decision 4) and
   `pickup-reuses-shipped-delivered-states.md` (decision 7).
 - Tinhof `CLAUDE.md`: pickup method, AGB change, wineNET notes.
+
+## Built (2026-11-19)
+
+All steps 2–18 built on `feat/store-pickup` in core-back and core-front, with the tests listed
+above (core-back `tests/pickup.test.ts`; core-front `payment-create-pickup.test.ts`,
+`order-email.test.tsx` → "pickup orders", `checkout-fulfillment.test.ts`, `shared/__tests__`,
+wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
+- `form.validate()` has no `{ pickup }` option — `CheckoutForm` keeps the mode
+  (`setPickupMode`), which also drives `getBillingAddress()`.
+- Mail helpers live in `templates/email/mail-keys.ts` (re-exported from `templates/email`), not
+  in `index.tsx` — `OrderEmail` imports them, and `index.tsx` imports `OrderEmail`.
+- The thanks page also swaps "Wie geht es weiter?" to `nextStepsPickup`.
+- `pickupDeadline()` without a `shipped` entry counts from now (core-front; the ready mail of a
+  status not stored yet); core-back's returns `null` (the order view shows no deadline).
+- Tinhof frontend: `.checkout__billing-heading` added to its legend rule (`blocks/checkout.css`).
 
 ## Rollout (Tinhof)
 

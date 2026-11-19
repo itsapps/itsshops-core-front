@@ -61,9 +61,10 @@ function renderSnapshot(root: HTMLElement, snapshot: OrderSnapshot): void {
       fillCartItem(li.querySelector<HTMLElement>('[data-cart-item]') ?? li, item, format)
       itemsEl.appendChild(li)
     }
+    const isPickup = snapshot.shippingMethod?.methodType === 'pickup'
     renderTotals(totalsEl, snapshot.summary, {
       subtotal: d.tSubtotal ?? 'Subtotal',
-      shipping: d.tShipping ?? 'Shipping',
+      shipping: (isPickup ? d.tPickupTotal : d.tShipping) ?? 'Shipping',
       total: d.tTotal ?? 'Total',
       vat: d.tVat ?? 'VAT',
       vatExempt: d.tVatExempt ?? 'VAT exempt',
@@ -74,10 +75,20 @@ function renderSnapshot(root: HTMLElement, snapshot: OrderSnapshot): void {
 
   const deliveryEl = root.querySelector<HTMLElement>('[data-order-thanks-delivery]')
   if (deliveryEl) {
-    const { shippingMethod: method, shippingAddress: address } = snapshot
+    const { shippingMethod: method, shippingAddress: address, pickupAddress } = snapshot
     if (method) fillSlot(deliveryEl, 'shipping-method', method.title)
-    // Pickup: the method title is the whole story — no delivery address.
-    if (address && method?.methodType !== 'pickup') {
+    if (method?.methodType === 'pickup') {
+      // Pickup: the section is "Abholung" with the pickup location, never a customer address.
+      const heading = deliveryEl.querySelector<HTMLElement>('h2')
+      if (heading && d.tPickup) heading.textContent = d.tPickup
+      if (pickupAddress) {
+        const lines = [pickupAddress.line1, pickupAddress.line2, `${pickupAddress.zip} ${pickupAddress.city}`, pickupAddress.country]
+        fillSlot(deliveryEl, 'address', lines.filter(Boolean).join('\n'))
+      }
+      if (snapshot.pickupInstructions) fillSlot(deliveryEl, 'pickup-instructions', snapshot.pickupInstructions)
+      const nextSteps = root.querySelector<HTMLElement>('[data-order-thanks-next-steps]')
+      if (nextSteps?.dataset.tPickup) nextSteps.textContent = nextSteps.dataset.tPickup
+    } else if (address) {
       const lines = [address.name, address.line1, address.line2, `${address.zip} ${address.city}`, address.country]
       fillSlot(deliveryEl, 'address', lines.filter(Boolean).join('\n'))
     }

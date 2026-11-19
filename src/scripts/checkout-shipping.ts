@@ -17,10 +17,22 @@ export class CheckoutShipping {
     return checked?.value
   }
 
-  render(methods: ShippingMethodResponse[], selectedId: string | null, formatPrice: (cents: number) => string): void {
+  /**
+   * Render the delivery methods (pickup methods are offered by `CheckoutFulfillment`). None for
+   * the address country → `emptyText` ("Versand in dieses Land ist nicht möglich.").
+   */
+  render(methods: ShippingMethodResponse[], selectedId: string | null, formatPrice: (cents: number) => string, emptyText?: string): void {
     this.container.innerHTML = ''
+    const delivery = methods.filter(m => m.methodType === 'delivery')
+    if (delivery.length === 0 && emptyText) {
+      const p = document.createElement('p')
+      p.className = 'checkout-shipping__empty'
+      p.textContent = emptyText
+      this.container.appendChild(p)
+      return
+    }
 
-    for (const method of methods) {
+    for (const method of delivery) {
       const isSelected = method._id === selectedId
       const label = document.createElement('label')
       label.className = `checkout-shipping__option${isSelected ? ' is-selected' : ''}`

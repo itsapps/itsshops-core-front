@@ -231,6 +231,10 @@ export type ResolvedShippingMethod = {
   deliveryTime: string | null
   methodType: 'delivery' | 'pickup'
   pickupFee: number | null
+  /** Pickup only: where the order is collected, the instructions, the hold period (days). */
+  pickupAddress: ResolvedAddress | null
+  pickupInstructions: string | null
+  pickupHoldDays: number | null
   freeShippingThreshold: number | null
   /** Enabled tax countries this method ships to (ISO codes). */
   countries: string[]

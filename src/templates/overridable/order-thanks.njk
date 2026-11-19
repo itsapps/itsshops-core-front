@@ -15,6 +15,8 @@
   data-t-heading-named="{{ 'staticPages.orderThankYou.headingNamed' | trans({ name: '%name%' }) }}"
   data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
   data-t-shipping="{{ 'checkout.shipping' | trans }}"
+  data-t-pickup="{{ 'staticPages.orderThankYou.pickup' | trans }}"
+  data-t-pickup-total="{{ 'checkout.pickup' | trans }}"
   data-t-total="{{ 'checkout.total' | trans }}"
   data-t-vat="{{ 'checkout.vat' | trans }}"
   data-t-vat-exempt="{{ 'checkout.vatExempt' | trans }}"
@@ -39,11 +41,13 @@
     <h2 id="order-thanks-delivery-title">{{ 'staticPages.orderThankYou.delivery' | trans }}</h2>
     <p class="order-thanks__shipping-method" data-slot="shipping-method" hidden></p>
     <address class="order-thanks__address" data-slot="address" hidden></address>
+    {#- Pickup only: the pickup instructions (opening hours, ID check, …). -#}
+    <p class="order-thanks__pickup-instructions" data-slot="pickup-instructions" hidden></p>
   </section>
 
   <section class="order-thanks__section order-thanks__next" aria-labelledby="order-thanks-next-title" data-order-thanks-next hidden>
     <h2 id="order-thanks-next-title">{{ 'staticPages.orderThankYou.nextStepsTitle' | trans }}</h2>
-    <p>{{ 'staticPages.orderThankYou.nextSteps' | trans }}</p>
+    <p data-order-thanks-next-steps data-t-pickup="{{ 'staticPages.orderThankYou.nextStepsPickup' | trans }}">{{ 'staticPages.orderThankYou.nextSteps' | trans }}</p>
     {%- if coreConfig.features.shop.checkoutAgeConfirmation %}
     <p>{{ 'staticPages.orderThankYou.nextStepsAgeRestricted' | trans }}</p>
     {%- endif %}

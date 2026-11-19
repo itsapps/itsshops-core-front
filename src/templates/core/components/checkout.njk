@@ -22,6 +22,17 @@
     {% if coreConfig.units.price.currencyLabel %}data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
     data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
     data-t-shipping="{{ 'checkout.shipping' | trans }}"
+    data-t-pickup="{{ 'checkout.pickup' | trans }}"
+    data-t-address-delivery="{{ 'checkout.sections.delivery' | trans }}"
+    data-t-address-billing="{{ 'checkout.sections.billing' | trans }}"
+    data-t-fulfillment-delivery="{{ 'checkout.fulfillment.delivery' | trans }}"
+    data-t-fulfillment-free="{{ 'checkout.fulfillment.free' | trans }}"
+    data-t-fulfillment-ready-in="{{ 'checkout.fulfillment.readyIn' | trans }}"
+    data-t-fulfillment-hold-period="{{ 'checkout.fulfillment.holdPeriod' | trans }}"
+    data-t-fulfillment-delivery-unavailable="{{ 'checkout.fulfillment.deliveryUnavailable' | trans }}"
+    data-t-fulfillment-delivery-unavailable-short="{{ 'checkout.fulfillment.deliveryUnavailableShort' | trans }}"
+    data-t-fulfillment-pickup-selected="{{ 'checkout.fulfillment.pickupSelected' | trans }}"
+    data-t-fulfillment-delivery-selected="{{ 'checkout.fulfillment.deliverySelected' | trans }}"
     data-t-total="{{ 'checkout.total' | trans }}"
     data-t-vat="{{ 'checkout.vat' | trans }}"
     data-t-vat-exempt="{{ 'checkout.vatExempt' | trans }}"
@@ -103,9 +114,21 @@
             </div>
           </fieldset>
 
-          {# Shipping address #}
-          <fieldset class="checkout__section">
-            <legend>{{ 'checkout.sections.delivery' | trans }}</legend>
+          {#- Delivery or pickup — shown by the script only when the calculation lists a pickup
+              method. A sibling of the address fieldset (whose legend becomes "Rechnungsadresse"
+              in pickup mode). Hooks: ui-contracts.md → "Fulfillment choice". -#}
+          <fieldset class="checkout__section checkout-fulfillment" data-checkout-fulfillment hidden>
+            <legend>{{ 'checkout.fulfillment.legend' | trans }}</legend>
+            <div data-checkout-fulfillment-options class="checkout-fulfillment__options"></div>
+            <div data-checkout-pickup-details id="checkout-pickup-details" class="checkout-fulfillment__details" hidden></div>
+          </fieldset>
+          {#- Announces mode switches (auto-switch to pickup, …). Outside the hidden fieldset and
+              never hidden: a live region is only announced reliably when it exists first. -#}
+          <p data-checkout-fulfillment-status class="sr-only" role="status"></p>
+
+          {# Shipping address (pickup mode: the billing address) #}
+          <fieldset class="checkout__section" data-checkout-address-section>
+            <legend data-checkout-address-legend>{{ 'checkout.sections.delivery' | trans }}</legend>
             <div class="form__row">
               <div class="form-field">
                 <label for="checkout-prename">{{ 'forms.fields.prename.label' | trans }}</label>
@@ -143,16 +166,23 @@
               </select>
               <span data-checkout-error="shipping.country" class="form-field__error"></span>
             </div>
+            <div class="form-field">
+              <label for="checkout-phone">{{ 'forms.fields.phone.labelOptional' | trans }}</label>
+              <input type="tel" id="checkout-phone" name="shipping.phone" autocomplete="tel" maxlength="40">
+              <span data-checkout-error="shipping.phone" class="form-field__error"></span>
+            </div>
           </fieldset>
 
-          {# Billing toggle + address #}
-          <fieldset class="checkout__section">
+          {# Billing toggle + address (hidden as a whole in pickup mode) #}
+          <fieldset class="checkout__section" data-checkout-billing-section>
+            {#- The fieldset's name must be its first child; the visible heading is in the div. -#}
+            <legend class="sr-only">{{ 'checkout.sections.billing' | trans }}</legend>
             <label class="form-field__checkbox">
               <input type="checkbox" data-checkout-same-billing checked>
               {{ 'forms.checkout.useShippingAsBilling' | trans }}
             </label>
             <div data-checkout-billing-fields class="checkout__billing" hidden>
-              <legend>{{ 'checkout.sections.billing' | trans }}</legend>
+              <p class="checkout__billing-heading" aria-hidden="true">{{ 'checkout.sections.billing' | trans }}</p>
               <div class="form__row">
                 <div class="form-field">
                   <label for="checkout-billing-prename">{{ 'forms.fields.prename.label' | trans }}</label>
@@ -189,6 +219,11 @@
                   <option value="">{{ 'forms.fields.country.none' | trans }}</option>
                 </select>
                 <span data-checkout-error="billing.country" class="form-field__error"></span>
+              </div>
+              <div class="form-field">
+                <label for="checkout-billing-phone">{{ 'forms.fields.phone.labelOptional' | trans }}</label>
+                <input type="tel" id="checkout-billing-phone" name="billing.phone" autocomplete="billing tel" maxlength="40">
+                <span data-checkout-error="billing.phone" class="form-field__error"></span>
               </div>
             </div>
           </fieldset>
@@ -238,8 +273,8 @@
           </fieldset>
           {%- endif -%}
 
-          {# Shipping method #}
-          <fieldset class="checkout__section">
+          {# Shipping method (hidden in pickup mode) #}
+          <fieldset class="checkout__section" data-checkout-shipping-section>
             <legend>{{ 'checkout.sections.shippingMethod' | trans }}</legend>
             <div data-checkout-shipping class="checkout-shipping"></div>
           </fieldset>

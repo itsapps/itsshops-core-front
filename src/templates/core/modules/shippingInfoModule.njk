@@ -21,8 +21,16 @@
         <dt>{{ 'shippingInfo.type' | trans }}</dt>
         <dd>{{ ('shippingInfo.types.' + method.methodType) | trans }}</dd>
         {%- if method.deliveryTime %}
-        <dt>{{ 'shippingInfo.deliveryTime' | trans }}</dt>
+        <dt>{{ ('shippingInfo.pickupReadyTime' if method.methodType == 'pickup' else 'shippingInfo.deliveryTime') | trans }}</dt>
         <dd>{{ method.deliveryTime }}</dd>
+        {%- endif %}
+        {%- if method.pickupAddress %}
+        <dt>{{ 'shippingInfo.pickupAddress' | trans }}</dt>
+        <dd>{{ method.pickupAddress.line1 }}{% if method.pickupAddress.line2 %}, {{ method.pickupAddress.line2 }}{% endif %}, {{ method.pickupAddress.zip }} {{ method.pickupAddress.city }}, {{ method.pickupAddress.country | countryName }}</dd>
+        {%- endif %}
+        {%- if method.pickupHoldDays %}
+        <dt>{{ 'shippingInfo.pickupHoldPeriod' | trans }}</dt>
+        <dd>{{ 'shippingInfo.pickupHoldDays' | trans({ days: method.pickupHoldDays }) }}</dd>
         {%- endif %}
         {%- if method.countries.length %}
         <dt>{{ 'shippingInfo.countries' | trans }}</dt>
@@ -37,6 +45,9 @@
         <dd>{{ 'shippingInfo.freeShippingFrom' | trans({ amount: method.freeShippingThreshold | formatPrice }) }}</dd>
         {%- endif %}
       </dl>
+      {%- if method.pickupInstructions %}
+      <div class="shipping-info__pickup-instructions">{{ method.pickupInstructions | paragraphs | safe }}</div>
+      {%- endif %}
 
       {#- One table per packaging group (box type). Rows are places; bottles sharing a place
           (perPlace > 1) get a note in the caption, so screen readers announce it with the table. #}

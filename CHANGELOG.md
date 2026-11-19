@@ -6,6 +6,30 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 
 ## Unreleased
 
+- **Store pickup** (click & collect; plan `.claude/plans/store-pickup.md`, needs core-back with the
+  pickup shipping method): a published `shippingMethod` with `methodType: 'pickup'` is offered in
+  the checkout ("Versand oder Abholung"), for any address country (pickup mode lists every ISO
+  country). VAT by the pickup location's country; the order stores the billing address only plus
+  `fulfillment.pickupAddress` / `pickupInstructions` / `pickupHoldDays`. Express checkout works
+  for pickup (billing address instead of a shipping address). Mails: pickup texts for
+  confirmation / processing / ready ("abholbereit", with the deadline) / collected / cancelled
+  (not collected); "Abholort" block, "Abholung" totals row, shop mail banner. Thanks page and the
+  "Versand & Zahlung" module show the pickup location. wc-api: `pickup_location` shipping line.
+  A full refund of an "Abholbereit" order auto-cancels it; the withdrawal receipt says nothing has
+  to be returned. `commerce-and-netlify.md` → "Store pickup".
+- Without a delivery method `selectShippingMethod` now returns `null` instead of the first method
+  (a pickup is only chosen when requested).
+- `customer.shippingAddress` is optional on orders (`OrderCustomer`), `fulfillment.pickupLocation`
+  is replaced by `pickupAddress` / `pickupInstructions` / `pickupHoldDays`.
+- Checkout: optional phone field (`shipping.phone` / `billing.phone`, max 40 chars), printed in
+  the mails' address blocks.
+- Checkout a11y: the billing fieldset's legend is now its first child (`sr-only`); the visible
+  heading is `<p class="checkout__billing-heading">`.
+- Cancel mail (every shop): "Den bezahlten Betrag erstatten wir Ihnen … zurück" instead of
+  "Falls Sie bereits bezahlt haben, … in voller Höhe" (an order is always paid; "in voller Höhe"
+  was wrong after a partial refund).
+- Privacy policy texts: "Rechnungsadresse und, bei Versand, Lieferadresse" and the optional phone.
+- `src/shared/countries.ts`: the ISO country list (browser-safe), used by the `countryList` filter.
 - Theme switch: no layout shift on load. The button is no longer rendered `hidden` and revealed by
   the deferred bundle; the inline head script sets `data-theme-js` on `<html>` before paint and
   `theme.css` hides `.theme-toggle` without it.
@@ -24,6 +48,12 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
   accepted". Needs core-back's `erpAcceptedAt` field / `erp` history type to show in the Studio.
 
 ### Upgrading
+- Store pickup: pin a core-back with the pickup method fields. Nothing to configure — create a
+  pickup method to turn it on. Customers styling `.checkout__section legend` add
+  `.checkout__billing-heading` to that rule (Tinhof done; Jurtschitsch and Lichtenau when they
+  upgrade), else the billing heading falls back to core's bold text.
+- Own email templates (`templates` overrides) reading `customer.shippingAddress` must handle it
+  missing (pickup); use `mailKey()` / `pickupExtraLines()` for the pickup texts.
 - wc-api: nothing to change (opt-in). wineNET shops: set `completedMeans: 'accepted'` and pin a
   core-back with `erpAcceptedAt`.
 - Nothing to change for `staticImage` (its `width`/`height` attributes just become right) or for

@@ -63,6 +63,15 @@ describe('withdrawal mails', () => {
     expect(customer.text).toContain('Bitte senden Sie die Ware')
   })
 
+  it('pickup: "ready for pickup" (shipped) → not collected, nothing to return; collected → return', () => {
+    const ready = { ...matched, order: { ...matched.order!, status: 'shipped', methodType: 'pickup' as const } }
+    const r = buildWithdrawalMails(ready, ctx()).customer.text
+    expect(r).toContain('noch nicht abgeholt')
+    expect(r).not.toContain('Bitte senden Sie die Ware')
+    const collected = { ...matched, order: { ...matched.order!, status: 'delivered', methodType: 'pickup' as const } }
+    expect(buildWithdrawalMails(collected, ctx()).customer.text).toContain('Bitte senden Sie die Ware')
+  })
+
   it('shop notification goes to shopNotificationEmail, falling back to the sender', () => {
     expect(buildWithdrawalMails(matched, ctx()).shop.to).toBe('orders@shop.example')
     expect(buildWithdrawalMails(matched, ctx({ shopNotificationEmail: '' })).shop.to).toBe('noreply@shop.example')
