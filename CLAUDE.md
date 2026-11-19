@@ -130,7 +130,8 @@ src/
 ├── scripts/             # client-side JS (cart, checkout, user auth, newsletter, filters, search); scripts/inline/ = head-inlined
 ├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
 ├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
-├── types/               # Config, data shapes, netlify, vinofact, generated sanity.types
+├── types/               # Config, resolved data shapes, vinofact — hand-written; no generated sanity.types
+│                        #   (order/checkout shapes: netlify/types/; data-layer.md → resolved output types)
 ├── test-utils/          # integration-test suites customers run (`./test-utils`); side effects only with TEST_LIVE=1
 └── bin/                 # itsshops CLI (see .claude/architecture/cli.md)
 ```
