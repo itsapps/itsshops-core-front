@@ -2,9 +2,9 @@
 
 Status: **planned** 2026-11-18; refined 2026-11-19 (round 1, 86/100); owner decisions 2026-11-19 (default `de_DE`, build both
 phases, phase 2 via env var); refined 2026-11-19 (round 2, 93/100). **Built 2026-11-19** (both phases,
-branch `feat/locale-regions`, unreleased) — checked in a Tinhof build: `og:locale` `de_DE`/`en_GB`
+released in core-front `5.3.0`) — checked in a Tinhof build: `og:locale` `de_DE`/`en_GB`
 on all 222 pages; with `SHOP_FORMAT_LOCALES=de:de-AT,en:en-GB` only prices/dates/lists change
-(`en-GB` also drops the Oxford comma in `formatVolumeList`). Open: release, share-preview re-test. core-front only (no
+(`en-GB` also drops the Oxford comma in `formatVolumeList`). Open: share-preview re-test. core-front only (no
 core-back, no schema, no customer change required).
 Trigger: Hotel Ploberger prospect review; applies to every customer.
 
