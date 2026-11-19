@@ -40,7 +40,8 @@ Refinement decisions (owner, 2026-11-12):
 - Applies to `methodType: 'delivery'` only. **Pickup is out of scope** — confirmed by the code
   (2026-11-12): core-back's `shippingMethod.methodType` list offers only `delivery` (`pickup` and
   `pickupFee` are commented out in `schemas/documents/shippingMethod.ts`), so no shop can create a
-  pickup method in the Studio. core-front only carries leftovers: the pickup branch in
+  pickup method in the Studio (true then; pickup is now built — plan `store-pickup.md`, it never
+  gets product free shipping). core-front only carried leftovers: the pickup branch in
   `resolveShippingMethods` (price = `pickupFee`), the `shippingInfoModule` pickup row,
   `order-thanks.ts` / `OrderEmail.tsx` hiding the address, the Studio `pickupLocation` field and
   `OrderActions` skipping the tracking prompt. The pickup branch stays untouched and never gets a

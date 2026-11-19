@@ -126,7 +126,8 @@ each derived from `urlMap`, `permalinks`, or `userPaths`, and **feature-gated to
 - withdrawal: `orderWithdrawUrl`, `orderWithdrawSuccessUrl` (when shop).
 - `shippingInfoUrl` (`shopSettings.shippingInfoPage`, `'#'` when unset); `cms[locale].shippingMethods`
   (`resolveShippingMethods`: title, delivery time, enabled countries, weight rates, packaging prices —
-  gross cents, the checkout's own data); `hasFreeShippingProducts` (any active variant with
+  gross cents, the checkout's own data; pickup methods carry `pickupAddress` / `pickupInstructions` /
+  `pickupHoldDays` and always empty countries/rates/packaging, whatever the document still holds); `hasFreeShippingProducts` (any active variant with
   `grantsFreeShipping` — the `shippingInfoModule` sentence follows the content, no config flag).
 Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read these directly
 (e.g. `cms[locale].checkoutUrl`) instead of constructing URLs.

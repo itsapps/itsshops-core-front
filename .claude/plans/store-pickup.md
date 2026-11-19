@@ -1,6 +1,6 @@
 # Plan — store pickup (click & collect) as a shipping method
 
-Status: **built, on branches `feat/store-pickup`** (core-back, core-front, Tinhof frontend; 2026-11-19), not on staging yet — Rollout 2 onward. Refined 2026-11-18/19 (8 rounds, last 96/100). All decisions are the
+Status: **built, on Tinhof staging** (branches `feat/store-pickup` in core-back, core-front and both Tinhof repos; 2026-11-19), staging test in progress — see Rollout 4. Refined 2026-11-18/19 (8 rounds, last 96/100). All decisions are the
 owner's (1–5, 7–9 confirmed 2026-11-18). Spans **core-back** (shipping method fields, order snapshot, status labels)
 and **core-front** (checkout UI, tax country, order snapshot, mails, thanks page, wc-api, info
 page). Tinhof is the first user ("Abholung im Weingut", Eisenstätter Straße 10, 7061 Trausdorf —
@@ -788,7 +788,16 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
    pickup on top of core `main` (contains it) and keep Tinhof's `completedMeans: 'accepted'`.
 3. Development dataset: create "Abholung im Weingut" (fee 0, address, our drafted
    instructions de/en, `pickupHoldDays` 14 — see open decisions).
-4. "release tinhof staging": test orders — pickup via form and via Apple/Google Pay and Klarna
+4. **Staging state (2026-11-19):** Tinhof frontend pins core-front `81a3fe9`, backend core-back
+   `a1faf45`. Tested on staging: orders 000021 (AT billing; wc-api `PUT completed` → stays
+   "In Bearbeitung" + `erpAcceptedAt`; "Abholbereit" + mail; wc-api still `completed`), 000022
+   (hold 14 days; "Abholbereit" → "Storniert" (not-collected mail) → "Refundiert"; wc-api
+   `refunded`), 000023 (KR billing → AT 13 %, pickup only); Apple Pay in pickup mode after the
+   express re-create fix. wc-api output checked (`pickup_location` + meta, shipping = billing
+   copy, `AT-13`). Open: "Abgeholt", DE billing, coupon, withdrawal on an "Abholbereit" order;
+   wineNET questions (mail drafted for Andi: shipping country use, `pickup_location` vs
+   `local_pickup`, non-EU customers, re-reading `completed` orders).
+   "release tinhof staging": test orders — pickup via form and via Apple/Google Pay and Klarna
    (the express element offers it; tested on staging 2026-11-17), with a DE
    billing address, with a non-tax-country (e.g. CH) billing address, with a coupon; status "Abholbereit" + mail, "Abgeholt"; refund/cancel of a
    not-collected order; wc-api output on staging.
