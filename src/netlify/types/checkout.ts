@@ -84,10 +84,31 @@ export type SanityShippingMethodResult = {
   deliveryTime?: LocaleString[] | null
   methodType: 'delivery' | 'pickup'
   pickupFee: number | null
+  /** Pickup only: where the order is collected (`city` raw i18n, resolved per locale). */
+  pickupAddress?: SanityPickupAddressResult | null
+  pickupInstructions?: LocaleString[] | null
+  pickupHoldDays?: number | null
   freeShippingThreshold: number | null
   taxCategoryCode: string | null
   rates: SanityShippingRateResult[] | null
   packagingGroups: SanityPackagingGroupResult[] | null
+}
+
+export type SanityPickupAddressResult = {
+  line1?: string | null
+  line2?: string | null
+  zip?: string | null
+  city?: LocaleString[] | null
+  country?: string | null
+}
+
+/** A pickup method's address, resolved to the locale (snapshotted onto the order). */
+export type PickupAddress = {
+  line1: string
+  line2?: string
+  zip: string
+  city: string
+  country: string
 }
 
 export type SanityShippingRateResult = {
@@ -134,8 +155,12 @@ export type SanityCouponResult = {
 
 export type SanityCheckoutQueryResult = {
   variants: SanityVariantResult[]
+  /** Null when the address country is no (enabled) tax country — possible only for pickup. */
   taxCountry: SanityTaxCountryResult
+  /** Delivery methods for the address country + every pickup method. */
   shippingMethods: SanityShippingMethodResult[]
+  /** Tax rules of the pickup locations' countries (+ the default country, the fallback). */
+  pickupTaxCountries: NonNullable<SanityTaxCountryResult>[]
   shopSettings: SanityShopSettingsResult
   supportedCountries: SanitySupportedCountryResult[]
   coupon: SanityCouponResult | null
@@ -220,6 +245,10 @@ export type AvailableShippingMethod = {
   freeReason?: 'product' | 'threshold'
   taxCategoryCode: string | null
   packagingLines?: Array<{ volumes: number[]; packSize: number; quantity: number; price: number }>
+  /** Pickup only (city and instructions in the request locale). */
+  pickupAddress?: PickupAddress
+  pickupInstructions?: string
+  pickupHoldDays?: number
 }
 
 // ── Sanity order document types (for mutations) ─────────────────────────────
@@ -284,7 +313,8 @@ export type OrderCustomer = {
   contactEmail: string
   supabaseId?: string
   billingAddress: AddressStrict
-  shippingAddress: AddressStrict
+  /** Delivery only — a pickup order stores no shipping address (`fulfillment.pickupAddress`). */
+  shippingAddress?: AddressStrict
 }
 
 export type OrderTotals = {
@@ -335,7 +365,11 @@ export type Fulfillment = {
   method: { _type: 'reference'; _ref: string; _weak: true }
   packagingLines?: FulfillmentPackagingLine[]
   trackingCode?: string
-  pickupLocation?: string
+  /** Pickup only: snapshot of the pickup method (customer's locale). */
+  pickupAddress?: PickupAddress
+  pickupInstructions?: string
+  /** Pickup only: days a ready order is held (deadline = latest `shipped` entry + days). */
+  pickupHoldDays?: number
 }
 
 export type OrderStatusHistoryEntry = {

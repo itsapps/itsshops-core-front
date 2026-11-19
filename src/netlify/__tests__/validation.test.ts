@@ -60,6 +60,13 @@ describe('validateAddress', () => {
     expect(validateAddress(validAddress, 'shipping')).toEqual({ valid: true })
   })
 
+  it('phone is optional, at most 40 characters', () => {
+    expect(validateAddress({ ...validAddress, phone: '+43 664 1234567' }, 'shipping')).toEqual({ valid: true })
+    const long = validateAddress({ ...validAddress, phone: '1'.repeat(41) }, 'shipping')
+    expect(long.valid).toBe(false)
+    expect(long.details).toHaveProperty(['shipping.phone'])
+  })
+
   it('rejects null', () => {
     const result = validateAddress(null, 'shipping')
     expect(result.valid).toBe(false)

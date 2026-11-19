@@ -3,12 +3,13 @@ import { Column, Img, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
 import { EmailText, EmailHeading, EmailHr, CustomerMessage } from './components'
 import type { OrderEmailProps } from './types'
-import type { OrderItem, AddressStrict, OrderTotals } from '../../types/checkout'
+import type { OrderItem, AddressStrict, OrderTotals, OrderDocument } from '../../types/checkout'
 import { colors } from './tokens'
 import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
 import { bundleItemLines } from '../../lib/order-item-display'
 import type { WithdrawalInstructions, WithdrawalRichText } from '../../../shared/withdrawal-instructions'
+import { mailKey, pickupExtraLines } from './mail-keys'
 
 export function AddressBlock({
   title,
@@ -32,7 +33,98 @@ export function AddressBlock({
         {address.zip} {address.city}
       </EmailText>
       <EmailText>{country}</EmailText>
+      {address.phone && <EmailText>{address.phone}</EmailText>}
     </>
+  )
+}
+
+/** The pickup location of a pickup order: shop name, address and instructions. */
+export function PickupBlock({
+  title,
+  shopName,
+  fulfillment,
+  locale,
+}: {
+  title: string
+  shopName: string
+  fulfillment: OrderDocument['fulfillment']
+  locale: string
+}) {
+  const address = fulfillment.pickupAddress
+  const country = address
+    ? new Intl.DisplayNames([locale], { type: 'region' }).of(address.country) ?? address.country
+    : undefined
+  return (
+    <>
+      <EmailText bold style={{ marginBottom: '4px' }}>
+        {title}
+      </EmailText>
+      <EmailText>{shopName}</EmailText>
+      {address && (
+        <>
+          <EmailText>{address.line1}</EmailText>
+          {address.line2 && <EmailText>{address.line2}</EmailText>}
+          <EmailText>
+            {address.zip} {address.city}
+          </EmailText>
+          <EmailText>{country}</EmailText>
+        </>
+      )}
+      {fulfillment.pickupInstructions?.split('\n').map((line, i) => (
+        <EmailText key={i} style={i === 0 ? { marginTop: '8px' } : undefined}>{line}</EmailText>
+      ))}
+    </>
+  )
+}
+
+/**
+ * The address section: billing + delivery address (one block when equal), or for pickup the
+ * billing address + the pickup location.
+ */
+export function AddressesSection({
+  ctx,
+  order,
+  style,
+}: {
+  ctx: OrderEmailProps['ctx']
+  order: OrderDocument
+  style?: React.CSSProperties
+}) {
+  const { t, locale } = ctx
+  const { customer, fulfillment } = order
+  const billed = customer.billingAddress
+  const shipped = customer.shippingAddress
+  const isPickup = fulfillment.methodType === 'pickup'
+  const addressesIdentical = !isPickup && (!shipped ||
+    JSON.stringify({ ...billed, _type: undefined }) === JSON.stringify({ ...shipped, _type: undefined }))
+  return (
+    <Section style={style}>
+      {addressesIdentical ? (
+        <Row>
+          <Column>
+            <AddressBlock title={t('emails.billedAndShippedTo')} address={billed} locale={locale} />
+          </Column>
+        </Row>
+      ) : (
+        <Row>
+          <Column style={{ verticalAlign: 'top', paddingRight: '16px' }}>
+            <AddressBlock title={t('emails.billedTo')} address={billed} locale={locale} />
+          </Column>
+          <Column style={{ verticalAlign: 'top' }}>
+            {isPickup || !shipped ? (
+              <PickupBlock
+                title={t('emails.order.pickupLocation')}
+                shopName={ctx.settings.shopName}
+                fulfillment={fulfillment}
+                locale={locale}
+              />
+            ) : (
+              <AddressBlock title={t('emails.shippedTo')} address={shipped} locale={locale} />
+            )}
+          </Column>
+        </Row>
+      )}
+    </Section>
   )
 }
 
@@ -87,15 +179,17 @@ export function OrderDetails({ ctx, order }: Pick<OrderEmailProps, 'ctx' | 'orde
   const { fulfillment } = order
   // Older orders have no orderDate snapshot → the first status entry (order creation).
   const placedAt = order.orderDate ?? order.statusHistory?.[0]?.timestamp
+  const isPickup = fulfillment.methodType === 'pickup'
   const rows: Array<[string, string]> = [
     ...(placedAt ? [[t('emails.order.orderDate'), formatShopDate(placedAt, locale)] as [string, string]] : []),
     ...(order.payment
       ? [[t('emails.order.paymentMethod'), paymentMethodLabel(order.payment, t)] as [string, string]]
       : []),
-    ...(fulfillment.methodTitle ? [[t('emails.order.shippingMethod'), fulfillment.methodTitle] as [string, string]] : []),
-    ...(fulfillment.deliveryTime ? [[t('emails.order.deliveryTime'), fulfillment.deliveryTime] as [string, string]] : []),
-    ...(fulfillment.methodType === 'pickup' && fulfillment.pickupLocation
-      ? [[t('emails.order.pickupLocation'), fulfillment.pickupLocation] as [string, string]]
+    ...(fulfillment.methodTitle
+      ? [[t(isPickup ? 'emails.order.pickupMethod' : 'emails.order.shippingMethod'), fulfillment.methodTitle] as [string, string]]
+      : []),
+    ...(fulfillment.deliveryTime
+      ? [[t(isPickup ? 'emails.order.pickupReadyTime' : 'emails.order.deliveryTime'), fulfillment.deliveryTime] as [string, string]]
       : []),
   ]
   if (!rows.length) return null
@@ -197,15 +291,21 @@ function SummaryLine({
 export function TotalsBlock({
   totals,
   ctx,
+  methodType,
 }: {
   totals: OrderTotals
   ctx: OrderEmailProps['ctx']
+  /** `pickup`: the shipping row reads "Abholung". */
+  methodType?: 'delivery' | 'pickup'
 }) {
   const { t, formatPrice } = ctx
   return (
     <Section style={{ marginTop: '24px' }}>
       <SummaryLine label={t('emails.order.summaryProducts')} value={formatPrice(totals.subtotal)} />
-      <SummaryLine label={t('emails.order.summaryShipping')} value={formatPrice(totals.shipping)} />
+      <SummaryLine
+        label={t(methodType === 'pickup' ? 'emails.order.summaryPickup' : 'emails.order.summaryShipping')}
+        value={formatPrice(totals.shipping)}
+      />
       {totals.discount > 0 && (
         <SummaryLine label={t('emails.order.summaryDiscount')} value={`-${formatPrice(totals.discount)}`} />
       )}
@@ -225,19 +325,17 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
   const { t, formatPrice, locale } = ctx
   const { customer, totals, fulfillment, orderItems } = order
 
-  const billed = customer.billingAddress
-  const shipped = customer.shippingAddress
-  const addressesIdentical =
-    JSON.stringify({ ...billed, _type: undefined }) === JSON.stringify({ ...shipped, _type: undefined })
-
-  const body = t(`emails.${mailType}.text`)
+  const bodyLines = [
+    ...t(mailKey(mailType, order, 'text')).split('\n'),
+    ...pickupExtraLines(ctx, mailType, order),
+  ]
   const headline = t('emails.headline', { customerName: customer.billingAddress.name })
 
   return (
     <EmailLayout ctx={ctx}>
       <Section style={{ padding: '16px 0' }}>
         <EmailHeading style={{ marginBottom: '12px' }}>{headline}</EmailHeading>
-        {body.split('\n').map((line, i) => (
+        {bodyLines.map((line, i) => (
           <EmailText key={i} style={{ marginBottom: '8px' }}>
             {line}
           </EmailText>
@@ -270,11 +368,11 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
         ))}
       </Section>
 
-      <TotalsBlock totals={totals} ctx={ctx} />
+      <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} />
 
       <OrderDetails ctx={ctx} order={order} />
 
-      {fulfillment.trackingCode && (
+      {fulfillment.trackingCode && fulfillment.methodType !== 'pickup' && (
         <Section style={{ marginTop: '24px' }}>
           <EmailText>
             {t('emails.trackingNumber')}: <strong>{fulfillment.trackingCode}</strong>
@@ -283,28 +381,7 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
       )}
 
       {/* Addresses */}
-      <Section style={{margin: "48px 0"}}>
-        {addressesIdentical ? (
-          <Row>
-            <Column>
-              <AddressBlock
-                title={t('emails.billedAndShippedTo')}
-                address={billed}
-                locale={locale}
-              />
-            </Column>
-          </Row>
-        ) : (
-          <Row>
-            <Column style={{ verticalAlign: 'top', paddingRight: '16px' }}>
-              <AddressBlock title={t('emails.billedTo')} address={billed} locale={locale} />
-            </Column>
-            <Column style={{ verticalAlign: 'top' }}>
-              <AddressBlock title={t('emails.shippedTo')} address={shipped} locale={locale} />
-            </Column>
-          </Row>
-        )}
-      </Section>
+      <AddressesSection ctx={ctx} order={order} style={{ margin: '48px 0' }} />
 
       {/* Harmonised warranty notice (FAGG §4 (1) + Anhang II) — the official graphic, served by
           the shop site (core ships it at /assets/legal/); confirmation email only. */}

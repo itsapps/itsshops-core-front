@@ -96,7 +96,7 @@ describe('buildOrderMeta', () => {
     expect(meta.customer._type).toBe('orderCustomer')
     expect(meta.customer.contactEmail).toBe('max@example.com')
     expect(meta.customer.locale).toBe('de')
-    expect(meta.customer.shippingAddress.city).toBe('Eisenstadt')
+    expect(meta.customer.shippingAddress!.city).toBe('Eisenstadt')
     expect(meta.customer.billingAddress.city).toBe('Wien')
   })
 
@@ -141,9 +141,9 @@ describe('buildOrderMeta', () => {
       },
     })
     const meta = buildOrderMeta(input)
-    expect(meta.customer.shippingAddress.name).toBe('Apple Pay User')
-    expect(meta.customer.shippingAddress.prename).toBeUndefined()
-    expect(meta.customer.shippingAddress.lastname).toBeUndefined()
+    expect(meta.customer.shippingAddress!.name).toBe('Apple Pay User')
+    expect(meta.customer.shippingAddress!.prename).toBeUndefined()
+    expect(meta.customer.shippingAddress!.lastname).toBeUndefined()
   })
 
   it('handles items with options', () => {
@@ -198,8 +198,52 @@ describe('buildOrderMeta — free shipping reason', () => {
   })
   it('ignores a reason for pickup', () => {
     const base = free()
-    const meta = buildOrderMeta({ ...base, selectedShipping: { ...base.selectedShipping, methodType: 'pickup' }, freeShippingReason: 'threshold' })
+    const meta = buildOrderMeta({ ...base, selectedShipping: { ...base.selectedShipping, methodType: 'pickup', pickupAddress: PICKUP_ADDRESS }, freeShippingReason: 'threshold' })
     expect(meta.fulfillment).not.toHaveProperty('freeShippingReason')
+  })
+})
+
+const PICKUP_ADDRESS = { line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' }
+
+describe('buildOrderMeta — pickup', () => {
+  const pickupInput = (extra: Partial<AvailableShippingMethod> = {}) => {
+    const base = makeInput()
+    return makeInput({
+      selectedShipping: {
+        _id: 'pu1', title: 'Abholung im Weingut', methodType: 'pickup', price: 0, isFree: true,
+        taxCategoryCode: null, pickupAddress: PICKUP_ADDRESS, ...extra,
+      },
+      totals: { ...base.totals, shipping: 0 },
+    })
+  }
+
+  it('snapshots the pickup address, instructions and hold days; no shipping address', () => {
+    const meta = buildOrderMeta(pickupInput({ pickupInstructions: 'Mo–Fr 9–17', pickupHoldDays: 14 }))
+    expect(meta.fulfillment.pickupAddress).toEqual(PICKUP_ADDRESS)
+    expect(meta.fulfillment.pickupInstructions).toBe('Mo–Fr 9–17')
+    expect(meta.fulfillment.pickupHoldDays).toBe(14)
+    // even though makeInput passes one
+    expect(meta.customer).not.toHaveProperty('shippingAddress')
+    expect(meta.customer.billingAddress.line1).toBe('Rechnungsstr. 2')
+  })
+
+  it('no line2 / instructions / hold days keys when empty', () => {
+    const meta = buildOrderMeta(pickupInput())
+    expect(meta.fulfillment.pickupAddress).not.toHaveProperty('line2')
+    expect(meta.fulfillment).not.toHaveProperty('pickupInstructions')
+    expect(meta.fulfillment).not.toHaveProperty('pickupHoldDays')
+  })
+
+  it('a pickup without address throws', () => {
+    expect(() => buildOrderMeta(pickupInput({ pickupAddress: undefined }))).toThrow()
+  })
+
+  it('a delivery without shipping address throws', () => {
+    expect(() => buildOrderMeta(makeInput({ shippingAddress: undefined }))).toThrow()
+  })
+
+  it('a delivery stores no pickup fields', () => {
+    expect(buildOrderMeta(makeInput()).fulfillment).not.toHaveProperty('pickupAddress')
   })
 })
 

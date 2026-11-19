@@ -41,12 +41,27 @@ export type ValidatedCartItemResponse = {
   bundleKey: string | null
 }
 
+/** A pickup location's address (city in the request locale). */
+export type PickupAddressResponse = {
+  line1: string
+  line2?: string
+  zip: string
+  city: string
+  country: string
+}
+
 export type ShippingMethodResponse = {
   _id: string
   title: string
   methodType: 'delivery' | 'pickup'
   price: number
   isFree: boolean
+  /** Delivery: "2–4 Werktage"; pickup: how long until the order is ready to collect. */
+  deliveryTime?: string
+  /** Pickup only. */
+  pickupAddress?: PickupAddressResponse
+  pickupInstructions?: string
+  pickupHoldDays?: number
 }
 
 export type VatBreakdownItem = {

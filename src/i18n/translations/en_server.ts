@@ -148,6 +148,9 @@ export default {
       shippingMethod: "Shipping method",
       deliveryTime: "Delivery time",
       pickupLocation: "Pickup location",
+      pickupMethod: "Pickup",
+      pickupReadyTime: "Ready for pickup in",
+      summaryPickup: "Pickup",
       legalGuaranteeAlt: "Legal guarantee – harmonised EU notice: Minimum two-year legal guarantee protection for goods sold in the European Union.",
       legalGuaranteeUrl: "https://europa.eu/youreurope/guarantees",
       withdrawalTitle: "Right of withdrawal",
@@ -166,6 +169,7 @@ export default {
       customer: "Customer",
       language: "Language",
       openInStudio: "Open order in the Studio",
+      pickupBanner: "PICKUP – do not ship",
     },
     orderProcessing: {
       subject: "Order {{orderNumber}} in progress ⚙️",
@@ -195,7 +199,33 @@ export default {
     orderCanceled: {
       subject: "Order {{orderNumber}} cancelled",
       preview: "Your order has been cancelled.",
-      text: "Your order has been cancelled. If you've already paid, we'll refund the full amount to your original payment method.\nIf you have any questions, feel free to get in touch.",
+      text: "Your order has been cancelled. We'll refund the amount you paid to your original payment method.\nIf you have any questions, feel free to get in touch.",
+    },
+    // Pickup orders (`fulfillment.methodType: 'pickup'`): replace the keys above for the mail
+    // types/parts listed in `PICKUP_MAIL_KEYS` (templates/email/index.tsx).
+    pickup: {
+      holdPeriod: "We'll hold your order for {{days}} days from our notification.",
+      deadline: "Please collect your order by {{date}}.",
+      orderConfirmation: {
+        text: "Thank you for your purchase. We have received your order and will let you know as soon as it is ready for pickup.",
+      },
+      orderProcessing: {
+        text: "Thank you for your purchase. Your order is now being processed. We'll let you know as soon as it is ready for pickup.",
+      },
+      orderShipping: {
+        subject: "Order {{orderNumber}} is ready for pickup 🛍️",
+        preview: "Your order is ready for pickup.",
+        text: "Your order is ready for pickup. You'll find the address and the pickup instructions below.",
+      },
+      orderDelivered: {
+        subject: "Order {{orderNumber}} collected 🛍️",
+        preview: "You have collected your order.",
+        text: "Thank you for collecting your order – enjoy!",
+      },
+      orderCanceled: {
+        textNotCollected: "As you didn't collect your order within the pickup period, we have cancelled it. We'll refund the amount you paid to your original payment method.\nIf you have any questions, feel free to get in touch.",
+        textNotCollectedNoPeriod: "As you didn't collect your order, we have cancelled it. We'll refund the amount you paid to your original payment method.\nIf you have any questions, feel free to get in touch.",
+      },
     },
     orderRefunded: {
       subject: "Payment refunded – order {{orderNumber}} 💶",
@@ -258,6 +288,7 @@ export default {
       refundTerms: "We will refund all payments received, including the standard delivery costs, within 14 days of receiving the goods back or proof of return, using the original payment method. We may withhold the refund until then.",
       diminishedValue: "You are only liable for any diminished value of the goods resulting from handling beyond what is necessary to establish their nature, characteristics and functioning.",
       notDispatched: "As your order has not been dispatched yet, we will cancel it and refund all payments received within 14 days using the original payment method. You don't need to return anything.",
+      notCollected: "As you haven't collected your order yet, we will cancel it and refund all payments received within 14 days using the original payment method. You don't need to return anything.",
     },
     orderWithdrawalShop: {
       subject: "New withdrawal – order {{orderNumber}}",

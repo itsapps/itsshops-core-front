@@ -148,6 +148,9 @@ export default {
       shippingMethod: "Versandart",
       deliveryTime: "Lieferzeit",
       pickupLocation: "Abholort",
+      pickupMethod: "Abholung",
+      pickupReadyTime: "Abholbereit in",
+      summaryPickup: "Abholung",
       legalGuaranteeAlt: "Gesetzliche Gewährleistung – harmonisierte Mitteilung der EU: Mindestens zwei Jahre gesetzliche Gewährleistung der Vertragsmäßigkeit für Waren, die in der Europäischen Union verkauft werden.",
       legalGuaranteeUrl: "https://europa.eu/youreurope/citizens/consumers/shopping/guarantees-returns/index_de.htm",
       withdrawalTitle: "Widerrufsrecht",
@@ -166,6 +169,7 @@ export default {
       customer: "Kunde",
       language: "Sprache",
       openInStudio: "Bestellung im Studio öffnen",
+      pickupBanner: "ABHOLUNG – nicht versenden",
     },
     orderProcessing: {
       subject: "Bestellung {{orderNumber}} in Bearbeitung ⚙️",
@@ -195,7 +199,33 @@ export default {
     orderCanceled: {
       subject: "Bestellung {{orderNumber}} storniert",
       preview: "Ihre Bestellung wurde storniert.",
-      text: "Ihre Bestellung wurde storniert. Falls Sie bereits bezahlt haben, erstatten wir Ihnen den Betrag in voller Höhe über das ursprünglich verwendete Zahlungsmittel zurück.\nSollten Sie Fragen haben, melden Sie sich gerne jederzeit bei uns.",
+      text: "Ihre Bestellung wurde storniert. Den bezahlten Betrag erstatten wir Ihnen über das ursprünglich verwendete Zahlungsmittel zurück.\nSollten Sie Fragen haben, melden Sie sich gerne jederzeit bei uns.",
+    },
+    // Pickup orders (`fulfillment.methodType: 'pickup'`): replace the keys above for the mail
+    // types/parts listed in `PICKUP_MAIL_KEYS` (templates/email/index.tsx).
+    pickup: {
+      holdPeriod: "Wir bewahren Ihre Bestellung ab unserer Benachrichtigung {{days}} Tage für Sie auf.",
+      deadline: "Bitte holen Sie Ihre Bestellung bis {{date}} ab.",
+      orderConfirmation: {
+        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
+      },
+      orderProcessing: {
+        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
+      },
+      orderShipping: {
+        subject: "Bestellung {{orderNumber}} ist abholbereit 🛍️",
+        preview: "Ihre Bestellung liegt zur Abholung bereit.",
+        text: "Ihre Bestellung liegt für Sie zur Abholung bereit. Die Adresse und die Hinweise zur Abholung finden Sie unten.",
+      },
+      orderDelivered: {
+        subject: "Bestellung {{orderNumber}} abgeholt 🛍️",
+        preview: "Sie haben Ihre Bestellung abgeholt.",
+        text: "Vielen Dank, dass Sie Ihre Bestellung abgeholt haben – viel Freude damit!",
+      },
+      orderCanceled: {
+        textNotCollected: "Da Sie Ihre Bestellung nicht innerhalb der Abholfrist abgeholt haben, haben wir sie storniert. Den bezahlten Betrag erstatten wir Ihnen über das ursprünglich verwendete Zahlungsmittel zurück.\nSollten Sie Fragen haben, melden Sie sich gerne jederzeit bei uns.",
+        textNotCollectedNoPeriod: "Da Sie Ihre Bestellung nicht abgeholt haben, haben wir sie storniert. Den bezahlten Betrag erstatten wir Ihnen über das ursprünglich verwendete Zahlungsmittel zurück.\nSollten Sie Fragen haben, melden Sie sich gerne jederzeit bei uns.",
+      },
     },
     orderRefunded: {
       subject: "Zahlung zurückerstattet – Bestellung {{orderNumber}} 💶",
@@ -258,6 +288,7 @@ export default {
       refundTerms: "Wir erstatten alle erhaltenen Zahlungen einschließlich der Standard-Lieferkosten innerhalb von 14 Tagen ab Eingang der Ware oder eines Rücksendenachweises über das ursprünglich verwendete Zahlungsmittel. Bis dahin können wir die Rückzahlung zurückbehalten.",
       diminishedValue: "Für einen etwaigen Wertverlust der Ware haften Sie nur, wenn dieser auf einen nicht notwendigen Umgang zur Prüfung der Beschaffenheit und Funktionsweise zurückzuführen ist.",
       notDispatched: "Da Ihre Bestellung noch nicht versendet wurde, stornieren wir sie und erstatten alle erhaltenen Zahlungen innerhalb von 14 Tagen über das ursprünglich verwendete Zahlungsmittel. Sie müssen nichts zurücksenden.",
+      notCollected: "Da Sie Ihre Bestellung noch nicht abgeholt haben, stornieren wir sie und erstatten alle erhaltenen Zahlungen innerhalb von 14 Tagen über das ursprünglich verwendete Zahlungsmittel. Sie müssen nichts zurückgeben.",
     },
     orderWithdrawalShop: {
       subject: "Neuer Widerruf – Bestellung {{orderNumber}}",

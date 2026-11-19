@@ -213,6 +213,38 @@ describe('resolveShippingMethods', () => {
     expect(pickup.price).toBe(0)
   })
 
+  it('pickup carries address (city per locale), instructions and hold days', () => {
+    const withAddress: SanityShippingMethodResult = {
+      ...methods[1],
+      pickupAddress: {
+        line1: 'Eisenstätter Straße 10', line2: null, zip: '7061',
+        city: [{ language: 'de', value: 'Trausdorf' }, { language: 'en', value: 'Trausdorf an der Wulka' }],
+        country: 'AT',
+      },
+      pickupInstructions: [{ language: 'de', value: 'Mo–Fr 9–17' }, { language: 'en', value: 'Mon–Fri 9–5' }],
+      pickupHoldDays: 14,
+    }
+    const [pickup] = resolveShippingMethods([withAddress], [makeItem()], 5000, 0, 'afterDiscount', 'en')
+    expect(pickup.pickupAddress).toEqual({ line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf an der Wulka', country: 'AT' })
+    expect(pickup.pickupInstructions).toBe('Mon–Fri 9–5')
+    expect(pickup.pickupHoldDays).toBe(14)
+    // No address/instructions/days → keys absent
+    const [bare] = resolveShippingMethods([methods[1]], [makeItem()], 5000, 0, 'afterDiscount', 'en')
+    expect(bare).not.toHaveProperty('pickupAddress')
+    expect(bare).not.toHaveProperty('pickupInstructions')
+    expect(bare).not.toHaveProperty('pickupHoldDays')
+  })
+
+  it('pickup ignores leftover rates, threshold and packaging (no weight limit)', () => {
+    const leftover: SanityShippingMethodResult = {
+      ...methods[1], pickupFee: 300, freeShippingThreshold: 100, rates: [{ maxWeight: 1, price: 999 }],
+    }
+    const heavy = [makeItem({ weight: 50000, quantity: 3 })]
+    const [pickup] = resolveShippingMethods([leftover], heavy, 50000, 0, 'beforeDiscount', 'de')
+    expect(pickup.price).toBe(300)
+    expect(pickup.isFree).toBe(false)
+  })
+
   // Tinhof-style setup: half bottles share the 0.75 l boxes (2 per place), magnums their own box.
   const tinhofGroups: SanityPackagingGroupResult[] = [
     {
@@ -519,9 +551,11 @@ describe('selectShippingMethod', () => {
     expect(selectShippingMethod(methods)!._id).toBe('sm2')
   })
 
-  it('falls back to first method if no delivery methods exist', () => {
+  it('never picks a pickup method unless requested', () => {
     const pickupOnly = [methods[2]]
-    expect(selectShippingMethod(pickupOnly)!._id).toBe('sm3')
+    expect(selectShippingMethod(pickupOnly)).toBeNull()
+    expect(selectShippingMethod(pickupOnly, 'sm3')!._id).toBe('sm3')
+    expect(selectShippingMethod(methods, 'sm3')!._id).toBe('sm3')
   })
 
   it('returns null for empty methods', () => {

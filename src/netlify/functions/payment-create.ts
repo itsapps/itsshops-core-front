@@ -11,7 +11,7 @@ import type {
   AppliedCouponResponse,
   CouponErrorResponse,
 } from '../types/api'
-import type { SanityCheckoutQueryResult, AppliedCouponSnapshot } from '../types/checkout'
+import type { SanityCheckoutQueryResult, SanityShippingMethodResult, AppliedCouponSnapshot } from '../types/checkout'
 import { fetchCheckoutData, createOrderMeta, updateOrderMeta, fetchOrderMeta } from '../services/sanity'
 import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
@@ -23,6 +23,7 @@ import { validateCoupon, buildAppliedCouponSnapshot } from '../lib/coupon'
 import { bundleContentsKey } from '../lib/order-item-display'
 import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
+import { isCountryCode } from '../../shared/countries'
 
 export function createPaymentHandler(config: ServerConfig = {}) {
   const { defaultLocale, hasStock, hasCoupons, volumeUnit } = resolveServerConfig(config)
@@ -61,6 +62,10 @@ export function createPaymentHandler(config: ServerConfig = {}) {
     const requestedCountry = req.partialAddress?.country
       ?? req.address?.shipping.country
       ?? null
+    // Pickup accepts any country (any ISO code); a made-up one is rejected before the fetch.
+    if (requestedCountry !== null && !isCountryCode(requestedCountry)) {
+      return validationError(ErrorCode.INVALID_ADDRESS, serverT(req.locale, 'api.errors.validation.countryShippingNotSupported'), requestId)
+    }
 
     const variantIds = req.cart.items.map(i => i.variantId)
     const initialCountry = requestedCountry ?? 'AT'
@@ -82,17 +87,41 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       data = await fetchCheckoutData(variantIds, country, couponCode, hasCoupons)
     }
 
-    // ── Validate tax country ────────────────────────────────────────────
-    if (!data.taxCountry) {
+    // ── Pickup methods and the tax country ─────────────────────────────
+    // A pickup order is taxed by the pickup location's country (place of supply), not the
+    // customer's address. The rules must be known before `validateCart`, so pickup is decided
+    // from the raw methods: only an explicitly requested pickup id makes a pickup order.
+    const defaultCountryCode = data.shopSettings?.defaultCountryCode ?? null
+    const taxRulesFor = (m: SanityShippingMethodResult) => {
+      const code = m.pickupAddress?.country ?? defaultCountryCode
+      return data.pickupTaxCountries?.find(t => t.countryCode === code)?.rules ?? null
+    }
+    const pickups = data.shippingMethods.filter(m => {
+      if (m.methodType !== 'pickup') return false
+      if (taxRulesFor(m)) return true
+      log.warn('Pickup method dropped: its country is no enabled tax country', { methodId: m._id, requestId })
+      return false
+    })
+    const pickup = pickups.find(m => m._id === req.shippingMethodId)
+
+    // The address country is no tax country: possible only for pickup (any country) — then the
+    // methods are the pickups only; without any pickup method it stays unavailable.
+    if (!data.taxCountry && pickups.length === 0) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.countryShippingNotSupported'), requestId)
     }
+    const methodsIn: SanityShippingMethodResult[] = data.taxCountry
+      ? [...data.shippingMethods.filter(m => m.methodType !== 'pickup'), ...pickups]
+      : pickups
+    const taxRules = pickup
+      ? taxRulesFor(pickup)!
+      : data.taxCountry?.rules ?? taxRulesFor(pickups[0])!
 
     // ── Validate cart items ─────────────────────────────────────────────
     const defaultTaxCategoryCode = data.shopSettings?.defaultTaxCategoryCode ?? null
     const { items: validatedItems, unavailableItems } = validateCart(
       req.cart.items,
       data.variants,
-      data.taxCountry.rules,
+      taxRules,
       req.locale,
       defaultLocale,
       hasStock,
@@ -113,7 +142,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
     // Pass 1: resolve with discount=0 so we have a shipping price to feed the
     // coupon validator (free-shipping coupons need it).
     let shippingMethods = resolveShippingMethods(
-      data.shippingMethods,
+      methodsIn,
       validatedItems,
       subtotal,
       0,
@@ -121,7 +150,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       req.locale,
     )
 
-    let selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
+    const requestedMethodId = pickup?._id ?? req.shippingMethodId
+    let selectedShipping = selectShippingMethod(shippingMethods, requestedMethodId)
 
     if (!selectedShipping && shippingMethods.length === 0) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'), requestId)
@@ -174,14 +204,14 @@ export function createPaymentHandler(config: ServerConfig = {}) {
     // the post-discount subtotal. Pure local recomputation, no extra fetch.
     if (couponDiscount && freeShippingCalc === 'afterDiscount' && couponDiscount.discountAmount > 0) {
       shippingMethods = resolveShippingMethods(
-        data.shippingMethods,
+        methodsIn,
         validatedItems,
         subtotal,
         couponDiscount.discountAmount,
         freeShippingCalc,
         req.locale,
       )
-      selectedShipping = selectShippingMethod(shippingMethods, req.shippingMethodId)
+      selectedShipping = selectShippingMethod(shippingMethods, requestedMethodId)
     }
 
     // ── Calculate totals ────────────────────────────────────────────────
@@ -231,6 +261,10 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         methodType: m.methodType,
         price: couponDiscount?.zeroShipping ? 0 : m.price,
         isFree: couponDiscount?.zeroShipping ? true : m.isFree,
+        ...(m.deliveryTime && { deliveryTime: m.deliveryTime }),
+        ...(m.pickupAddress && { pickupAddress: m.pickupAddress }),
+        ...(m.pickupInstructions && { pickupInstructions: m.pickupInstructions }),
+        ...(m.pickupHoldDays && { pickupHoldDays: m.pickupHoldDays }),
       })),
       selectedShippingMethodId: selectedShipping?._id ?? null,
       selectedCountry: country,
@@ -260,7 +294,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       totals,
       selectedShipping,
       shippingVatRate,
-      shippingAddress: req.address.shipping,
+      // Pickup: the main fields are the billing address; no shipping address is stored.
+      ...(selectedShipping.methodType === 'delivery' && { shippingAddress: req.address.shipping }),
       billingAddress: req.address.billing ?? req.address.shipping,
       contactEmail: req.address.contactEmail,
       locale: req.locale,

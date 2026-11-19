@@ -23,6 +23,9 @@ import type { EmailContext, OrderEmailProps, SimpleEmailProps } from './types'
 import type { MailType } from '../../types/orderTransitions'
 import { ORDER_SUMMARY_MAIL_TYPES } from '../../types/orderTransitions'
 import type { OrderDocument } from '../../types/checkout'
+import { mailKey } from './mail-keys'
+
+export { mailKey, pickupExtraLines } from './mail-keys'
 
 export { EmailLayout } from './EmailLayout'
 export { OrderEmail } from './OrderEmail'
@@ -120,12 +123,12 @@ export async function renderMailFor(
 
 /**
  * Look up the localized subject for a mailType. With the order, `{{orderNumber}}` is filled in
- * (used by the refund subjects).
+ * (used by the refund subjects) and a pickup order gets its pickup subject.
  */
 export function subjectFor(
   ctx: EmailContext,
   mailType: MailType,
-  order?: Pick<OrderDocument, 'orderNumber'>,
+  order?: Pick<OrderDocument, 'orderNumber' | 'fulfillment'>,
 ): string {
-  return ctx.t(`emails.${mailType}.subject`, order ? { orderNumber: order.orderNumber } : undefined)
+  return ctx.t(mailKey(mailType, order, 'subject'), order ? { orderNumber: order.orderNumber } : undefined)
 }

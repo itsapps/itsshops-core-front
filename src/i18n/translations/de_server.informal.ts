@@ -44,7 +44,29 @@ export default {
     },
     orderCanceled: {
       preview: "Deine Bestellung wurde storniert.",
-      text: "Deine Bestellung wurde storniert. Falls Du bereits bezahlt hast, erstatten wir Dir den Betrag in voller Höhe über das ursprünglich verwendete Zahlungsmittel zurück.\nSolltest Du Fragen haben, melde Dich gerne jederzeit bei uns.",
+      text: "Deine Bestellung wurde storniert. Den bezahlten Betrag erstatten wir Dir über das ursprünglich verwendete Zahlungsmittel zurück.\nSolltest Du Fragen haben, melde Dich gerne jederzeit bei uns.",
+    },
+    pickup: {
+      holdPeriod: "Wir bewahren Deine Bestellung ab unserer Benachrichtigung {{days}} Tage für Dich auf.",
+      deadline: "Bitte hol Deine Bestellung bis {{date}} ab.",
+      orderConfirmation: {
+        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
+      },
+      orderProcessing: {
+        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
+      },
+      orderShipping: {
+        preview: "Deine Bestellung liegt zur Abholung bereit.",
+        text: "Deine Bestellung liegt für Dich zur Abholung bereit. Die Adresse und die Hinweise zur Abholung findest Du unten.",
+      },
+      orderDelivered: {
+        preview: "Du hast Deine Bestellung abgeholt.",
+        text: "Vielen Dank, dass Du Deine Bestellung abgeholt hast – viel Freude damit!",
+      },
+      orderCanceled: {
+        textNotCollected: "Da Du Deine Bestellung nicht innerhalb der Abholfrist abgeholt hast, haben wir sie storniert. Den bezahlten Betrag erstatten wir Dir über das ursprünglich verwendete Zahlungsmittel zurück.\nSolltest Du Fragen haben, melde Dich gerne jederzeit bei uns.",
+        textNotCollectedNoPeriod: "Da Du Deine Bestellung nicht abgeholt hast, haben wir sie storniert. Den bezahlten Betrag erstatten wir Dir über das ursprünglich verwendete Zahlungsmittel zurück.\nSolltest Du Fragen haben, melde Dich gerne jederzeit bei uns.",
+      },
     },
     orderRefunded: {
       preview: "Wir haben Deine Zahlung zurückerstattet.",
@@ -83,6 +105,7 @@ export default {
       },
       diminishedValue: "Für einen etwaigen Wertverlust der Ware haftest Du nur, wenn dieser auf einen nicht notwendigen Umgang zur Prüfung der Beschaffenheit und Funktionsweise zurückzuführen ist.",
       notDispatched: "Da Deine Bestellung noch nicht versendet wurde, stornieren wir sie und erstatten alle erhaltenen Zahlungen innerhalb von 14 Tagen über das ursprünglich verwendete Zahlungsmittel. Du musst nichts zurücksenden.",
+      notCollected: "Da Du Deine Bestellung noch nicht abgeholt hast, stornieren wir sie und erstatten alle erhaltenen Zahlungen innerhalb von 14 Tagen über das ursprünglich verwendete Zahlungsmittel. Du musst nichts zurückgeben.",
     },
   },
 }

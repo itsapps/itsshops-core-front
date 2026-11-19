@@ -22,7 +22,7 @@ import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
 import { appendOrderHistory, fetchEmailSettings, fetchOrderById } from '../services/sanity'
-import { refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
+import { mailKey, pickupExtraLines, refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
 import { latestRefund, refundedTotal } from './order-refunds'
 import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
@@ -246,7 +246,7 @@ export async function sendOrderNotification(
   const intro =
     refundAmount !== undefined
       ? refundMailText(ctx, mailType, order, refundAmount)
-      : ctx.t(`emails.${mailType}.text`)
+      : [ctx.t(mailKey(mailType, order, 'text')), ...pickupExtraLines(ctx, mailType, order)].join('\n')
   const text = customerMessage ? `${intro}\n\n${customerMessage}` : intro
 
   const wantsInvoice = options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType)
@@ -336,6 +336,7 @@ export async function sendShopOrderNotification(
     customerName: order.customer.billingAddress.name,
   })
   const text = [
+    ...(order.fulfillment.methodType === 'pickup' ? [ctx.t('emails.shopOrderConfirmation.pickupBanner')] : []),
     ctx.t('emails.shopOrderConfirmation.headline', { orderNumber: order.orderNumber }),
     ctx.t('emails.shopOrderConfirmation.text'),
     `${ctx.t('emails.shopOrderConfirmation.customer')}: ${order.customer.billingAddress.name} <${order.customer.contactEmail}>`,

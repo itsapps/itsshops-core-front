@@ -46,7 +46,7 @@ function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0, c
     fulfillment: {
       methodTitle: 'DPD (AT)', methodType: 'delivery', shippingCost: shipping,
       taxSnapshot: { rate: shippingRate, net: shipping - shippingVat, vat: shippingVat },
-      trackingCode: null, packagingLines: null,
+      trackingCode: null, packagingLines: null, pickupAddress: null, pickupInstructions: null,
     },
   }
 }
@@ -144,6 +144,56 @@ describe('wc-api mapOrder (WooCommerce-compatible amounts)', () => {
         expect(Math.abs(Math.round(li.price * li.quantity * (100 + rate)) - gross)).toBeLessThanOrEqual(1)
       })
     }
+  })
+})
+
+describe('wc-api pickup orders (WC block checkout Local Pickup)', () => {
+  const billing = {
+    name: 'Max Muster', prename: 'Max', lastname: 'Muster', line1: 'Hauptstr. 1', line2: null,
+    zip: '80331', city: 'München', country: 'DE', state: null, phone: null,
+  }
+  const pickupOrder = (): SanityOrder => {
+    const o = order([{ price: 1500, quantity: 2, vatRate: 13 }])
+    return {
+      ...o,
+      customer: { ...o.customer, billingAddress: billing, shippingAddress: null },
+      fulfillment: {
+        ...o.fulfillment!,
+        methodTitle: 'Abholung im Weingut', methodType: 'pickup',
+        pickupAddress: { line1: 'Eisenstätter Straße 10', line2: null, zip: '7061', city: 'Trausdorf', country: 'AT' },
+        pickupInstructions: 'Mo–Fr 9–17 Uhr',
+      },
+    }
+  }
+
+  it('method_id pickup_location + the three meta entries', () => {
+    const line = map(pickupOrder()).shipping_lines[0] as { method_id: string; method_title: string; meta_data: Array<{ id: number; key: string; value: string }> }
+    expect(line.method_id).toBe('pickup_location')
+    expect(line.method_title).toBe('Abholung im Weingut')
+    expect(line.meta_data.map(m => [m.key, m.value])).toEqual([
+      ['pickup_location', 'Abholung im Weingut'],
+      ['pickup_address', 'Eisenstätter Straße 10, 7061 Trausdorf, AT'],
+      ['pickup_details', 'Mo–Fr 9–17 Uhr'],
+    ])
+    expect(line.meta_data.every(m => Number.isInteger(m.id) && m.id > 0)).toBe(true)
+  })
+
+  it('shipping = a copy of billing; rate_ids by the pickup country', () => {
+    const wc = map(pickupOrder())
+    expect(wc.shipping.address_1).toBe('Hauptstr. 1')
+    expect(wc.shipping.country).toBe('DE')
+    expect(wc.tax_lines[0].rate_code).toBe('AT-13')
+  })
+
+  it('delivery stays as is', () => {
+    const line = map(order([{ price: 1500, quantity: 1, vatRate: 13 }], { country: 'AT' })).shipping_lines[0]
+    expect(line.method_id).toBe('delivery')
+    expect(line).not.toHaveProperty('meta_data')
+  })
+
+  it('an open withdrawal on a ready-for-pickup (shipped) order stays completed', () => {
+    const o = { ...pickupOrder(), status: 'shipped', hasOpenWithdrawal: true }
+    expect(map(o).status).toBe('completed')
   })
 })
 

@@ -89,6 +89,9 @@ export type SanityOrder = {
     taxSnapshot: { rate: number; net: number; vat: number } | null
     trackingCode: string | null
     packagingLines: Array<{ _key: string; quantity: number; packSize: number; volumes?: number[]; volume?: number; price: number }> | null
+    /** Pickup only. */
+    pickupAddress: { line1: string | null; line2: string | null; zip: string | null; city: string | null; country: string | null } | null
+    pickupInstructions: string | null
   } | null
 }
 
@@ -358,6 +361,22 @@ function mapAddress(addr: SanityAddress | null) {
 
 // ── Order mapping ────────────────────────────────────────────────────────────
 
+/**
+ * Shipping-line meta of a pickup order, with WooCommerce's own Local Pickup keys: location
+ * name, its address on one line, the pickup details (instructions).
+ */
+function pickupMeta(orderNumber: string, f: NonNullable<SanityOrder['fulfillment']>) {
+  const a = f.pickupAddress
+  const address = a
+    ? [a.line1, a.line2, [a.zip, a.city].filter(Boolean).join(' '), a.country].filter(Boolean).join(', ')
+    : ''
+  return [
+    { key: 'pickup_location', value: f.methodTitle ?? '' },
+    { key: 'pickup_address', value: address },
+    { key: 'pickup_details', value: f.pickupInstructions ?? '' },
+  ].map(m => ({ id: stableId(`${orderNumber}:shipping:${m.key}`), ...m }))
+}
+
 /** Simple string-to-positive-integer hash for stable IDs. */
 function stableId(s: string): number {
   let hash = 5381
@@ -438,9 +457,12 @@ export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCo
 
   // One tax line per rate (items first, then a shipping-only rate if any). As in WooCommerce,
   // a rate is per country and its `rate_id` is the same in every order (AT 20 % ≠ DE 20 %);
-  // the tax country is the shipping country, as in checkout. `id` is the tax line's own
+  // the tax country is the shipping country, as in checkout — for pickup the pickup location's
+  // country (WC does the same with `_pickup_location_address`). `id` is the tax line's own
   // number; line `taxes[].id` refer to `rate_id`.
-  const taxCountry = (order.customer?.shippingAddress?.country
+  const isPickup = f?.methodType === 'pickup'
+  const taxCountry = ((isPickup ? f?.pickupAddress?.country : null)
+    ?? order.customer?.shippingAddress?.country
     ?? order.customer?.billingAddress?.country ?? '').toUpperCase()
   const rateId = (rate: number) => stableId(`tax-rate:${taxCountry}:${rate}`)
   const rates = [...new Set(wcLines.map(line => line.vatRate))]
@@ -493,7 +515,9 @@ export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCo
       ...mapAddress(order.customer?.billingAddress),
       email: order.customer?.contactEmail ?? '',
     },
-    shipping: mapAddress(order.customer?.shippingAddress),
+    // Pickup: a copy of billing, as WC's block checkout stores it for Local Pickup (the pickup
+    // location goes into the shipping line's meta, not here).
+    shipping: mapAddress(order.customer?.shippingAddress ?? order.customer?.billingAddress),
     // Stripe type (card, eps, klarna, …) + readable label ("Visa •••• 4242"); 'stripe' for
     // older orders without the snapshot.
     payment_method: order.payment?.type ?? 'stripe',
@@ -522,8 +546,10 @@ export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCo
     tax_lines: taxLines,
     shipping_lines: f ? [{
       id: 1,
-      method_id: f.methodType ?? 'flat_rate',
+      // Pickup: WC block checkout's Local Pickup method + its line meta keys.
+      method_id: isPickup ? 'pickup_location' : (f.methodType ?? 'flat_rate'),
       method_title: f.methodTitle ?? '',
+      ...(isPickup && { meta_data: pickupMeta(order.orderNumber, f) }),
       total: price(shippingNet),
       total_tax: price(shippingTax),
       // WC lists the shipping rate even at 0 tax (free shipping); only no rate → []
@@ -549,7 +575,10 @@ const ORDER_PROJECTION = `{
     _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight,
     bundle { items[] { _key, variantId, productId, sku, subtitle, title, quantity, price, vatRate } }
   },
-  fulfillment { methodTitle, methodType, shippingCost, taxSnapshot, trackingCode, packagingLines }
+  fulfillment {
+    methodTitle, methodType, shippingCost, taxSnapshot, trackingCode, packagingLines,
+    pickupAddress, pickupInstructions
+  }
 }`
 
 // ── Route handlers ───────────────────────────────────────────────────────────

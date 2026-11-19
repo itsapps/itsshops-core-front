@@ -21,6 +21,8 @@ export function validateCartItems(items: unknown): items is CheckoutCartItem[] {
   )
 }
 
+export const PHONE_MAX_LENGTH = 40
+
 export function validateAddress(address: unknown, label: string): ValidationResult {
   if (typeof address !== 'object' || address === null) {
     return { valid: false, message: `${label} is required` }
@@ -31,6 +33,11 @@ export function validateAddress(address: unknown, label: string): ValidationResu
     if (typeof a[field] !== 'string' || a[field].trim().length === 0) {
       details[`${label}.${field}`] = `${field} is required`
     }
+  }
+  // Optional phone (checkout field, delivery and pickup): a string of at most 40 characters.
+  if (a.phone !== undefined && a.phone !== null
+    && (typeof a.phone !== 'string' || a.phone.trim().length > PHONE_MAX_LENGTH)) {
+    details[`${label}.phone`] = `phone must be at most ${PHONE_MAX_LENGTH} characters`
   }
   if (Object.keys(details).length > 0) {
     return { valid: false, message: `Invalid ${label}`, details }

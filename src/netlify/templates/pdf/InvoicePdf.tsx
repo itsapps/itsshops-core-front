@@ -187,7 +187,7 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
         <View wrap={false}>
           <SummaryLine label={t('emails.order.summaryProducts')} value={formatPrice(order.totals.subtotal)} />
           <SummaryLine
-            label={t('emails.order.summaryShipping')}
+            label={t(order.fulfillment.methodType === 'pickup' ? 'emails.order.summaryPickup' : 'emails.order.summaryShipping')}
             subLabel={`(${order.fulfillment.methodTitle})`}
             value={formatPrice(order.totals.shipping)}
           />

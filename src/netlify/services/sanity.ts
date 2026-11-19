@@ -2,6 +2,7 @@ import { createClient, type SanityClient } from '@sanity/client'
 import { sanityApiVersion } from '../../config/constants'
 import { log } from '../utils/logger'
 import type { WithdrawalPeriodStart } from '../../shared/withdrawal-instructions'
+import { isHandedOver } from '../../shared/pickup'
 import type {
   SanityCheckoutQueryResult,
   OrderMetaDocument,
@@ -75,8 +76,11 @@ const CHECKOUT_QUERY = `{
     countryCode,
     rules[]{ "taxCategoryCode": taxCategory->code.current, rate }
   },
-  "shippingMethods": *[_type == "shippingMethod" && references(*[_type == "taxCountry" && countryCode == $country]._id)]{
+  "shippingMethods": *[_type == "shippingMethod" && (
+    methodType == "pickup" || references(*[_type == "taxCountry" && countryCode == $country]._id)
+  )]{
     _id, title, deliveryTime, methodType, pickupFee, freeShippingThreshold,
+    pickupAddress{ line1, line2, zip, city, country }, pickupInstructions, pickupHoldDays,
     "taxCategoryCode": taxCategory->code.current,
     rates[]{ maxWeight, price },
     packagingGroups[]{ packages[]{ places, price }, bottles[]{ volume, perPlace } }
@@ -86,6 +90,13 @@ const CHECKOUT_QUERY = `{
     freeShippingCalculation,
     "defaultTaxCategoryCode": defaultTaxCategory->code.current,
     orderNumberPrefix, invoiceNumberPrefix, lastInvoiceNumber
+  },
+  "pickupTaxCountries": *[_type == "taxCountry" && enabled == true && countryCode in (
+    *[_type == "shippingMethod" && methodType == "pickup"].pickupAddress.country
+    + [*[_type == "shopSettings"][0].defaultCountry->countryCode]
+  )]{
+    countryCode,
+    rules[]{ "taxCategoryCode": taxCategory->code.current, rate }
   },
   "supportedCountries": *[_type == "taxCountry" && enabled == true]{ countryCode },
   "coupon": *[_type == "coupon" && $couponEnabled && defined($couponCode) && code == $couponCode][0]{
@@ -234,6 +245,8 @@ export type OrderWithdrawalLookup = {
   createdAt: string
   /** Order fulfillment status — drives whether the confirmation asks for a return. */
   status: string
+  /** `pickup`: `shipped` = ready for pickup, goods still at the shop. */
+  methodType?: 'delivery' | 'pickup' | null
   customer: {
     contactEmail: string
     locale: string
@@ -245,6 +258,7 @@ const ORDER_LOOKUP_PROJECTION = `{
   _id,
   orderNumber,
   status,
+  "methodType": fulfillment.methodType,
   "createdAt": _createdAt,
   "customer": {
     "contactEmail": customer.contactEmail,
@@ -666,8 +680,8 @@ export async function updateOrderPaymentStatus(
   paymentIntentId: string,
   status: 'refunded' | 'partiallyRefunded',
 ): Promise<void> {
-  const order = await sanityClient.fetch<{ _id: string; status: string } | null>(
-    `*[_type == "order" && paymentIntentId == $pid][0]{ _id, status }`,
+  const order = await sanityClient.fetch<{ _id: string; status: string; methodType?: 'delivery' | 'pickup' | null } | null>(
+    `*[_type == "order" && paymentIntentId == $pid][0]{ _id, status, "methodType": fulfillment.methodType }`,
     { pid: paymentIntentId },
   )
   if (!order?._id) {
@@ -681,12 +695,14 @@ export async function updateOrderPaymentStatus(
   ]
   const set: Record<string, string> = { paymentStatus: status }
 
-  // Full refund of a still-undispatched order also cancels fulfillment, so the
-  // order doesn't stay stuck reading as `created`/`processing`. Mirrors the
-  // Studio refund action — keeps every refund source (action / dashboard /
-  // webhook reconciliation) consistent. Idempotent: a re-run sees `canceled`
-  // and does nothing more.
-  if (status === 'refunded' && (order.status === 'created' || order.status === 'processing')) {
+  // Full refund of a goods-not-handed-over order (undispatched; for pickup: not collected,
+  // incl. "ready for pickup") also cancels fulfillment, so the order doesn't stay stuck reading
+  // as `created`/`processing`/"Abholbereit". Mirrors the Studio refund action — keeps every
+  // refund source (action / dashboard / webhook reconciliation) consistent. Idempotent: a
+  // re-run sees `canceled` and does nothing more.
+  const notHandedOver = !isHandedOver(order.status, order.methodType)
+    && order.status !== 'canceled' && order.status !== 'returned'
+  if (status === 'refunded' && notHandedOver) {
     set.status = 'canceled'
     historyEntries.push({
       _type: 'orderStatusHistory',

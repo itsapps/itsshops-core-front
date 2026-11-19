@@ -319,6 +319,9 @@ export function resolveShippingMethods(
     const deliveryTime = resolveLocalizedTitle(method.deliveryTime ?? null, locale) || undefined
 
     if (method.methodType === 'pickup') {
+      // No countries, rates, packaging or free-shipping threshold: the pickup fee is the price.
+      const address = method.pickupAddress
+      const instructions = resolveLocalizedTitle(method.pickupInstructions ?? null, locale)
       available.push({
         _id: method._id,
         title,
@@ -327,6 +330,17 @@ export function resolveShippingMethods(
         price: method.pickupFee ?? 0,
         isFree: (method.pickupFee ?? 0) === 0,
         taxCategoryCode: method.taxCategoryCode,
+        ...(address?.line1 && address.zip && address.country && {
+          pickupAddress: {
+            line1: address.line1,
+            ...(address.line2 && { line2: address.line2 }),
+            zip: address.zip,
+            city: resolveLocalizedTitle(address.city ?? null, locale),
+            country: address.country,
+          },
+        }),
+        ...(instructions && { pickupInstructions: instructions }),
+        ...(method.pickupHoldDays && { pickupHoldDays: method.pickupHoldDays }),
       })
       continue
     }
@@ -386,7 +400,9 @@ export function freeShippingReason(
 }
 
 /**
- * Select a shipping method: prefer the requested one, otherwise cheapest delivery.
+ * Select a shipping method: prefer the requested one, otherwise the cheapest delivery. A pickup
+ * method is only ever selected when requested — without a delivery method the result is `null`
+ * (never a pickup order the customer didn't pick).
  */
 export function selectShippingMethod(
   methods: AvailableShippingMethod[],
@@ -402,5 +418,5 @@ export function selectShippingMethod(
   if (delivery.length > 0) {
     return delivery.sort((a, b) => a.price - b.price)[0]
   }
-  return methods[0]
+  return null
 }

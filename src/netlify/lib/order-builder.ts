@@ -128,6 +128,13 @@ function buildFulfillment(
     ? Math.round(shippingCost - shippingCost / (1 + shippingVatRate / 100))
     : 0
 
+  // Pickup: snapshot the location so a later change on the method moves no existing order.
+  const isPickup = selectedShipping.methodType === 'pickup'
+  const pickupAddress = selectedShipping.pickupAddress
+  if (isPickup && !pickupAddress) {
+    throw new Error(`Pickup method ${selectedShipping._id} has no pickup address`)
+  }
+
   const packagingLines = selectedShipping.packagingLines?.map((line, i) => ({
     _key: `pkg_${i}`,
     _type: 'fulfillmentPackagingLine' as const,
@@ -152,6 +159,17 @@ function buildFulfillment(
       _weak: true,
     },
     ...(packagingLines?.length && { packagingLines }),
+    ...(isPickup && pickupAddress && {
+      pickupAddress: {
+        line1: pickupAddress.line1,
+        ...(pickupAddress.line2 && { line2: pickupAddress.line2 }),
+        zip: pickupAddress.zip,
+        city: pickupAddress.city,
+        country: pickupAddress.country,
+      },
+      ...(selectedShipping.pickupInstructions && { pickupInstructions: selectedShipping.pickupInstructions }),
+      ...(selectedShipping.pickupHoldDays && { pickupHoldDays: selectedShipping.pickupHoldDays }),
+    }),
     ...(freeShippingReason && selectedShipping.methodType === 'delivery' && shippingCost === 0 && {
       freeShippingReason,
     }),
@@ -163,7 +181,8 @@ export type BuildOrderMetaInput = {
   totals: CalculatedTotals
   selectedShipping: AvailableShippingMethod
   shippingVatRate: number
-  shippingAddress: AddressInput
+  /** Delivery only (required then); ignored for pickup — no shipping address is stored. */
+  shippingAddress?: AddressInput
   billingAddress: AddressInput
   contactEmail: string
   locale: string
@@ -174,6 +193,11 @@ export type BuildOrderMetaInput = {
 }
 
 export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
+  // The method type decides, not whether the caller passed an address.
+  const isDelivery = input.selectedShipping.methodType === 'delivery'
+  if (isDelivery && !input.shippingAddress) {
+    throw new Error('A delivery order needs a shipping address')
+  }
   return {
     _type: 'orderMeta',
     paymentIntentId: input.paymentIntentId,
@@ -183,7 +207,9 @@ export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
       locale: input.locale,
       contactEmail: input.contactEmail,
       billingAddress: buildAddressStrict(input.billingAddress),
-      shippingAddress: buildAddressStrict(input.shippingAddress),
+      ...(isDelivery && input.shippingAddress && {
+        shippingAddress: buildAddressStrict(input.shippingAddress),
+      }),
     },
     totals: buildOrderTotals(input.totals),
     fulfillment: buildFulfillment(

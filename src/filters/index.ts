@@ -218,9 +218,7 @@ function countryName(code: string, locale: string): string {
   }
 }
 
-import isoCountries from 'i18n-iso-countries'
-
-const ALPHA2_CODES = Object.keys(isoCountries.getAlpha2Codes())
+import { COUNTRY_CODES } from '../shared/countries'
 
 /** All ISO 3166-1 alpha-2 country codes with localized names, sorted alphabetically.
  * Names come from `Intl.DisplayNames` (built-in, all browsers/Node 18+).
@@ -232,7 +230,7 @@ function countryList(locale: string): Array<{ code: string; name: string }> {
   } catch {
     names = new Intl.DisplayNames(['en'], { type: 'region' })
   }
-  return ALPHA2_CODES
+  return COUNTRY_CODES
     .map(code => ({ code, name: names.of(code) ?? code }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 }

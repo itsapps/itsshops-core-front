@@ -32,6 +32,7 @@ import type { EmailAddress, EmailContext } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
 import { formatPrice as fmtPrice, formatShopDate, serverT } from '../utils/i18n'
 import { log } from '../utils/logger'
+import { isHandedOver } from '../../shared/pickup'
 
 export type WithdrawNotifyOptions = {
   baseUrl?: string
@@ -83,7 +84,7 @@ export function buildWithdrawalMails(
   let followUp: string[]
   if (!matched) {
     followUp = [t('emails.orderWithdrawalCustomer.unmatched')]
-  } else if (order.status === 'shipped' || order.status === 'delivered') {
+  } else if (isHandedOver(order.status, order.methodType)) {
     // Goods already with the customer → ask for a return.
     const returnAddress: EmailAddress | null = settings.returnAddress ?? settings.billingAddress
     const borneBy = settings.returnShippingBorneBy ?? 'customer'
@@ -98,8 +99,10 @@ export function buildWithdrawalMails(
       ...(settings.returnPolicyNote ? [settings.returnPolicyNote] : []),
     ]
   } else {
-    // Not yet dispatched → cancel + refund, nothing to return.
-    followUp = [t('emails.orderWithdrawalCustomer.notDispatched')]
+    // Not yet dispatched (pickup: not collected) → cancel + refund, nothing to return.
+    followUp = [t(order.methodType === 'pickup'
+      ? 'emails.orderWithdrawalCustomer.notCollected'
+      : 'emails.orderWithdrawalCustomer.notDispatched')]
   }
 
   // Matched with a different submitted address → that one gets the same receipt too.
