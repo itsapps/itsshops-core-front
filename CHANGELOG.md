@@ -4,7 +4,10 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
-## Unreleased
+## 5.3.0
+
+Store pickup, locale regions (`og:locale`, opt-in regional formats), wc-api accepted mode,
+express-area and layout-shift fixes.
 
 - **`og:locale` is now valid** (`de_DE` / `en_GB` instead of `de` / `en`, which Facebook and
   LinkedIn ignored). Override per locale with the new config field `localeRegions` (e.g.
