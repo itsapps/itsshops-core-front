@@ -221,7 +221,8 @@ describe('CheckoutExpress — pickup', () => {
   async function setup() {
     const { CheckoutExpress } = await import('../checkout-express')
     const handlers: Record<string, (e: any) => any> = {}
-    const element = { mount: vi.fn(), unmount: vi.fn(), update: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
+    const element = { mount: vi.fn(), unmount: vi.fn(), destroy: vi.fn(), update: vi.fn(), on: (name: string, fn: (e: any) => any) => { handlers[name] = fn } }
+    const create = vi.fn((_options: any) => element)
     const calc = {
       totals: { grandTotal: 3000 },
       shippingMethods: [
@@ -234,7 +235,7 @@ describe('CheckoutExpress — pickup', () => {
     }
     const onCreatePayment = vi.fn(async (_input: any) => ({ error: 'stop' }))
     const express = new CheckoutExpress({
-      stripe: { createExpressCheckoutElement: () => element, updateAmount: vi.fn() } as never,
+      stripe: { createExpressCheckoutElement: create, updateAmount: vi.fn() } as never,
       container: document.createElement('div'),
       returnUrl: '/thanks',
       allowedCountries: ['AT'],
@@ -245,17 +246,29 @@ describe('CheckoutExpress — pickup', () => {
       onCreatePayment,
     })
     express.mount()
-    return { express, handlers, element, calc, onCreatePayment }
+    return { express, handlers, element, calc, onCreatePayment, create }
   }
 
-  it('setPickup updates both address flags (only on a mode change)', async () => {
-    const { express, element } = await setup()
+  it('setPickup re-creates the element with the mode\'s options (only on a mode change)', async () => {
+    const { express, element, create } = await setup()
+    expect(create).toHaveBeenLastCalledWith(expect.objectContaining({ shippingAddressRequired: true }))
     express.setPickup('pu1')
-    expect(element.update).toHaveBeenLastCalledWith({ shippingAddressRequired: false, billingAddressRequired: true })
+    expect(element.destroy).toHaveBeenCalledTimes(1)
+    expect(create).toHaveBeenLastCalledWith(expect.objectContaining({ shippingAddressRequired: false, billingAddressRequired: true }))
+    expect(create.mock.calls.at(-1)![0]).not.toHaveProperty('allowedShippingCountries')
     express.setPickup('pu1')
-    expect(element.update).toHaveBeenCalledTimes(1)
+    expect(create).toHaveBeenCalledTimes(2)
     express.setPickup(null)
-    expect(element.update).toHaveBeenLastCalledWith({ shippingAddressRequired: true, billingAddressRequired: false })
+    expect(create).toHaveBeenCalledTimes(3)
+    expect(create).toHaveBeenLastCalledWith(expect.objectContaining({ shippingAddressRequired: true, allowedShippingCountries: ['AT'] }))
+    expect(element.update).not.toHaveBeenCalled()
+  })
+
+  it('no wallet: a mode change creates nothing', async () => {
+    const { express, handlers, create } = await setup()
+    handlers.ready({ availablePaymentMethods: undefined })
+    express.setPickup('pu1')
+    expect(create).toHaveBeenCalledTimes(1)
   })
 
   it('pickup click: no shipping rates, pickup line, and the shown calculation is set', async () => {

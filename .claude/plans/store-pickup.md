@@ -773,6 +773,10 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
 - `pickupDeadline()` without a `shipped` entry counts from now (core-front; the ready mail of a
   status not stored yet); core-back's returns `null` (the order view shows no deadline).
 - Tinhof frontend: `.checkout__billing-heading` added to its legend rule (`blocks/checkout.css`).
+- Express (step 15, decision 11): a mode change **re-creates** the express element instead of
+  `element.update()`. On staging (2026-11-19, Safari Apple Pay) `update({ shippingAddressRequired:
+  false })` failed with "You must specify `shippingAddressRequired: true` when providing
+  `shippingRates`" — Stripe keeps shipping rates from earlier answers in the element's options.
 
 ## Rollout (Tinhof)
 

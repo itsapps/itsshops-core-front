@@ -128,6 +128,13 @@ export class CheckoutExpress {
     this.config = config
   }
 
+  /** No wallet in this browser — the element was dropped and is never created again. */
+  private unavailable = false
+
+  /**
+   * Create + mount the element for the current mode. Pickup asks the sheet for the billing
+   * address instead of a shipping address (no shipping rates then).
+   */
   mount(): void {
     const element = this.config.stripe.createExpressCheckoutElement({
       paymentMethods: {
@@ -136,8 +143,9 @@ export class CheckoutExpress {
         paypal: 'never',
       },
       emailRequired: true,
-      shippingAddressRequired: true,
-      allowedShippingCountries: this.config.allowedCountries,
+      ...(this.pickupId
+        ? { shippingAddressRequired: false, billingAddressRequired: true }
+        : { shippingAddressRequired: true, allowedShippingCountries: this.config.allowedCountries }),
     })
     if (!element) return
     this.element = element
@@ -150,7 +158,10 @@ export class CheckoutExpress {
       if (hasAny) this.config.onReady?.({ availablePaymentMethods: available })
       // No wallet in this browser (e.g. Firefox desktop: no Klarna, Apple/Google Pay only with
       // 'always'): drop the element so its iframe doesn't keep a blank box on the page.
-      else this.destroy()
+      else {
+        this.unavailable = true
+        this.destroy()
+      }
     })
     element.on('click', e => this.handleClick(e))
     element.on('shippingaddresschange', e => this.handleShippingAddressChange(e))
@@ -165,6 +176,8 @@ export class CheckoutExpress {
 
   destroy(): void {
     this.element?.unmount()
+    // destroy, not only unmount: an Elements instance holds one express element at a time.
+    this.element?.destroy?.()
     this.element = null
   }
 
@@ -174,16 +187,19 @@ export class CheckoutExpress {
 
   /**
    * Pickup chosen on the page (`methodId`) or delivery (`null`): the sheet then asks for the
-   * billing address instead of a shipping address. Both flags are set explicitly — the billing
-   * flag defaults to off because the element is created with other options.
+   * billing address instead of a shipping address. A mode change **re-creates** the element —
+   * `element.update({ shippingAddressRequired: false })` is refused by Stripe ("You must specify
+   * `shippingAddressRequired: true` when providing `shippingRates`") once a click/address
+   * answer gave it shipping rates (seen on staging, Safari Apple Pay, 2026-11-19).
    */
   setPickup(methodId: string | null): void {
     const changed = (methodId === null) !== (this.pickupId === null)
     this.pickupId = methodId
-    if (!changed || !this.element) return
-    this.element.update(methodId
-      ? { shippingAddressRequired: false, billingAddressRequired: true }
-      : { shippingAddressRequired: true, billingAddressRequired: false })
+    if (!changed || !this.element || this.unavailable) return
+    this.lastAddress = null
+    this.shownCalculation = null
+    this.destroy()
+    this.mount()
   }
 
   // ── Event handlers ──────────────────────────────────────────────────────

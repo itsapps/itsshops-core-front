@@ -174,8 +174,11 @@ Pickup mode: the main address fields are the billing address (sent as `address.s
 countries first); back on "Versand" a country outside the tax list is cleared and flagged
 (no focus move). A response with pickups but no delivery method switches to pickup once per
 country and announces it; "Versand" then shows "Versand in dieses Land ist nicht möglich."
-The totals label reads "Abholung" (`CheckoutSummary.setShippingLabel`). Express: `setPickup()`
-→ `element.update({ shippingAddressRequired: false, billingAddressRequired: true })`; the sheet
+The totals label reads "Abholung" (`CheckoutSummary.setShippingLabel`). Express: `setPickup()` on a
+mode change **re-creates** the element (pickup: `shippingAddressRequired: false`,
+`billingAddressRequired: true`; delivery: shipping address + `allowedShippingCountries`) —
+`element.update()` is refused once Stripe holds shipping rates from an earlier answer
+("You must specify `shippingAddressRequired: true` when providing `shippingRates`"); the sheet
 gets the page's calculation (no shipping rates) and the order the billing address; in delivery
 mode the sheet lists delivery methods only (none → the address event is rejected).
 The billing fieldset's name is an `sr-only` first-child `<legend>`; its visible heading is
