@@ -18,6 +18,10 @@ export const projectConfig: Config = { /* … */ }
 - `locales?: Locale[]` — default `['de','en']`. **Core ships UI translations for de/en only** — any
   other locale needs full `translations` (see [i18n.md](i18n.md)) or the build throws on missing keys.
 - `defaultLocale?: Locale` — default `'de'`.
+- `localeRegions?: Partial<Record<Locale, string>>` — region (ISO 3166-1 alpha-2) per locale, used
+  only where a region is required: `og:locale` (`de_DE`). Default `{ de: 'DE', en: 'GB' }`;
+  normalised to upper case, an invalid value warns and keeps the default (`resolveLocaleRegions` in
+  `src/config/config.ts`). Build-only. Rule (language vs. region): [i18n.md](i18n.md).
 - `sanity?: SanityClientConfig` — `{ projectId, dataset, token?, studioUrl?, … }`. `projectId` and
   `dataset` are **required** (hard-fail) and usually come from env (`SANITY_PROJECT_ID`,
   `SANITY_DATASET`); `token`/`studioUrl` from `SANITY_TOKEN`/`SANITY_STUDIO_URL`. The payment
@@ -113,6 +117,10 @@ No `Config` field — both runtimes must see the same value, so set them on the 
 - `SHOP_FORMALITY` = `formal` (default, "Sie") | `informal` ("Du") — German form of address for every
   core text: website, emails, server messages. Build-only would give a "Du" site with "Sie" mails.
   Mechanism: [i18n.md](i18n.md) → "Form of address".
+- `SHOP_FORMAT_LOCALES` — opt-in regional formatting (dates, numbers, prices), e.g. `en:en-GB` or
+  `de:de-AT,en:en-GB`. Unset = bare `de`/`en` (no change). Visible: `de-AT` gives "€ 1.234,50",
+  "Jänner", "1 234 567,5"; `en-GB` changes dates only ("5 January 2027"). Mechanism:
+  [i18n.md](i18n.md) → "Language vs. region".
 - `SHOP_TIMEZONE` — IANA name for dates/times in mails (default `Europe/Vienna`; invalid → warning +
   default). Helper: `formatShopDate` in `src/netlify/utils/i18n.ts`.
 
@@ -146,7 +154,7 @@ Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
 - **wc-api:** `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` (missing → every request 401), `WC_TIMEZONE`
   (fallback when the wrapper passes no `timezone`). `WC_API_BASE_URL` is **test-only** (customer
   `tests/integration/wc-api.test.ts`). Details: [wc-api.md](wc-api.md).
-- Shared with the build: `SANITY_*`, `SHOP_FORMALITY`, `SHOP_TIMEZONE`, `SUPPORT_EMAIL`,
+- Shared with the build: `SANITY_*`, `SHOP_FORMALITY`, `SHOP_FORMAT_LOCALES`, `SHOP_TIMEZONE`, `SUPPORT_EMAIL`,
   `VINOFACT_*` (see above), and — for the generated privacy policy — `EMAIL_PROVIDER`,
   `MAILGUN_USE_EU_REGION_URL` and whether `WC_CONSUMER_KEY` is set. The build reads them into
   `CoreConfig.services` (`emailProvider`, `mailgunEu`, `wcApi`; flags only, never the secrets, same

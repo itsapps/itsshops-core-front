@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="{{ page.lang }}">
+<html lang="{{ page.lang }}"
+  {%- if coreConfig.formatLocales[page.lang] %} data-format-locale="{{ coreConfig.formatLocales[page.lang] }}"{% endif %}>
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />

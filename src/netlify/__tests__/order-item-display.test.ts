@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { bundleItemLines, composeSubtitle, lineVatRate } from '../lib/order-item-display'
 
 describe('bundleItemLines', () => {
@@ -50,3 +50,13 @@ describe('lineVatRate (invoice)', () => {
     expect(lineVatRate({ vatRate: 13, bundle: { items: [{}] } })).toBeNull()
   })
 })
+
+describe('composeSubtitle with SHOP_FORMAT_LOCALES', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('de-AT gives the same volume as de', () => {
+    vi.stubEnv('SHOP_FORMAT_LOCALES', 'de:de-AT')
+    expect(composeSubtitle('wine', { vintage: '2025', volume: 750 }, null)).toBe('0,75l, 2025')
+  })
+})
+

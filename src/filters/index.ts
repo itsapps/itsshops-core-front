@@ -10,6 +10,7 @@ import { buildWithdrawalInstructions, missingWithdrawalData, type WithdrawalInst
 import { buildPrivacyPolicy, missingPrivacyData, type PrivacyPolicyInput } from "../shared/privacy-policy"
 import { ORDER_META_RETENTION_DAYS } from "../config/constants"
 import { formatVolumeMl } from "../shared/format-volume"
+import { intlLocale } from "../i18n/format-locale"
 import type { CmsLocaleData } from "../types/data"
 
 function toIsoString(text: string) {
@@ -255,8 +256,19 @@ function nl2br(text: string): string {
   return text.replace(/\r?\n/g, '<br>')
 }
 
+/** og:locale value: `language_TERRITORY` (`de_AT`); the bare locale when no region is set. */
+export function ogLocale(locale: string, regions: Partial<Record<string, string>>): string {
+  const region = regions[locale]
+  return region ? `${locale}_${region}` : locale
+}
+
 export const createFilters = (ctx: CoreContext) => {
   const { eleventyConfig, config, translate } = ctx
+  /** Intl tag for formatting (opt-in `SHOP_FORMAT_LOCALES`); never for translations or `lang`. */
+  const fmt = (locale: string | undefined, page?: { lang?: string }) =>
+    intlLocale(locale || page?.lang || config.defaultLocale, config.formatLocales)
+
+  eleventyConfig.addFilter('ogLocale', (locale: string) => ogLocale(locale, config.localeRegions))
 
   eleventyConfig.addFilter('log', (value: any, label?: string) => {
     if (label) console.warn(`⚠️ [itsshops] ${label}`, value)
@@ -274,13 +286,13 @@ export const createFilters = (ctx: CoreContext) => {
   eleventyConfig.addFilter("toIsoString", toIsoString);
   // eleventyConfig.addFilter("formatPrice", formatPrice);
   eleventyConfig.addFilter("formatPrice", function (price: number, locale: string | undefined) {
-    return formatPrice(price, locale || this.page?.lang || config.defaultLocale, config.units.price.currency, config.units.price.currencyLabel);
+    return formatPrice(price, fmt(locale, this.page), config.units.price.currency, config.units.price.currencyLabel);
   });
   eleventyConfig.addFilter("formatVolume", function (ml: number) {
-    return formatVolumeMl(ml, config.units.volume, this.page?.lang || config.defaultLocale)
+    return formatVolumeMl(ml, config.units.volume, fmt(undefined, this.page))
   });
   eleventyConfig.addFilter("formatVolumeList", function (mls: number[]) {
-    return formatVolumeList(mls, config.units.volume, this.page?.lang || config.defaultLocale)
+    return formatVolumeList(mls, config.units.volume, fmt(undefined, this.page))
   });
   eleventyConfig.addFilter("filterByCategory", filterByCategory as any);
   eleventyConfig.addFilter("filterGroupsForProducts", filterGroupsForProducts as any);
@@ -321,10 +333,10 @@ export const createFilters = (ctx: CoreContext) => {
   }) as any);
   eleventyConfig.addFilter('limit', limit as any)
   eleventyConfig.addFilter('formatDate', function (date: string, style?: Intl.DateTimeFormatOptions['dateStyle']) {
-    return formatDate(date, this.page?.lang || config.defaultLocale, style)
+    return formatDate(date, fmt(undefined, this.page), style)
   })
   eleventyConfig.addFilter('formatNumber', function (num: number) {
-    return formatNumber(num, this.page?.lang || config.defaultLocale)
+    return formatNumber(num, fmt(undefined, this.page))
   })
   eleventyConfig.addFilter('sortBy', ((arr: any[], path: string, reverse?: boolean) => {
     if (!Array.isArray(arr)) return arr
@@ -402,7 +414,7 @@ export const createFilters = (ctx: CoreContext) => {
       dpoContact: module?.dpoContact,
       extraSections: module?.extraSections ?? [],
       countryName: (code) => countryName(code, locale),
-      formatUpdated: (yearMonth) => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
+      formatUpdated: (yearMonth) => new Intl.DateTimeFormat(fmt(locale), { month: 'long', year: 'numeric' })
         .format(new Date(`${yearMonth}-01T12:00:00Z`)),
     }
     return {
@@ -432,7 +444,7 @@ export const createFilters = (ctx: CoreContext) => {
     return renderPortableText(blocks, urlMap, extra as any, options)
   })
   eleventyConfig.addFilter('formatDateRange', function (from: string, to?: string, options?: { combine?: boolean }) {
-    return formatDateRange(from, this.page?.lang || config.defaultLocale, to, options)
+    return formatDateRange(from, fmt(undefined, this.page), to, options)
   })
   eleventyConfig.addFilter('docById', function (id: string) {
     const locale = this.page?.lang || config.defaultLocale

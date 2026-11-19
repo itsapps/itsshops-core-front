@@ -1,4 +1,5 @@
 import { formatVolumeMl } from '../../shared/format-volume'
+import { intlLocale } from '../../i18n/format-locale'
 
 /** How a composed subtitle formats numbers: the shop's volume unit and the order locale. */
 export type SubtitleFormat = { volumeUnit: string; locale: string }
@@ -30,7 +31,7 @@ export function composeSubtitle(
     }
   } else if (kind === 'wine' && wine) {
     const parts: string[] = []
-    if (wine.volume) parts.push(formatVolumeMl(wine.volume, format.volumeUnit, format.locale))
+    if (wine.volume) parts.push(formatVolumeMl(wine.volume, format.volumeUnit, intlLocale(format.locale)))
     if (wine.vintage) parts.push(String(wine.vintage))
     if (parts.length > 0) return parts.join(', ')
   } else if ((kind === 'physical' || kind === 'digital') && options && options.length > 0) {

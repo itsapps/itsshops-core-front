@@ -6,6 +6,7 @@ import deInformal from '../../i18n/translations/de_server.informal'
 import deSharedInformal from '../../i18n/translations/de_shared.informal'
 import { readFormality, type Formality } from '../../i18n/formality'
 import { mergeTranslations } from '../../i18n/merge-translations'
+import { intlLocale } from '../../i18n/format-locale'
 
 const baseTranslations: Record<string, object> = {
   de: { ...de, ...deShared },
@@ -56,7 +57,7 @@ export function serverT(
  * Format an amount in cents as a localized currency string.
  */
 export function formatPrice(cents: number, locale: string, currency: string = 'EUR'): string {
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(cents / 100)
+  return new Intl.NumberFormat(intlLocale(locale), { style: 'currency', currency }).format(cents / 100)
 }
 
 /**
@@ -103,7 +104,7 @@ export function formatShopDate(
   options: { dateStyle?: 'full' | 'long' | 'medium' | 'short'; withTime?: boolean } = {},
 ): string {
   const { dateStyle = 'long', withTime = false } = options
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle,
     ...(withTime && { timeStyle: 'short' as const }),
     timeZone: shopTimeZone(),

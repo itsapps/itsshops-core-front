@@ -42,7 +42,7 @@
 {# Open Graph #}
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="{{ _siteTitle }}" />
-<meta property="og:locale" content="{{ _locale }}" />
+<meta property="og:locale" content="{{ _locale | ogLocale }}" />
 <meta property="og:title" content="{{ _shareTitle }}" />
 {% if _shareDesc %}<meta property="og:description" content="{{ _shareDesc }}" />{% endif %}
 {% if coreConfig.baseUrl %}<meta property="og:url" content="{{ coreConfig.baseUrl }}{{ page.url }}" />{% endif %}

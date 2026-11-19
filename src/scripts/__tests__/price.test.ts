@@ -20,3 +20,19 @@ describe('createPriceFormatter', () => {
     expect(norm(createPriceFormatter({ locale: 'de', currency: 'EUR', currencyLabel: '€' })(5))).toBe('0,05 €')
   })
 })
+
+describe('createPriceFormatter with a regional tag', () => {
+  it('de-AT puts the euro sign first', () => {
+    expect(norm(createPriceFormatter({ locale: 'de-AT', currency: 'EUR' })(123450))).toBe('€ 1.234,50')
+  })
+
+  it('en-GB formats prices like en', () => {
+    expect(createPriceFormatter({ locale: 'en-GB', currency: 'EUR' })(123450))
+      .toBe(createPriceFormatter({ locale: 'en', currency: 'EUR' })(123450))
+  })
+
+  it('de-AT groups plain numbers with a no-break space', () => {
+    expect(new Intl.NumberFormat('de-AT').format(1234.5)).toBe('1\u00a0234,5')
+  })
+})
+

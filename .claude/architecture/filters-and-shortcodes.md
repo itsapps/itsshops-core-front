@@ -12,6 +12,7 @@ Usage: `{{ value | filterName(args) }}`.
 | Filter | Purpose |
 |---|---|
 | `trans(key, params?)` | Translate `key` at the current page locale (`this.page.lang`). See [i18n.md](i18n.md). |
+| `ogLocale` | Locale → `og:locale` (`de` → `de_DE`, from `localeRegions`). |
 | `nl2br` | Newlines → `<br>` (does **not** escape — trusted text only). |
 | `paragraphs` | Plain text → escaped HTML: blank lines → `<p>`s, single newlines → `<br>`. Use for editor text (e.g. `product.description`) with `\| safe`. |
 | `truncate(n)` | Shorten a string. |
@@ -19,6 +20,8 @@ Usage: `{{ value | filterName(args) }}`.
 | `postalCode` | Format a postal code. |
 
 ### Money, numbers, dates, volume
+All of these format with `intlLocale(locale)` — the bare locale unless `SHOP_FORMAT_LOCALES` sets a
+regional tag ([i18n.md](i18n.md) → "Language vs. region").
 | Filter | Purpose |
 |---|---|
 | `formatPrice(locale?)` | Currency format per `units.price` config. |

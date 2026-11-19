@@ -84,6 +84,9 @@ og/twitter tags or WebSite/Organization JSON-LD (only the page's own flag counts
   title is the raw title **without** the site suffix — `og:site_name` carries the brand); share
   image = `seo.shareImage` → doc `image` → `settings.defaultShareImage`. Leave the share fields
   empty unless a page should read differently when shared than in search results.
+- `og:locale` = locale + region via the `ogLocale` filter (`de_DE` / `en_GB`; override with
+  `localeRegions`, [configuration.md](configuration.md)). `<html lang>`/`hreflang` stay bare —
+  rule: [i18n.md](i18n.md) → "Language vs. region".
 
 `npm run dev` runs `scripts/watch-templates.mjs` alongside tsup so template edits propagate to
 linked consumers without a full rebuild.

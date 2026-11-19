@@ -3,6 +3,7 @@ import { stegaClean } from '@sanity/client/stega'
 import { formatVolumeMl } from '../../filters'
 import type { ResolveContext } from '../../types'
 import type { FilterGroup, ResolvedCategory, ResolvedFilterKey, ResolvedWine } from '../../types/data'
+import { intlLocale } from '../../i18n/format-locale'
 
 export type FilterAccumulator = Map<string, {
   label: string
@@ -99,7 +100,7 @@ export function accumulateFilterGroups(
       }
     }
     if (wine.volume) {
-      addToAcc(acc, 'volume', ctx.translate('filters.volume'), stegaClean(String(wine.volume)), formatVolumeMl(wine.volume, ctx.units.volume, ctx.locale))
+      addToAcc(acc, 'volume', ctx.translate('filters.volume'), stegaClean(String(wine.volume)), formatVolumeMl(wine.volume, ctx.units.volume, intlLocale(ctx.locale)))
     }
   }
 

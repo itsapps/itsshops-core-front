@@ -5,6 +5,7 @@ import type { ResolvedCategory, ResolvedVariant } from '../../types/data'
 import { resolveString } from '../localizers'
 import { formatVolumeMl } from '../../filters'
 import { buildFilterAttributes, accumulateFilterGroups, mergeBundleFilterAttributes, type FilterAccumulator } from './filters'
+import { intlLocale } from '../../i18n/format-locale'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -19,7 +20,7 @@ function buildVariantLabel(
   switch (kind) {
     case 'wine': {
       const parts: string[] = []
-      if (variant.wine?.volume)  parts.push(formatVolumeMl(variant.wine.volume, ctx.units.volume, ctx.locale))
+      if (variant.wine?.volume)  parts.push(formatVolumeMl(variant.wine.volume, ctx.units.volume, intlLocale(ctx.locale)))
       if (variant.wine?.vintage) parts.push(String(variant.wine.vintage))
       return { label: parts.length ? parts.join(' · ') : title, labels: parts.length ? parts : [title] }
     }

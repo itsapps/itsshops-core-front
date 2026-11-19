@@ -19,6 +19,7 @@ import { CheckoutShipping } from './checkout-shipping'
 import { CheckoutFulfillment } from './checkout-fulfillment'
 import { COUNTRY_CODES } from '../shared/countries'
 import { CheckoutSummary } from './checkout-summary'
+import { pageFormatLocale } from './price'
 import { CheckoutStripe } from './checkout-stripe'
 import { CheckoutExpress } from './checkout-express'
 import { CheckoutCoupon, type CouponLabels } from './checkout-coupon'
@@ -154,7 +155,7 @@ export async function initCheckout(): Promise<void> {
     : null
   /** The method the request asks for: the chosen pickup, else the chosen delivery method. */
   const selectedMethodId = (): string | undefined => fulfillment?.getPickupId() ?? shipping.getSelectedId()
-  const summary = new CheckoutSummary(itemsEl, totalsEl, locale, currency, currencyLabel, {
+  const summary = new CheckoutSummary(itemsEl, totalsEl, pageFormatLocale() || locale, currency, currencyLabel, {
     subtotal: t.subtotal,
     shipping: t.shipping,
     total: t.total,

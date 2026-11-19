@@ -1,3 +1,10 @@
+/** The page's Intl tag for formatting: `data-format-locale` on `<html>` (opt-in
+ *  `SHOP_FORMAT_LOCALES`, set by the build) or else `lang`. Formatting only — the API, Stripe and
+ *  the order keep the bare `lang`. */
+export function pageFormatLocale(): string | undefined {
+  return document.documentElement.dataset.formatLocale || document.documentElement.lang || undefined
+}
+
 export type PriceFormatOptions = {
   locale?: string
   currency: string

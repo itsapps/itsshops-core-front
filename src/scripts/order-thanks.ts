@@ -1,7 +1,7 @@
 import { clearCart } from './cart-store'
 import { cloneTemplate, fillSlot } from './template-utils'
 import { fillCartItem } from './cart-item-render'
-import { createPriceFormatter } from './price'
+import { createPriceFormatter, pageFormatLocale } from './price'
 import { renderTotals } from './order-totals'
 import { takeOrderSnapshot, type OrderSnapshot } from './order-snapshot'
 import { clearPendingPayment } from './pending-payment'
@@ -40,7 +40,7 @@ function showStatus(root: HTMLElement, status: 'succeeded' | 'processing', email
 function renderSnapshot(root: HTMLElement, snapshot: OrderSnapshot): void {
   const d = root.dataset
   const format = createPriceFormatter({
-    locale: document.documentElement.lang || undefined,
+    locale: pageFormatLocale(),
     currency: d.currency || 'EUR',
     currencyLabel: d.currencyLabel || undefined,
   })

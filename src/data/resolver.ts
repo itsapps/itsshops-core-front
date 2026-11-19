@@ -25,6 +25,7 @@ import { resolveSettings, resolveShopSettings, resolveShippingMethods } from './
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
 import { buildSearchIndex, resolveSearchFields } from './search'
 import { formatVolumeMl } from '../filters'
+import { intlLocale } from '../i18n/format-locale'
 
 export async function buildCmsData(
   client: SanityClient,
@@ -218,7 +219,7 @@ export async function buildCmsData(
               return imageSrcsetData(imageBuilder, img, size)
             },
             imageSizes: context.imageSizes,
-            formatVolume: (ml, locale) => formatVolumeMl(ml, config.units.volume, locale),
+            formatVolume: (ml, locale) => formatVolumeMl(ml, config.units.volume, intlLocale(locale, config.formatLocales)),
           })
         : [],
       searchFields: extensions.search

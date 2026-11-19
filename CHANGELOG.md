@@ -6,6 +6,12 @@ Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow
 
 ## Unreleased
 
+- **`og:locale` is now valid** (`de_DE` / `en_GB` instead of `de` / `en`, which Facebook and
+  LinkedIn ignored). Override per locale with the new config field `localeRegions` (e.g.
+  `{ de: 'AT' }`). New filter `ogLocale`. No customer action.
+- **Opt-in regional formats** via env var `SHOP_FORMAT_LOCALES` (e.g. `de:de-AT,en:en-GB`; build
+  **and** functions scope): dates, numbers and prices on the site, in the browser, in mails and
+  PDFs. Unset = unchanged output. `i18n.md` → "Language vs. region".
 - **Store pickup** (click & collect; plan `.claude/plans/store-pickup.md`, needs core-back with the
   pickup shipping method): a published `shippingMethod` with `methodType: 'pickup'` is offered in
   the checkout ("Versand oder Abholung"), for any address country (pickup mode lists every ISO

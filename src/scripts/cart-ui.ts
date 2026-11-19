@@ -1,7 +1,7 @@
 import { addItem, removeItem, updateQuantity, getCart, getCount, getTotal } from './cart-store'
 import { cloneTemplate } from './template-utils'
 import { fillCartItem } from './cart-item-render'
-import { createPriceFormatter } from './price'
+import { createPriceFormatter, pageFormatLocale } from './price'
 import { lockInertOutside } from './inert-lock'
 import { reconcilePendingPayment } from './pending-payment'
 
@@ -100,7 +100,7 @@ export function initCart(): void {
   cartEmptyEl = cartSidebar.querySelector('[data-cart-empty]')
 
   formatPrice   = createPriceFormatter({
-    locale: document.documentElement.lang || 'de',
+    locale: pageFormatLocale() || 'de',
     currency: cartSidebar.dataset.currency || 'EUR',
     currencyLabel: cartSidebar.dataset.currencyLabel || undefined,
   })

@@ -2,7 +2,24 @@ import type { Config, CoreConfig, ItsshopsFeatures, Features, Locale, EnvVarName
 import type { ClientPerspective } from '@sanity/client'
 import { buildPermalinkTranslations, buildUserPaths } from '../i18n/permalinks'
 import { readFormality } from '../i18n/formality'
+import { readFormatLocales } from '../i18n/format-locale'
 import { resolveRedirects } from './redirects'
+
+const DEFAULT_LOCALE_REGIONS: Record<Locale, string> = { de: 'DE', en: 'GB' }
+
+/** Region per locale for og:locale — ISO 3166-1 alpha-2, normalised to upper case. An invalid
+ *  value warns and falls back to the default; a missing key takes the default silently. */
+export function resolveLocaleRegions(input?: Partial<Record<Locale, string>>): Record<Locale, string> {
+  const out = { ...DEFAULT_LOCALE_REGIONS }
+  for (const locale of Object.keys(DEFAULT_LOCALE_REGIONS) as Locale[]) {
+    const raw = input?.[locale]
+    if (raw === undefined) continue
+    const value = String(raw).trim().toUpperCase()
+    if (/^[A-Z]{2}$/.test(value)) out[locale] = value
+    else console.warn(`[itsshops] Invalid localeRegions.${locale} "${raw}", using "${DEFAULT_LOCALE_REGIONS[locale]}"`)
+  }
+  return out
+}
 
 export function resolveConfig(config: Config): CoreConfig {
   const env = readEnv()
@@ -39,12 +56,14 @@ export function resolveConfig(config: Config): CoreConfig {
     },
     locales:       config.locales || ['de', 'en'],
     defaultLocale: config.defaultLocale || 'de',
+    localeRegions: resolveLocaleRegions(config.localeRegions),
     features,
     permalinks:         config.permalinks ?? {},
     resolvedPermalinks: buildPermalinkTranslations(config.permalinks),
     userPaths: buildUserPaths(),
     translations:       config.translations ?? {},
     formality:          readFormality(),
+    formatLocales:      readFormatLocales(),
     headers: {
       extra:  resolveCspDirectives(config.headers?.extra),
       routes: (config.headers?.routes ?? []).map(r => ({

@@ -1,6 +1,6 @@
 import MiniSearch from 'minisearch'
 import type { SearchItem } from '../types/data'
-import { createPriceFormatter } from './price'
+import { createPriceFormatter, pageFormatLocale } from './price'
 
 type SearchResult = SearchItem & { score: number }
 
@@ -141,7 +141,7 @@ export function init(): void {
   indexUrl = input.dataset.searchIndexUrl ?? null
   searchFields = JSON.parse(input.dataset.searchFields ?? '["title"]')
   formatPrice = createPriceFormatter({
-    locale: document.documentElement.lang || undefined,
+    locale: pageFormatLocale(),
     currency: input.dataset.currency || 'EUR',
     currencyLabel: input.dataset.currencyLabel || undefined,
   })

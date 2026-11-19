@@ -60,6 +60,7 @@ export type EnvVars = {
   // Shop locale behaviour (build + functions)
   SHOP_FORMALITY: string | undefined  // 'formal' | 'informal' — German form of address (default: 'formal')
   SHOP_TIMEZONE:  string | undefined  // IANA name for dates/times in mails (default: 'Europe/Vienna')
+  SHOP_FORMAT_LOCALES: string | undefined  // opt-in Intl tags per locale, e.g. 'de:de-AT,en:en-GB' (default: bare locale)
 
   // Email — provider selection
   EMAIL_PROVIDER: string | undefined  // 'mailgun' | 'resend' (default: 'mailgun')
@@ -395,11 +396,15 @@ export type ResolveHooks = NonNullable<Extensions['resolve']>
 //   CAPTCHA_SITE_KEY           → captchaSiteKey
 //   SUPPORT_EMAIL              → supportEmail
 //   SHOP_FORMALITY             → formality (env only — the functions read it too)
+//   SHOP_FORMAT_LOCALES        → formatLocales (env only — the functions read it too)
 
 export type Config = {
   // required — project-specific, no env var equivalent
   locales?: Locale[]
   defaultLocale?: Locale
+  /** Region per locale (ISO 3166-1 alpha-2), used where a region is required (og:locale).
+   *  Default `{ de: 'DE', en: 'GB' }`. */
+  localeRegions?: Partial<Record<Locale, string>>
 
   // sanity — projectId/dataset/token can come from env vars
   sanity?: SanityClientConfig
@@ -519,6 +524,8 @@ export type CoreConfig = {
   sanity: SanityClientConfig & { projectId: string; dataset: string; studioUrl: string | undefined }
   locales: Locale[]
   defaultLocale: Locale
+  /** Region per locale (og:locale), from `localeRegions` (see `resolveLocaleRegions`) */
+  localeRegions: Record<Locale, string>
   features: Features
   permalinks: Partial<Record<Locale, PermalinkTranslations>>
   resolvedPermalinks: Record<Locale, Required<PermalinkTranslations>>
@@ -526,6 +533,8 @@ export type CoreConfig = {
   translations: Record<string, any>
   /** German form of address, from `SHOP_FORMALITY` (see `i18n/formality.ts`) */
   formality: import('../i18n/formality').Formality
+  /** Opt-in Intl tag per locale for formatting, from `SHOP_FORMAT_LOCALES` (see `i18n/format-locale.ts`) */
+  formatLocales: Partial<Record<Locale, string>>
   headers: {
     extra:  ResolvedCspDirectives
     routes: Array<{ path: string; extra: ResolvedCspDirectives }>

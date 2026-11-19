@@ -113,3 +113,6 @@ alternative was rejected, a constraint discovered the hard way.
   orders taxed by the pickup location's country; pickup open to every address country.
 - [pickup-reuses-shipped-delivered-states.md](pickup-reuses-shipped-delivered-states.md) — pickup
   `shipped` = "Abholbereit", `delivered` = "Abgeholt"; `isHandedOver()` where it matters.
+- [locale-regions-og-locale-and-format-env.md](locale-regions-og-locale-and-format-env.md) —
+  language stays bare; `og:locale` region from config `localeRegions` (default `de_DE`/`en_GB`),
+  regional formatting opt-in via env `SHOP_FORMAT_LOCALES`.
