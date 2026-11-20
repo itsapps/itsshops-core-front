@@ -161,6 +161,14 @@ nothing) and a **flag** where core itself builds something the customer can't re
 (e.g. a page core generates). Plans must state which side each part lands on. Owner's rule,
 2026-11-04; example: `.claude/plans/interest-list-and-invites.md`.
 
+**Page modules:** a content module (how something looks on a page: FAQ, hero, teaser, download,
+embed, …) belongs in `itsshops-starter` (`modules/`), not in core — even when every customer uses
+it. Core gets a module only when core itself produces its data (product/category lists, legal texts
+generated from settings); `carousel` and `youtube` are older exceptions. Core never reads a starter
+module's type: anything a starter module needs on top (e.g. `FAQPage` JSON-LD) is built inside the
+module or the starter's `extensions.mts`, and core offers only generic infrastructure (e.g. a
+click-to-load mechanism, the `schemas` bundle). Owner, 2026-11-19.
+
 ## No credentials in the Studio bundle
 
 The Studio is a public SPA: every `SANITY_STUDIO_*` var and everything in a customer's
