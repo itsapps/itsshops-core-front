@@ -148,8 +148,16 @@ Checked against WooCommerce's source (`class-wc-cart-totals.php`, `abstract-wc-o
 - **`tax_lines[].tax_total`** = the item line taxes of that rate, **without shipping**. Shipping tax
   (rounded on its own) is only in `shipping_tax_total` / `shipping_tax`. A shipping line lists its
   rate in `taxes` even at `0.00` (free shipping); `[]` only without a rate.
-- **Coupons:** the gross discount is spread proportionally over the lines (rounding remainder on
-  the last line, so lines + shipping = `total`). `subtotal*` pre-discount, `total*` post-discount.
+- **Discounts:** each line's discounted gross = its gross − its **stored** discount
+  (`orderItem.discount`, for an expanded bundle item its own `orderItemBundleItem.discount`; unset
+  = 0) — the allocation checkout wrote (core-front 6.0.0, discounts model), never recomputed, so
+  lines + shipping = `total` by construction (no factor, no remainder). `subtotal*` pre-discount,
+  `total*` post-discount. Orders from before 6.0.0 got their line discounts from the migration
+  (`itsshops sanity migrate-discounts`), computed with the **old** wc-api algorithm (proportional,
+  `Math.round`, remainder on the last line), so their output is byte-identical to what the ERP
+  already received (tested against `__tests__/fixtures/wc-api-legacy-orders.json`). An old-shape
+  coupon order **not** migrated yet has no line discounts — its lines then don't add up to `total`
+  (Rollout: run the migration right after the frontend publish).
 
 Invariants (tested in `src/netlify/__tests__/wc-api.test.ts`):
 - `tax_lines[r].tax_total` == sum of `line_items[].total_tax` at rate r
@@ -170,14 +178,15 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
 - The **`dp`** query param (decimal places) is ignored; values are always 2 dp. (WC formats the
   money strings *and* `taxes[].total`/`subtotal` with `dp`, default 2 — so at default `dp` our
   `taxes[]` match WC exactly; only `dp` > 2 would show WC's stored unrounded line taxes.)
-- No **`coupon_lines`** (WC lists code + net/tax discount per coupon there). The discount is only
-  in the line amounts and `discount_total`/`discount_tax` — enough for wineNET (see below).
+- No **`coupon_lines`** (WC lists code + net/tax discount per coupon there). The discount — code
+  and automatic discounts alike — is only in the line amounts and `discount_total`/`discount_tax`
+  — enough for wineNET (see below).
 - **Bundles** are sent as **their items, as ordinary line items** (`expandOrderLines` in
   `wc-api.ts`; decision C): no parent line, no €0 lines, no `bundled_by`/`bundled_items`. Per item:
   `product_id`/`variation_id` = `stableId` of the item's own product/variant (same as bought loose,
   so the ERP's learned mapping applies), `sku`, `name` = `title - subtitle`, `quantity` = bundle qty
-  × item qty, gross = stored share × bundle qty (`lineGross`, which the coupon allocation and all
-  amounts use), its own `taxes`; `meta_data` adds `_bundle_title`, `_bundle_sku`,
+  × item qty, gross = stored share × bundle qty (`lineGross`, which all amounts use; its discount = the
+  item's own stored `discount`), its own `taxes`; `meta_data` adds `_bundle_title`, `_bundle_sku`,
   `_bundle_variant_id`. Line id = `stableId(orderNumber:lineKey:bundleItemKey)`; ids are unique per
   order (on a hash clash re-hashed with `:1`, `:2`, … — deterministic). Older bundle orders without
   `bundle.items` stay one line.

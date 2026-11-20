@@ -270,7 +270,12 @@ export default {
         notYet: "This coupon is not yet valid",
         exhausted: "This coupon has reached its redemption limit",
         belowMinimum: "Cart total is below the coupon's minimum",
+        notApplicable: "This coupon applies to no item in your cart",
+        limitPerEmail: "This coupon has already been used with this email address",
+        belowMinQuantity: "Your cart has too few matching items for this coupon",
+        notCombinable: "Cannot be combined with the promotion “{title}”",
       },
+      notDiscounted: "Not discounted: {items}",
     },
   },
   ageGate: {

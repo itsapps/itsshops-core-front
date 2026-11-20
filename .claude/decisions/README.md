@@ -102,7 +102,7 @@ alternative was rejected, a constraint discovered the hard way.
   is customer CSS (starter), not core: it's design, and a layered core rule couldn't enforce it.
 - [product-free-shipping-variant-flag.md](product-free-shipping-variant-flag.md) — a variant flag
   makes the whole order ship free (every delivery method); core-front follows the data; reason
-  stored as product > threshold > coupon.
+  stored as product > threshold > coupon. **Superseded** by `discounts-model.md`.
 - [bundle-items-total-not-compare-at.md](bundle-items-total-not-compare-at.md) — a bundle's sum of
   single prices is its own line (`productBundleItemsTotal`), never a struck-through "was" price.
 - [bundle-filters-by-contents.md](bundle-filters-by-contents.md) — bundles match filters by their
@@ -116,3 +116,6 @@ alternative was rejected, a constraint discovered the hard way.
 - [locale-regions-og-locale-and-format-env.md](locale-regions-og-locale-and-format-env.md) —
   language stays bare; `og:locale` region from config `localeRegions` (default `de_DE`/`en_GB`),
   regional formatting opt-in via env `SHOP_FORMAT_LOCALES`.
+- [discounts-model.md](discounts-model.md) — one `discount` model (codes + automatic, selector,
+  exclusions, combinability) and one line-level pipeline; allocation stored on the order;
+  threshold stays on the shipping method; old data migrated. Supersedes the variant flag.

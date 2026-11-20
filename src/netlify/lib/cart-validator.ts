@@ -10,6 +10,33 @@ import type { CheckoutCartItem } from '../types/api'
 import { findTaxRate, extractVat, splitBundlePrice } from './tax'
 import { resolveLocalizedTitle, resolveVariantWeight, resolveBundleWeight } from './shipping'
 import { composeSubtitle, type SubtitleFormat } from './order-item-display'
+import { withAncestors, type SelectorLine } from '../../shared/discounts'
+
+type CategoryParents = Map<string, string | null | undefined> | Record<string, string | null | undefined>
+
+/**
+ * What the discount selector sees of a top-level line: the variant's categories if non-empty,
+ * else the product's (as `data/resolve/variants.ts`), plus their ancestors; manufacturers with
+ * the same fallback (already coalesced in the query); compare-at price against the effective
+ * price. Bundle items are never matched (a bundle matches by its own fields).
+ */
+export function selectorLineFromVariant(
+  variant: SanityVariantResult,
+  price: number,
+  categoryParents: CategoryParents = {},
+): SelectorLine {
+  const own = variant.categoryIds?.filter(Boolean) ?? []
+  const categoryIds = own.length > 0 ? own : variant.productCategoryIds?.filter(Boolean) ?? []
+  const compareAt = variant.compareAtPrice ?? variant.productCompareAtPrice
+  return {
+    variantId: variant._id,
+    productId: variant.productId ?? '',
+    kind: variant.kind,
+    categoryIds: withAncestors(categoryIds, categoryParents),
+    manufacturerIds: variant.manufacturerIds?.filter(Boolean) ?? [],
+    hasCompareAtPrice: typeof compareAt === 'number' && compareAt > price,
+  }
+}
 
 const MAX_DISPLAY_LEN = 300
 
@@ -42,6 +69,8 @@ export function validateCart(
   hasStockFeature = true,
   defaultTaxCategoryCode?: string | null,
   volumeUnit = 'l',
+  /** Category id → parent id (`CHECKOUT_QUERY` `categories`), for the selector's ancestors. */
+  categoryParents: CategoryParents = {},
 ): CartValidationResult {
   const format = { volumeUnit, locale }
   const variantMap = new Map(variants.map(v => [v._id, v]))
@@ -130,8 +159,7 @@ export function validateCart(
       wine,
       options,
       bundleItems,
-      // Only the line's own flag counts (a bundle's children don't).
-      grantsFreeShipping: variant.kind !== 'digital' && variant.grantsFreeShipping === true,
+      selector: selectorLineFromVariant(variant, price, categoryParents),
     }
 
     validatedItems.push(item)

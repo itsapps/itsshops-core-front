@@ -145,7 +145,8 @@ describe('CheckoutExpress', () => {
       ],
       selectedShippingMethodId: 'sm1',
       items: [],
-      appliedCoupons: [],
+      appliedDiscounts: [],
+      notDiscountedVariantIds: [],
     }
     const updateAmount = vi.fn()
     const onCreatePayment = vi.fn(async () => ({ error: 'stop' }))
@@ -231,7 +232,8 @@ describe('CheckoutExpress — pickup', () => {
       ],
       selectedShippingMethodId: 'pu1',
       items: [{ variantId: 'a', title: 'Wein', subtitle: null, price: 1500, quantity: 2 }],
-      appliedCoupons: [],
+      appliedDiscounts: [],
+      notDiscountedVariantIds: [],
     }
     const onCreatePayment = vi.fn(async (_input: any) => ({ error: 'stop' }))
     const express = new CheckoutExpress({

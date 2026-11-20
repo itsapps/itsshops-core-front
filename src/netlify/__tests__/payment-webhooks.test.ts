@@ -97,3 +97,50 @@ describe('payment-webhooks refunds', () => {
     expect(statusMock).not.toHaveBeenCalled()
   })
 })
+
+describe('payment-webhooks — order creation, discount increments', () => {
+  const sanity = async () => await import('../services/sanity')
+  const orderMeta = (extra: Record<string, unknown>) => ({
+    _id: 'orderMeta-1', _type: 'orderMeta', paymentIntentId: 'pi_9',
+    orderItems: [{ _key: 'l1', _type: 'orderItem', kind: 'wine', variantId: 'v1', productId: 'p1', title: 'W', quantity: 1, price: 2000, vatRate: 13, vatAmount: 230, packed: false }],
+    customer: { _type: 'orderCustomer', locale: 'de', contactEmail: 'a@b.at', billingAddress: {} },
+    totals: { _type: 'orderTotals', subtotal: 2000, shipping: 0, discount: 0, grandTotal: 2000, totalVat: 230, vatBreakdown: [], currency: 'EUR' },
+    fulfillment: { _type: 'fulfillment', methodTitle: 'DPD', methodType: 'delivery', shippingCost: 0 },
+    ...extra,
+  })
+
+  beforeEach(async () => {
+    const s = await sanity()
+    vi.mocked(s.findOrderByPaymentIntent).mockReset().mockResolvedValue(null)
+    vi.mocked(s.getNextInvoiceNumber).mockReset().mockResolvedValue({ invoiceNumber: 7, orderNumberPrefix: null, invoiceNumberPrefix: null })
+    vi.mocked(s.commitOrderTransaction).mockReset().mockResolvedValue({ _id: 'order-1' })
+    vi.mocked(s.fetchOrderMeta).mockReset()
+  })
+
+  const succeed = () => deliver('payment_intent.succeeded', { id: 'pi_9', created: 1, metadata: { orderMetaId: 'orderMeta-1' } })
+
+  it('increments every applied discount with a ref, once per id', async () => {
+    const s = await sanity()
+    vi.mocked(s.fetchOrderMeta).mockResolvedValue(orderMeta({
+      appliedDiscounts: [
+        { _key: 'a', _type: 'appliedDiscount', discountRef: { _type: 'reference', _ref: 'discount-c1', _weak: true }, title: 'C', trigger: 'code', target: 'order', valueType: 'percent', amount: 0 },
+        { _key: 'b', _type: 'appliedDiscount', title: 'Versandkostenfrei durch Produkt', trigger: 'automatic', target: 'shipping', valueType: 'free' },
+      ],
+    }) as never)
+    await succeed()
+    expect(vi.mocked(s.commitOrderTransaction).mock.calls[0][0].discountIncrements).toEqual([{ discountId: 'discount-c1', by: 1 }])
+  })
+
+  it('an old-shape orderMeta (appliedCoupons) is created as a migrated order and counts the new id', async () => {
+    const s = await sanity()
+    vi.mocked(s.fetchOrderMeta).mockResolvedValue(orderMeta({
+      totals: { _type: 'orderTotals', subtotal: 2000, shipping: 0, discount: 200, grandTotal: 1800, totalVat: 207, vatBreakdown: [], currency: 'EUR' },
+      appliedCoupons: [{ _key: 'c', _type: 'appliedCoupon', couponRef: { _type: 'reference', _ref: 'coupon-x', _weak: true }, code: 'TEN', discountType: 'percent', value: 10, discountAmount: 200 }],
+    }) as never)
+    await succeed()
+    const { doc, discountIncrements } = vi.mocked(s.commitOrderTransaction).mock.calls[0][0]
+    expect(discountIncrements).toEqual([{ discountId: 'discount-coupon-x', by: 1 }])
+    expect(doc).not.toHaveProperty('appliedCoupons')
+    expect(doc.orderItems[0].discount).toBe(200)
+  })
+})

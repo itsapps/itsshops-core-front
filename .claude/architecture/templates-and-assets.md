@@ -448,8 +448,8 @@ with the next build (item price changes included). Why: ADR `bundle-items-total-
 
 ### Product free shipping in templates
 
-A variant with `grantsFreeShipping` (core-front `commerce-and-netlify.md` → "Product free
-shipping"): the product page's tax line (`core/components/product/container.njk`) reads
+A variant with the derived `grantsFreeShipping` (an unconditional automatic shipping discount
+matches it — `data-layer.md`, core-front `commerce-and-netlify.md` → "Product free shipping"): the product page's tax line (`core/components/product/container.njk`) reads
 `product.taxFreeShippingInfoText` ("Inkl. MwSt. / Versandkostenfrei") instead of
 `product.taxShippingInfoText` — a full `product/container.njk` override must switch the same line.
 Cards get the macro `productFreeShipping(product, class)` (`macros/product.njk`, plain text inside
@@ -488,8 +488,9 @@ Merchant-listing data (`src/schema/shipping.ts`; shipping and return policy only
   (numbers: "2 – 5 Werktage"; unparseable → omitted, and Google ignores the entry). Weight: the
   variant's or product's `weight`, wines estimated from the volume (`resolveVariantWeight` /
   `resolveBundleWeight` in `netlify/lib/shipping.ts`, shared with checkout). Rates without
-  `maxWeight` aren't published. A variant with `grantsFreeShipping` publishes rate 0 for every
-  method (`variantToCartItem` passes the flag), as checkout charges.
+  `maxWeight` aren't published. A variant with the derived `grantsFreeShipping` publishes rate 0
+  for every method (read in `schema/shipping.ts`, not passed through the cart item), as checkout
+  charges.
 - **`hasMerchantReturnPolicy`** on the `Organization` **and on each offer** (Google's Rich Results
   Test doesn't apply the Organization's policy to offers — checked live 2026-10-19): 14 days
   by mail to the union of the delivery methods' countries, `returnPolicyCountry` = return address

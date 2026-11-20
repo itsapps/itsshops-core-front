@@ -6,6 +6,7 @@ import { resolveString } from '../localizers'
 import { formatVolumeMl } from '../../filters'
 import { buildFilterAttributes, accumulateFilterGroups, mergeBundleFilterAttributes, type FilterAccumulator } from './filters'
 import { intlLocale } from '../../i18n/format-locale'
+import { matchesSelector, withAncestors, type DiscountInput, type SelectorLine } from '../../shared/discounts'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -444,7 +445,8 @@ export function resolveVariants(
       taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
       stock: variant.stock ?? null,
       weight: variant.weight ?? product.weight ?? null,
-      grantsFreeShipping: kind !== 'digital' && variant.grantsFreeShipping === true,
+      // Set by `applyBuildShippingDiscounts` (resolver post-pass) from the automatic discounts.
+      grantsFreeShipping: false,
       wine,
       options: (variant.options ?? [])
         // guard against an option with an unset/dangling group ref (group is
@@ -514,4 +516,40 @@ export function resolveVariants(
 
   mergeBundleFilterAttributes(resolvedVariants, filterAcc)
   return resolvedVariants
+}
+
+/**
+ * What the discount selector sees of a resolved variant (the build's adapter; checkout's is
+ * `selectorLineFromVariant` in `cart-validator.ts`). Categories, manufacturers and the
+ * compare-at price are already resolved with the variant → product fallbacks; ancestors via
+ * `parentById` (`ResolvedCategory.parentId`). Without `shop.category` the categories are empty.
+ */
+export function selectorLineFromResolved(
+  v: Pick<ResolvedVariant, '_id' | 'product' | 'kind' | 'categories' | 'manufacturers' | 'compareAtPrice' | 'price'>,
+  parentById: Map<string, string | null | undefined>,
+): SelectorLine {
+  return {
+    variantId: v._id,
+    productId: v.product._id,
+    kind: v.kind,
+    categoryIds: withAncestors(v.categories.map(c => c._id), parentById),
+    manufacturerIds: v.manufacturers.map(m => m._id),
+    hasCompareAtPrice: v.compareAtPrice != null && v.compareAtPrice > v.price,
+  }
+}
+
+/**
+ * Derive `grantsFreeShipping` from the automatic shipping discounts the build may state as a
+ * static claim (`isUnconditional`, filtered by the caller): a cart holding just this variant
+ * would ship free. Digital variants never ship. Mutates `variants`.
+ */
+export function applyBuildShippingDiscounts(
+  variants: ResolvedVariant[],
+  discounts: Pick<DiscountInput, 'appliesTo'>[],
+  parentById: Map<string, string | null | undefined>,
+): void {
+  for (const v of variants) {
+    v.grantsFreeShipping = v.kind !== 'digital' && discounts.length > 0
+      && discounts.some(d => matchesSelector(selectorLineFromResolved(v, parentById), d.appliesTo))
+  }
 }

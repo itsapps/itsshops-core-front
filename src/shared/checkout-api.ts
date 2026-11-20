@@ -79,17 +79,27 @@ export type TotalsResponse = {
   vatBreakdown: VatBreakdownItem[]
 }
 
-export type AppliedCouponResponse = {
-  code: string
-  discountType: 'percent' | 'fixed' | 'freeShipping'
-  value: number | null
-  discountAmount: number
+/**
+ * One applied discount (code or automatic), in apply order (items → order → shipping). `amount`
+ * = cents saved; for shipping the waived cost of the selected method (0 when it was already free
+ * — a code still shows as applied then).
+ */
+export type AppliedDiscountResponse = {
+  /** In the request locale; may be empty (the client falls back to its "Rabatt" label). */
+  title: string
+  /** Code discounts only. */
+  code?: string
+  trigger: 'code' | 'automatic'
+  target: 'items' | 'order' | 'shipping'
+  amount: number
 }
 
 export type CouponErrorResponse = {
   code: string
   errorCode: string
   message: string
+  /** `COUPON_NOT_COMBINABLE`: the title of the automatic discount that won. */
+  discountTitle?: string
 }
 
 export type SupportedCountry = {
@@ -106,7 +116,9 @@ export type CalculateResponse = {
   selectedCountry: string
   supportedCountries: SupportedCountry[]
   currency: 'EUR'
-  appliedCoupons: AppliedCouponResponse[]
+  appliedDiscounts: AppliedDiscountResponse[]
+  /** Cart lines the applied code discount skipped (not eligible / shop-excluded) — the hint. */
+  notDiscountedVariantIds: string[]
   couponError: CouponErrorResponse | null
 }
 

@@ -1,6 +1,7 @@
 # Free shipping granted by a variant flag, for the whole order
 
-Status: accepted
+Status: superseded by `discounts-model.md` (core-front 6.0.0 / core-back 7.0.0 — the flag became
+an automatic shipping discount)
 Date: 2026-11-12
 
 ## Context

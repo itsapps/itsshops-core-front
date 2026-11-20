@@ -51,8 +51,9 @@ export function extractNet(grossCents: number, ratePercent: number): number {
  * largest **gross** goods value (sum of price × quantity incl. VAT, i.e. the shop
  * prices) — not the VAT amount, which would tilt the choice towards the higher rate.
  * Ties break to the higher rate (safer for the tax authority). Zero-rate items are
- * ignored; returns 0 if the cart is empty or all items are tax-exempt. A coupon reduces
- * every item by the same factor, so it never changes the result.
+ * ignored; returns 0 if the cart is empty or all items are tax-exempt. Always on the
+ * **undiscounted** gross (owner decision, 2026-11-20 — pending the tax advisor): with shop-wide
+ * exclusions a discount no longer reduces every rate by the same factor, but the basis stays.
  */
 export function dominantItemVatRate(items: ValidatedCartItem[]): number {
   const grossByRate = new Map<number, number>()

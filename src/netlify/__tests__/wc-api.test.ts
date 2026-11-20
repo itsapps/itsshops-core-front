@@ -10,16 +10,37 @@ import { log } from '../utils/logger'
 import { sendOrderNotification } from '../lib/order-notifier'
 import { calculateTotals } from '../lib/totals'
 import { extractVat } from '../lib/tax'
+import { evaluateDiscounts, type DiscountResult } from '../../shared/discounts'
+import { convertLegacyOrderMeta, type OrderLike } from '../lib/discount-migration'
+import legacy from './fixtures/wc-api-legacy-orders.json'
 
 type Item = { price: number; quantity: number; vatRate: number }
 
-/** Builds an order the way checkout does (calculateTotals + per-line vatAmount). */
+/** A fixed order discount of `amount` cents over the lines, through the checkout pipeline. */
+function pipeline(lines: { price: number; quantity: number; bundleItems?: { price: number }[] }[], amount: number): DiscountResult | null {
+  if (!amount) return null
+  return evaluateDiscounts({
+    lines: lines.map((l, i) => ({
+      selector: { variantId: `v${i}`, productId: `p${i}`, kind: 'wine', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
+      unitPrice: l.price,
+      quantity: l.quantity,
+      childPrices: l.bundleItems?.map(bi => bi.price) ?? null,
+    })),
+    couponCode: 'X',
+    codeDiscount: {
+      _id: 'd', title: 'X', trigger: 'code', code: 'X', enabled: true, target: 'order', valueType: 'fixed', value: amount,
+    },
+  })
+}
+
+/** Builds an order the way checkout does (pipeline + calculateTotals + per-line vatAmount/discount). */
 function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0, country = '' } = {}): SanityOrder {
+  const discounts = pipeline(items, discount)
   const totals = calculateTotals(
     items.map(i => ({ ...i })) as never,
     shipping ? { price: shipping } as never : null,
     shippingRate,
-    discount ? { discountAmount: discount, zeroShipping: false } : null,
+    discounts,
   )
   const shippingVat = extractVat(shipping, shippingRate)
   return {
@@ -42,6 +63,7 @@ function order(items: Item[], { shipping = 0, shippingRate = 13, discount = 0, c
       _key: `k${n}`, kind: 'wine', variantId: `v${n}`, productId: `p${n}`, title: `Wine ${n}`,
       subtitle: null, sku: null, weight: null, ...i,
       vatAmount: extractVat(i.price * i.quantity, i.vatRate),
+      ...(discounts?.lines[n].discount && { discount: discounts.lines[n].discount }),
     })),
     fulfillment: {
       methodTitle: 'DPD (AT)', methodType: 'delivery', shippingCost: shipping,
@@ -209,21 +231,29 @@ describe('wc-api bundles → their items as ordinary lines', () => {
   function bundleOrder(bundleQty: number, items: BI[], { loose = [] as Item[], discount = 0, shipping = 0, withItems = true } = {}) {
     const unit = items.reduce((sum, bi) => sum + bi.price, 0)
     const bundleItems = items.map(bi => ({ ...bi, vatAmount: 0 }))
+    const lines = [{ price: unit, quantity: bundleQty, vatRate: 13, bundleItems }, ...loose]
+    const discounts = pipeline(lines, discount)
     const totals = calculateTotals(
-      [{ price: unit, quantity: bundleQty, vatRate: 13, bundleItems }, ...loose] as never,
+      lines as never,
       shipping ? { price: shipping } as never : null,
       13,
-      discount ? { discountAmount: discount, zeroShipping: false } : null,
+      discounts,
     )
-    const o = order(loose, { shipping, discount })
+    const o = order(loose, { shipping })
+    o.orderItems.forEach((item, n) => {
+      const d = discounts?.lines[n + 1].discount
+      if (d) item.discount = d
+    })
     o.totals = { ...totals, totalVat: totals.tax, currency: 'EUR' }
     o.orderItems = [{
       _key: 'box', kind: 'bundle', variantId: 'box-v', productId: 'box-p', title: 'Weinbox',
       subtitle: '2× Wein, 1× Saft', sku: 'BOX', weight: null, quantity: bundleQty, price: unit, vatRate: 13,
       vatAmount: 0,
-      bundle: withItems ? { items: items.map(bi => ({
+      ...(discounts?.lines[0].discount && { discount: discounts.lines[0].discount }),
+      bundle: withItems ? { items: items.map((bi, c) => ({
         _key: bi.key, variantId: bi.variant, productId: bi.product, title: `T ${bi.variant}`,
         subtitle: '2023 · 750 ml', sku: `S-${bi.variant}`, quantity: bi.quantity, price: bi.price, vatRate: bi.vatRate,
+        ...(discounts?.lines[0].children?.[c] && { discount: discounts.lines[0].children[c] }),
       })) } : null,
     }, ...o.orderItems]
     return o
@@ -459,4 +489,15 @@ describe('wc-api PUT orders/:id', () => {
     expect(sendOrderNotification).toHaveBeenCalledOnce()
     expect(body.status).toBe('completed')
   })
+})
+
+describe('wc-api — orders migrated from the coupon shape', () => {
+  const fixtures = legacy as unknown as { order: SanityOrder & OrderLike; wc: unknown }[]
+  it.each(fixtures.map(f => [f.order.orderNumber, f] as const))(
+    'order %s: mapOrder(migrated) equals what wineNET already received',
+    (_n, f) => {
+      const migrated = convertLegacyOrderMeta(structuredClone(f.order)) as unknown as SanityOrder
+      expect(JSON.stringify(map(migrated))).toBe(JSON.stringify(f.wc))
+    },
+  )
 })

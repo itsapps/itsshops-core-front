@@ -186,32 +186,39 @@ describe('validateCart', () => {
     ])
   })
 
-  describe('grantsFreeShipping', () => {
-    const validate = (variant: SanityVariantResult, cartItem: Record<string, unknown> = {}) =>
-      validateCart([{ variantId: 'v1', quantity: 1, ...cartItem } as never], [variant], taxRules, 'de').items[0]
+  describe('selector line', () => {
+    const validate = (
+      variant: SanityVariantResult,
+      cartItem: Record<string, unknown> = {},
+      parents: Record<string, string | null> = {},
+    ) =>
+      validateCart([{ variantId: 'v1', quantity: 1, ...cartItem } as never], [variant], taxRules, 'de', 'de', true, null, 'l', parents).items[0]
 
-    it('takes the flag from the server variant', () => {
-      expect(validate(makeVariant({ grantsFreeShipping: true })).grantsFreeShipping).toBe(true)
-      expect(validate(makeVariant({ grantsFreeShipping: null })).grantsFreeShipping).toBe(false)
-      expect(validate(makeVariant()).grantsFreeShipping).toBe(false)
+    it('takes kind, ids and manufacturers from the server variant', () => {
+      const line = validate(makeVariant({ productId: 'p1', manufacturerIds: ['m1'] })).selector
+      expect(line).toMatchObject({ variantId: 'v1', productId: 'p1', kind: 'wine', manufacturerIds: ['m1'] })
     })
 
-    it('ignores a client-sent flag', () => {
-      expect(validate(makeVariant(), { grantsFreeShipping: true }).grantsFreeShipping).toBe(false)
+    it("variant categories override the product's; empty falls back", () => {
+      expect(validate(makeVariant({ categoryIds: ['c1'], productCategoryIds: ['c2'] })).selector.categoryIds).toEqual(['c1'])
+      expect(validate(makeVariant({ categoryIds: [], productCategoryIds: ['c2'] })).selector.categoryIds).toEqual(['c2'])
+      expect(validate(makeVariant({ categoryIds: null, productCategoryIds: null })).selector.categoryIds).toEqual([])
     })
 
-    it('is false for digital variants', () => {
-      const digital = makeVariant({ kind: 'digital', wine: null, grantsFreeShipping: true })
-      expect(validate(digital).grantsFreeShipping).toBe(false)
+    it('adds every ancestor category', () => {
+      const line = validate(makeVariant({ categoryIds: ['child'] }), {}, { child: 'mid', mid: 'top', top: null }).selector
+      expect(line.categoryIds.sort()).toEqual(['child', 'mid', 'top'])
     })
 
-    it('a flagged bundle flags its line; a flagged child does not', () => {
-      const child = bundleItem('child1', 2)
-      const flaggedChild = { ...child, variant: { ...child.variant!, grantsFreeShipping: true } as never }
-      const bundle = (flag: boolean, items: SanityBundleItemResult[]) =>
-        makeVariant({ kind: 'bundle', wine: null, price: 3000, grantsFreeShipping: flag, bundleItems: items })
-      expect(validate(bundle(true, [child])).grantsFreeShipping).toBe(true)
-      expect(validate(bundle(false, [flaggedChild])).grantsFreeShipping).toBe(false)
+    it('compare-at price against the effective price, with the product fallback', () => {
+      expect(validate(makeVariant({ price: 1000, compareAtPrice: 1200 })).selector.hasCompareAtPrice).toBe(true)
+      expect(validate(makeVariant({ price: 1000, compareAtPrice: 1000 })).selector.hasCompareAtPrice).toBe(false)
+      expect(validate(makeVariant({ price: null, productPrice: 1000, productCompareAtPrice: 1500 })).selector.hasCompareAtPrice).toBe(true)
+      expect(validate(makeVariant()).selector.hasCompareAtPrice).toBe(false)
+    })
+
+    it('ignores client-sent selector fields', () => {
+      expect(validate(makeVariant(), { selector: { kind: 'bundle' }, kind: 'bundle' }).selector.kind).toBe('wine')
     })
   })
 

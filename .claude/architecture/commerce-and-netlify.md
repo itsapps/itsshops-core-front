@@ -223,13 +223,14 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   wrapper) refuses `orderInvoice` and `attachInvoice` with 400 before anything is fetched; core-back
   `features.shop.invoices: false` hides both in the Studio's "Send mail" action. Core still assigns
   an `invoiceNumber` to every order (the mails don't print it). Tinhof: wineNET issues invoices. Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
-- `totals.ts`, `tax.ts`, `shipping.ts`, `coupon.ts` — money math. VAT is extracted from gross
+- `totals.ts`, `tax.ts`, `shipping.ts` + the discount pipeline (`src/shared/discounts/`) — money math. VAT is extracted from gross
   prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
   (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
   **gross** goods value (sum of shop prices; the owner's choice) — not the most VAT, which favoured
   the higher rate; ties → higher rate; 0 % items ignored. The shipping method's `taxCategoryCode` is not used. Shipping VAT is
   rounded on its own and stored as `fulfillment.taxSnapshot`. Why: ADR
-  `shipping-vat-largest-gross-goods-value.md`.
+  `shipping-vat-largest-gross-goods-value.md`. The basis is always the **undiscounted** gross,
+  also with shop-wide discount exclusions (owner 2026-11-20, tax advisor to confirm).
 - **Wine packaging** (`calcWinePackagingCost` in `shipping.ts`): a delivery method with
   `packagingGroups` prices wine by boxes. A group = a box type: `packages[]{ places, price }` +
   `bottles[]{ volume, perPlace }` (`perPlace` bottles share one place, e.g. 2 × 375 ml in a 750 ml
@@ -244,33 +245,85 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   sizes (`formatVolumeList`) plus a note per shared size. Studio enforces each size in one group per
   method. A size in several box types (e.g. half-bottle-only boxes, 2 × 750 in a magnum box) is not
   supported — it would need boxes that accept only certain sizes and a split search.
-- **Free shipping** (`isFreeShipping` in `shipping.ts`): a delivery method's
+- **Free-shipping threshold** (`isFreeShipping` in `shipping.ts`): a delivery method's
   `freeShippingThreshold` (cents, **gross**) is compared with the **gross goods subtotal** —
-  shipping itself never counts — using `>=` ("ab €150"). `shopSettings.freeShippingCalculation`:
-  `beforeDiscount` (also when **unset**, from 3.8.0) compares the subtotal before the coupon;
-  `afterDiscount` re-resolves shipping after the coupon (`payment-create.ts` pass 2, percent/fixed
-  coupons only), so a coupon can push an order back under the threshold. The same default is
-  used by the schema.org shipping details and the `cms` settings. Coupons are gross as well
-  (`coupon.ts`: percent of the gross subtotal, `minSubtotal` against it); the discount is spread
-  proportionally over the items for the VAT breakdown (`totals.ts`).
-- **Product free shipping** (plan `.claude/plans/product-free-shipping.md`): a variant with
-  `grantsFreeShipping` (core-back flag `shop.productFreeShipping` shows the field; core-front reads
-  the field whatever the flag — the data is the switch) makes **every delivery method** cost 0 for
-  the **whole order**, other items included, whatever the subtotal or `freeShippingCalculation`.
-  Only the line's own flag counts (`CHECKOUT_QUERY` reads it on the top-level variant, not on
-  bundle children); `cart-validator.ts` sets `ValidatedCartItem.grantsFreeShipping` from the server
-  variant (false for digital). `resolveShippingMethods` still computes the boxes
-  (`packagingLines` stay on the order) and still drops a method that can't pack the cart; pickup
-  is untouched. To switch the rule off: unset the field on every variant first, then the flag.
-  Why: ADR `product-free-shipping-variant-flag.md`.
-- **Why shipping was free** → `fulfillment.freeShippingReason` (`product` / `threshold` /
-  `coupon`, Studio order view only; checkout, mails, invoice unchanged). `resolveShippingMethods`
-  sets `freeReason` (`product` > `threshold`, server only — `payment-create.ts` maps the client
-  response field by field) on free delivery methods; `freeShippingReason(selected,
-  couponZeroShipping)` in `shipping.ts` adds the coupon as the last resort, and `buildOrderMeta`
-  stores it only for delivery at shipping 0. A `freeShipping` coupon in a cart that already ships
-  free stays applied with 0 discount (`zeroShipping` is false then). The order copies it from
-  `orderMeta.fulfillment`.
+  shipping itself never counts — using `>=` ("ab €150"). It stays on the shipping method (per
+  method and country), it is **not** a discount. `shopSettings.freeShippingCalculation`:
+  `beforeDiscount` (also when **unset**) compares the subtotal before discounts; `afterDiscount`
+  re-resolves shipping with the items + order discounts subtracted (`payment-create.ts` pass 2),
+  so a discount can push an order back under the threshold. The same default is used by the
+  schema.org shipping details and the `cms` settings.
+- **Discounts** (plan `.claude/plans/discounts-model.md`, ADR `discounts-model.md`; core-back
+  `discount` document). One pure pipeline in `src/shared/discounts/` —
+  `evaluateDiscounts(PipelineInput): DiscountResult` — shared by checkout and the build:
+  - **Data:** `CHECKOUT_QUERY` reads `codeDiscount` (the typed code, any state — only with
+    `hasCoupons`, else no code lookup), `automaticDiscounts` (`enabled == true`; dates are checked
+    in `conditions.ts` for both), `shopSettings.discountExclusions` and all categories with their
+    parent (ancestors for the category criterion). One projection, `DISCOUNT_PROJECTION`
+    (`projection.ts`), selector references flattened to id arrays. **The data is the switch:**
+    core-front has no `automaticDiscounts` flag; `hasCoupons` gates only the code input + lookup.
+  - **Selector** (`matchesSelector`): a line matches when (`include` empty or any include
+    criterion) and no exclude criterion — kinds, categories (variant's if non-empty else the
+    product's, **plus ancestors**; a bundle by its own categories only), manufacturers, products,
+    variants, `hasCompareAtPrice`. Bundle items are never matched. Each side builds a
+    `SelectorLine` with an adapter (`selectorLineFromVariant` in `cart-validator.ts`,
+    `selectorLineFromResolved` in `data/resolve/variants.ts`).
+  - **Eligible lines** for items/order discounts: matching `appliesTo` and not matched by
+    `shopSettings.discountExclusions` (unless `ignoreShopExclusions`). Shipping discounts: the
+    cart must contain a matching non-digital line; exclusions never apply.
+  - **Conditions** (`conditions.ts`, one entry per condition — the extension point): enabled,
+    dates, `maxRedemptions`, `maxPerEmail` (codes only), applicable, `minSubtotal` (whole cart or
+    matching lines), `minQuantity` (units of matching lines; a bundle = 1 per quantity). A failing
+    code → `couponError` with the first failing condition's `ErrorCode`.
+  - **Combinability:** at most one code. A, B compatible iff each one's `combinesWith` contains
+    the other's target; never two shipping discounts. Automatic set (greedy by saving) vs. code set
+    (code + compatible automatic ones): the larger saving wins, tie → the code; automatic wins →
+    `COUPON_NOT_COMBINABLE` with `discountTitle` (the client fills "Nicht mit Aktion „{title}“
+    kombinierbar").
+  - **Apply order** items → order → shipping, each on what the earlier left. percent =
+    `floor(Σ remaining eligible × value / 100)` (today's coupon rounding), allocated by largest
+    remainder; items + fixed per line `min(value, remaining unit) × qty`; order + fixed
+    `min(value, Σ)` by largest remainder. A bundle line's share is split again over its items by
+    their price shares (`allocateToChildren`). Sums exact at both levels.
+  - **VAT** (`calculateTotals(items, shipping, rate, result)`): each VAT part (a bundle: one per
+    item) is taxed on its gross minus its allocated discount — no global factor; excluded lines
+    keep their full VAT. `orderItem.vatAmount` stays the undiscounted line VAT.
+  - **Shipping discounts** are applied **after** `selectShippingMethod` (both passes select on
+    real prices; `resolveShippingMethods` knows only the threshold): `waivesShipping(result, type)`
+    zeroes every delivery method in the response — pickup methods only with `appliesToPickup`
+    (unset = codes yes, automatic no). `amount` = the selected method's price before the waiver
+    (0 when it was already free — a code still shows as applied).
+  - **Per-email limit** (`maxPerEmail`, codes only): on `createPayment` only, one
+    `countOrdersWithDiscountForEmail` fetch (all orders, case-insensitive email). Over the limit →
+    the pipeline re-runs with `emailRedemptions`, the code drops out with
+    `COUPON_LIMIT_PER_EMAIL`, the total changes and the client's reconfirm stops the payment.
+  - **Re-submit replaces the `orderMeta`** (`createOrderMeta` = `createOrReplace`; there is no
+    merge update any more), so a dropped discount never survives in it.
+  - **Order snapshot:** `orderItem.discount` / bundle item `discount` (gross cents, whole line,
+    only when > 0 — never recomputed), `appliedDiscounts[]` `{ discountRef (weak), code?, title
+    (order locale), trigger, target, valueType, value?, amount }` (`buildAppliedDiscountSnapshots`),
+    `totals.discount` = items + order discounts. The webhook increments `redemptionCount` of every
+    entry with a ref — published **and** an open draft, existing ids only (`existingDiscountDocIds`,
+    raw perspective; a patch on a deleted doc would fail the order transaction), with
+    `setIfMissing({ redemptionCount: 0 })`.
+  - **Response:** `appliedDiscounts` (`{ title, code?, trigger, target, amount }`, apply order),
+    `notDiscountedVariantIds` (lines the applied code skipped — the checkout hint), `couponError`
+    (+ `discountTitle`).
+  - **Webhook transition** (remove ≥ 30 days after the last live shop's 6.0.0 release):
+    `buildOrder` converts an old-shape `orderMeta` (`appliedCoupons`, reason `product`/`coupon`)
+    with `convertLegacyOrderMeta` (`discount-migration.ts`).
+- **Why shipping was free** → `fulfillment.freeShippingReason` (`threshold` / `discount`, Studio
+  order view only). `resolveShippingMethods` sets `freeReason: 'threshold'` (server only);
+  `freeShippingReason(selected, waived)` adds `discount` when a shipping discount waived a
+  delivery method; `buildOrderMeta` stores it only for delivery at shipping 0. Threshold beats
+  discount (before 6.0.0 `product` beat `threshold`; old values `product` / `coupon` are migrated
+  to `discount`). A shipping discount on an already free method stays in `appliedDiscounts` with
+  `amount: 0` (counted on the webhook).
+- **Product free shipping** is an automatic shipping discount since 6.0.0 ("cart contains kind
+  bundle → shipping free", migrated from the removed variant flag `grantsFreeShipping`). The
+  build still exposes `ResolvedVariant.grantsFreeShipping` (card note, product-page tax line,
+  "Versand & Zahlung", schema.org rate 0) — **derived** from the automatic shipping discounts
+  without conditions (`data-layer.md`).
 - **Shipping weight** (grams): `resolveVariantWeight` (physical: variant/product `weight`; wine: the
   same, else estimated from the volume) and `resolveBundleWeight` in `shipping.ts`, used by
   `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the
@@ -295,8 +348,9 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   - **Only ever chosen explicitly:** `selectShippingMethod` picks a pickup only by its requested
     id; without a delivery method it returns `null` (a calculate answers
     `selectedShippingMethodId: null`, a `createPayment` without a pickup id fails with
-    `SHIPPING_UNAVAILABLE`). No weight/packaging limit, no threshold or product free shipping;
-    a `freeShipping` coupon waives a pickup fee (0 discount on a free pickup).
+    `SHIPPING_UNAVAILABLE`). No weight/packaging limit, no threshold; a shipping discount waives
+    a pickup fee only with `appliesToPickup` (migrated codes: yes; the migrated bundle rule: no) —
+    0 discount on a free pickup.
   - **Address:** the form's main fields (still `address.shipping` on the wire) are the billing
     address; the order stores **no** `customer.shippingAddress` (optional in the types —
     `buildOrderMeta` writes it only for delivery and throws for a delivery without one). The
@@ -331,7 +385,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
 - `payment-method.ts` — Stripe charge → `order.payment` snapshot + readable label
 - `email-settings.ts`, `auth-urls.ts`, `newsletter-urls.ts`
 
-When touching pricing/tax/shipping/coupon math, **update or add a test in `__tests__/`** — this is
+When touching pricing/tax/shipping/discount math, **update or add a test in `__tests__/`** — this is
 the one part of core-front with real coverage, keep it that way.
 
 ## Services (`src/netlify/services/`)
@@ -363,7 +417,8 @@ changing an endpoint's payload, change it in `src/shared/` and both sides follow
    `clientSecret`. Calculate and create are the same endpoint: `createPayment: false` returns
    only the calculation, `true` also writes the `orderMeta` and creates/updates the
    PaymentIntent (`metadata.orderMetaId`; the webhook builds the order from that `orderMeta`). Right before `stripe.confirmPayment`, an **order snapshot** is written to
-   **sessionStorage** (`scripts/order-snapshot.ts`): items, totals, coupons, shipping method,
+   **sessionStorage** (`scripts/order-snapshot.ts`, `v: 2` since the discounts model — other
+   versions are dropped): items, totals, applied discounts, shipping method,
    email, first name, shipping address — keyed to the PaymentIntent id. No phone, billing address,
    client secret or `orderMetaId`.
 2. Stripe redirects to `orderThanksUrl` with `payment_intent`, `payment_intent_client_secret`,

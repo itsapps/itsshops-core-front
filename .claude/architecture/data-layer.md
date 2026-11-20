@@ -97,8 +97,18 @@ The largest resolver. `resolveVariants` does, per variant:
   fields (locale-resolved) are merged onto the resolved wine.
 - **Filter attributes**: accumulated into `filterAcc` (`buildFilterAttributes` / `accumulateFilterGroups`)
   to later form `filterGroups`; bundles then take their items' attributes (see "Filter groups").
-- **Free shipping / bundle total**: `grantsFreeShipping` (variant field, false for digital or unset —
-  `commerce-and-netlify.md` → "Product free shipping"); `bundleItemsTotal` (`bundleItemsTotal()`:
+- **Free shipping / bundle total**: `grantsFreeShipping` is **derived** (core-front 6.0.0, no
+  variant field any more): `resolveVariants` sets `false`, then the resolver's post-pass
+  `applyBuildShippingDiscounts` (`resolve/variants.ts`) sets it on every non-digital variant that
+  an automatic shipping discount's `appliesTo` matches — a cart holding just this variant
+  (`matchesSelector(selectorLineFromResolved(v, parentById), …)`, ancestors from
+  `ResolvedCategory.parentId`). Only discounts without conditions (`isUnconditional`: no dates,
+  limits, min subtotal / quantity), fetched by `fetchBuildShippingDiscounts`
+  (`data/build-discounts.ts`, only with checkout) with plain `client.fetch` — **never stega**,
+  which would encode `appliesTo.kinds` in preview builds so nothing matches. The build snapshot
+  changes with the next deploy; checkout evaluates every rule live. Without `shop.category` the
+  resolved categories are empty, so a leftover category rule shows no build claim (the Studio
+  warns about the disabled criterion). `commerce-and-netlify.md` → "Discounts"; `bundleItemsTotal` (`bundleItemsTotal()`:
   bundles only, items' single prices × quantity when above the bundle price, else null —
   `templates-and-assets.md` → "Bundle: sum of single prices").
 - **Description**: `description` (core-back `i18nText`, any kind) → plain string or `null`, variant's
@@ -128,7 +138,8 @@ each derived from `urlMap`, `permalinks`, or `userPaths`, and **feature-gated to
   (`resolveShippingMethods`: title, delivery time, enabled countries, weight rates, packaging prices —
   gross cents, the checkout's own data; pickup methods carry `pickupAddress` / `pickupInstructions` /
   `pickupHoldDays` and always empty countries/rates/packaging, whatever the document still holds); `hasFreeShippingProducts` (any active variant with
-  `grantsFreeShipping` — the `shippingInfoModule` sentence follows the content, no config flag).
+  the derived `grantsFreeShipping` — the `shippingInfoModule` sentence follows the content, no
+  config flag).
 Plus `searchIndex`/`searchFields` and the merged `extensionData`. Templates read these directly
 (e.g. `cms[locale].checkoutUrl`) instead of constructing URLs.
 

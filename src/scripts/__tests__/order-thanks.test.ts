@@ -35,7 +35,7 @@ const MARKER_KEY = `itsshops_pending_payment_${location.host}`
 const PI = 'pi_3TRUr5ImdKLyyYu027p4gDQp'
 
 const snapshot = (overrides: Partial<OrderSnapshot> = {}): OrderSnapshot => ({
-  v: 1,
+  v: 2,
   paymentIntentId: PI,
   createdAt: Date.now(),
   email: 'anna@example.com',
@@ -43,7 +43,7 @@ const snapshot = (overrides: Partial<OrderSnapshot> = {}): OrderSnapshot => ({
   items: [{ title: 'Grüner Veltliner', subtitle: '2023', imageUrl: '/img.jpg', url: '/de/gv', price: 1450, quantity: 2 }],
   summary: {
     totals: { subtotal: 2900, shipping: 590, tax: 582, discount: 0, grandTotal: 3490, vatBreakdown: [{ rate: 20, net: 2908, vat: 582 }] },
-    appliedCoupons: [],
+    appliedDiscounts: [],
   },
   shippingMethod: { title: 'Post', methodType: 'delivery' },
   shippingAddress: { name: 'Anna Muster', line1: 'Hauptstraße 1', zip: '3550', city: 'Langenlois', country: 'Österreich' },

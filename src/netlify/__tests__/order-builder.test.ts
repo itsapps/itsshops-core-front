@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { buildOrderMeta, buildOrder, formatOrderNumber, type BuildOrderMetaInput } from '../lib/order-builder'
+import {
+  buildOrderMeta,
+  buildOrder,
+  buildAppliedDiscountSnapshots,
+  formatOrderNumber,
+  type BuildOrderMetaInput,
+} from '../lib/order-builder'
+import { discount, bundleFreeShipping } from '../../shared/__tests__/discounts-fixtures'
 import type { ValidatedCartItem, AvailableShippingMethod, CalculatedTotals } from '../types/checkout'
 
 function makeInput(overrides: Partial<BuildOrderMetaInput> = {}): BuildOrderMetaInput {
@@ -19,7 +26,7 @@ function makeInput(overrides: Partial<BuildOrderMetaInput> = {}): BuildOrderMeta
     wine: { vintage: '2023', volume: 750 },
     options: null,
     bundleItems: null,
-    grantsFreeShipping: false,
+    selector: { variantId: 'v1', productId: 'p1', kind: 'wine', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
   }]
 
   const selectedShipping: AvailableShippingMethod = {
@@ -167,7 +174,7 @@ describe('buildOrderMeta', () => {
           { groupTitle: 'Color', optionTitle: 'Red' },
         ],
         bundleItems: null,
-        grantsFreeShipping: false,
+        selector: { variantId: 'v1', productId: 'p1', kind: 'wine', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
       }],
     })
     const meta = buildOrderMeta(input)
@@ -188,13 +195,13 @@ describe('buildOrderMeta — free shipping reason', () => {
     })
   }
   it('stores the reason for a delivery method at shipping 0', () => {
-    expect(buildOrderMeta(free({ freeShippingReason: 'product' })).fulfillment.freeShippingReason).toBe('product')
+    expect(buildOrderMeta(free({ freeShippingReason: 'discount' })).fulfillment.freeShippingReason).toBe('discount')
   })
   it('no reason input → no field', () => {
     expect(buildOrderMeta(free()).fulfillment).not.toHaveProperty('freeShippingReason')
   })
   it('ignores a reason when shipping is charged', () => {
-    expect(buildOrderMeta(makeInput({ freeShippingReason: 'coupon' })).fulfillment).not.toHaveProperty('freeShippingReason')
+    expect(buildOrderMeta(makeInput({ freeShippingReason: 'discount' })).fulfillment).not.toHaveProperty('freeShippingReason')
   })
   it('ignores a reason for pickup', () => {
     const base = free()
@@ -253,7 +260,8 @@ describe('buildOrderMeta — bundle contents', () => {
       items: [{
         variantId: 'b1', productId: 'pb', kind: 'bundle', title: 'Box', subtitle: '2× Wein, 1× Saft',
         sku: 'BOX', price: 3000, weight: 3500, quantity: 2, taxCategoryCode: '', vatRate: 13,
-        vatAmount: 552 + 200, wine: null, options: null, grantsFreeShipping: false,
+        vatAmount: 552 + 200, wine: null, options: null,
+        selector: { variantId: 'b1', productId: 'pb', kind: 'bundle', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
         bundleItems: [
           { key: 'ka', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: '2023 · 750 ml', sku: 'W', quantity: 2, kind: 'wine', weight: 1250, wine: { volume: 750 }, price: 2400, vatRate: 13, vatAmount: 552 },
           { key: 'kb', variantId: 'j', productId: 'pj', title: 'Saft', subtitle: null, sku: null, quantity: 1, kind: 'physical', weight: 1000, wine: null, price: 600, vatRate: 20, vatAmount: 200 },
@@ -306,6 +314,86 @@ describe('buildOrder', () => {
     expect(order.orderDate).toBe('2026-10-05T20:00:00.000Z')
     expect(order.payment).toEqual(payment)
     expect(order.fulfillment.deliveryTime).toBe('2–4 Werktage')
+  })
+})
+
+describe('buildOrderMeta — discounts', () => {
+  const bundleLine = (): ValidatedCartItem => ({
+    variantId: 'b1', productId: 'pb', kind: 'bundle', title: 'Box', subtitle: null,
+    sku: null, price: 3000, weight: 3500, quantity: 2, taxCategoryCode: '', vatRate: 13,
+    vatAmount: 752, wine: null, options: null,
+    selector: { variantId: 'b1', productId: 'pb', kind: 'bundle', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
+    bundleItems: [
+      { key: 'ka', variantId: 'w', productId: 'pw', title: 'Wein', subtitle: null, sku: null, quantity: 2, kind: 'wine', weight: 1250, wine: { volume: 750 }, price: 2400, vatRate: 13, vatAmount: 552 },
+      { key: 'kb', variantId: 'j', productId: 'pj', title: 'Saft', subtitle: null, sku: null, quantity: 1, kind: 'physical', weight: 1000, wine: null, price: 600, vatRate: 20, vatAmount: 200 },
+    ],
+  })
+
+  it('stores line and bundle-item discounts; lines without one carry no field', () => {
+    const base = makeInput()
+    const meta = buildOrderMeta(makeInput({
+      items: [base.items[0], bundleLine()],
+      lineDiscounts: [{ discount: 0, children: null }, { discount: 600, children: [480, 120] }],
+    }))
+    expect(meta.orderItems[0]).not.toHaveProperty('discount')
+    expect(meta.orderItems[1].discount).toBe(600)
+    expect(meta.orderItems[1].bundle!.items!.map(bi => bi.discount)).toEqual([480, 120])
+  })
+
+  it('a zero child share carries no field', () => {
+    const meta = buildOrderMeta(makeInput({ items: [bundleLine()], lineDiscounts: [{ discount: 5, children: [5, 0] }] }))
+    expect(meta.orderItems[0].bundle!.items![1]).not.toHaveProperty('discount')
+  })
+
+  it('snapshots applied discounts (code with code, automatic without; no value for free)', () => {
+    const snaps = buildAppliedDiscountSnapshots([
+      { discount: discount({ _id: 'discount-c1', title: 'Sommer', code: 'SUMMER' }), amount: 300, lineAmounts: [300] },
+      { discount: bundleFreeShipping(), amount: 0, lineAmounts: [0] },
+    ])
+    expect(snaps.map(({ _key: _k, ...rest }) => rest)).toEqual([
+      { _type: 'appliedDiscount', discountRef: { _type: 'reference', _ref: 'discount-c1', _weak: true }, code: 'SUMMER', title: 'Sommer', trigger: 'code', target: 'order', valueType: 'percent', value: 10, amount: 300 },
+      { _type: 'appliedDiscount', discountRef: { _type: 'reference', _ref: 'auto-ship', _weak: true }, title: 'Versandkostenfrei mit Weinpaket', trigger: 'automatic', target: 'shipping', valueType: 'free', amount: 0 },
+    ])
+  })
+
+  it('orderMeta and order carry appliedDiscounts; none → no field', () => {
+    const appliedDiscounts = buildAppliedDiscountSnapshots([
+      { discount: discount(), amount: 300, lineAmounts: [300] },
+    ])
+    const meta = buildOrderMeta(makeInput({ appliedDiscounts }))
+    expect(meta.appliedDiscounts).toEqual(appliedDiscounts)
+    expect(buildOrder({ orderMeta: meta, orderNumber: '1', invoiceNumber: '1' }).appliedDiscounts).toEqual(appliedDiscounts)
+    expect(buildOrderMeta(makeInput())).not.toHaveProperty('appliedDiscounts')
+    expect(meta).not.toHaveProperty('appliedCoupons')
+  })
+})
+
+describe('buildOrder — old-shape orderMeta (webhook transition)', () => {
+  it('converts appliedCoupons + reason to the discount shape', () => {
+    const meta = buildOrderMeta(makeInput())
+    const legacy = {
+      ...meta,
+      totals: { ...meta.totals, discount: 300, grandTotal: meta.totals.grandTotal - 300 },
+      appliedCoupons: [{
+        _key: 'c', _type: 'appliedCoupon', couponRef: { _type: 'reference', _ref: 'coupon-1', _weak: true },
+        code: 'TEN', discountType: 'percent', value: 10, discountAmount: 300,
+      }],
+    }
+    const order = buildOrder({ orderMeta: legacy as never, orderNumber: '1', invoiceNumber: '1' })
+    expect(order).not.toHaveProperty('appliedCoupons')
+    expect(order.appliedDiscounts).toEqual([expect.objectContaining({
+      discountRef: { _type: 'reference', _ref: 'discount-coupon-1', _weak: true }, code: 'TEN', trigger: 'code', target: 'order', amount: 300,
+    })])
+    expect(order.orderItems.reduce((s, i) => s + (i.discount ?? 0), 0)).toBe(300)
+  })
+
+  it('a product reason becomes discount + a ref-less entry', () => {
+    const meta = buildOrderMeta(makeInput())
+    const legacy = { ...meta, fulfillment: { ...meta.fulfillment, shippingCost: 0, freeShippingReason: 'product' } }
+    const order = buildOrder({ orderMeta: legacy as never, orderNumber: '1', invoiceNumber: '1' })
+    expect(order.fulfillment.freeShippingReason).toBe('discount')
+    expect(order.appliedDiscounts).toEqual([expect.objectContaining({ title: 'Versandkostenfrei durch Produkt', target: 'shipping' })])
+    expect(order.appliedDiscounts![0]).not.toHaveProperty('discountRef')
   })
 })
 

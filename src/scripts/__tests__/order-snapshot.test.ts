@@ -25,7 +25,8 @@ const response = {
   selectedCountry: 'AT',
   supportedCountries: [{ code: 'AT', title: 'Österreich' }],
   currency: 'EUR',
-  appliedCoupons: [],
+  appliedDiscounts: [],
+  notDiscountedVariantIds: [],
   couponError: null,
 } as unknown as CreatePaymentResponse
 
@@ -112,6 +113,12 @@ describe('save / take', () => {
   it('round-trips for the matching payment intent and deletes on read', () => {
     saveOrderSnapshot(build())
     expect(takeOrderSnapshot('pi_123', 1_000_000 + 1000)?.email).toBe('anna@example.com')
+    expect(takeOrderSnapshot('pi_123', 1_000_000 + 1000)).toBeNull()
+  })
+
+  it('ignores a v1 snapshot saved before the discounts release (appliedCoupons shape)', () => {
+    const v1 = { ...build()!, v: 1, summary: { totals: build()!.summary.totals, appliedCoupons: [] } }
+    saveOrderSnapshot(v1 as never)
     expect(takeOrderSnapshot('pi_123', 1_000_000 + 1000)).toBeNull()
   })
 

@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { stegaEncodeSourceMap } from '@sanity/client/stega'
-import { bundleItemsTotal, effectiveStatus, resolveVariants } from '../resolve/variants'
+import { applyBuildShippingDiscounts, bundleItemsTotal, effectiveStatus, resolveVariants } from '../resolve/variants'
+import { fetchBuildShippingDiscounts } from '../build-discounts'
 
 const product = (id: string, over: Record<string, unknown> = {}) => ({ _id: id, kind: 'wine', title: null, price: null, ...over })
 const variant = (id: string, productId: string, over: Record<string, unknown> = {}) => ({
@@ -95,11 +96,62 @@ describe('resolveVariants — grantsFreeShipping', () => {
     return resolveVariants(raw, prods, ctx as never, permalinks as never, new Map(), new Map([[v.productId as string, raw]]), new Map())[0]
   }
 
-  it('true only when set on a non-digital variant', () => {
-    expect(resolve(variant('f', 'pf', { grantsFreeShipping: true })).grantsFreeShipping).toBe(true)
-    expect(resolve(variant('m', 'pm')).grantsFreeShipping).toBe(false)
-    expect(resolve(variant('n', 'pn', { grantsFreeShipping: null })).grantsFreeShipping).toBe(false)
-    expect(resolve(variant('d', 'pd', { kind: 'digital', wine: null, grantsFreeShipping: true })).grantsFreeShipping).toBe(false)
+  const bundleRule = { appliesTo: { include: { kinds: ['bundle'] } } }
+  const derive = (v: Record<string, unknown>, discounts: { appliesTo: unknown }[], parents = new Map<string, string | null>()) => {
+    const resolved = resolve(v)
+    applyBuildShippingDiscounts([resolved], discounts as never, parents)
+    return resolved.grantsFreeShipping
+  }
+
+  it('a stored flag no longer counts; resolveVariants leaves it false', () => {
+    expect(resolve(variant('f', 'pf', { grantsFreeShipping: true })).grantsFreeShipping).toBe(false)
+  })
+
+  it('a kind-bundle rule sets it on bundles only', () => {
+    expect(derive(variant('b', 'pb', { kind: 'bundle', wine: null, bundleItems: [] }), [bundleRule])).toBe(true)
+    expect(derive(variant('w', 'pw'), [bundleRule])).toBe(false)
+    expect(derive(variant('b', 'pb', { kind: 'bundle', wine: null, bundleItems: [] }), [])).toBe(false)
+  })
+
+  it('an empty appliesTo = every non-digital variant; digital never', () => {
+    expect(derive(variant('w', 'pw'), [{ appliesTo: null }])).toBe(true)
+    expect(derive(variant('d', 'pd', { kind: 'digital', wine: null }), [{ appliesTo: null }])).toBe(false)
+  })
+
+  it('a stega-encoded kind would never match (why the build fetch skips stega)', () => {
+    const encoded = stegaEncodeSourceMap(
+      { kind: 'bundle' },
+      { documents: [{ _id: 'd', _type: 'discount' }], paths: ["$['kind']"], mappings: { "$['kind']": { type: 'value', source: { type: 'documentValue', document: 0, path: 0 } } } } as never,
+      { enabled: true, studioUrl: 'https://studio.example', filter: () => true },
+    ) as { kind: string }
+    const v = variant('b', 'pb', { kind: 'bundle', wine: null, bundleItems: [] })
+    expect(derive(v, [{ appliesTo: { include: { kinds: [encoded.kind] } } }])).toBe(false)
+  })
+})
+
+describe('fetchBuildShippingDiscounts', () => {
+  const on = { shop: { enabled: true, checkout: true } }
+  const raw = (over: Record<string, unknown> = {}) => ({
+    _id: 'd', title: null, trigger: 'automatic', enabled: true, target: 'shipping', valueType: 'free',
+    appliesTo: { include: { kinds: ['bundle'] } }, ...over,
+  })
+
+  it('fetches without stega options and keeps only unconditional rules', async () => {
+    const fetch = vi.fn().mockResolvedValue([
+      raw(), raw({ _id: 'dated', validTo: '2026-12-31' }), raw({ _id: 'min', minSubtotal: 5000 }),
+      raw({ _id: 'limited', maxRedemptions: 10 }), raw({ _id: 'qty', minQuantity: 2 }),
+    ])
+    const result = await fetchBuildShippingDiscounts({ fetch } as never, on)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch.mock.calls[0]).toHaveLength(1)
+    expect(fetch.mock.calls[0][0]).toContain('_type == "discount" && trigger == "automatic" && target == "shipping" && enabled == true')
+    expect(result.map(d => d._id)).toEqual(['d'])
+  })
+
+  it('without checkout: no fetch, no rules', async () => {
+    const fetch = vi.fn()
+    expect(await fetchBuildShippingDiscounts({ fetch } as never, { shop: { enabled: true, checkout: false } })).toEqual([])
+    expect(fetch).not.toHaveBeenCalled()
   })
 })
 

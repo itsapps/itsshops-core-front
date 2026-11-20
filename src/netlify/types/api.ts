@@ -16,7 +16,7 @@ export type {
   CalculateResponse,
   CreatePaymentResponse,
   ErrorResponse,
-  AppliedCouponResponse,
+  AppliedDiscountResponse,
   CouponErrorResponse,
 } from '../../shared/checkout-api'
 

@@ -121,6 +121,8 @@ type SanityOrderItem = {
   vatRate: number
   vatAmount: number
   weight: number | null
+  /** Gross cents the discounts took off the whole line (stored allocation); unset = 0. */
+  discount?: number | null
   /** Bundle contents snapshot (orders from 2026-11 on); `price` = share of one bundle. */
   bundle?: { items?: SanityOrderBundleItem[] | null } | null
 }
@@ -135,6 +137,8 @@ type SanityOrderBundleItem = {
   quantity: number
   price: number
   vatRate: number
+  /** This item's part of the line's `discount` (whole line quantity); unset = 0. */
+  discount?: number | null
 }
 
 /**
@@ -152,6 +156,8 @@ type WcLine = {
   vatRate: number
   /** Gross of the whole line, cents (an expanded item: its share × the bundle quantity). */
   lineGross: number
+  /** Gross discount of the whole line, cents (an expanded item: its own stored part). */
+  discount: number
   meta: Array<{ key: string; value: string }>
 }
 
@@ -176,6 +182,7 @@ export function expandOrderLines(order: Pick<SanityOrder, 'orderNumber' | 'order
         quantity: bi.quantity * item.quantity,
         vatRate: bi.vatRate,
         lineGross: bi.price * item.quantity,
+        discount: bi.discount ?? 0,
         meta: [
           { key: '_sanity_product_id', value: bi.productId },
           { key: '_sanity_variant_id', value: bi.variantId },
@@ -194,6 +201,7 @@ export function expandOrderLines(order: Pick<SanityOrder, 'orderNumber' | 'order
       quantity: item.quantity,
       vatRate: item.vatRate,
       lineGross: item.price * item.quantity,
+      discount: item.discount ?? 0,
       meta: base,
     }]
   })
@@ -425,21 +433,12 @@ export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCo
   const shippingNet = f ? f.shippingCost - shippingTax : 0
   const shippingRate = f?.taxSnapshot?.rate ?? null
 
-  // Proportional factor used to distribute the gross discount across line items.
-  const discountFactor = t.subtotal > 0 ? t.discount / t.subtotal : 0
-
-  // Pre-compute discounted gross per line item, then absorb the rounding remainder
-  // in the last item so that sum(discountedGross) + shippingCost == grandTotal exactly.
-  // Bundles are sent as their items (see `expandOrderLines`); everything below runs over the
-  // expanded lines.
+  // Discounted gross per line = its stored allocation (`orderItem.discount` / bundle item
+  // `discount`, written by checkout or the discounts migration): the lines already sum to
+  // `grandTotal - shippingCost` exactly, so no factor and no remainder. Bundles are sent as their
+  // items (see `expandOrderLines`); everything below runs over the expanded lines.
   const wcLines = expandOrderLines(order)
-  const discountedGrossPerItem = wcLines.map(line =>
-    Math.round(line.lineGross * (1 - discountFactor))
-  )
-  const expectedLineTotal = t.grandTotal - (f ? f.shippingCost : 0)
-  const roundingRemainder = expectedLineTotal - discountedGrossPerItem.reduce((s, v) => s + v, 0)
-  if (discountedGrossPerItem.length > 0)
-    discountedGrossPerItem[discountedGrossPerItem.length - 1] += roundingRemainder
+  const discountedGrossPerItem = wcLines.map(line => line.lineGross - line.discount)
 
   // Per line, in cents: exact (unrounded) net and per-line rounded tax, before (subtotal)
   // and after (total) the discount.
@@ -572,8 +571,8 @@ const ORDER_PROJECTION = `{
   customer { contactEmail, locale, billingAddress, shippingAddress },
   totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },
   orderItems[] {
-    _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight,
-    bundle { items[] { _key, variantId, productId, sku, subtitle, title, quantity, price, vatRate } }
+    _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight, discount,
+    bundle { items[] { _key, variantId, productId, sku, subtitle, title, quantity, price, vatRate, discount } }
   },
   fulfillment {
     methodTitle, methodType, shippingCost, taxSnapshot, trackingCode, packagingLines,

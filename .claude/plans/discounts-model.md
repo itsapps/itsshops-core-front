@@ -1,6 +1,6 @@
 # Plan — discounts model (codes + automatic discounts, one line-level pipeline)
 
-Status: **planned** (2026-11-20), all decisions taken, nothing built; refined 2026-11-20 (round 1, 80/100); refined 2026-11-20 (round 2, 86/100); refined 2026-11-20 (round 3, 89/100); refined 2026-11-20 (round 4, 92/100); refined 2026-11-20 (round 5, 95/100). Base: core-front `main` (5.3.0 +
+Status: **in progress** — sessions 1 + 2 done (core-back 1–8, core-front 9–20; see Implementation log); Rollout 1–2 open; all decisions taken; refined 2026-11-20 (round 1, 80/100); refined 2026-11-20 (round 2, 86/100); refined 2026-11-20 (round 3, 89/100); refined 2026-11-20 (round 4, 92/100); refined 2026-11-20 (round 5, 95/100). Base: core-front `main` (5.3.0 +
 store pickup), core-back `main` (6.3.0). Spans **core-back** (discount document, product selector,
 shop-wide exclusions, order snapshot, Studio views, migrations) and **core-front** (one discount
 pipeline shared by checkout and build, line-level discounts on the order, checkout UI, mails,
@@ -12,6 +12,76 @@ shipping (`product-free-shipping.md`) this is the second one-off rule in the che
 one was a full plan. Goal: the usual cases become **data in the Studio**, rare ones a **small
 extension at a fixed place**, and the money math (VAT, rounding, order, wineNET) is built and
 tested **once**.
+
+## Implementation log
+
+**Session 1 (2026-11-20), uncommitted, on `feat/discounts-model` in core-back and core-front:**
+core-back steps 1–8 done (types regenerated, `npm run build` + tests pass, CHANGELOG 7.0.0
+"unreleased"); core-front step 9 (`src/shared/discounts/`, 4 test files) and step 19's pure
+functions (`src/netlify/lib/discount-migration.ts` + test) done. Deviations / decisions taken
+while building:
+- **`productSelectorCriteria`** is its own object type (the `include` / `exclude` sides): typegen
+  hoisted the inline objects as top-level `Include` / `Exclude` types, and `Exclude` shadows the
+  TS utility type. Stored shape unchanged apart from `_type: 'productSelectorCriteria'` on the
+  sides; labels under `productSelectorCriteria.fields.*`.
+- **History type `system`** added to core-back `orderStatusHistory` (status `discountsMigrated`,
+  labels + OrderView case) — the migration's "Format migriert" entry needed a type
+  (`discountMigrationHistoryEntry`).
+- **`appliesToPickup` has no Studio `initialValue`** (a field can't see the trigger); unset =
+  code yes / automatic no, applied by `appliesToPickup()` in `apply.ts` (description says so).
+  The migration sets it explicitly. `combinesWith` initial: shipping only.
+- `discount` groups: general / discountValue / conditions / combinations. `maxPerEmail` is hidden
+  on automatic discounts unless a value is set (then the validation error shows).
+- OrderView falls back to legacy `appliedCoupons` (mapped to the new card) on unmigrated orders —
+  removed with the old fields (Rollout 6).
+- **`coupon.ts` / `coupon.test.ts` not deleted yet**: `payment-create.ts` still imports
+  `validateCoupon`; delete them in step 11 together with that import (their cases are already in
+  `discounts-apply.test.ts`).
+- Pipeline API for steps 10–18: `evaluateDiscounts(input: PipelineInput): DiscountResult`
+  (`lines` aligned with the cart; `shipping` = the selected method's price after the threshold
+  + its type; re-run after pass 2 and after the per-email fetch with `emailRedemptions`);
+  `waivesShipping(result, methodType)` for the method list; `toDiscountInput(raw, resolveTitle)`
+  for the projection result; `DISCOUNT_PROJECTION` / `SELECTOR_PROJECTION` (step 10/18);
+  `isUnconditional` (step 18). Errors are `DiscountErrorCode` strings equal to `ErrorCode` — add
+  the 4 new members to `netlify/types/errors.ts` + server i18n in step 11/17.
+- Migration: the product-free-shipping discount has the fixed id
+  `discount-product-free-shipping` (idempotent). `convertLegacyOrderMeta` (step 14) also writes
+  line discounts with the old algorithm, so an order created from an old `orderMeta` is a
+  migrated one. Still open in step 19: the CLI subcommand.
+- **wc-api fixture:** `src/netlify/__tests__/fixtures/wc-api-legacy-orders.json` holds 6
+  old-shape orders (incl. 000007/000008-like coupon orders, bundles, product / coupon free
+  shipping) **with the pre-6.0.0 `mapOrder` output**, generated before step 15. Step 15's test:
+  `mapOrder(migrated order)` must equal `wc` byte for byte.
+
+**Session 2 (2026-11-20), uncommitted, same branches:** core-front steps 10–20 done; `npm test`
+(833), `tsc`, `npm run build`, `check:functions` pass; Tinhof frontend builds against the linked
+core (`development`, read-only — no free-shipping notes until the migration created the
+discount). Not done (owner's constraints for this session): commits/pushes, Tinhof pins
+(Rollout 1), the migration on `development` and the staging tests (Rollout 2), `TEST_LIVE`
+integration tests. Deviations / decisions taken while building:
+- `validateCart` takes the category parents as a new last parameter (`categoryParents`);
+  `selectorLineFromVariant` is exported from `cart-validator.ts`.
+- `coupon.ts` / `coupon.test.ts` deleted; `updateOrderMeta` removed (no other caller).
+- `payment-create.ts`: pass 1 resolves once; `run(emailRedemptions?)` = select → pipeline →
+  (afterDiscount) pass 2 → pipeline again; the per-email check re-runs it once.
+- Webhook increments are de-duplicated per discount id; `existingDiscountDocIds` +
+  `countOrdersWithDiscountForEmail` in `services/sanity.ts`.
+- Mails/PDF: `discountSummaryLines` (`lib/order-discount-lines.ts`) falls back to one "Rabatt" row
+  when the stored entries don't sum to `totals.discount`.
+- Client: `shouldClearStoredCode` exported from `checkout-coupon.ts` (tested); `applyCouponState`
+  in `checkout.ts` does clearing + render on calculate and both submit paths. Totals row: the code
+  slot is left out when the code equals the title (migrated codes have title = code). Wallet line
+  name = title (fallback code).
+- Hint CSS: never `display: none` (live region), only no margin while `:empty`.
+- Build: the fetch is `fetchBuildShippingDiscounts` in its own module `data/build-discounts.ts`
+  (testable: plain `client.fetch`, no stega options); `applyBuildShippingDiscounts` +
+  `selectorLineFromResolved` in `resolve/variants.ts`.
+- Migration runner: `lib/discount-migration-run.ts` (`planDiscountMigration` →
+  `describeDiscountMigration` → `applyDiscountMigration`); plans and checks everything before the
+  first write; coupons and orders one transaction each, orders with `ifRevisionId`; the
+  preflight also blocks `versions.*`. Tested against an in-memory dataset (incl. idempotency).
+- New tests: `payment-create-discounts`, `commit-order-transaction`, `discount-migration-run`,
+  `scripts/__tests__/checkout-discounts`, wc-api legacy-fixture byte-identity, plus updates.
 
 ## Decisions (owner, 2026-11-20)
 

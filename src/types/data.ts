@@ -332,7 +332,8 @@ export type ResolvedVariant = {
   /** Bundles only: the items at their single prices × quantity, when more than the bundle's price;
    *  else null. Not a former price — rendered by `productBundleItemsTotal`, never struck through. */
   bundleItemsTotal: number | null
-  /** The whole order ships free when the cart holds this variant (false for digital / unset). */
+  /** The whole order ships free when the cart holds this variant — derived from the automatic
+   *  shipping discounts without conditions (`applyBuildShippingDiscounts`); false for digital. */
   grantsFreeShipping: boolean
   wine: ResolvedWine | null
   options: ResolvedOption[]
@@ -392,8 +393,9 @@ export type CmsLocaleData = {
   shopSettings: ResolvedShopSettings | null
   /** Shipping methods (shop only) — rendered by the shippingInfoModule. */
   shippingMethods: ResolvedShippingMethod[]
-  /** Any active variant makes the whole order ship free (`grantsFreeShipping`) — the "Versand &
-   *  Zahlung" module then says so. Follows the content, not a config flag. */
+  /** Any active variant makes the whole order ship free (`grantsFreeShipping`, derived from the
+   *  automatic shipping discounts) — the "Versand & Zahlung" module then says so. Follows the
+   *  content, not a config flag. */
   hasFreeShippingProducts: boolean
   /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
   urlMap: Record<string, string>

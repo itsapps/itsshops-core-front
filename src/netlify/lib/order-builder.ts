@@ -11,11 +11,13 @@ import type {
   FreeShippingReason,
   AddressStrict,
   OrderStatusHistoryEntry,
-  AppliedCouponSnapshot,
+  AppliedDiscountSnapshot,
   OrderPaymentMethod,
 } from '../types/checkout'
 import type { AddressInput } from '../types/api'
+import type { AppliedDiscountResult, LineDiscount } from '../../shared/discounts'
 import { findTaxRate } from './tax'
+import { convertLegacyOrderMeta, type OrderLike } from './discount-migration'
 import type { SanityTaxRuleResult } from '../types/checkout'
 
 function generateKey(): string {
@@ -39,8 +41,9 @@ function buildAddressStrict(input: AddressInput): AddressStrict {
   return out
 }
 
-function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
-  return items.map(item => {
+function buildOrderItems(items: ValidatedCartItem[], lineDiscounts: LineDiscount[] = []): OrderItem[] {
+  return items.map((item, index) => {
+    const line = lineDiscounts[index]
     const orderItem: OrderItem = {
       _key: generateKey(),
       _type: 'orderItem',
@@ -54,6 +57,9 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
       vatAmount: item.vatAmount,
       packed: false,
     }
+
+    // The stored allocation (never recomputed); lines without a discount carry no field.
+    if (line && line.discount > 0) orderItem.discount = line.discount
 
     if (item.subtitle) orderItem.subtitle = item.subtitle
     if (item.weight) orderItem.weight = item.weight
@@ -81,7 +87,7 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
         _type: 'orderItemBundle',
         itemCount: item.bundleItems.reduce((sum, bi) => sum + bi.quantity, 0),
         // Snapshot of the contents and the VAT split (stored, never recomputed).
-        items: item.bundleItems.map(bi => ({
+        items: item.bundleItems.map((bi, c) => ({
           _key: bi.key,
           _type: 'orderItemBundleItem' as const,
           variantId: bi.variantId,
@@ -93,12 +99,33 @@ function buildOrderItems(items: ValidatedCartItem[]): OrderItem[] {
           price: bi.price,
           vatRate: bi.vatRate,
           vatAmount: bi.vatAmount,
+          ...((line?.children?.[c] ?? 0) > 0 && { discount: line!.children![c] }),
         })),
       }
     }
 
     return orderItem
   })
+}
+
+/**
+ * The order snapshot of the applied discounts (pipeline result, apply order). `title` is already
+ * in the order's locale (`toDiscountInput`). Shipping discounts are kept with `amount: 0` when
+ * the selected method was already free (still counted on the webhook).
+ */
+export function buildAppliedDiscountSnapshots(applied: AppliedDiscountResult[]): AppliedDiscountSnapshot[] {
+  return applied.map(({ discount, amount }) => ({
+    _key: generateKey(),
+    _type: 'appliedDiscount' as const,
+    discountRef: { _type: 'reference' as const, _ref: discount._id, _weak: true as const },
+    ...(discount.trigger === 'code' && discount.code && { code: discount.code }),
+    title: discount.title,
+    trigger: discount.trigger,
+    target: discount.target,
+    valueType: discount.valueType,
+    ...(discount.valueType !== 'free' && typeof discount.value === 'number' && { value: discount.value }),
+    amount,
+  }))
 }
 
 function buildOrderTotals(totals: CalculatedTotals): OrderTotals {
@@ -187,7 +214,9 @@ export type BuildOrderMetaInput = {
   contactEmail: string
   locale: string
   paymentIntentId: string
-  appliedCoupons?: AppliedCouponSnapshot[]
+  /** `evaluateDiscounts(...).lines`, aligned with `items` (unset = no discounts). */
+  lineDiscounts?: LineDiscount[]
+  appliedDiscounts?: AppliedDiscountSnapshot[]
   /** Why shipping is free (`freeShippingReason()` in `shipping.ts`); stored only for delivery at 0. */
   freeShippingReason?: FreeShippingReason
 }
@@ -201,7 +230,7 @@ export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
   return {
     _type: 'orderMeta',
     paymentIntentId: input.paymentIntentId,
-    orderItems: buildOrderItems(input.items),
+    orderItems: buildOrderItems(input.items, input.lineDiscounts),
     customer: {
       _type: 'orderCustomer',
       locale: input.locale,
@@ -218,7 +247,7 @@ export function buildOrderMeta(input: BuildOrderMetaInput): OrderMetaDocument {
       input.totals.shipping,
       input.freeShippingReason,
     ),
-    ...(input.appliedCoupons?.length && { appliedCoupons: input.appliedCoupons }),
+    ...(input.appliedDiscounts?.length && { appliedDiscounts: input.appliedDiscounts }),
   }
 }
 
@@ -234,6 +263,10 @@ export type BuildOrderInput = {
 
 export function buildOrder(input: BuildOrderInput): OrderDocument {
   const now = new Date().toISOString()
+  // Transition (remove ≥ 30 days after the last live shop's 6.0.0 release — an unpaid
+  // `orderMeta` lives that long): an `orderMeta` written by the old frontend (`appliedCoupons`,
+  // reason `product`/`coupon`) becomes a migrated order.
+  const orderMeta = convertLegacyOrderMeta(input.orderMeta as unknown as OrderLike) as unknown as OrderMetaDocument
 
   return {
     _type: 'order',
@@ -251,15 +284,15 @@ export function buildOrder(input: BuildOrderInput): OrderDocument {
         source: 'stripe',
       },
     ],
-    paymentIntentId: input.orderMeta.paymentIntentId,
+    paymentIntentId: orderMeta.paymentIntentId,
     ...(input.orderDate && { orderDate: input.orderDate }),
     ...(input.payment && { payment: input.payment }),
-    orderItems: input.orderMeta.orderItems,
-    customer: input.orderMeta.customer,
-    totals: input.orderMeta.totals,
-    fulfillment: input.orderMeta.fulfillment,
-    ...(input.orderMeta.appliedCoupons?.length && {
-      appliedCoupons: input.orderMeta.appliedCoupons,
+    orderItems: orderMeta.orderItems,
+    customer: orderMeta.customer,
+    totals: orderMeta.totals,
+    fulfillment: orderMeta.fulfillment,
+    ...(orderMeta.appliedDiscounts?.length && {
+      appliedDiscounts: orderMeta.appliedDiscounts,
     }),
   }
 }

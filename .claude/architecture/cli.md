@@ -23,6 +23,7 @@ Source: `src/bin/itsshops.ts` (commander) → built to `dist/itsshops.js`, expos
 | `clean` | Removes `dist`, `src/_includes/css`, `src/_includes/scripts`. |
 | `sanity [-e <path>] query <groq>` | Runs a GROQ query, prints JSON to stdout. |
 | `sanity [-e <path>] count <type1,type2>` | Document count per type. |
+| `sanity [-e <path>] migrate-discounts [--dry-run] [-y\|--yes] [--locales de,en]` | One-off data migration to the discounts model (core-back 7 / core-front 6): coupons → `discount-<id>`, `grantsFreeShipping` → one automatic shipping discount, orders get line discounts + `appliedDiscounts`. Plans and checks everything first; writes nothing on a problem. Idempotent. See below. |
 | `sanity [-e <path>] delete <type1,type2> [--dry-run] [-y\|--yes]` | Deletes **all** documents of those types — drafts and release versions too (raw perspective) — in **one transaction**, after a typed confirmation. |
 
 ## Examples
@@ -80,7 +81,22 @@ SANITY_DATASET=development itsshops sanity count order
   - needs a token with write access (a read-only token makes `query`/`count` work, `delete` fail).
   - one transaction holds all IDs; for very large deletes (thousands of docs) it may hit Sanity's
     request-size limit — split by type then.
-- There is **no write/patch command.** For bulk content edits use a one-off Node script with
+- `migrate-discounts` (`src/netlify/lib/discount-migration-run.ts`, pure conversions in
+  `discount-migration.ts`; plan `discounts-model.md` → Migration): reads `raw` (the preflight must
+  see drafts) and first **plans** every step — 0. refuse while a `drafts.*`/`versions.*` coupon or
+  flagged variant exists; 1. each coupon → `discount-<old _id>` (create-if-missing + delete the
+  coupon, one transaction each); 2. flagged variants → `discount-product-free-shipping` (kind
+  bundle when every active bundle and only bundles are flagged, else the variants), then unset
+  `grantsFreeShipping` on every variant; 3. each old-shape order → line discounts by the **old**
+  wc-api algorithm (so wineNET's numbers stay), `appliedCoupons` → `appliedDiscounts`, reason
+  `product`/`coupon` → `discount`, a `system` history entry; one transaction per order with
+  `ifRevisionId`. Every order is checked (amounts unchanged, line discounts = `totals.discount`,
+  bundle items sum to their line); any problem → exit 1, **nothing written**. `--dry-run` prints
+  the plan and the checks. Same typed-dataset confirmation / TTY / `--yes` rules as `delete`. A
+  write error stops the run — what ran is done; run it again (idempotent). Backup first
+  (`sanity-dataset-backups.md`); production runs go to the user as a `!` command (below).
+  `orderMeta` docs are not migrated (the webhook converts unpaid ones).
+- Apart from `migrate-discounts` there is **no write/patch command.** For bulk content edits use a one-off Node script with
   `@sanity/client` (a dependency of core-front, not of the customer frontend — resolve it with
   `createRequire(path.join(process.cwd(), 'node_modules/@itsapps/itsshops-core-front/package.json'))`,
   which works linked and installed; run from the customer frontend with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by

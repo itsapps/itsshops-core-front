@@ -3,6 +3,7 @@ import { sanityApiVersion } from '../../config/constants'
 import { log } from '../utils/logger'
 import type { WithdrawalPeriodStart } from '../../shared/withdrawal-instructions'
 import { isHandedOver } from '../../shared/pickup'
+import { DISCOUNT_PROJECTION, SELECTOR_PROJECTION } from '../../shared/discounts/projection'
 import type {
   SanityCheckoutQueryResult,
   OrderMetaDocument,
@@ -49,8 +50,14 @@ export const sanityClient = new Proxy({} as SanityClient, {
 
 const CHECKOUT_QUERY = `{
   "variants": *[_type == "productVariant" && _id in $variantIds]{
-    _id, status, kind, title, sku, price, weight, stock, grantsFreeShipping,
+    _id, status, kind, title, sku, price, weight, stock,
     "productId": product._ref,
+    // Discount selector (top-level lines only — bundle items are never matched).
+    "categoryIds": categories[]._ref,
+    "productCategoryIds": product->categories[]._ref,
+    "manufacturerIds": coalesce(manufacturers, product->manufacturers)[]._ref,
+    compareAtPrice,
+    "productCompareAtPrice": product->compareAtPrice,
     "taxCategoryCode": taxCategory->code.current,
     "productTitle": product->title,
     "productWeight": product->weight,
@@ -89,8 +96,11 @@ const CHECKOUT_QUERY = `{
     "defaultCountryCode": defaultCountry->countryCode,
     freeShippingCalculation,
     "defaultTaxCategoryCode": defaultTaxCategory->code.current,
-    orderNumberPrefix, invoiceNumberPrefix, lastInvoiceNumber
+    orderNumberPrefix, invoiceNumberPrefix, lastInvoiceNumber,
+    "discountExclusions": discountExclusions${SELECTOR_PROJECTION}
   },
+  // Ancestors for the discount category criterion (a parent matches its subcategories).
+  "categories": *[_type == "category"]{ _id, "parentId": parent._ref },
   "pickupTaxCountries": *[_type == "taxCountry" && enabled == true && countryCode in (
     *[_type == "shippingMethod" && methodType == "pickup"].pickupAddress.country
     + [*[_type == "shopSettings"][0].defaultCountry->countryCode]
@@ -99,10 +109,10 @@ const CHECKOUT_QUERY = `{
     rules[]{ "taxCategoryCode": taxCategory->code.current, rate }
   },
   "supportedCountries": *[_type == "taxCountry" && enabled == true]{ countryCode },
-  "coupon": *[_type == "coupon" && $couponEnabled && defined($couponCode) && code == $couponCode][0]{
-    _id, code, enabled, discountType, value,
-    validFrom, validTo, minSubtotal, maxRedemptions, redemptionCount
-  }
+  // No enabled/date filter: the pipeline's conditions report disabled / expired / not yet valid.
+  "codeDiscount": *[_type == "discount" && trigger == "code" && $couponEnabled && defined($couponCode) && code == $couponCode][0]${DISCOUNT_PROJECTION},
+  // Dates are checked in the pipeline (one date rule for code and automatic discounts).
+  "automaticDiscounts": *[_type == "discount" && trigger == "automatic" && enabled == true]${DISCOUNT_PROJECTION}
 }`
 
 export function fetchCheckoutData(
@@ -124,13 +134,6 @@ export async function createOrderMeta(
   doc: OrderMetaDocument,
 ): Promise<void> {
   await sanityClient.createOrReplace({ _id: id, ...doc })
-}
-
-export async function updateOrderMeta(
-  id: string,
-  doc: Partial<OrderMetaDocument>,
-): Promise<void> {
-  await sanityClient.patch(id).set(doc).commit()
 }
 
 export async function fetchOrderMeta(
@@ -166,12 +169,35 @@ export async function createOrder(
 export type CommitOrderInput = {
   doc: OrderDocument & { _type: 'order' }
   stockDecrements: { variantId: string; quantity: number }[]
-  couponIncrements: { couponId: string; by: number }[]
+  discountIncrements: { discountId: string; by: number }[]
 }
 
 /**
- * Atomically create the order, decrement stock on each variant, and bump
- * redemptionCount on each applied coupon. One Sanity round trip.
+ * The discount documents to increment for `ids`: each published id and its `drafts.` copy that
+ * still exist. A patch on a deleted document fails the whole transaction (no order would ever be
+ * created); an open draft holds a stale `redemptionCount` that would overwrite the increment on
+ * publish, so it is incremented too. Raw perspective — the client reads `published` only.
+ */
+export async function existingDiscountDocIds(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+  const candidates = ids.flatMap(id => [id, `drafts.${id}`])
+  return sanityClient.fetch<string[]>(`*[_id in $ids]._id`, { ids: candidates }, { perspective: 'raw' })
+}
+
+/**
+ * Orders placed with this email (case-insensitive) that applied the discount — all orders,
+ * refunded ones too (simple and conservative). For `maxPerEmail`, on `createPayment` only.
+ */
+export async function countOrdersWithDiscountForEmail(discountId: string, email: string): Promise<number> {
+  return sanityClient.fetch<number>(
+    `count(*[_type == "order" && lower(customer.contactEmail) == lower($email) && $discountId in appliedDiscounts[].discountRef._ref])`,
+    { discountId, email },
+  )
+}
+
+/**
+ * Atomically create the order, decrement stock on each variant, and bump `redemptionCount` on
+ * each applied discount (published + open draft, existing ones only). One read + one write.
  */
 export async function commitOrderTransaction(
   input: CommitOrderInput,
@@ -182,8 +208,12 @@ export async function commitOrderTransaction(
   for (const { variantId, quantity } of input.stockDecrements) {
     tx.patch(variantId, (p) => p.dec({ stock: quantity }))
   }
-  for (const { couponId, by } of input.couponIncrements) {
-    tx.patch(couponId, (p) => p.inc({ redemptionCount: by }))
+  const existing = new Set(await existingDiscountDocIds(input.discountIncrements.map(d => d.discountId)))
+  for (const { discountId, by } of input.discountIncrements) {
+    for (const id of [discountId, `drafts.${discountId}`]) {
+      if (!existing.has(id)) continue
+      tx.patch(id, (p) => p.setIfMissing({ redemptionCount: 0 }).inc({ redemptionCount: by }))
+    }
   }
 
   await tx.commit()

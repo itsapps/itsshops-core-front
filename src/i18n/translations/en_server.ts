@@ -49,6 +49,10 @@ export default {
         COUPON_NOT_YET_VALID: "This coupon is not yet valid",
         COUPON_EXHAUSTED: "This coupon has reached its redemption limit",
         COUPON_BELOW_MINIMUM: "Cart total is below the coupon's minimum",
+        COUPON_NOT_APPLICABLE: "This coupon applies to no item in your cart",
+        COUPON_LIMIT_PER_EMAIL: "This coupon has already been used with this email address",
+        COUPON_BELOW_MIN_QUANTITY: "Your cart has too few matching items for this coupon",
+        COUPON_NOT_COMBINABLE: "This coupon cannot be combined with a current promotion",
       },
     },
     voucher: {

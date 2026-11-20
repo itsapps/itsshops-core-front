@@ -13,7 +13,7 @@ import { log } from '../utils/logger'
 
 /** What the shipping calculation reads from a cart line — checkout passes full `ValidatedCartItem`s,
  *  the schema.org markup builds these from resolved variants (`src/schema/shipping.ts`). */
-export type ShippingCartItem = Pick<ValidatedCartItem, 'kind' | 'quantity' | 'weight' | 'wine' | 'grantsFreeShipping'> & {
+export type ShippingCartItem = Pick<ValidatedCartItem, 'kind' | 'quantity' | 'weight' | 'wine'> & {
   bundleItems: Pick<ValidatedBundleItem, 'variantId' | 'quantity' | 'kind' | 'weight' | 'wine'>[] | null
 }
 
@@ -311,8 +311,6 @@ export function resolveShippingMethods(
 ): AvailableShippingMethod[] {
   const cartWeightKg = calculateCartWeight(items)
   const available: AvailableShippingMethod[] = []
-  // One flagged line makes every delivery method free for the whole order (boxes still computed).
-  const productFree = items.some(i => i.grantsFreeShipping)
 
   for (const method of methods) {
     const title = resolveLocalizedTitle(method.title, locale)
@@ -368,8 +366,9 @@ export function resolveShippingMethods(
       price = rate.price
     }
 
-    const thresholdFree = isFreeShipping(method.freeShippingThreshold, subtotal, discount, freeShippingCalculation)
-    const free = productFree || thresholdFree
+    // Only the threshold here: shipping discounts are applied after the method is selected on
+    // real prices (`payment-create.ts`).
+    const free = isFreeShipping(method.freeShippingThreshold, subtotal, discount, freeShippingCalculation)
 
     available.push({
       _id: method._id,
@@ -378,7 +377,7 @@ export function resolveShippingMethods(
       methodType: 'delivery',
       price: free ? 0 : price,
       isFree: free,
-      ...(free && { freeReason: productFree ? 'product' as const : 'threshold' as const }),
+      ...(free && { freeReason: 'threshold' as const }),
       taxCategoryCode: method.taxCategoryCode,
       ...(packagingLines && { packagingLines }),
     })
@@ -388,15 +387,16 @@ export function resolveShippingMethods(
 }
 
 /**
- * Why the selected method ships free, for the order snapshot: the method's own reason (product >
- * threshold), else a coupon that zeroed shipping. Delivery only; `undefined` when not free.
+ * Why the selected method ships free, for the order snapshot: the threshold first, else a
+ * shipping discount that waived it. Delivery only (a pickup waived by a code stores no reason);
+ * `undefined` when not free.
  */
 export function freeShippingReason(
   selected: AvailableShippingMethod,
-  couponZeroShipping: boolean,
+  shippingDiscountApplied: boolean,
 ): FreeShippingReason | undefined {
   if (selected.methodType !== 'delivery') return undefined
-  return selected.freeReason ?? (couponZeroShipping ? 'coupon' : undefined)
+  return selected.freeReason ?? (shippingDiscountApplied ? 'discount' : undefined)
 }
 
 /**

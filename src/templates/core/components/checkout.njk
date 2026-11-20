@@ -55,8 +55,9 @@
     data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
     data-t-error-zip-format="{{ 'forms.fields.zip.errorMessageFormat' | trans }}"
     data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
-    {%- if coreConfig.features.shop.coupons %}
+    {#- Fallback label of a discount row (automatic discounts too, not only codes). #}
     data-t-discount="{{ 'checkout.discount' | trans }}"
+    {%- if coreConfig.features.shop.coupons %}
     data-t-coupon-apply="{{ 'checkout.coupon.apply' | trans }}"
     data-t-coupon-remove="{{ 'checkout.coupon.remove' | trans }}"
     data-t-coupon-applied="{{ 'checkout.coupon.applied' | trans }}"
@@ -67,6 +68,11 @@
     data-t-coupon-not-yet="{{ 'checkout.coupon.error.notYet' | trans }}"
     data-t-coupon-exhausted="{{ 'checkout.coupon.error.exhausted' | trans }}"
     data-t-coupon-below-minimum="{{ 'checkout.coupon.error.belowMinimum' | trans }}"
+    data-t-coupon-not-applicable="{{ 'checkout.coupon.error.notApplicable' | trans }}"
+    data-t-coupon-limit-per-email="{{ 'checkout.coupon.error.limitPerEmail' | trans }}"
+    data-t-coupon-below-min-quantity="{{ 'checkout.coupon.error.belowMinQuantity' | trans }}"
+    data-t-coupon-not-combinable="{{ 'checkout.coupon.error.notCombinable' | trans }}"
+    data-t-coupon-not-discounted="{{ 'checkout.coupon.notDiscounted' | trans }}"
     {%- endif %}
   >
     {# Top progress bar — drives loading feedback without layout shift #}
@@ -269,6 +275,8 @@
                 {{ 'checkout.coupon.applied' | trans }}: <code data-checkout-coupon-applied-code></code>
               </p>
               <p data-checkout-coupon-error class="checkout-coupon__error" role="alert" hidden></p>
+              {#- Always in the DOM (a polite live region is announced reliably only then); empty = nothing to say. #}
+              <p data-checkout-coupon-hint class="checkout-coupon__hint" role="status"></p>
             </div>
           </fieldset>
           {%- endif -%}

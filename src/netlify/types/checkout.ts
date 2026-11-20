@@ -4,6 +4,7 @@
  */
 
 import type { VatBreakdownItem } from '../../shared/checkout-api'
+import type { ProductSelector, RawDiscount, SelectorLine } from '../../shared/discounts'
 export type { VatBreakdownItem }
 
 // ── Sanity query result types ───────────────────────────────────────────────
@@ -17,9 +18,13 @@ export type SanityVariantResult = {
   price: number | null
   weight: number | null
   stock: number | null
-  /** The whole order ships free when the cart holds this variant (top-level lines only). */
-  grantsFreeShipping?: boolean | null
   productId: string | null
+  /** Discount selector inputs (top-level lines only; `cart-validator.ts` builds the `SelectorLine`). */
+  categoryIds?: string[] | null
+  productCategoryIds?: string[] | null
+  manufacturerIds?: string[] | null
+  compareAtPrice?: number | null
+  productCompareAtPrice?: number | null
   taxCategoryCode: string | null
   productTitle: LocaleString[] | null
   productWeight: number | null
@@ -134,23 +139,17 @@ export type SanityShopSettingsResult = {
   orderNumberPrefix: string | null
   invoiceNumberPrefix: string | null
   lastInvoiceNumber: number
+  /** Never discounted by items/order discounts (unless the discount ignores them). */
+  discountExclusions?: ProductSelector | null
 }
 
 export type SanitySupportedCountryResult = {
   countryCode: string
 }
 
-export type SanityCouponResult = {
+export type SanityCategoryParentResult = {
   _id: string
-  code: string
-  enabled: boolean
-  discountType: 'percent' | 'fixed' | 'freeShipping'
-  value: number | null
-  validFrom: string | null
-  validTo: string | null
-  minSubtotal: number | null
-  maxRedemptions: number | null
-  redemptionCount: number | null
+  parentId: string | null
 }
 
 export type SanityCheckoutQueryResult = {
@@ -163,7 +162,12 @@ export type SanityCheckoutQueryResult = {
   pickupTaxCountries: NonNullable<SanityTaxCountryResult>[]
   shopSettings: SanityShopSettingsResult
   supportedCountries: SanitySupportedCountryResult[]
-  coupon: SanityCouponResult | null
+  /** Every category with its parent (ancestors for the discount category criterion). */
+  categories: SanityCategoryParentResult[]
+  /** The `discount` with the typed code (any state), if codes are on and one was typed. */
+  codeDiscount: RawDiscount | null
+  /** Published automatic discounts with `enabled == true` (dates checked by the pipeline). */
+  automaticDiscounts: RawDiscount[]
 }
 
 export type LocaleString = {
@@ -189,8 +193,8 @@ export type ValidatedCartItem = {
   wine: { vintage: string | null; volume: number | null } | null
   options: { groupTitle: string; optionTitle: string }[] | null
   bundleItems: ValidatedBundleItem[] | null
-  /** From the server variant (never the client); false for digital. Makes every delivery method free. */
-  grantsFreeShipping: boolean
+  /** What the discount selector sees of this line (from the server variant, never the client). */
+  selector: SelectorLine
 }
 
 /**
@@ -224,14 +228,25 @@ export type CalculatedTotals = {
   vatBreakdown: VatBreakdownItem[]
 }
 
-export type AppliedCouponSnapshot = {
+/**
+ * Snapshot of one applied discount on an `orderMeta` / `order` (core-back `appliedDiscount`).
+ * `amount` = cents saved (shipping: the waived cost of the selected method). The per-line split
+ * is on `OrderItem.discount` / `OrderItemBundleItem.discount`.
+ */
+export type AppliedDiscountSnapshot = {
   _key: string
-  _type: 'appliedCoupon'
-  couponRef: { _type: 'reference'; _ref: string; _weak: true }
-  code: string
-  discountType: 'percent' | 'fixed' | 'freeShipping'
-  value: number | null
-  discountAmount: number
+  _type: 'appliedDiscount'
+  /** Unset on migrated "Versandkostenfrei durch Produkt" entries (no discount document). */
+  discountRef?: { _type: 'reference'; _ref: string; _weak: true }
+  code?: string
+  /** In the order's locale, at order time. */
+  title: string
+  trigger: 'code' | 'automatic'
+  target: 'items' | 'order' | 'shipping'
+  valueType: 'percent' | 'fixed' | 'free'
+  value?: number
+  /** Unset on migrated product-free-shipping entries (the waived cost was never stored). */
+  amount?: number
 }
 
 export type AvailableShippingMethod = {
@@ -241,8 +256,8 @@ export type AvailableShippingMethod = {
   methodType: 'delivery' | 'pickup'
   price: number
   isFree: boolean
-  /** Server only (never sent to the client): why a delivery method is free. */
-  freeReason?: 'product' | 'threshold'
+  /** Server only (never sent to the client): why a delivery method is free before discounts. */
+  freeReason?: 'threshold'
   taxCategoryCode: string | null
   packagingLines?: Array<{ volumes: number[]; packSize: number; quantity: number; price: number }>
   /** Pickup only (city and instructions in the request locale). */
@@ -267,7 +282,10 @@ export type OrderItem = {
   quantity: number
   price: number
   vatRate: number
+  /** VAT of the **undiscounted** line (the discounted VAT is in `totals.vatBreakdown`). */
   vatAmount: number
+  /** Gross cents all discounts took off the whole line (all units); unset = 0. Never recomputed. */
+  discount?: number
   packed: boolean
   wine?: { _type: 'orderItemWine'; vintage?: string; volume?: number }
   options?: { _type: 'orderItemOption'; _key: string; groupTitle: string; optionTitle: string }[]
@@ -291,6 +309,8 @@ export type OrderItemBundleItem = {
   price: number
   vatRate: number
   vatAmount: number
+  /** This item's part of the line's `discount` (whole line quantity); items sum to the line's. */
+  discount?: number
 }
 
 export type AddressStrict = {
@@ -350,7 +370,8 @@ export type OrderPaymentMethod = {
   wallet?: string
 }
 
-export type FreeShippingReason = 'product' | 'threshold' | 'coupon'
+/** `discount` = a shipping discount in `appliedDiscounts`. (`product` / `coupon` = pre-6.0.0, migrated.) */
+export type FreeShippingReason = 'threshold' | 'discount'
 
 export type Fulfillment = {
   _type: 'fulfillment'
@@ -417,7 +438,7 @@ export type OrderMetaDocument = {
   customer: OrderCustomer
   totals: OrderTotals
   fulfillment: Fulfillment
-  appliedCoupons?: AppliedCouponSnapshot[]
+  appliedDiscounts?: AppliedDiscountSnapshot[]
 }
 
 export type OrderDocument = {
@@ -436,7 +457,7 @@ export type OrderDocument = {
   customer: OrderCustomer
   totals: OrderTotals
   fulfillment: Fulfillment
-  appliedCoupons?: AppliedCouponSnapshot[]
+  appliedDiscounts?: AppliedDiscountSnapshot[]
   /** Stripe refunds, oldest first. Absent on orders refunded before refunds were stored. */
   refunds?: OrderRefund[]
 }

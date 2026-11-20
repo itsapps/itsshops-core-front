@@ -81,7 +81,7 @@ export function ShopOrderEmail({ ctx, order, studioOrderUrl }: ShopOrderEmailPro
         ))}
       </Section>
 
-      <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} />
+      <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} appliedDiscounts={order.appliedDiscounts} />
 
       <OrderDetails ctx={ctx} order={order} />
 

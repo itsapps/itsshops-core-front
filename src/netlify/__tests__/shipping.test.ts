@@ -36,7 +36,7 @@ function makeItem({ bundleItems, ...overrides }: ItemOverrides = {}): ValidatedC
     vatAmount: 167,
     wine: null,
     options: null,
-    grantsFreeShipping: false,
+    selector: { variantId: 'v1', productId: 'p1', kind: 'wine', categoryIds: [], manufacturerIds: [], hasCompareAtPrice: false },
     bundleItems: bundleItems?.map((bi, i) => ({
       key: `k${i}`, productId: 'p', title: 'T', subtitle: null, sku: null,
       price: 0, vatRate: 20, vatAmount: 0, ...bi,
@@ -453,7 +453,7 @@ describe('resolveShippingMethods', () => {
   })
 })
 
-describe('resolveShippingMethods — product free shipping', () => {
+describe('resolveShippingMethods — free shipping (threshold only)', () => {
   const groups: SanityPackagingGroupResult[] = [
     { bottles: [{ volume: 750, perPlace: 1 }], packages: [{ places: 1, price: 600 }, { places: 6, price: 800 }] },
   ]
@@ -471,32 +471,25 @@ describe('resolveShippingMethods — product free shipping', () => {
       freeShippingThreshold: null, taxCategoryCode: 'standard', rates: null, packagingGroups: null,
     },
   ]
-  const bundle = (flag: boolean) => makeItem({
-    variantId: 'b1', kind: 'bundle', weight: 3750, quantity: 1, wine: null, grantsFreeShipping: flag,
+  const bundle = () => makeItem({
+    variantId: 'b1', kind: 'bundle', weight: 3750, quantity: 1, wine: null,
     bundleItems: [{ variantId: 'w1', quantity: 3, kind: 'wine', weight: 1250, wine: { volume: 750 } }],
   })
   const wine = (volume: number, quantity: number) =>
     makeItem({ variantId: `w${volume}`, kind: 'wine', weight: null, quantity, wine: { vintage: '2024', volume } })
   const delivery = (r: AvailableShippingMethod[]) => r.filter(m => m.methodType === 'delivery')
 
-  it('one flagged line makes every delivery method free, boxes still computed', () => {
-    const result = resolveShippingMethods(methods, [bundle(true), wine(750, 2)], 5000, 0, 'beforeDiscount', 'de')
-    expect(delivery(result)).toHaveLength(2)
+  it('a bundle no longer frees shipping by itself (shipping discounts come after selection)', () => {
+    const result = resolveShippingMethods(methods, [bundle(), wine(750, 2)], 5000, 0, 'beforeDiscount', 'de')
     for (const m of delivery(result)) {
-      expect(m.price).toBe(0)
-      expect(m.isFree).toBe(true)
-      expect(m.freeReason).toBe('product')
-      expect(m.packagingLines).toEqual([{ volumes: [750], packSize: 6, quantity: 1, price: 800 }])
+      expect(m.isFree).toBe(false)
+      expect(m.price).toBeGreaterThan(0)
+      expect(m.freeReason).toBeUndefined()
     }
   })
 
-  it('product wins over the threshold', () => {
-    const result = resolveShippingMethods(methods, [bundle(true)], 20000, 0, 'beforeDiscount', 'de')
-    expect(delivery(result).map(m => m.freeReason)).toEqual(['product', 'product'])
-  })
-
   it('threshold only → reason threshold', () => {
-    const result = resolveShippingMethods(methods, [bundle(false)], 12000, 0, 'beforeDiscount', 'de')
+    const result = resolveShippingMethods(methods, [bundle()], 12000, 0, 'beforeDiscount', 'de')
     const at = result.find(m => m._id === 'at')!
     const de = result.find(m => m._id === 'de')!
     expect(at).toMatchObject({ price: 0, isFree: true, freeReason: 'threshold' })
@@ -505,12 +498,12 @@ describe('resolveShippingMethods — product free shipping', () => {
   })
 
   it('an uncoverable bottle size still drops the method', () => {
-    const result = resolveShippingMethods(methods, [bundle(true), wine(1500, 1)], 5000, 0, 'beforeDiscount', 'de')
+    const result = resolveShippingMethods(methods, [bundle(), wine(1500, 1)], 5000, 0, 'beforeDiscount', 'de')
     expect(delivery(result)).toHaveLength(0)
   })
 
   it('leaves pickup untouched', () => {
-    const result = resolveShippingMethods(methods, [bundle(true)], 5000, 0, 'beforeDiscount', 'de')
+    const result = resolveShippingMethods(methods, [bundle()], 5000, 0, 'beforeDiscount', 'de')
     const pickup = result.find(m => m.methodType === 'pickup')!
     expect(pickup.price).toBe(300)
     expect(pickup.freeReason).toBeUndefined()
@@ -521,12 +514,11 @@ describe('freeShippingReason', () => {
   const method = (o: Partial<AvailableShippingMethod> = {}): AvailableShippingMethod => ({
     _id: 'm', title: 'M', methodType: 'delivery', price: 0, isFree: true, taxCategoryCode: null, ...o,
   })
-  it('the method reason wins over a coupon', () => {
-    expect(freeShippingReason(method({ freeReason: 'product' }), true)).toBe('product')
+  it('the threshold wins over a shipping discount', () => {
     expect(freeShippingReason(method({ freeReason: 'threshold' }), true)).toBe('threshold')
   })
-  it('no method reason + coupon zeroed shipping → coupon', () => {
-    expect(freeShippingReason(method({ price: 500, isFree: false }), true)).toBe('coupon')
+  it('no threshold + a shipping discount waived it → discount', () => {
+    expect(freeShippingReason(method({ price: 500, isFree: false }), true)).toBe('discount')
   })
   it('neither → undefined', () => {
     expect(freeShippingReason(method({ price: 500, isFree: false }), false)).toBeUndefined()

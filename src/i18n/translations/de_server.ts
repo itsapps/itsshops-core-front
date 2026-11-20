@@ -49,6 +49,10 @@ export default {
         COUPON_NOT_YET_VALID: "Dieser Rabattcode ist noch nicht gültig",
         COUPON_EXHAUSTED: "Dieser Rabattcode hat sein Einlöselimit erreicht",
         COUPON_BELOW_MINIMUM: "Der Warenkorb-Wert liegt unter dem Mindestwert für diesen Code",
+        COUPON_NOT_APPLICABLE: "Dieser Rabattcode gilt für keinen Artikel im Warenkorb",
+        COUPON_LIMIT_PER_EMAIL: "Dieser Rabattcode wurde mit dieser E-Mail-Adresse schon eingelöst",
+        COUPON_BELOW_MIN_QUANTITY: "Für diesen Rabattcode sind zu wenige passende Artikel im Warenkorb",
+        COUPON_NOT_COMBINABLE: "Dieser Rabattcode ist nicht mit einer laufenden Aktion kombinierbar",
       },
     },
     voucher: {

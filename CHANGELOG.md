@@ -4,6 +4,61 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Release flow: `.claude/workflows/consuming-core-and-deploy.md` → "Release flow".
 
+## 6.0.0 (unreleased)
+
+Discounts model: codes and automatic discounts in one line-level pipeline (plan
+`.claude/plans/discounts-model.md`, ADR `discounts-model.md`). **Needs core-back 7.0.0** (the
+`discount` document) and the data migration — release both together (plan → Rollout 4).
+
+- **Discounts** replace coupons: a `discount` document with trigger `code` | `automatic`, target
+  `items` | `order` | `shipping`, a product selector (kinds, categories incl. subcategories,
+  manufacturers, products, variants, "has compare-at price"), conditions (dates, min subtotal of
+  the whole cart or matching items, min quantity, total limit, limit per email), `combinesWith`,
+  and shop-wide exclusions (`shopSettings.discountExclusions`). At most one code per order plus
+  automatic discounts; the larger saving wins when they don't combine. One pure pipeline in
+  `src/shared/discounts/` (exported building blocks), shared by checkout and build.
+- **Line-level discounts on the order:** `orderItem.discount` and bundle item `discount` (gross
+  cents, whole line), `appliedDiscounts[]` instead of `appliedCoupons[]`. VAT per rate from the
+  discounted line parts (no global factor) — may differ by a cent from the old math on mixed
+  carts. `fulfillment.freeShippingReason` is `threshold` | `discount` (threshold first; was
+  `product` > `threshold` > `coupon`).
+- **Product free shipping is an automatic shipping discount.** `grantsFreeShipping` is no longer a
+  variant field: `ResolvedVariant.grantsFreeShipping` (and `hasFreeShippingProducts`) is derived
+  at build time from enabled automatic shipping discounts without conditions. Templates unchanged.
+  Shipping discounts are applied after the method is selected on real prices (the default pick is
+  the really cheapest delivery method now), pickup only with `appliesToPickup`.
+- **API response:** `appliedDiscounts` (`{ title, code?, trigger, target, amount }`) and
+  `notDiscountedVariantIds` replace `appliedCoupons`; `couponError.discountTitle` for the new
+  `COUPON_NOT_COMBINABLE`. New error codes `COUPON_NOT_APPLICABLE`, `COUPON_LIMIT_PER_EMAIL`,
+  `COUPON_BELOW_MIN_QUANTITY`, `COUPON_NOT_COMBINABLE`. Types `AppliedCouponResponse`,
+  `AppliedCouponSnapshot`, `SanityCouponResult`, `CouponDiscount` removed; `calculateTotals` takes
+  the pipeline result; `ValidatedCartItem.selector` replaces `grantsFreeShipping`.
+- **Checkout UI:** one totals row per discount (its title, code in the code slot); a "Nicht
+  rabattiert: …" hint (`[data-checkout-coupon-hint]`, polite live region) when the code skips
+  lines; the coupon box ignores automatic discounts; `data-t-discount` is set without
+  `shop.coupons` too. Order snapshot `v: 2` (a v1 snapshot from before the release is ignored).
+  Express checkout: one wallet line per items/order discount.
+- **Mails / invoice PDF:** one summary row per items/order discount (title + amount) instead of
+  one "Rabatt" row.
+- **wc-api:** line totals from the stored line discounts (no proportional spread). Migrated orders
+  give byte-identical output.
+- **Webhook:** increments `redemptionCount` on every applied discount with a document — published
+  and an open draft, deleted ids skipped. Converts an old-shape `orderMeta` (transition, removed
+  ≥ 30 days after the last live shop's release). A re-submitted checkout replaces its `orderMeta`
+  (`updateOrderMeta` removed).
+- **CLI:** `itsshops sanity migrate-discounts [--dry-run] [--yes]` (`cli.md`).
+
+### Upgrading
+
+1. Upgrade core-back to 7.0.0 in the same release (its notes: remove `productFreeShipping` from
+   `sanity.config.ts`, set `automaticDiscounts` if wanted).
+2. Backup the dataset, then `itsshops sanity migrate-discounts --dry-run`, then without
+   `--dry-run` — in the release window: frontend built but not published → migrate → publish →
+   run it once more (plan → Rollout 4). Non-live shops: just run it.
+3. Customer code: anything reading `appliedCoupons`, `grantsFreeShipping` from a query, or
+   `CalculateResponse.appliedCoupons` (template overrides, custom scripts) → the new fields.
+   Template overrides reading `product.grantsFreeShipping` keep working.
+
 ## 5.3.0
 
 Store pickup, locale regions (`og:locale`, opt-in regional formats), wc-api accepted mode,

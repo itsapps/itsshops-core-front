@@ -16,6 +16,7 @@ import {
   View,
 } from '@react-pdf/renderer'
 import type { OrderDocument } from '../../types/checkout'
+import { discountSummaryLines } from '../../lib/order-discount-lines'
 import type { EmailContext } from '../email/types'
 import { formatShopDate } from '../../utils/i18n'
 import { bundleItemLines, lineVatRate } from '../../lib/order-item-display'
@@ -191,12 +192,9 @@ export function InvoicePdf({ ctx, order }: InvoicePdfProps) {
             subLabel={`(${order.fulfillment.methodTitle})`}
             value={formatPrice(order.totals.shipping)}
           />
-          {order.totals.discount > 0 && (
-            <SummaryLine
-              label={t('emails.order.summaryDiscount')}
-              value={`-${formatPrice(order.totals.discount)}`}
-            />
-          )}
+          {discountSummaryLines(order.totals, order.appliedDiscounts, t('emails.order.summaryDiscount')).map((row, i) => (
+            <SummaryLine key={i} label={row.label} value={`-${formatPrice(row.amount)}`} />
+          ))}
           <SummaryLine
             label={t('emails.order.summaryTotal')}
             value={formatPrice(order.totals.grandTotal)}

@@ -156,6 +156,28 @@ grid/list toggle.
 | Age gate (`age-gate.ts` + inline) | `[data-age-gate]`, `[data-age-gate-confirm|deny]`, `[data-age-gate-denied-msg]` | `html[data-age-gate-state="pending|open"]`; structure in `age-gate.css`, the buttons' look is customer CSS |
 | Checkout (`checkout.ts`) | `[data-checkout]` + `[data-checkout-*]` regions | `data-checkout-state`, `aria-busy` on the container; `checkout.css` |
 
+## Checkout discounts (`checkout-coupon.ts`, `order-totals.ts`)
+
+- **Totals rows:** one `totalsRow` (`macros/cart.njk`) per applied discount with `amount > 0`, code
+  and automatic alike (shipping discounts too — the shipping row then reads "—"): label = the
+  discount's title (text), the code in the `code` slot (not repeated when it equals the title),
+  value `− €X`, modifier `--discount`. Empty title → the generic `data-t-discount` label, which is
+  on the container **whatever** `shop.coupons` (shops with automatic discounts and no codes need
+  it). All via `textContent`.
+- **Coupon box** (`[data-checkout-coupon]`, only with `shop.coupons`): `render(applied, error,
+  notDiscounted)` looks only at the `trigger: 'code'` entry — an automatic discount neither locks
+  the input nor shows "Eingelöst". Errors by `errorCode` (`data-t-coupon-*` per code, incl.
+  `not-applicable`, `limit-per-email`, `below-min-quantity`, `not-combinable`); `{title}` is
+  filled with `discountTitle`.
+- **Hint** `[data-checkout-coupon-hint]` (`<p class="checkout-coupon__hint" role="status">` inside
+  the coupon fieldset): "Nicht rabattiert: <titles>" when the applied code skipped cart lines.
+  **Always in the DOM, never `hidden`/`display: none`** — empty = nothing to say (a polite live
+  region is announced reliably only when it exists before it is filled). Core CSS only drops its
+  margin while `:empty`.
+- **Stored code** is dropped when a response has a `couponError` and no `trigger: 'code'` entry
+  (`shouldClearStoredCode`) — after calculate **and** on both submit paths (express: before the
+  reconfirm calculate, which gets the error passed on so it stays visible).
+
 ## Fulfillment choice (`checkout-fulfillment.ts`, store pickup)
 
 Hooks in `core/components/checkout.njk` (core template, no override):

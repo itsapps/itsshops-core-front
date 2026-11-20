@@ -270,7 +270,12 @@ export default {
         notYet: "Dieser Rabattcode ist noch nicht gültig",
         exhausted: "Dieser Rabattcode hat sein Einlöselimit erreicht",
         belowMinimum: "Der Warenkorb-Wert liegt unter dem Mindestwert für diesen Code",
+        notApplicable: "Dieser Rabattcode gilt für keinen Artikel im Warenkorb",
+        limitPerEmail: "Dieser Rabattcode wurde mit dieser E-Mail-Adresse schon eingelöst",
+        belowMinQuantity: "Für diesen Rabattcode sind zu wenige passende Artikel im Warenkorb",
+        notCombinable: "Nicht mit Aktion „{title}“ kombinierbar",
       },
+      notDiscounted: "Nicht rabattiert: {items}",
     },
   },
   ageGate: {

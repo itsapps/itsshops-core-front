@@ -22,10 +22,10 @@ import { CheckoutSummary } from './checkout-summary'
 import { pageFormatLocale } from './price'
 import { CheckoutStripe } from './checkout-stripe'
 import { CheckoutExpress } from './checkout-express'
-import { CheckoutCoupon, type CouponLabels } from './checkout-coupon'
+import { CheckoutCoupon, shouldClearStoredCode, type CouponLabels } from './checkout-coupon'
 import { buildOrderSnapshot, saveOrderSnapshot, paymentIntentIdFromSecret } from './order-snapshot'
 import { savePendingPayment, reconcilePendingPayment } from './pending-payment'
-import type { CalculateResponse, CheckoutCartItem, SupportedCountry } from '../shared/checkout-api'
+import type { CalculateResponse, CheckoutCartItem, CouponErrorResponse, SupportedCountry } from '../shared/checkout-api'
 
 function dispatch(name: string, detail?: unknown): void {
   document.dispatchEvent(new CustomEvent(name, { detail }))
@@ -83,6 +83,11 @@ export async function initCheckout(): Promise<void> {
     couponErrorNotYet: container.dataset.tCouponNotYet ?? 'Coupon is not yet valid',
     couponErrorExhausted: container.dataset.tCouponExhausted ?? 'Coupon limit reached',
     couponErrorBelowMinimum: container.dataset.tCouponBelowMinimum ?? 'Cart total is below the coupon minimum',
+    couponErrorNotApplicable: container.dataset.tCouponNotApplicable ?? 'This coupon applies to no item in your cart',
+    couponErrorLimitPerEmail: container.dataset.tCouponLimitPerEmail ?? 'This coupon has already been used with this email address',
+    couponErrorBelowMinQuantity: container.dataset.tCouponBelowMinQuantity ?? 'Too few matching items for this coupon',
+    couponErrorNotCombinable: container.dataset.tCouponNotCombinable ?? 'Cannot be combined with “{title}”',
+    couponNotDiscounted: container.dataset.tCouponNotDiscounted ?? 'Not discounted: {items}',
   }
 
   const changeLabels: ChangeLabels = {
@@ -178,7 +183,12 @@ export async function initCheckout(): Promise<void> {
       COUPON_NOT_YET_VALID: t.couponErrorNotYet,
       COUPON_EXHAUSTED: t.couponErrorExhausted,
       COUPON_BELOW_MINIMUM: t.couponErrorBelowMinimum,
+      COUPON_NOT_APPLICABLE: t.couponErrorNotApplicable,
+      COUPON_LIMIT_PER_EMAIL: t.couponErrorLimitPerEmail,
+      COUPON_BELOW_MIN_QUANTITY: t.couponErrorBelowMinQuantity,
+      COUPON_NOT_COMBINABLE: t.couponErrorNotCombinable,
     },
+    notDiscounted: t.couponNotDiscounted,
   }
   const coupon = couponEl ? new CheckoutCoupon(couponEl, couponLabels) : null
 
@@ -278,6 +288,21 @@ export async function initCheckout(): Promise<void> {
   }
 
   // ── Coupon ────────────────────────────────────────────────────────────
+  /**
+   * Take a response's coupon state (calculate and both submit paths): a stored code the server
+   * rejected is dropped — so it doesn't keep producing the same error (or, on the express path,
+   * come back via the reconfirm calculate) — unless a code discount is still applied (automatic
+   * discounts don't count). `couponError` overrides an empty response error (the reconfirm
+   * calculate after a per-email drop no longer sends the code, so it can't report it itself).
+   */
+  function applyCouponState(response: CalculateResponse, couponError: CouponErrorResponse | null = null): void {
+    const error = response.couponError ?? couponError
+    if (shouldClearStoredCode(response)) clearAppliedCouponCode()
+    const skipped = new Set(response.notDiscountedVariantIds)
+    const titles = response.items.filter(item => skipped.has(item.variantId)).map(item => item.title)
+    coupon?.render(response.appliedDiscounts, error, titles)
+  }
+
   coupon?.setEvents({
     onApply(code) {
       setAppliedCouponCode(code)
@@ -545,10 +570,16 @@ export async function initCheckout(): Promise<void> {
           // the wallet's address/rate, so recalculate the page instead of rendering it.
           const changes = syncFromResponse(response)
           if (!changes) return { error: changeLabels.intro }
+          // Before the reconfirm calculate: a code dropped here (e.g. per-email limit) must be
+          // cleared, or that calculate sends it again without an email and gets it back.
+          applyCouponState(response)
           if (expressMustReconfirm(shownCalculation, response)) {
             showChanges(changes, { reconfirm: true, focus: true })
             const message = [...changeMessages(changes, changeLabels, summary.formatPrice.bind(summary)), changeLabels.reconfirm].join(' ')
-            void calculate({ country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: selectedMethodId() }, { keepNotice: true })
+            void calculate(
+              { country: form.getCountry() || lastResponse?.selectedCountry, shippingMethodId: selectedMethodId() },
+              { keepNotice: true, couponError: response.couponError },
+            )
             return { error: message }
           }
           // Order summary for the thanks page (read back after the Stripe redirect).
@@ -575,7 +606,7 @@ export async function initCheckout(): Promise<void> {
 
   async function calculate(
     options: { country?: string; shippingMethodId?: string } = {},
-    { keepNotice = false } = {},
+    { keepNotice = false, couponError = null as CouponErrorResponse | null } = {},
   ): Promise<void> {
     const seq = ++calcSeq
     setLoading(true)
@@ -596,13 +627,7 @@ export async function initCheckout(): Promise<void> {
       if (!keepNotice || hasCartChanges(changes)) showChanges(changes, { reconfirm: keepNotice })
       lastResponse = response
 
-      // If the server rejected the stored coupon, drop it from the store so it
-      // doesn't keep producing the same error on subsequent recalculations.
-      if (response.couponError && response.appliedCoupons.length === 0) {
-        clearAppliedCouponCode()
-      }
-
-      coupon?.render(response.appliedCoupons, response.couponError)
+      applyCouponState(response, couponError)
 
       populateCountries(response.supportedCountries, response.selectedCountry)
       // May switch the mode (and its totals label) — before the totals render.
@@ -692,6 +717,8 @@ export async function initCheckout(): Promise<void> {
       if (!changes) return
       if (mustReconfirm(changes, lastResponse.totals.grandTotal, response.totals.grandTotal)) {
         lastResponse = response
+        // E.g. the code was dropped by its per-email limit: say why, and drop the stored code.
+        applyCouponState(response)
         summary.renderItems(response.items, localCartMap)
         summary.renderTotals(response)
         renderShippingChoice(response)

@@ -84,7 +84,8 @@ async function handlePaymentSucceeded(
 
   log.debug('OrderMeta loaded', {
     orderMetaId,
-    appliedCoupons: orderMeta.appliedCoupons?.length ?? 0,
+    appliedDiscounts: orderMeta.appliedDiscounts?.length ?? 0,
+    legacyCoupons: (orderMeta as { appliedCoupons?: unknown[] }).appliedCoupons?.length ?? 0,
   })
 
   const { invoiceNumber, orderNumberPrefix, invoiceNumberPrefix } = await getNextInvoiceNumber()
@@ -100,7 +101,7 @@ async function handlePaymentSucceeded(
 
   log.debug('Order doc built', {
     orderNumber: orderDoc.orderNumber,
-    appliedCoupons: orderDoc.appliedCoupons?.length ?? 0,
+    appliedDiscounts: orderDoc.appliedDiscounts?.length ?? 0,
   })
 
   const stockDecrements = hasStock
@@ -109,21 +110,22 @@ async function handlePaymentSucceeded(
         .map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
     : []
 
-  const couponIncrements = (orderDoc.appliedCoupons ?? []).map((c) => ({
-    couponId: c.couponRef._ref,
-    by: 1,
-  }))
+  // Every applied discount with a document (migrated "Versandkostenfrei durch Produkt" entries
+  // have none); `commitOrderTransaction` skips ids that no longer exist.
+  const discountIncrements = [...new Set(
+    (orderDoc.appliedDiscounts ?? []).flatMap((d) => (d.discountRef?._ref ? [d.discountRef._ref] : [])),
+  )].map((discountId) => ({ discountId, by: 1 }))
 
   const created = await commitOrderTransaction({
     doc: orderDoc,
     stockDecrements,
-    couponIncrements,
+    discountIncrements,
   })
   log.debug('Order created', {
     orderId: created._id,
     orderNumber: orderDoc.orderNumber,
     stockUpdates: stockDecrements.length,
-    couponUpdates: couponIncrements.length,
+    discountUpdates: discountIncrements.length,
   })
 
   // Send the order confirmation email. Failures here must NOT abort the

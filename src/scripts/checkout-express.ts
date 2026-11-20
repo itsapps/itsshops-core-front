@@ -10,7 +10,7 @@ import type {
   ShippingMethodResponse,
   AddressInput,
   ValidatedCartItemResponse,
-  AppliedCouponResponse,
+  AppliedDiscountResponse,
 } from '../shared/checkout-api'
 import type { CheckoutStripe } from './checkout-stripe'
 
@@ -59,7 +59,7 @@ export function buildLineItems(
   items: ValidatedCartItemResponse[],
   selectedShipping: ShippingMethodResponse | undefined,
   shippingLabel: string,
-  appliedCoupons: AppliedCouponResponse[] = [],
+  appliedDiscounts: AppliedDiscountResponse[] = [],
 ): LineItem[] {
   const lines: LineItem[] = items.map(i => ({
     name: `${i.quantity}x ${i.title}${i.subtitle ? ` ${i.subtitle}` : ''}`,
@@ -71,13 +71,13 @@ export function buildLineItems(
       amount: selectedShipping.price,
     })
   }
-  for (const coupon of appliedCoupons) {
-    // freeShipping coupons are already reflected in the shipping rate being 0 —
-    // adding them as a separate negative line item would break the sum.
-    if (coupon.discountAmount > 0 && coupon.discountType !== 'freeShipping') {
+  for (const discount of appliedDiscounts) {
+    // Shipping discounts are already reflected in the shipping rate being 0 — a separate
+    // negative line would break the sum.
+    if (discount.amount > 0 && discount.target !== 'shipping') {
       lines.push({
-        name: coupon.code,
-        amount: -coupon.discountAmount,
+        name: discount.title || discount.code || '',
+        amount: -discount.amount,
       })
     }
   }
@@ -99,7 +99,7 @@ export function buildPayloadFromCalculation(calc: CalculateResponse, shippingLab
   if (shippingRates.length === 0) return null
   const selected = calc.shippingMethods.find(m => m._id === calc.selectedShippingMethodId && m.methodType === 'delivery')
   return {
-    lineItems: buildLineItems(calc.items, selected, shippingLabel, calc.appliedCoupons),
+    lineItems: buildLineItems(calc.items, selected, shippingLabel, calc.appliedDiscounts),
     shippingRates,
   }
 }
@@ -110,7 +110,7 @@ export function buildPayloadFromCalculation(calc: CalculateResponse, shippingLab
  */
 export function buildPickupPayload(calc: CalculateResponse, pickupId: string, pickupLabel: string): ResolvedClickPayload {
   const method = calc.shippingMethods.find(m => m._id === pickupId)
-  return { lineItems: buildLineItems(calc.items, method, pickupLabel, calc.appliedCoupons) }
+  return { lineItems: buildLineItems(calc.items, method, pickupLabel, calc.appliedDiscounts) }
 }
 
 // ── Class ────────────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ export class CheckoutExpress {
     // immediately with the user's actual wallet address and recalculates the
     // correct shipping methods for their country.
     event.resolve({
-      lineItems: buildLineItems(calc.items, undefined, this.config.labels.shipping, calc.appliedCoupons),
+      lineItems: buildLineItems(calc.items, undefined, this.config.labels.shipping, calc.appliedDiscounts),
       shippingRates: [],
     })
   }

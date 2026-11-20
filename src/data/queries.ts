@@ -1,5 +1,6 @@
 import type { Config } from '../types'
 import * as proj from './projections'
+import { DISCOUNT_PROJECTION } from '../shared/discounts/projection'
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -107,7 +108,6 @@ export function buildVariantQuery(extensions?: Config['extensions']): string {
   price,
   compareAtPrice,
   weight,
-  grantsFreeShipping,
   ${proj.i18nAltImageField('image')},
   seo ${proj.seo},
   ${proj.specificationsField()},
@@ -259,4 +259,13 @@ export function buildShopSettingsQuery(): string {
     _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
   }
 }`
+}
+
+/**
+ * The build's automatic shipping discounts (enabled; dates/limits filtered by `isUnconditional`)
+ * — they derive `ResolvedVariant.grantsFreeShipping`. Same projection as checkout's
+ * `CHECKOUT_QUERY`, so both sides read one shape.
+ */
+export function buildAutomaticShippingDiscountsQuery(): string {
+  return `*[_type == "discount" && trigger == "automatic" && target == "shipping" && enabled == true]${DISCOUNT_PROJECTION}`
 }

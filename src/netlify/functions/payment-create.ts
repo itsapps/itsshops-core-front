@@ -8,18 +8,34 @@ import type {
   CalculateResponse,
   CreatePaymentResponse,
   ValidatedCartItemResponse,
-  AppliedCouponResponse,
+  AppliedDiscountResponse,
   CouponErrorResponse,
 } from '../types/api'
-import type { SanityCheckoutQueryResult, SanityShippingMethodResult, AppliedCouponSnapshot } from '../types/checkout'
-import { fetchCheckoutData, createOrderMeta, updateOrderMeta, fetchOrderMeta } from '../services/sanity'
+import type {
+  SanityCheckoutQueryResult,
+  SanityShippingMethodResult,
+  AvailableShippingMethod,
+  LocaleString,
+} from '../types/checkout'
+import {
+  fetchCheckoutData,
+  createOrderMeta,
+  fetchOrderMeta,
+  countOrdersWithDiscountForEmail,
+} from '../services/sanity'
 import { createPaymentIntent, updatePaymentIntent } from '../services/stripe'
 import { validateCart } from '../lib/cart-validator'
-import { freeShippingReason, resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
-import { calculateTotals, type CouponDiscount } from '../lib/totals'
+import { freeShippingReason, resolveLocalizedTitle, resolveShippingMethods, selectShippingMethod } from '../lib/shipping'
+import { calculateTotals } from '../lib/totals'
 import { dominantItemVatRate } from '../lib/tax'
-import { buildOrderMeta } from '../lib/order-builder'
-import { validateCoupon, buildAppliedCouponSnapshot } from '../lib/coupon'
+import { buildAppliedDiscountSnapshots, buildOrderMeta } from '../lib/order-builder'
+import {
+  evaluateDiscounts,
+  toDiscountInput,
+  waivesShipping,
+  type LocaleValue,
+  type PipelineInput,
+} from '../../shared/discounts'
 import { bundleContentsKey } from '../lib/order-item-display'
 import { serverT, countryName } from '../utils/i18n'
 import { type ServerConfig, resolveServerConfig } from '../types/config'
@@ -127,6 +143,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       hasStock,
       defaultTaxCategoryCode,
       volumeUnit,
+      Object.fromEntries((data.categories ?? []).map(c => [c._id, c.parentId])),
     )
 
     if (validatedItems.length === 0) {
@@ -135,91 +152,84 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       })
     }
 
-    // ── Calculate shipping ──────────────────────────────────────────────
+    // ── Shipping + discounts ────────────────────────────────────────────
     const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const freeShippingCalc = data.shopSettings?.freeShippingCalculation ?? 'beforeDiscount'
-
-    // Pass 1: resolve with discount=0 so we have a shipping price to feed the
-    // coupon validator (free-shipping coupons need it).
-    let shippingMethods = resolveShippingMethods(
-      methodsIn,
-      validatedItems,
-      subtotal,
-      0,
-      freeShippingCalc,
-      req.locale,
-    )
-
     const requestedMethodId = pickup?._id ?? req.shippingMethodId
-    let selectedShipping = selectShippingMethod(shippingMethods, requestedMethodId)
 
-    if (!selectedShipping && shippingMethods.length === 0) {
+    // Pass 1: the threshold on the undiscounted subtotal. Shipping discounts never change the
+    // method prices here — they are applied after selection (on real prices).
+    const pass1Methods = resolveShippingMethods(methodsIn, validatedItems, subtotal, 0, freeShippingCalc, req.locale)
+    if (pass1Methods.length === 0) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.shipping.noSupportedShippingCountries'), requestId)
     }
 
-    // ── Validate coupon (if any) ────────────────────────────────────────
-    let appliedCoupons: AppliedCouponResponse[] = []
-    let appliedCouponSnapshots: AppliedCouponSnapshot[] = []
-    let couponDiscount: CouponDiscount | null = null
-    let couponError: CouponErrorResponse | null = null
+    const resolveTitle = (title: LocaleValue[] | null | undefined) =>
+      resolveLocalizedTitle((title ?? null) as LocaleString[] | null, req.locale, defaultLocale)
+    const pipelineBase: PipelineInput = {
+      lines: validatedItems.map(item => ({
+        selector: item.selector,
+        unitPrice: item.price,
+        quantity: item.quantity,
+        childPrices: item.bundleItems?.map(bi => bi.price) ?? null,
+      })),
+      couponCode,
+      codeDiscount: data.codeDiscount ? toDiscountInput(data.codeDiscount, resolveTitle) : null,
+      automaticDiscounts: (data.automaticDiscounts ?? []).map(d => toDiscountInput(d, resolveTitle)),
+      exclusions: data.shopSettings?.discountExclusions ?? null,
+    }
+    const shippingOf = (m: AvailableShippingMethod | null) => (m ? { price: m.price, methodType: m.methodType } : null)
 
-    if (couponCode) {
-      const result = validateCoupon(
-        couponCode,
-        data.coupon,
-        subtotal,
-        selectedShipping?.price ?? 0,
-      )
-      if (result.ok) {
-        couponDiscount = {
-          discountAmount: result.discountAmount,
-          zeroShipping: result.zeroShipping,
-        }
-        // For freeShipping coupons, the monetary discount is the shipping cost
-        // that was waived — use that for display so the summary shows the actual
-        // saving (e.g. "-7,00€") rather than "-0,00€".
-        const displayDiscountAmount = result.zeroShipping
-          ? (selectedShipping?.price ?? 0)
-          : result.discountAmount
-        appliedCoupons = [{
-          code: result.coupon.code,
-          discountType: result.coupon.discountType,
-          value: result.coupon.value,
-          discountAmount: displayDiscountAmount,
-        }]
-        appliedCouponSnapshots = [
-          buildAppliedCouponSnapshot(result.coupon, displayDiscountAmount),
-        ]
-      } else {
-        couponError = {
-          code: result.code,
-          errorCode: result.errorCode,
-          message: serverT(req.locale, `api.errors.coupon.${result.errorCode}`),
-        }
+    const run = (emailRedemptions?: Record<string, number>) => {
+      let methods = pass1Methods
+      let selected = selectShippingMethod(methods, requestedMethodId)
+      let result = evaluateDiscounts({ ...pipelineBase, shipping: shippingOf(selected), emailRedemptions })
+      // Pass 2 (`afterDiscount`): the threshold sees the subtotal minus items + order discounts.
+      if (freeShippingCalc === 'afterDiscount' && result.itemsOrderTotal > 0) {
+        methods = resolveShippingMethods(methodsIn, validatedItems, subtotal, result.itemsOrderTotal, freeShippingCalc, req.locale)
+        selected = selectShippingMethod(methods, requestedMethodId)
+        result = evaluateDiscounts({ ...pipelineBase, shipping: shippingOf(selected), emailRedemptions })
+      }
+      return { methods, selected, result }
+    }
+
+    let { methods: shippingMethods, selected: selectedShipping, result: discounts } = run()
+
+    // Per-email limit: needs the email, so only on createPayment (calculate sends no address).
+    // Over the limit → the code is dropped and the pipeline re-runs; the grand total then differs
+    // from the page and the client's reconfirm stops the payment.
+    const contactEmail = req.createPayment ? req.address?.contactEmail?.trim() : undefined
+    const limited = discounts.applied.find(a => a.discount.trigger === 'code' && (a.discount.maxPerEmail ?? 0) > 0)
+    if (contactEmail && limited) {
+      const used = await countOrdersWithDiscountForEmail(limited.discount._id, contactEmail)
+      if (used >= limited.discount.maxPerEmail!) {
+        ;({ methods: shippingMethods, selected: selectedShipping, result: discounts } = run({ [limited.discount._id]: used }))
       }
     }
 
-    // Pass 2: when a percent/fixed coupon is applied AND shop uses
-    // `afterDiscount` free-shipping, re-resolve so the threshold check sees
-    // the post-discount subtotal. Pure local recomputation, no extra fetch.
-    if (couponDiscount && freeShippingCalc === 'afterDiscount' && couponDiscount.discountAmount > 0) {
-      shippingMethods = resolveShippingMethods(
-        methodsIn,
-        validatedItems,
-        subtotal,
-        couponDiscount.discountAmount,
-        freeShippingCalc,
-        req.locale,
-      )
-      selectedShipping = selectShippingMethod(shippingMethods, requestedMethodId)
-    }
+    const couponError: CouponErrorResponse | null = discounts.couponError
+      ? {
+          code: discounts.couponError.code,
+          errorCode: discounts.couponError.errorCode,
+          message: serverT(req.locale, `api.errors.coupon.${discounts.couponError.errorCode}`),
+          ...(discounts.couponError.discountTitle && { discountTitle: discounts.couponError.discountTitle }),
+        }
+      : null
+    const appliedDiscounts: AppliedDiscountResponse[] = discounts.applied.map(({ discount, amount }) => ({
+      title: discount.title,
+      ...(discount.trigger === 'code' && discount.code && { code: discount.code }),
+      trigger: discount.trigger,
+      target: discount.target,
+      amount,
+    }))
+    const notDiscountedVariantIds = discounts.notDiscountedLines.map(i => validatedItems[i].variantId)
 
     // ── Calculate totals ────────────────────────────────────────────────
-    // Shipping VAT follows the "dominant goods": the rate whose items have the
-    // largest gross goods value (sum of shop prices).
+    // Shipping VAT follows the "dominant goods": the rate whose items have the largest
+    // undiscounted gross goods value (sum of shop prices).
     const shippingVatRate = selectedShipping ? dominantItemVatRate(validatedItems) : 0
 
-    const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate, couponDiscount)
+    const totals = calculateTotals(validatedItems, selectedShipping, shippingVatRate, discounts)
 
     // ── Build response ──────────────────────────────────────────────────
     const responseItems: ValidatedCartItemResponse[] = validatedItems.map(item => {
@@ -259,8 +269,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         _id: m._id,
         title: m.title,
         methodType: m.methodType,
-        price: couponDiscount?.zeroShipping ? 0 : m.price,
-        isFree: couponDiscount?.zeroShipping ? true : m.isFree,
+        price: waivesShipping(discounts, m.methodType) ? 0 : m.price,
+        isFree: waivesShipping(discounts, m.methodType) ? true : m.isFree,
         ...(m.deliveryTime && { deliveryTime: m.deliveryTime }),
         ...(m.pickupAddress && { pickupAddress: m.pickupAddress }),
         ...(m.pickupInstructions && { pickupInstructions: m.pickupInstructions }),
@@ -270,7 +280,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       selectedCountry: country,
       supportedCountries,
       currency: 'EUR',
-      appliedCoupons,
+      appliedDiscounts,
+      notDiscountedVariantIds,
       couponError,
     }
 
@@ -300,8 +311,9 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       contactEmail: req.address.contactEmail,
       locale: req.locale,
       paymentIntentId: '',
-      appliedCoupons: appliedCouponSnapshots,
-      freeShippingReason: freeShippingReason(selectedShipping, !!couponDiscount?.zeroShipping),
+      lineDiscounts: discounts.lines,
+      appliedDiscounts: buildAppliedDiscountSnapshots(discounts.applied),
+      freeShippingReason: freeShippingReason(selectedShipping, waivesShipping(discounts, selectedShipping.methodType)),
     })
 
     if (req.orderMetaId) {
@@ -316,7 +328,9 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       })
 
       orderMetaDoc.paymentIntentId = intent.id
-      await updateOrderMeta(orderMetaId, orderMetaDoc)
+      // Replace, not merge: a discount dropped since the last submit (or an old-frontend
+      // `appliedCoupons`) must not survive in the stored document.
+      await createOrderMeta(orderMetaId, orderMetaDoc)
 
       log.info('PaymentIntent updated', { paymentIntentId: intent.id, requestId })
 

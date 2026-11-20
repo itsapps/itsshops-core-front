@@ -10,7 +10,7 @@ export type TotalsLabels = {
   discount?: string
 }
 
-export type TotalsData = Pick<CalculateResponse, 'totals' | 'appliedCoupons'>
+export type TotalsData = Pick<CalculateResponse, 'totals' | 'appliedDiscounts'>
 
 type Row = { label: string; value: string; modifier?: string; code?: string }
 
@@ -41,10 +41,12 @@ export function renderTotals(
   const { totals } = data
   renderRows(container, [
     { label: labels.subtotal, value: formatPrice(totals.subtotal) },
-    ...data.appliedCoupons.map(coupon => ({
-      label: labels.discount ?? 'Discount',
-      code: coupon.code,
-      value: `− ${formatPrice(coupon.discountAmount)}`,
+    // One row per applied discount that saved something (shipping ones too — shipping then
+    // reads "—"); label = its title, the generic label only when the title is empty.
+    ...data.appliedDiscounts.filter(d => d.amount > 0).map(d => ({
+      label: d.title || (labels.discount ?? 'Discount'),
+      ...(d.code && d.code !== d.title && { code: d.code }),
+      value: `− ${formatPrice(d.amount)}`,
       modifier: 'discount',
     })),
     { label: labels.shipping, value: totals.shipping === 0 ? '—' : formatPrice(totals.shipping) },

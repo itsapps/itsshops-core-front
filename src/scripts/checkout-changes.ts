@@ -43,7 +43,8 @@ export function expressMustReconfirm(
   return shown === null || calculationSignature(shown) !== calculationSignature(response)
 }
 
-function fill(template: string, values: Record<string, string>): string {
+/** Replace `{key}` placeholders (unknown keys stay). The result goes in via `textContent`. */
+export function fill(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (m, key: string) => values[key] ?? m)
 }
 

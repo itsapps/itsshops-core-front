@@ -53,7 +53,6 @@ export function variantToCartItem(variant: ResolvedVariant): ShippingCartItem {
     quantity: 1,
     weight: children ? resolveBundleWeight(children) : resolveVariantWeight({ kind, weight: variant.weight, wine }),
     wine,
-    grantsFreeShipping: variant.grantsFreeShipping,
     // Same per-child weights as checkout's `bundleItems[].weight` (explicit first, wine estimated)
     bundleItems: children?.map(c => ({ ...c, weight: resolveVariantWeight(c) })) ?? null,
   }
@@ -108,11 +107,14 @@ export function buildShippingDetails(variant: ResolvedVariant, shipping: Shippin
     const method = byId.get(p._id)
     if (!method || p.methodType !== 'delivery') return []
     const days = parseDeliveryDays(method.deliveryTime)
+    // A derived `grantsFreeShipping` (an unconditional automatic shipping discount matches this
+    // variant alone): checkout waives every delivery method, so the published rate is 0 too.
+    const rate = variant.grantsFreeShipping ? 0 : p.price
     return [{
       '@type': 'OfferShippingDetails',
       shippingRate: {
         '@type':  'MonetaryAmount',
-        value:    Number((p.price / 100).toFixed(2)),
+        value:    Number((rate / 100).toFixed(2)),
         currency: 'EUR',
       },
       shippingDestination: method.countries.map(country => ({

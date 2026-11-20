@@ -95,6 +95,30 @@ describe('order confirmation email', () => {
     expect(html).toContain('https://shop.example/assets/legal/legal-guarantee-notice-de-1200.png')
   })
 
+  it('one summary row per items/order discount (title + amount); shipping discounts none', async () => {
+    const ad = (over: Partial<NonNullable<OrderDocument['appliedDiscounts']>[number]>) => ({ _key: 'k', _type: 'appliedDiscount' as const, title: '', trigger: 'code' as const, target: 'order' as const, valueType: 'percent' as const, ...over })
+    vi.mocked(fetchOrderById).mockResolvedValue(order({
+      totals: { ...order().totals, discount: 450, grandTotal: 2050, shipping: 0 },
+      appliedDiscounts: [
+        ad({ title: 'Herbstaktion', trigger: 'automatic', target: 'items', amount: 250 }),
+        ad({ title: 'SOMMER', code: 'SOMMER', amount: 200 }),
+        ad({ title: 'Versandkostenfrei mit Weinpaket', trigger: 'automatic', target: 'shipping', valueType: 'free', amount: 500 }),
+      ],
+    }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const text = textOf((await sent()).html)
+    expect(text).toContain('Herbstaktion -2,50 €')
+    expect(text).toContain('SOMMER -2,00 €')
+    expect(text).not.toContain('Versandkostenfrei mit Weinpaket')
+    expect(text).not.toContain('Rabatt -')
+  })
+
+  it('a discount without matching entries falls back to one "Rabatt" row', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(order({ totals: { ...order().totals, discount: 300, grandTotal: 2700 } }))
+    await sendOrderNotification('o1', 'orderConfirmation')
+    expect(textOf((await sent()).html)).toContain('Rabatt -3,00 €')
+  })
+
   it('older orders: no payment line, order date from the first status entry', async () => {
     vi.mocked(fetchOrderById).mockResolvedValue(order())
     await sendOrderNotification('o1', 'orderConfirmation')

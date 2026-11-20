@@ -3,7 +3,8 @@ import { Column, Img, Link, Row, Section } from '@react-email/components'
 import { EmailLayout } from './EmailLayout'
 import { EmailText, EmailHeading, EmailHr, CustomerMessage } from './components'
 import type { OrderEmailProps } from './types'
-import type { OrderItem, AddressStrict, OrderTotals, OrderDocument } from '../../types/checkout'
+import type { OrderItem, AddressStrict, OrderTotals, OrderDocument, AppliedDiscountSnapshot } from '../../types/checkout'
+import { discountSummaryLines } from '../../lib/order-discount-lines'
 import { colors } from './tokens'
 import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
@@ -292,11 +293,14 @@ export function TotalsBlock({
   totals,
   ctx,
   methodType,
+  appliedDiscounts,
 }: {
   totals: OrderTotals
   ctx: OrderEmailProps['ctx']
   /** `pickup`: the shipping row reads "Abholung". */
   methodType?: 'delivery' | 'pickup'
+  /** One row per items/order discount (title + amount). */
+  appliedDiscounts?: AppliedDiscountSnapshot[]
 }) {
   const { t, formatPrice } = ctx
   return (
@@ -306,9 +310,9 @@ export function TotalsBlock({
         label={t(methodType === 'pickup' ? 'emails.order.summaryPickup' : 'emails.order.summaryShipping')}
         value={formatPrice(totals.shipping)}
       />
-      {totals.discount > 0 && (
-        <SummaryLine label={t('emails.order.summaryDiscount')} value={`-${formatPrice(totals.discount)}`} />
-      )}
+      {discountSummaryLines(totals, appliedDiscounts, t('emails.order.summaryDiscount')).map((row, i) => (
+        <SummaryLine key={i} label={row.label} value={`-${formatPrice(row.amount)}`} />
+      ))}
       <SummaryLine
         label={t('emails.order.summaryTotal')}
         value={formatPrice(totals.grandTotal)}
@@ -368,7 +372,7 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
         ))}
       </Section>
 
-      <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} />
+      <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} appliedDiscounts={order.appliedDiscounts} />
 
       <OrderDetails ctx={ctx} order={order} />
 

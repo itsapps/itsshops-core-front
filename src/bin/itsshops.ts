@@ -326,6 +326,63 @@ sanity
   });
 
 sanity
+  .command('migrate-discounts')
+  .description('Migrate coupons, product free shipping and orders to the discounts model (core-back 7 / core-front 6)')
+  .option('--dry-run', 'Print what each step would change and the check results; write nothing')
+  .option('-y, --yes', 'Skip the confirmation prompt (for scripts)')
+  .option('--locales <list>', 'Locales of the generated titles, default locale first', 'de,en')
+  .action(async (options: { dryRun?: boolean; yes?: boolean; locales: string }, command: Command) => {
+    loadEnv(command.optsWithGlobals().env);
+    // raw: the preflight must see drafts (the default `published` read hides them)
+    const client = await getSanityClient('raw');
+    const dataset = process.env.SANITY_DATASET!;
+    const { planDiscountMigration, applyDiscountMigration, describeDiscountMigration } =
+      await import('../netlify/lib/discount-migration-run');
+    const locales = options.locales.split(',').map(l => l.trim()).filter(Boolean);
+
+    const plan = await planDiscountMigration(client as never, { locales });
+    for (const line of describeDiscountMigration(plan)) console.log(line);
+    if (plan.problems.length > 0) {
+      console.error(`\n❌ ${plan.problems.length} problem(s) — nothing written:`);
+      for (const p of plan.problems) console.error(`   ${p}`);
+      process.exit(1);
+    }
+    const nothingToDo = plan.coupons.length === 0 && !plan.productFreeShipping
+      && plan.variantsToUnset.length === 0 && plan.orders.length === 0;
+    if (nothingToDo) {
+      console.log('\nNothing to migrate.');
+      return;
+    }
+    if (options.dryRun) return;
+
+    if (!options.yes) {
+      if (!process.stdin.isTTY) {
+        console.error('❌ Refusing to migrate without a terminal to confirm — pass --yes');
+        process.exit(1);
+      }
+      const { createInterface } = await import('node:readline/promises');
+      const rl = createInterface({ input: process.stdin, output: process.stderr });
+      const answer = await rl
+        .question(`\nMigrate "${dataset}"? Type the dataset name to confirm: `)
+        .catch(() => '');
+      rl.close();
+      if (answer.trim() !== dataset) {
+        console.error('Aborted — nothing written.');
+        process.exit(1);
+      }
+    }
+
+    try {
+      await applyDiscountMigration(client as never, plan);
+    } catch (err) {
+      // Every coupon / order is its own transaction: what ran is done; re-run to finish.
+      console.error(`❌ Migration stopped: ${(err as Error).message} — run it again (idempotent)`);
+      process.exit(1);
+    }
+    console.log(`\n✅ Migrated "${dataset}" — run again after the frontend publish to catch stragglers`);
+  });
+
+sanity
   .command('count')
   .description('Count documents by type')
   .argument('<types>', 'Comma-separated document types')

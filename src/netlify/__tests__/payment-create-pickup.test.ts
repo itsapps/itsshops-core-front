@@ -6,8 +6,8 @@ const fetchCheckoutData = vi.hoisted(() => vi.fn())
 vi.mock('../services/sanity', () => ({
   fetchCheckoutData,
   createOrderMeta: vi.fn(),
-  updateOrderMeta: vi.fn(),
   fetchOrderMeta: vi.fn(),
+  countOrdersWithDiscountForEmail: vi.fn(),
 }))
 const createPaymentIntent = vi.hoisted(() => vi.fn())
 vi.mock('../services/stripe', () => ({ createPaymentIntent, updatePaymentIntent: vi.fn() }))
@@ -38,7 +38,7 @@ const pickup = (over: Partial<SanityShippingMethodResult> = {}): SanityShippingM
   ...over,
 })
 
-function data(country: 'AT' | 'DE' | 'CH', methods: SanityShippingMethodResult[], coupon: unknown = null): SanityCheckoutQueryResult {
+function data(country: 'AT' | 'DE' | 'CH', methods: SanityShippingMethodResult[], codeDiscount: unknown = null): SanityCheckoutQueryResult {
   return {
     variants: [{
       _id: 'v1', status: 'active', kind: 'wine', title: de('Blaufränkisch'), sku: null, price: 11900,
@@ -54,7 +54,9 @@ function data(country: 'AT' | 'DE' | 'CH', methods: SanityShippingMethodResult[]
       orderNumberPrefix: null, invoiceNumberPrefix: null, lastInvoiceNumber: 0,
     },
     supportedCountries: [{ countryCode: 'AT' }, { countryCode: 'DE' }],
-    coupon: coupon as never,
+    categories: [],
+    codeDiscount: codeDiscount as never,
+    automaticDiscounts: [],
   }
 }
 
@@ -165,18 +167,19 @@ describe('payment-create — pickup', () => {
     expect(body.shippingMethods.map((m: { _id: string }) => m._id)).toEqual(['dpd-de'])
   })
 
-  it('freeShipping coupon: free pickup accepted with 0 discount; a pickup fee is waived', async () => {
-    const coupon = {
-      _id: 'c1', code: 'FREE', enabled: true, discountType: 'freeShipping', value: null,
-      validFrom: null, validTo: null, minSubtotal: null, maxRedemptions: null, redemptionCount: 0,
+  it('free-shipping code: free pickup accepted with 0 discount; a pickup fee is waived', async () => {
+    const code = {
+      _id: 'discount-c1', title: de('Gratis Versand'), trigger: 'code', code: 'FREE', enabled: true,
+      target: 'shipping', valueType: 'free', value: null, appliesTo: null, appliesToPickup: true,
+      minSubtotalBasis: 'wholeCart', redemptionCount: 0, combinesWith: { items: false, order: false, shipping: true },
     }
-    fetchCheckoutData.mockResolvedValue(data('AT', [delivery('dpd-at'), pickup()], coupon))
+    fetchCheckoutData.mockResolvedValue(data('AT', [delivery('dpd-at'), pickup()], code))
     const free = await call({ partialAddress: { country: 'AT' }, shippingMethodId: 'pu1', appliedCouponCode: 'FREE' })
-    expect(free.body.appliedCoupons).toEqual([expect.objectContaining({ code: 'FREE', discountAmount: 0 })])
+    expect(free.body.appliedDiscounts).toEqual([expect.objectContaining({ code: 'FREE', trigger: 'code', amount: 0 })])
 
-    fetchCheckoutData.mockResolvedValue(data('AT', [delivery('dpd-at'), pickup({ pickupFee: 300 })], coupon))
+    fetchCheckoutData.mockResolvedValue(data('AT', [delivery('dpd-at'), pickup({ pickupFee: 300 })], code))
     const paid = await call({ partialAddress: { country: 'AT' }, shippingMethodId: 'pu1', appliedCouponCode: 'FREE' })
     expect(paid.body.totals.shipping).toBe(0)
-    expect(paid.body.appliedCoupons[0].discountAmount).toBe(300)
+    expect(paid.body.appliedDiscounts[0].amount).toBe(300)
   })
 })

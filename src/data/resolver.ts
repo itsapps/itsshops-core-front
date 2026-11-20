@@ -14,12 +14,13 @@ import {
   buildShopSettingsQuery,
   buildShippingMethodsQuery,
 } from './queries'
+import { fetchBuildShippingDiscounts } from './build-discounts'
 import { fetchVinofactWines } from './vinofact'
 import { makeCtx } from './resolve/context'
 import { resolveCategories } from './resolve/categories'
 import { resolvePages } from './resolve/pages'
 import { resolvePosts } from './resolve/posts'
-import { resolveVariants } from './resolve/variants'
+import { resolveVariants, applyBuildShippingDiscounts } from './resolve/variants'
 import { resolveMenus, ensureSystemPageLink, addSystemUrls } from './resolve/menus'
 import { resolveSettings, resolveShopSettings, resolveShippingMethods } from './resolve/settings'
 import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
@@ -57,6 +58,7 @@ export async function buildCmsData(
   const [
     rawProducts, rawVariants, rawCategories,
     rawPages, rawPosts, rawMenus, rawSettings, rawShopSettings, rawShippingMethods,
+    buildShippingDiscounts,
   ] = await Promise.all([
     features.shop.enabled ? fetchQuery(buildProductQuery(extensions))  : Promise.resolve([]),
     features.shop.enabled ? fetchQuery(buildVariantQuery(extensions))  : Promise.resolve([]),
@@ -68,6 +70,8 @@ export async function buildCmsData(
     fetchQuery(buildSettingsQuery(extensions.fields)),
     features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
     features.shop.enabled ? fetchQuery(buildShippingMethodsQuery()) : Promise.resolve([]),
+    // Derives `grantsFreeShipping` (never stega-encoded — see the function).
+    fetchBuildShippingDiscounts(client, features),
   ])
 
   // ─── Extension queries (fetched once, resolved per-locale via resolveData) ──
@@ -136,6 +140,7 @@ export async function buildCmsData(
     const products = features.shop
       ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, vinofactMap, resolve, filterAcc)
       : []
+    applyBuildShippingDiscounts(products, buildShippingDiscounts, new Map(categories.map(c => [c._id, c.parentId])))
     const filterGroups = buildFilterGroups(filterAcc)
 
     const homePageId = rawSettings?.homePage?._ref ?? null

@@ -18,7 +18,8 @@ const STORAGE_KEY = 'itsshops_order_snapshot'
 const MAX_AGE_MS = 30 * 60 * 1000
 
 export type OrderSnapshot = {
-  v: 1
+  /** 2 = discounts model (`summary.appliedDiscounts`); other versions are dropped by the reader. */
+  v: 2
   paymentIntentId: string
   createdAt: number
   email: string
@@ -70,7 +71,7 @@ export function buildOrderSnapshot(input: {
   const isPickup = method?.methodType === 'pickup'
 
   return {
-    v: 1,
+    v: 2,
     paymentIntentId,
     createdAt: input.now ?? Date.now(),
     email,
@@ -88,7 +89,7 @@ export function buildOrderSnapshot(input: {
         quantity: item.quantity,
       }
     }),
-    summary: { totals: response.totals, appliedCoupons: response.appliedCoupons },
+    summary: { totals: response.totals, appliedDiscounts: response.appliedDiscounts },
     ...(method && { shippingMethod: { title: method.title, methodType: method.methodType } }),
     ...(isPickup
       ? {
@@ -135,10 +136,10 @@ export function takeOrderSnapshot(paymentIntentId: string, now = Date.now()): Or
 
   try {
     const snapshot = JSON.parse(raw) as OrderSnapshot
-    if (snapshot?.v !== 1) return null
+    if (snapshot?.v !== 2) return null
     if (snapshot.paymentIntentId !== paymentIntentId) return null
     if (!(now - snapshot.createdAt >= 0 && now - snapshot.createdAt < MAX_AGE_MS)) return null
-    if (!Array.isArray(snapshot.items) || !snapshot.summary?.totals) return null
+    if (!Array.isArray(snapshot.items) || !snapshot.summary?.totals || !Array.isArray(snapshot.summary.appliedDiscounts)) return null
     return snapshot
   } catch {
     return null
