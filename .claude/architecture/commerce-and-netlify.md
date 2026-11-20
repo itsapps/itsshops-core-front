@@ -160,6 +160,28 @@ HTTP entry points, one file per endpoint:
   `dist/preview-enable.js`), `wc-api.ts`,
   `supabase-keep-alive.ts`, `order-meta-cleanup.ts`
 
+### Netlify Functions vs. Edge Functions
+
+Every core endpoint is a **Netlify Function** (serverless Node.js on AWS Lambda); core ships **no
+Edge Functions**. The two are different runtimes for different jobs:
+
+| | Netlify Functions (core) | Edge Functions |
+|---|---|---|
+| Runtime | Node.js, one region | Deno / V8 isolates on every CDN node |
+| Cold start | noticeable (≈100 ms–1 s) | near zero |
+| Limits | 10 s sync (15 min background), ~1 GB RAM, ~6 MB payload | ~50 ms CPU, little memory |
+| npm / Node APIs | full (Stripe, Supabase, Sanity write client, `crypto`) | Web-standard APIs; not every npm package runs |
+| Invocation | own endpoint (`/.netlify/functions/…`, our `/api/…`) | intercepts **any** matching request (static pages too), can rewrite request/response |
+| Use for | backend logic: checkout, webhooks, DB, email | middleware: geo/language redirects, headers, A/B, auth gates, HTML rewrites |
+| Billing ([netlify-plans.md](../workflows/netlify-plans.md)) | compute | web requests, not compute |
+
+Keep backend logic in Functions — it needs the SDKs, longer runtimes and explicit invocation.
+Consider an Edge Function only for something that must happen **before** a static page is served
+and that `_redirects`/`_headers` can't express, e.g. smarter `Accept-Language` matching for `/`
+([i18n.md](i18n.md) → "Root URL → locale"), geo redirects, a password gate for staging, or a
+server-side gate for gated commerce without client JS. None exists yet; adding one would need a
+build/deploy path for `netlify/edge-functions/` in the customer project (not designed).
+
 ## Business logic (`src/netlify/lib/`) — unit-tested
 
 Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
