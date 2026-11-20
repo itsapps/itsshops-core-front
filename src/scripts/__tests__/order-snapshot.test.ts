@@ -91,6 +91,7 @@ describe('buildOrderSnapshot', () => {
           ...response.shippingMethods[1],
           pickupAddress: { line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' },
           pickupInstructions: 'Mo–Fr 9–17',
+          pickupAnnounceReady: true,
         },
       ],
     } as CreatePaymentResponse
@@ -99,6 +100,7 @@ describe('buildOrderSnapshot', () => {
     expect(s).not.toHaveProperty('shippingAddress')
     expect(s.pickupAddress).toMatchObject({ line1: 'Eisenstätter Straße 10', city: 'Trausdorf' })
     expect(s.pickupInstructions).toBe('Mo–Fr 9–17')
+    expect(s.pickupAnnounceReady).toBe(true)
     expect(JSON.stringify(s)).not.toContain('Hauptstraße')
   })
 

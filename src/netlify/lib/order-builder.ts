@@ -196,6 +196,7 @@ function buildFulfillment(
       },
       ...(selectedShipping.pickupInstructions && { pickupInstructions: selectedShipping.pickupInstructions }),
       ...(selectedShipping.pickupHoldDays && { pickupHoldDays: selectedShipping.pickupHoldDays }),
+      ...(selectedShipping.pickupAnnounceReady && { pickupAnnounceReady: true }),
     }),
     ...(freeShippingReason && selectedShipping.methodType === 'delivery' && shippingCost === 0 && {
       freeShippingReason,

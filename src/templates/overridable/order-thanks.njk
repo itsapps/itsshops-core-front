@@ -48,7 +48,7 @@
 
   <section class="order-thanks__section order-thanks__next" aria-labelledby="order-thanks-next-title" data-order-thanks-next hidden>
     <h2 id="order-thanks-next-title">{{ 'staticPages.orderThankYou.nextStepsTitle' | trans }}</h2>
-    <p data-order-thanks-next-steps data-t-pickup="{{ 'staticPages.orderThankYou.nextStepsPickup' | trans }}">{{ 'staticPages.orderThankYou.nextSteps' | trans }}</p>
+    <p data-order-thanks-next-steps data-t-pickup="{{ 'staticPages.orderThankYou.nextStepsPickup' | trans }}" data-t-pickup-ready-later="{{ 'staticPages.orderThankYou.nextStepsPickupReadyLater' | trans }}">{{ 'staticPages.orderThankYou.nextSteps' | trans }}</p>
     {%- if coreConfig.features.shop.checkoutAgeConfirmation %}
     <p>{{ 'staticPages.orderThankYou.nextStepsAgeRestricted' | trans }}</p>
     {%- endif %}

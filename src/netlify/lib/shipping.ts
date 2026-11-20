@@ -339,6 +339,7 @@ export function resolveShippingMethods(
         }),
         ...(instructions && { pickupInstructions: instructions }),
         ...(method.pickupHoldDays && { pickupHoldDays: method.pickupHoldDays }),
+        ...(method.pickupAnnounceReady && { pickupAnnounceReady: true }),
       })
       continue
     }

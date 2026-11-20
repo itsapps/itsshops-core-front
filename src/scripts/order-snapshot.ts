@@ -30,6 +30,8 @@ export type OrderSnapshot = {
   /** Pickup only: the pickup location (from the calculate response) — country as a name. */
   pickupAddress?: { line1: string; line2?: string; zip: string; city: string; country: string }
   pickupInstructions?: string
+  /** Pickup only: the shop prepares the order first and mails when it's ready. */
+  pickupAnnounceReady?: boolean
   shippingAddress?: {
     name: string
     line1: string
@@ -97,6 +99,7 @@ export function buildOrderSnapshot(input: {
             pickupAddress: { ...method.pickupAddress, country: countryTitle(method.pickupAddress.country) },
           }),
           ...(method.pickupInstructions && { pickupInstructions: method.pickupInstructions }),
+          ...(method.pickupAnnounceReady && { pickupAnnounceReady: true }),
         }
       : {
           shippingAddress: {

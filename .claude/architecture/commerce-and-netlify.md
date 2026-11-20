@@ -375,8 +375,17 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
     `SHOP_TIMEZONE`) to the HTML body **and** the plain text. Addresses: billing + "Abholort"
     (`PickupBlock`); totals/invoice row "Abholung"; the shop mail starts with "ABHOLUNG – nicht
     versenden". The cancel mail's generic text no longer says "falls Sie bereits bezahlt haben".
+  - **Announcing the ready mail** is the method's checkbox `pickupAnnounceReady` ("Abholbereit-Mail
+    ankündigen", default off; snapshotted on the order's `fulfillment`, sent in the checkout
+    response). On = the shop prepares the order first: the confirmation/processing text is
+    `textReadyLater` ("Wir melden uns, sobald sie zur Abholung bereit ist") and the thanks page
+    shows `nextStepsPickupReadyLater`. Off = the goods can be collected right away (Tinhof): no
+    ready mail is announced, the thanks page points to the confirmation. Not derived from
+    `deliveryTime` ("Abholbereit in"): free text per language, so set/empty would differ by
+    locale (owner, 2026-11-21; Tinhof off, Jurtschitsch on). The Studio still needs "Abholbereit"
+    before "Abgeholt" (`processing` → `shipped` only); "Kunde benachrichtigen" can be unticked.
   - **Thanks page:** the snapshot keeps the pickup location instead of the customer's address;
-    heading/totals say "Abholung", next steps "sobald abholbereit". **Info page:** pickup facts
+    heading/totals say "Abholung", next steps by `pickupAnnounceReady` (above, also in the snapshot). **Info page:** pickup facts
     (address, ready in, hold period, instructions); leftover rates/countries are ignored.
   - Client side (fulfillment choice, pickup mode, express without shipping address):
     `ui-contracts.md` → "Fulfillment choice"; wc-api mapping: `wc-api.md` → "Pickup orders".

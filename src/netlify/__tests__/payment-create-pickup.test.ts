@@ -34,6 +34,7 @@ const pickup = (over: Partial<SanityShippingMethodResult> = {}): SanityShippingM
   pickupAddress: { line1: 'Eisenstätter Straße 10', line2: null, zip: '7061', city: de('Trausdorf'), country: 'AT' },
   pickupInstructions: de('Mo–Fr 9–17'),
   pickupHoldDays: 14,
+  pickupAnnounceReady: true,
   deliveryTime: de('1–2 Werktage'),
   ...over,
 })
@@ -86,7 +87,7 @@ describe('payment-create — pickup', () => {
     expect(body.selectedShippingMethodId).toBe('dpd-de')
     const pu = body.shippingMethods.find((m: { _id: string }) => m._id === 'pu1')
     expect(pu).toMatchObject({
-      methodType: 'pickup', deliveryTime: '1–2 Werktage', pickupHoldDays: 14, pickupInstructions: 'Mo–Fr 9–17',
+      methodType: 'pickup', deliveryTime: '1–2 Werktage', pickupHoldDays: 14, pickupAnnounceReady: true, pickupInstructions: 'Mo–Fr 9–17',
       pickupAddress: { line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' },
     })
     // DE address, delivery → DE rules (19 %)
@@ -136,6 +137,7 @@ describe('payment-create — pickup', () => {
     expect(meta.fulfillment.methodType).toBe('pickup')
     expect(meta.fulfillment.pickupAddress).toEqual({ line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf', country: 'AT' })
     expect(meta.fulfillment.pickupHoldDays).toBe(14)
+    expect(meta.fulfillment.pickupAnnounceReady).toBe(true)
   })
 
   it('no pickup method + non-tax country → SHIPPING_UNAVAILABLE as before', async () => {

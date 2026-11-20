@@ -62,6 +62,8 @@ export type ShippingMethodResponse = {
   pickupAddress?: PickupAddressResponse
   pickupInstructions?: string
   pickupHoldDays?: number
+  /** Pickup only: the shop prepares the order first and mails when it's ready. */
+  pickupAnnounceReady?: boolean
 }
 
 export type VatBreakdownItem = {

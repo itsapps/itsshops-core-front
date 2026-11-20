@@ -77,7 +77,8 @@ export default {
       processingEmail: "Deine Zahlung wird noch verarbeitet. Sobald sie bei uns eingegangen ist, erhältst Du eine Bestätigung an {{email}} – das kann einige Werktage dauern.",
       summary: "Deine Bestellung",
       nextSteps: "Sobald Deine Bestellung versendet wird, schicken wir Dir eine Versandbestätigung per E-Mail.",
-      nextStepsPickup: "Sobald Deine Bestellung abholbereit ist, benachrichtigen wir Dich per E-Mail.",
+      nextStepsPickup: "Die Adresse und die Hinweise zur Abholung findest Du auch in Deiner Bestellbestätigung.",
+      nextStepsPickupReadyLater: "Sobald Deine Bestellung abholbereit ist, benachrichtigen wir Dich per E-Mail.",
       nextStepsAgeRestricted: "Bitte beachte: Wir liefern nur an Personen ab 18 Jahren. Bei der Zustellung kann ein Altersnachweis verlangt werden.",
     },
     orderWithdraw: {

@@ -20,7 +20,9 @@ const PAGE = `
   <section data-order-thanks-delivery hidden>
     <p data-slot="shipping-method" hidden></p><address data-slot="address" hidden></address>
   </section>
-  <section data-order-thanks-next hidden></section>
+  <section data-order-thanks-next hidden>
+    <p data-order-thanks-next-steps data-t-pickup="pickup-neutral" data-t-pickup-ready-later="pickup-ready-later">versand</p>
+  </section>
   <template id="order-thanks-item-template"><li><div class="cart-item" data-cart-item>
     <img src="" alt="" data-slot="image"><a href="#" data-slot="title"></a>
     <span data-slot="subtitle" hidden></span><span data-qty-value>1</span><span data-slot="price"></span>
@@ -120,6 +122,15 @@ describe('initOrderThanks', () => {
 
     expect($('[data-slot="shipping-method"]').textContent).toBe('Abholung')
     expect($('[data-slot="address"]').hidden).toBe(true)
+    // Ready mail not announced: collectable right away.
+    expect($('[data-order-thanks-next-steps]').textContent).toBe('pickup-neutral')
+  })
+
+  it('pickup with pickupAnnounceReady: announces the ready mail', () => {
+    saveOrderSnapshot(snapshot({ shippingMethod: { title: 'Abholung', methodType: 'pickup' }, pickupAnnounceReady: true }))
+    visit(`?payment_intent=${PI}&redirect_status=succeeded`)
+
+    expect($('[data-order-thanks-next-steps]').textContent).toBe('pickup-ready-later')
   })
 
   it('snapshot of another payment: status text without summary', () => {

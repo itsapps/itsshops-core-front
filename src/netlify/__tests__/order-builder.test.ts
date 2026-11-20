@@ -225,10 +225,11 @@ describe('buildOrderMeta — pickup', () => {
   }
 
   it('snapshots the pickup address, instructions and hold days; no shipping address', () => {
-    const meta = buildOrderMeta(pickupInput({ pickupInstructions: 'Mo–Fr 9–17', pickupHoldDays: 14 }))
+    const meta = buildOrderMeta(pickupInput({ pickupInstructions: 'Mo–Fr 9–17', pickupHoldDays: 14, pickupAnnounceReady: true }))
     expect(meta.fulfillment.pickupAddress).toEqual(PICKUP_ADDRESS)
     expect(meta.fulfillment.pickupInstructions).toBe('Mo–Fr 9–17')
     expect(meta.fulfillment.pickupHoldDays).toBe(14)
+    expect(meta.fulfillment.pickupAnnounceReady).toBe(true)
     // even though makeInput passes one
     expect(meta.customer).not.toHaveProperty('shippingAddress')
     expect(meta.customer.billingAddress.line1).toBe('Rechnungsstr. 2')
@@ -239,6 +240,7 @@ describe('buildOrderMeta — pickup', () => {
     expect(meta.fulfillment.pickupAddress).not.toHaveProperty('line2')
     expect(meta.fulfillment).not.toHaveProperty('pickupInstructions')
     expect(meta.fulfillment).not.toHaveProperty('pickupHoldDays')
+    expect(meta.fulfillment).not.toHaveProperty('pickupAnnounceReady')
   })
 
   it('a pickup without address throws', () => {

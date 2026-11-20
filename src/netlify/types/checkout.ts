@@ -93,6 +93,7 @@ export type SanityShippingMethodResult = {
   pickupAddress?: SanityPickupAddressResult | null
   pickupInstructions?: LocaleString[] | null
   pickupHoldDays?: number | null
+  pickupAnnounceReady?: boolean | null
   freeShippingThreshold: number | null
   taxCategoryCode: string | null
   rates: SanityShippingRateResult[] | null
@@ -264,6 +265,8 @@ export type AvailableShippingMethod = {
   pickupAddress?: PickupAddress
   pickupInstructions?: string
   pickupHoldDays?: number
+  /** Pickup only: the shop prepares the order first and mails when it's ready. */
+  pickupAnnounceReady?: boolean
 }
 
 // ── Sanity order document types (for mutations) ─────────────────────────────
@@ -391,6 +394,8 @@ export type Fulfillment = {
   pickupInstructions?: string
   /** Pickup only: days a ready order is held (deadline = latest `shipped` entry + days). */
   pickupHoldDays?: number
+  /** Pickup only: the confirmation announces the "ready for pickup" mail (else collectable right away). */
+  pickupAnnounceReady?: boolean
 }
 
 export type OrderStatusHistoryEntry = {

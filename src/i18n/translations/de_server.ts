@@ -212,10 +212,13 @@ export default {
       holdPeriod: "Wir bewahren Ihre Bestellung ab unserer Benachrichtigung {{days}} Tage für Sie auf.",
       deadline: "Bitte holen Sie Ihre Bestellung bis {{date}} ab.",
       orderConfirmation: {
-        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
+        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen.",
+        // The method has a "ready in" time (`deliveryTime`): the shop prepares the order first.
+        textReadyLater: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
       },
       orderProcessing: {
-        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
+        text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung wird nun bearbeitet.",
+        textReadyLater: "Vielen Dank für Ihren Einkauf. Ihre Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
       },
       orderShipping: {
         subject: "Bestellung {{orderNumber}} ist abholbereit 🛍️",

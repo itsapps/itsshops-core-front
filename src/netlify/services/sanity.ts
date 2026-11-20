@@ -87,7 +87,7 @@ const CHECKOUT_QUERY = `{
     methodType == "pickup" || references(*[_type == "taxCountry" && countryCode == $country]._id)
   )]{
     _id, title, deliveryTime, methodType, pickupFee, freeShippingThreshold,
-    pickupAddress{ line1, line2, zip, city, country }, pickupInstructions, pickupHoldDays,
+    pickupAddress{ line1, line2, zip, city, country }, pickupInstructions, pickupHoldDays, pickupAnnounceReady,
     "taxCategoryCode": taxCategory->code.current,
     rates[]{ maxWeight, price },
     packagingGroups[]{ packages[]{ places, price }, bottles[]{ volume, perPlace } }

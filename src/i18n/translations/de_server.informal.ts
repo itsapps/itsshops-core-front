@@ -50,10 +50,12 @@ export default {
       holdPeriod: "Wir bewahren Deine Bestellung ab unserer Benachrichtigung {{days}} Tage für Dich auf.",
       deadline: "Bitte hol Deine Bestellung bis {{date}} ab.",
       orderConfirmation: {
-        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
+        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung ist bei uns eingegangen.",
+        textReadyLater: "Vielen Dank für Deinen Einkauf. Deine Bestellung ist bei uns eingegangen. Wir melden uns, sobald sie zur Abholung bereit ist.",
       },
       orderProcessing: {
-        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
+        text: "Vielen Dank für Deinen Einkauf. Deine Bestellung wird nun bearbeitet.",
+        textReadyLater: "Vielen Dank für Deinen Einkauf. Deine Bestellung wird nun bearbeitet. Wir melden uns, sobald sie zur Abholung bereit ist.",
       },
       orderShipping: {
         preview: "Deine Bestellung liegt zur Abholung bereit.",

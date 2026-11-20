@@ -212,10 +212,12 @@ export default {
       holdPeriod: "We'll hold your order for {{days}} days from our notification.",
       deadline: "Please collect your order by {{date}}.",
       orderConfirmation: {
-        text: "Thank you for your purchase. We have received your order and will let you know as soon as it is ready for pickup.",
+        text: "Thank you for your purchase. We have received your order.",
+        textReadyLater: "Thank you for your purchase. We have received your order and will let you know as soon as it is ready for pickup.",
       },
       orderProcessing: {
-        text: "Thank you for your purchase. Your order is now being processed. We'll let you know as soon as it is ready for pickup.",
+        text: "Thank you for your purchase. Your order is now being processed.",
+        textReadyLater: "Thank you for your purchase. Your order is now being processed. We'll let you know as soon as it is ready for pickup.",
       },
       orderShipping: {
         subject: "Order {{orderNumber}} is ready for pickup 🛍️",

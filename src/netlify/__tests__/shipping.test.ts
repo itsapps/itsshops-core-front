@@ -223,16 +223,19 @@ describe('resolveShippingMethods', () => {
       },
       pickupInstructions: [{ language: 'de', value: 'Mo–Fr 9–17' }, { language: 'en', value: 'Mon–Fri 9–5' }],
       pickupHoldDays: 14,
+      pickupAnnounceReady: true,
     }
     const [pickup] = resolveShippingMethods([withAddress], [makeItem()], 5000, 0, 'afterDiscount', 'en')
     expect(pickup.pickupAddress).toEqual({ line1: 'Eisenstätter Straße 10', zip: '7061', city: 'Trausdorf an der Wulka', country: 'AT' })
     expect(pickup.pickupInstructions).toBe('Mon–Fri 9–5')
     expect(pickup.pickupHoldDays).toBe(14)
+    expect(pickup.pickupAnnounceReady).toBe(true)
     // No address/instructions/days → keys absent
     const [bare] = resolveShippingMethods([methods[1]], [makeItem()], 5000, 0, 'afterDiscount', 'en')
     expect(bare).not.toHaveProperty('pickupAddress')
     expect(bare).not.toHaveProperty('pickupInstructions')
     expect(bare).not.toHaveProperty('pickupHoldDays')
+    expect(bare).not.toHaveProperty('pickupAnnounceReady')
   })
 
   it('pickup ignores leftover rates, threshold and packaging (no weight limit)', () => {

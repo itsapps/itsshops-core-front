@@ -278,6 +278,7 @@ export function createPaymentHandler(config: ServerConfig = {}) {
         ...(m.pickupAddress && { pickupAddress: m.pickupAddress }),
         ...(m.pickupInstructions && { pickupInstructions: m.pickupInstructions }),
         ...(m.pickupHoldDays && { pickupHoldDays: m.pickupHoldDays }),
+        ...(m.pickupAnnounceReady && { pickupAnnounceReady: true }),
       })),
       selectedShippingMethodId: selectedShipping?._id ?? null,
       selectedCountry: country,

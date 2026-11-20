@@ -566,7 +566,7 @@ describe('pickup orders', () => {
   afterEach(() => vi.unstubAllEnvs())
 
   it('confirmation: pickup text + hold period (HTML and text), billing + pickup location, no shipping address', async () => {
-    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({}, { pickupHoldDays: 14 }))
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({}, { pickupHoldDays: 14, pickupAnnounceReady: true }))
     await sendOrderNotification('o1', 'orderConfirmation')
     const { html, text } = await sent()
     const visible = textOf(html)
@@ -582,6 +582,22 @@ describe('pickup orders', () => {
     expect(visible).not.toContain('Lieferadresse')
     expect(visible).toContain('Abholung: Abholung im Weingut')
     expect(visible).toContain('Abholbereit in: 1–2 Werktage')
+  })
+
+  it('confirmation without pickupAnnounceReady: collectable right away, no ready mail announced', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder())
+    await sendOrderNotification('o1', 'orderConfirmation')
+    const { html, text } = await sent()
+    const visible = textOf(html)
+    expect(visible).toContain('Ihre Bestellung ist bei uns eingegangen.')
+    expect(visible).not.toContain('Abholung bereit')
+    expect(visible).not.toContain('in Kürze bearbeitet')
+    expect(text).not.toContain('Abholung bereit')
+    await sendOrderNotification('o1', 'orderProcessing')
+    const processing = textOf((await sent()).html)
+    expect(processing).toContain('Ihre Bestellung wird nun bearbeitet.')
+    expect(processing).not.toContain('Abholung bereit')
+    expect(processing).not.toContain('versendet')
   })
 
   it('confirmation without hold days: no period line', async () => {
@@ -614,6 +630,7 @@ describe('pickup orders', () => {
     vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder())
     await sendOrderNotification('o1', 'orderDelivered')
     expect((await sent()).subject).toBe('Bestellung 000042 abgeholt 🛍️')
+    vi.mocked(fetchOrderById).mockResolvedValue(pickupOrder({}, { pickupAnnounceReady: true }))
     await sendOrderNotification('o1', 'orderProcessing')
     expect(textOf((await sent()).html)).toContain('sobald sie zur Abholung bereit ist')
   })

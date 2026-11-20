@@ -21,8 +21,11 @@ export type MailKeyOrder = Pick<OrderDocument, 'fulfillment'> & Partial<Pick<Ord
 /**
  * Translation key of a mail part: the pickup variant for a pickup order where one exists (a
  * static list — `serverT` returns the key itself on a miss, so "if it exists" can't be asked),
- * else `emails.<mailType>.<part>`. Cancel mail: the "not collected" text only after the order
- * was "ready for pickup"; cancelled before that it is the generic text.
+ * else `emails.<mailType>.<part>`. Confirmation/processing text: `textReadyLater` ("we'll let you
+ * know when it's ready") when the method announces the ready mail (`pickupAnnounceReady`: the
+ * shop prepares the order first); otherwise the goods can be collected right away. Cancel mail: the
+ * "not collected" text only after the order was "ready for pickup"; cancelled before that it is
+ * the generic text.
  */
 export function mailKey(mailType: MailType, order: MailKeyOrder | undefined, part: string): string {
   const generic = `emails.${mailType}.${part}`
@@ -33,6 +36,9 @@ export function mailKey(mailType: MailType, order: MailKeyOrder | undefined, par
     return f.pickupHoldDays
       ? 'emails.pickup.orderCanceled.textNotCollected'
       : 'emails.pickup.orderCanceled.textNotCollectedNoPeriod'
+  }
+  if ((mailType === 'orderConfirmation' || mailType === 'orderProcessing') && part === 'text' && f.pickupAnnounceReady) {
+    return `emails.pickup.${mailType}.textReadyLater`
   }
   return `emails.pickup.${mailType}.${part}`
 }

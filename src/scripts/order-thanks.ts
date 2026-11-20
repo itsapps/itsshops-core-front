@@ -88,7 +88,10 @@ function renderSnapshot(root: HTMLElement, snapshot: OrderSnapshot): void {
       }
       if (snapshot.pickupInstructions) fillSlot(deliveryEl, 'pickup-instructions', snapshot.pickupInstructions)
       const nextSteps = root.querySelector<HTMLElement>('[data-order-thanks-next-steps]')
-      if (nextSteps?.dataset.tPickup) nextSteps.textContent = nextSteps.dataset.tPickup
+      // The shop prepares the order and mails when it's ready — or the goods can be collected
+      // right away, then no mail is announced.
+      const next = snapshot.pickupAnnounceReady ? nextSteps?.dataset.tPickupReadyLater : nextSteps?.dataset.tPickup
+      if (nextSteps && next) nextSteps.textContent = next
     } else if (address) {
       const lines = [address.name, address.line1, address.line2, `${address.zip} ${address.city}`, address.country]
       fillSlot(deliveryEl, 'address', lines.filter(Boolean).join('\n'))
