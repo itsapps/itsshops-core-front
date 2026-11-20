@@ -69,6 +69,7 @@ function renderSnapshot(root: HTMLElement, snapshot: OrderSnapshot): void {
       vat: d.tVat ?? 'VAT',
       vatExempt: d.tVatExempt ?? 'VAT exempt',
       discount: d.tDiscount,
+      free: d.tFree,
     }, format, 'order-thanks-totals-row-template')
     summaryEl.hidden = false
   }

@@ -74,7 +74,23 @@ describe('renderTotals — discount rows', () => {
     renderTotals(dl, { totals, appliedDiscounts: [code(), auto(), auto({ title: 'Null', amount: 0 }), code({ title: '', code: 'X', amount: 50 })] },
       labels, c => `€${c / 100}`, 'row')
     const rows = Array.from(dl.querySelectorAll('.checkout-totals__row--discount')).map(r => r.textContent!.replace(/\s+/g, ' ').trim())
-    expect(rows).toEqual(['Sommer SUMMER− €3', 'Versandkostenfrei mit Weinpaket − €7', 'Rabatt X− €0.5'])
+    expect(rows).toEqual(['Sommer SUMMER− €3', 'Rabatt X− €0.5'])
+  })
+
+  const rowText = (dl: HTMLElement, i: number) => dl.children[i].textContent!.replace(/\s+/g, ' ').trim()
+
+  it('a shipping discount is no row of its own: the shipping row names it and reads "kostenlos"', () => {
+    const dl = document.getElementById('t')!
+    renderTotals(dl, { totals, appliedDiscounts: [code(), auto()] }, { ...labels, free: 'kostenlos' }, c => `€${c / 100}`, 'row')
+    expect(rowText(dl, 2)).toBe('Versand (Versandkostenfrei mit Weinpaket) kostenlos')
+  })
+
+  it('shipping 0 without a discount (threshold): plain label; without a free label "—"', () => {
+    const dl = document.getElementById('t')!
+    renderTotals(dl, { totals, appliedDiscounts: [] }, { ...labels, free: 'kostenlos' }, c => `€${c / 100}`, 'row')
+    expect(rowText(dl, 1)).toBe('Versand kostenlos')
+    renderTotals(dl, { totals, appliedDiscounts: [] }, labels, c => `€${c / 100}`, 'row')
+    expect(rowText(dl, 1)).toBe('Versand —')
   })
 })
 

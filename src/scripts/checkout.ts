@@ -168,6 +168,7 @@ export async function initCheckout(): Promise<void> {
     vatExempt: t.vatExempt,
     available: t.available,
     discount: t.discount,
+    free: t.fulfillmentFree,
   })
   const stripeCheckout = new CheckoutStripe(stripe)
 

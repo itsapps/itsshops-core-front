@@ -35,7 +35,10 @@ Discounts model: codes and automatic discounts in one line-level pipeline (plan
   Stripe error). Codes match case-insensitively. Types `AppliedCouponResponse`,
   `AppliedCouponSnapshot`, `SanityCouponResult`, `CouponDiscount` removed; `calculateTotals` takes
   the pipeline result; `ValidatedCartItem.selector` replaces `grantsFreeShipping`.
-- **Checkout UI:** one totals row per discount (its title, code in the code slot); a "Nicht
+- **Checkout UI:** one totals row per items/order discount (its title, code in the code slot); a
+  shipping discount names itself in the shipping row ("Versand (Versandkostenfrei mit Weinpaket)
+  kostenlos"), free shipping reads "kostenlos" instead of "—" (an `order-thanks.njk` override
+  needs `data-t-free="{{ 'checkout.fulfillment.free' | trans }}"`); a "Nicht
   rabattiert: …" hint (`[data-checkout-coupon-hint]`, polite live region) when the code skips
   lines; the coupon box ignores automatic discounts; `data-t-discount` is set without
   `shop.coupons` too. Order snapshot `v: 2` (a v1 snapshot from before the release is ignored).

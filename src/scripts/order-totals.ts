@@ -8,6 +8,8 @@ export type TotalsLabels = {
   vat: string
   vatExempt: string
   discount?: string
+  /** Shipping row value at 0 ("kostenlos"); without it the row reads "—". */
+  free?: string
 }
 
 export type TotalsData = Pick<CalculateResponse, 'totals' | 'appliedDiscounts'>
@@ -39,17 +41,24 @@ export function renderTotals(
   templateId: string,
 ): void {
   const { totals } = data
+  const saved = data.appliedDiscounts.filter(d => d.amount > 0)
+  // A shipping discount is no row of its own (under the subtotal it read like a deduction from
+  // it): the shipping row names it and reads "kostenlos".
+  const shippingReasons = saved.filter(d => d.target === 'shipping' && d.title).map(d => d.title)
   renderRows(container, [
     { label: labels.subtotal, value: formatPrice(totals.subtotal) },
-    // One row per applied discount that saved something (shipping ones too — shipping then
-    // reads "—"); label = its title, the generic label only when the title is empty.
-    ...data.appliedDiscounts.filter(d => d.amount > 0).map(d => ({
+    // One row per items/order discount that saved something; label = its title, the generic
+    // label only when the title is empty.
+    ...saved.filter(d => d.target !== 'shipping').map(d => ({
       label: d.title || (labels.discount ?? 'Discount'),
       ...(d.code && d.code !== d.title && { code: d.code }),
       value: `− ${formatPrice(d.amount)}`,
       modifier: 'discount',
     })),
-    { label: labels.shipping, value: totals.shipping === 0 ? '—' : formatPrice(totals.shipping) },
+    {
+      label: shippingReasons.length ? `${labels.shipping} (${shippingReasons.join(', ')})` : labels.shipping,
+      value: totals.shipping === 0 ? (labels.free ?? '—') : formatPrice(totals.shipping),
+    },
     ...totals.vatBreakdown.map(v => ({
       label: v.rate > 0 ? `${v.rate}% ${labels.vat}` : labels.vatExempt,
       value: formatPrice(v.vat),

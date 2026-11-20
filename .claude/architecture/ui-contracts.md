@@ -158,12 +158,16 @@ grid/list toggle.
 
 ## Checkout discounts (`checkout-coupon.ts`, `order-totals.ts`)
 
-- **Totals rows:** one `totalsRow` (`macros/cart.njk`) per applied discount with `amount > 0`, code
-  and automatic alike (shipping discounts too — the shipping row then reads "—"): label = the
+- **Totals rows:** one `totalsRow` (`macros/cart.njk`) per applied **items/order** discount with
+  `amount > 0`, code and automatic alike: label = the
   discount's title (text), the code in the `code` slot (not repeated when it equals the title),
   value `− €X`, modifier `--discount`. Empty title → the generic `data-t-discount` label, which is
   on the container **whatever** `shop.coupons` (shops with automatic discounts and no codes need
-  it). All via `textContent`.
+  it). A **shipping** discount gets no row of its own (under the subtotal "− €23" read like a
+  deduction from it): the shipping row reads "Versand (<its title>)" with the value
+  `checkout.fulfillment.free` ("kostenlos" — `TotalsLabels.free`; checkout `data-t-fulfillment-free`,
+  thanks page `data-t-free`, a thanks-page override needs it too); shipping 0 without one
+  (threshold) is "Versand kostenlos", "—" without the label. All via `textContent`.
 - **Coupon box** (`[data-checkout-coupon]`, only with `shop.coupons`): `render(applied, error,
   notDiscounted)` looks only at the `trigger: 'code'` entry — an automatic discount neither locks
   the input nor shows "Eingelöst". Errors by `errorCode` (`data-t-coupon-*` per code, incl.
