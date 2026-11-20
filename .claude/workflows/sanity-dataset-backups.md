@@ -76,9 +76,28 @@ repo secrets.
    `files/`; docs products must still have their `image` fields), delete local copies.
 5. Note the backup repo in the customer backend `CLAUDE.md`.
 
-Before risky operations (migrations, bulk `itsshops sanity delete`, production content steps) also
-make a manual `sanity dataset export` — the daily backup may be up to a day old (images up to a
-week).
+## Local backup before a risky operation
+
+Before migrations, bulk `itsshops sanity delete` or production content steps, also back up right
+before — the daily backup may be up to a day old (images up to a week), and only `production` has
+one. **Production:** run the workflow by hand (Actions → *Sanity backup* → Run workflow, `docs`) —
+encrypted, kept with the others. **Any dataset, locally** (e.g. `development` before a staging
+migration), from the customer's backup repo with its pinned CLI:
+
+```bash
+cd web/<customer>/sanity-backups && npm ci --no-audit --no-fund && \
+  npx --no-install sanity dataset export <dataset> <dataset>-docs-$(date +%F).tar.gz \
+  --project-id <id> --raw
+```
+
+- Auth is your own `sanity login` (`npx --no-install sanity login` if the CLI says so) — the
+  workflow's `SANITY_AUTH_TOKEN` is only for CI, where the CLI reads it from the step's `env`.
+- `--raw` (docs) is enough when the operation changes documents only (no assets).
+- The file is **unencrypted** and contains orders/customers (and the Studio secrets): gitignored
+  (`*.tar.gz`), but delete it after the operation, or `age -r <public key>` it to keep it.
+- Rollback: `sanity dataset import <file> <dataset> --replace --project-id <id>` restores the
+  backed-up documents, but **doesn't delete** documents created after the backup (e.g. the
+  `discount-*` docs of the discounts migration) — delete those separately.
 
 ## Restoring a lost dataset
 
@@ -100,6 +119,6 @@ week).
    `development`.
 5. Reconcile what happened after the backup: orders (Stripe, order emails, wineNET/ERP),
    **`shopSettings.lastInvoiceNumber`** (order/invoice number counter — set to the highest number
-   already issued *before* taking orders, or numbers repeat), coupon `redemptionCount`, order
+   already issued *before* taking orders, or numbers repeat), discount `redemptionCount`, order
    statuses changed by the ERP.
 6. Trigger a production deploy.

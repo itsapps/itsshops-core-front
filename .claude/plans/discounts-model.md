@@ -766,7 +766,9 @@ per-email limit, express checkout (Apple Pay line items).
 1. Build core-back + core-front on feature branches (core `npm run build` + push before each
    customer lockfile pin); Tinhof frontend/backend branches pin commits; the backend branch sets
    `automaticDiscounts: true` and drops `productFreeShipping`.
-2. Staging (Tinhof `development`): run migration, set `discountExclusions` = kind bundle, check
+2. Staging (Tinhof `development`): local docs backup first (done 2026-11-20:
+   `web/tinhof/sanity-backups/development-docs-2026-11-20.tar.gz`, unencrypted — delete after
+   Rollout 2; `sanity-dataset-backups.md` → "Local backup before a risky operation"); run migration, set `discountExclusions` = kind bundle, check
    the migrated automatic shipping discount; test the matrix above, wc-api output on old and new
    orders, Studio views, mails.
 3. Decide: release together with store pickup or after it.
