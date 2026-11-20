@@ -85,6 +85,15 @@ describe('renderTotals — discount rows', () => {
     expect(rowText(dl, 2)).toBe('Versand (Versandkostenfrei mit Weinpaket) kostenlos')
   })
 
+  it('a shipping code shows its code next to the title (once when they are equal)', () => {
+    const dl = document.getElementById('t')!
+    const free = (over: object) => code({ target: 'shipping', amount: 890, ...over })
+    renderTotals(dl, { totals, appliedDiscounts: [free({ title: 'Gratis-Versand-Aktion', code: 'FREI' })] }, { ...labels, free: 'kostenlos' }, c => `€${c / 100}`, 'row')
+    expect(rowText(dl, 1)).toBe('Versand (Gratis-Versand-Aktion · FREI) kostenlos')
+    renderTotals(dl, { totals, appliedDiscounts: [free({ title: 'FREI', code: 'FREI' })] }, { ...labels, free: 'kostenlos' }, c => `€${c / 100}`, 'row')
+    expect(rowText(dl, 1)).toBe('Versand (FREI) kostenlos')
+  })
+
   it('shipping 0 without a discount (threshold): plain label; without a free label "—"', () => {
     const dl = document.getElementById('t')!
     renderTotals(dl, { totals, appliedDiscounts: [] }, { ...labels, free: 'kostenlos' }, c => `€${c / 100}`, 'row')

@@ -164,7 +164,8 @@ grid/list toggle.
   value `− €X`, modifier `--discount`. Empty title → the generic `data-t-discount` label, which is
   on the container **whatever** `shop.coupons` (shops with automatic discounts and no codes need
   it). A **shipping** discount gets no row of its own (under the subtotal "− €23" read like a
-  deduction from it): the shipping row reads "Versand (<its title>)" with the value
+  deduction from it): the shipping row reads "Versand (<its title>)" — "(<title> · <code>)" for a code whose code
+  differs from its title — with the value
   `checkout.fulfillment.free` ("kostenlos" — `TotalsLabels.free`; checkout `data-t-fulfillment-free`,
   thanks page `data-t-free`, a thanks-page override needs it too); shipping 0 without one
   (threshold) is "Versand kostenlos", "—" without the label. All via `textContent`.

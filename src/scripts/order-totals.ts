@@ -43,8 +43,11 @@ export function renderTotals(
   const { totals } = data
   const saved = data.appliedDiscounts.filter(d => d.amount > 0)
   // A shipping discount is no row of its own (under the subtotal it read like a deduction from
-  // it): the shipping row names it and reads "kostenlos".
-  const shippingReasons = saved.filter(d => d.target === 'shipping' && d.title).map(d => d.title)
+  // it): the shipping row names it (+ the code the customer typed, unless it is the title) and
+  // reads "kostenlos".
+  const shippingReasons = saved
+    .filter(d => d.target === 'shipping' && (d.title || d.code))
+    .map(d => [d.title, d.code !== d.title && d.code].filter(Boolean).join(' · '))
   renderRows(container, [
     { label: labels.subtotal, value: formatPrice(totals.subtotal) },
     // One row per items/order discount that saved something; label = its title, the generic

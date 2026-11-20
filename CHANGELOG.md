@@ -37,7 +37,7 @@ Discounts model: codes and automatic discounts in one line-level pipeline (plan
   the pipeline result; `ValidatedCartItem.selector` replaces `grantsFreeShipping`.
 - **Checkout UI:** one totals row per items/order discount (its title, code in the code slot); a
   shipping discount names itself in the shipping row ("Versand (Versandkostenfrei mit Weinpaket)
-  kostenlos"), free shipping reads "kostenlos" instead of "—" (an `order-thanks.njk` override
+  kostenlos", a code also with its code: "(Gratis-Versand-Aktion · FREI)"), free shipping reads "kostenlos" instead of "—" (an `order-thanks.njk` override
   needs `data-t-free="{{ 'checkout.fulfillment.free' | trans }}"`); a "Nicht
   rabattiert: …" hint (`[data-checkout-coupon-hint]`, polite live region) when the code skips
   lines; the coupon box ignores automatic discounts; `data-t-discount` is set without
