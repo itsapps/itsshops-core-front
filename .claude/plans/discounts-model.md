@@ -1,6 +1,6 @@
 # Plan — discounts model (codes + automatic discounts, one line-level pipeline)
 
-Status: **in progress** — sessions 1 + 2 done (core-back 1–8, core-front 9–20; see Implementation log); Rollout 1–2 open; all decisions taken; refined 2026-11-20 (round 1, 80/100); refined 2026-11-20 (round 2, 86/100); refined 2026-11-20 (round 3, 89/100); refined 2026-11-20 (round 4, 92/100); refined 2026-11-20 (round 5, 95/100). Base: core-front `main` (5.3.0 +
+Status: **in progress** — sessions 1 + 2 done (core-back 1–8, core-front 9–20; see Implementation log); Rollout 1 done, Rollout 2 in progress (Tinhof staging, 2026-11-20); all decisions taken; refined 2026-11-20 (round 1, 80/100); refined 2026-11-20 (round 2, 86/100); refined 2026-11-20 (round 3, 89/100); refined 2026-11-20 (round 4, 92/100); refined 2026-11-20 (round 5, 95/100). Base: core-front `main` (5.3.0 +
 store pickup), core-back `main` (6.3.0). Spans **core-back** (discount document, product selector,
 shop-wide exclusions, order snapshot, Studio views, migrations) and **core-front** (one discount
 pipeline shared by checkout and build, line-level discounts on the order, checkout UI, mails,
@@ -82,6 +82,22 @@ integration tests. Deviations / decisions taken while building:
   preflight also blocks `versions.*`. Tested against an in-memory dataset (incl. idempotency).
 - New tests: `payment-create-discounts`, `commit-order-transaction`, `discount-migration-run`,
   `scripts/__tests__/checkout-discounts`, wc-api legacy-fixture byte-identity, plus updates.
+
+**After the review (2026-11-20), committed + pushed** (core-front `feat/discounts-model` up to
+`ff9c0fb`, core-back up to `d756ae7`); owner-approved changes on top of the plan:
+- Checkout totals: a shipping discount gets **no row of its own** (under the subtotal "− €23" read
+  like a deduction from it) — the shipping row reads "Versand (<title> · <code>) kostenlos";
+  shipping 0 reads `checkout.fulfillment.free` instead of "—" (`ui-contracts.md`).
+- Codes match **case-insensitively** (checkout + core-back uniqueness; no case clashes in Tinhof
+  `development`/`production`, checked read-only).
+- `createPayment` below €0.50 → `ORDER_TOTAL_BELOW_MINIMUM` (no PaymentIntent/`orderMeta`);
+  free orders stay unsupported. Untested in a browser: Stripe Elements at an amount of 0.
+- Studio: status badge first in the discount preview subtitle; warnings (not errors) for 100 % and
+  for an automatic discount without any condition; translated titles on every reference array
+  member (also pre-existing: manufacturers, customer groups, variant options,
+  `builders.variantReference()`). Jurtschitsch's own title on its `variantReference()` was
+  removed in its working tree (uncommitted — commit with its core-back 7 upgrade).
+- Known and accepted: migrated coupon titles (formerly internal) are now shown to customers.
 
 ## Decisions (owner, 2026-11-20)
 
@@ -765,12 +781,23 @@ per-email limit, express checkout (Apple Pay line items).
 
 1. Build core-back + core-front on feature branches (core `npm run build` + push before each
    customer lockfile pin); Tinhof frontend/backend branches pin commits; the backend branch sets
-   `automaticDiscounts: true` and drops `productFreeShipping`.
+   `automaticDiscounts: true` and drops `productFreeShipping`. **Done 2026-11-20** — on Tinhof
+   `main` = `staging` directly (owner: no Tinhof feature branch), frontend `34e1b1c` (core-front
+   `ff9c0fb`), backend `16668fc` (core-back `d756ae7`); both `staging` pushed.
 2. Staging (Tinhof `development`): local docs backup first (done 2026-11-20:
    `web/tinhof/sanity-backups/development-docs-2026-11-20.tar.gz`, unencrypted — delete after
    Rollout 2; `sanity-dataset-backups.md` → "Local backup before a risky operation"); run migration, set `discountExclusions` = kind bundle, check
    the migrated automatic shipping discount; test the matrix above, wc-api output on old and new
    orders, Studio views, mails.
+   **Log (2026-11-20):** wc-api check before migrating (read-only; script compared the staging /
+   live `wc_api` output with the new `mapOrder` on in-memory migrated orders): `development` 24/24
+   and `production` 13/13 byte-identical (7 live coupon orders, incl. coupon + threshold free
+   shipping; a control run without the migrated line discounts differs, so the check bites).
+   Migration on `development` run by the owner (coupon `WEBSHOP26` → discount, bundle rule
+   `discount-product-free-shipping`, orders 000007/000008/000020); afterwards the not yet
+   redeployed (old) staging `wc_api` on the migrated data = new `mapOrder`, 24/24. Open:
+   `discountExclusions` = kind bundle, the matrix incl. a 100 % code (minimum-charge message),
+   `TEST_LIVE` integration tests, deleting the local backup.
 3. Decide: release together with store pickup or after it.
 4. Release (`consuming-core-and-deploy.md` → Release flow, majors). The old frontend reads
    `_type == "coupon"` and `grantsFreeShipping`, the new one `discount` — whichever runs against
