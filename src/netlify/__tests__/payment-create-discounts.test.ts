@@ -178,6 +178,30 @@ describe('payment-create — discounts', () => {
     expect(body.couponError).toMatchObject({ errorCode: 'COUPON_NOT_COMBINABLE', discountTitle: 'Herbstaktion' })
   })
 
+  it('a total below Stripe minimum (100 % code + free shipping): clear error, no PaymentIntent', async () => {
+    fetchCheckoutData.mockResolvedValue(data({
+      variants: [bundle('b1', 3000)], methods: [delivery('standard', 700)],
+      code: raw({ value: 100 }), automatic: [bundleShipping],
+    }))
+    const items = [{ variantId: 'b1', quantity: 1 }]
+    const calc = await call(items, { appliedCouponCode: 'ten' })
+    expect(calc.status).toBe(200)
+    expect(calc.body.totals.grandTotal).toBe(0)
+
+    const created = await call(items, { appliedCouponCode: 'TEN', createPayment: true, address: { shipping: address, contactEmail: 'a@b.at' } })
+    expect(created.status).toBe(400)
+    expect(created.body.error).toMatchObject({ code: 'ORDER_TOTAL_BELOW_MINIMUM', message: 'Der Bestellbetrag muss mindestens 0,50 € betragen' })
+    expect(createPaymentIntent).not.toHaveBeenCalled()
+    expect(createOrderMeta).not.toHaveBeenCalled()
+  })
+
+  it('passes the typed code on as typed (the query matches case-insensitively)', async () => {
+    fetchCheckoutData.mockResolvedValue(data({ variants: [wine('w1', 2000)], methods: [delivery('standard', 700)], code: raw() }))
+    const { body } = await call([{ variantId: 'w1', quantity: 1 }], { appliedCouponCode: ' ten ' })
+    expect(fetchCheckoutData.mock.calls[0][2]).toBe('ten')
+    expect(body.appliedDiscounts[0]).toMatchObject({ code: 'TEN', trigger: 'code' })
+  })
+
   it('re-submit replaces the orderMeta (a dropped code leaves no entry)', async () => {
     fetchCheckoutData.mockResolvedValue(data({ variants: [wine('w1', 2000)], methods: [delivery('standard', 700)] }))
     fetchOrderMeta.mockResolvedValue({ _id: 'orderMeta-1', paymentIntentId: 'pi_1', appliedCoupons: [{ code: 'OLD' }] })

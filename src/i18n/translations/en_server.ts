@@ -32,6 +32,7 @@ export default {
         noValidProducts: "No valid products in cart",
         addressRequired: "Address is required for payment",
         general: "An error occurred during payment",
+        belowMinimum: "The order total must be at least €0.50",
       },
       orderNotFound: "Order not found",
       refundFailed: "Refund failed",

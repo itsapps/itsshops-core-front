@@ -110,7 +110,7 @@ const CHECKOUT_QUERY = `{
   },
   "supportedCountries": *[_type == "taxCountry" && enabled == true]{ countryCode },
   // No enabled/date filter: the pipeline's conditions report disabled / expired / not yet valid.
-  "codeDiscount": *[_type == "discount" && trigger == "code" && $couponEnabled && defined($couponCode) && code == $couponCode][0]${DISCOUNT_PROJECTION},
+  "codeDiscount": *[_type == "discount" && trigger == "code" && $couponEnabled && defined($couponCode) && lower(code) == lower($couponCode)][0]${DISCOUNT_PROJECTION},
   // Dates are checked in the pipeline (one date rule for code and automatic discounts).
   "automaticDiscounts": *[_type == "discount" && trigger == "automatic" && enabled == true]${DISCOUNT_PROJECTION}
 }`

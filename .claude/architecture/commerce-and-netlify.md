@@ -274,7 +274,13 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   - **Conditions** (`conditions.ts`, one entry per condition — the extension point): enabled,
     dates, `maxRedemptions`, `maxPerEmail` (codes only), applicable, `minSubtotal` (whole cart or
     matching lines), `minQuantity` (units of matching lines; a bundle = 1 per quantity). A failing
-    code → `couponError` with the first failing condition's `ErrorCode`.
+    code → `couponError` with the first failing condition's `ErrorCode`. Codes match
+    case-insensitively (`lower(code) == lower($couponCode)` in `CHECKOUT_QUERY`; core-back's
+    uniqueness check compares the same way), the response shows the stored spelling.
+  - **Minimum charge:** `createPayment` with `grandTotal` < 50 cents (Stripe's EUR minimum — a
+    100 % code, stacked discounts) answers `ORDER_TOTAL_BELOW_MINIMUM` (400, message
+    `api.errors.payment.belowMinimum`) before any PaymentIntent or `orderMeta`; a calculate call
+    still returns the totals. Free orders (no payment) are not supported.
   - **Combinability:** at most one code. A, B compatible iff each one's `combinesWith` contains
     the other's target; never two shipping discounts. Automatic set (greedy by saving) vs. code set
     (code + compatible automatic ones): the larger saving wins, tie → the code; automatic wins →

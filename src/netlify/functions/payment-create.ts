@@ -3,6 +3,9 @@ import { validatePaymentRequest } from '../utils/validation'
 import { success, validationError, errorResponse, methodNotAllowed, badRequest } from '../utils/response'
 import { log } from '../utils/logger'
 import { ErrorCode } from '../types/errors'
+
+/** Stripe's minimum charge for EUR, in cents. */
+const STRIPE_MIN_CHARGE = 50
 import type {
   PaymentCreateRequest,
   CalculateResponse,
@@ -296,6 +299,12 @@ export function createPaymentHandler(config: ServerConfig = {}) {
 
     if (!selectedShipping) {
       return validationError(ErrorCode.SHIPPING_UNAVAILABLE, serverT(req.locale, 'api.errors.validation.shippingRateMustBeProvided'), requestId)
+    }
+
+    // Stripe refuses EUR charges below 0.50 (a 100 % code, stacked discounts) — say so instead of
+    // failing in Stripe with a generic error. A free order would need a flow without payment.
+    if (totals.grandTotal < STRIPE_MIN_CHARGE) {
+      return validationError(ErrorCode.ORDER_TOTAL_BELOW_MINIMUM, serverT(req.locale, 'api.errors.payment.belowMinimum'), requestId)
     }
 
     const orderMetaId = req.orderMetaId ?? `orderMeta-${crypto.randomUUID()}`

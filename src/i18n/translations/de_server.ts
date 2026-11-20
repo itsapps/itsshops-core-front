@@ -31,7 +31,8 @@ export default {
         productZeroAmount: "Ein Produkt mit einer Menge von 0 ist im Warenkorb",
         noValidProducts: "Keine gültigen Produkte im Warenkorb",
         addressRequired: "Adresse wird für die Zahlung benötigt",
-        general: "Während des Zahlvorgangs ist ein Fehler aufgetreten"
+        general: "Während des Zahlvorgangs ist ein Fehler aufgetreten",
+        belowMinimum: "Der Bestellbetrag muss mindestens 0,50 € betragen"
       },
       orderNotFound: "Bestellung nicht gefunden",
       refundFailed: "Rückerstattung fehlgeschlagen",

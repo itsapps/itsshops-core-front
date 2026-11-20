@@ -30,7 +30,9 @@ Discounts model: codes and automatic discounts in one line-level pipeline (plan
 - **API response:** `appliedDiscounts` (`{ title, code?, trigger, target, amount }`) and
   `notDiscountedVariantIds` replace `appliedCoupons`; `couponError.discountTitle` for the new
   `COUPON_NOT_COMBINABLE`. New error codes `COUPON_NOT_APPLICABLE`, `COUPON_LIMIT_PER_EMAIL`,
-  `COUPON_BELOW_MIN_QUANTITY`, `COUPON_NOT_COMBINABLE`. Types `AppliedCouponResponse`,
+  `COUPON_BELOW_MIN_QUANTITY`, `COUPON_NOT_COMBINABLE`, and `ORDER_TOTAL_BELOW_MINIMUM` (a
+  `createPayment` below Stripe's €0.50, e.g. after a 100 % code — a clear message instead of a
+  Stripe error). Codes match case-insensitively. Types `AppliedCouponResponse`,
   `AppliedCouponSnapshot`, `SanityCouponResult`, `CouponDiscount` removed; `calculateTotals` takes
   the pipeline result; `ValidatedCartItem.selector` replaces `grantsFreeShipping`.
 - **Checkout UI:** one totals row per discount (its title, code in the code slot); a "Nicht
