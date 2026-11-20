@@ -140,6 +140,15 @@ Owner, 2026-11-17/18 (1–5 and 7–9 confirmed 2026-11-18):
     fine (the API doesn't validate) but the Studio shows it as "not in list" and flags the order.
     Step 3 (core-back) covers it. Related parked plan:
     `billing-address-all-countries.md` (every country for the billing address in general).
+13. **Announcing the ready mail is a checkbox on the method** (owner, 2026-11-21):
+    `pickupAnnounceReady` ("Abholbereit-Mail ankündigen", default off). Shops differ: Tinhof has
+    everything on site (customers just come at opening hours or call), Jurtschitsch prepares the
+    order and mails when it's ready. Off: confirmation/processing mail and thanks page announce
+    no mail. Not derived from `deliveryTime`: free text per language, so the behaviour would
+    differ by locale. Mechanism: `commerce-and-netlify.md` → Store pickup. The Studio flow
+    stays `processing` → `shipped` ("Abholbereit") → `delivered`; with the box off the shop sets
+    "Abholbereit" with "Kunde benachrichtigen" unticked when the customer arrives. Built on core
+    `main` (core-front `5ed49dd`, core-back `de9016b`), not pinned in Tinhof yet.
 
 ## Behaviour
 
@@ -812,7 +821,9 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
    "ready for pickup" mail, the age check at handover, what to do with **uncollected** orders
    (status dialog: "Storniert" with mail, then "Refundiert" — decision 10) and **withdrawn**
    ones (on the withdrawal: "Erstatten & abschließen"); in both cases cancel the Auftrag in
-   wineNET by hand, credit note if already invoiced.
+   wineNET by hand, credit note if already invoiced. With "Abholbereit-Mail ankündigen" off
+   (decision 13): when the customer comes, "Abholbereit" with "Kunde benachrichtigen" unticked,
+   then "Abgeholt".
 
 ## Open decisions (owner)
 
@@ -820,10 +831,11 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
 - Pickup address + instructions (de + en): **we draft, Tinhof approves** (owner, 2026-11-18) —
   address Eisenstätter Straße 10, 7061 Trausdorf; draft opening hours placeholder, "Ausweis
   mitbringen — Altersprüfung bei Übergabe", "wir benachrichtigen Sie per E-Mail, sobald die
-  Bestellung abholbereit ist". Open: Tinhof's opening hours + approval.
-- Hold period: **propose 14 days** to Tinhof (owner, 2026-11-18), entered as `pickupHoldDays`;
-  Tinhof may change it in the Studio. Open: Tinhof's OK + AGB approval of the generic wording
-  (decision 10).
+  Bestellung abholbereit ist". State in `development` (2026-11-21): opening hours (Mi 15–18,
+  Sa 10–13) + "oder nach telefonischer Vereinbarung", no ID line, no notification line (goods
+  on site — decision 13). Open: Tinhof's approval.
+- ~~Hold period: propose 14 days~~ — removed in `development` (2026-11-21, owner): Tinhof has
+  no hold period and no "ready in" time. AGB: no pickup period to mention.
 - ~~Only Tinhof now, or switch it on for Jurtschitsch / Lichtenau too?~~ — only Tinhof at
   start (owner, 2026-11-18); the others get a pickup method when they ask for it.
 - Tax advisor: VAT of a pickup order by the pickup location (decision 4), also for customers
