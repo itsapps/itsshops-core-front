@@ -4,6 +4,9 @@ export default {
   cart: {
     empty: "Dein Warenkorb ist leer.",
   },
+  product: {
+    bundleSaving: "Du sparst {{amount}}",
+  },
   checkout: {
     cartEmpty: "Dein Warenkorb ist leer.",
     error: "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",

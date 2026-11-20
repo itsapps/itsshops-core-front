@@ -52,6 +52,10 @@ Discounts model: codes and automatic discounts in one line-level pipeline (plan
   ≥ 30 days after the last live shop's release). A re-submitted checkout replaces its `orderMeta`
   (`updateOrderMeta` removed).
 - **CLI:** `itsshops sanity migrate-discounts [--dry-run] [--yes]` (`cli.md`).
+- **Bundle price line** reads "Statt €X bei Einzelkauf – Sie sparen €Y" (was "Summe der
+  Einzelpreise: €X"; en "Instead of €X bought singly – You save €Y", informal "Du sparst"). New
+  key `product.bundleSaving`; a project override of `product.bundleItemsTotal` keeps its text and
+  gets the saving appended.
 
 ### Upgrading
 

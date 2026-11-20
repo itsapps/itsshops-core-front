@@ -208,7 +208,7 @@ export function effectiveStatus(
 /**
  * A bundle's items at their single prices (item variant's price, else its product's) × quantity —
  * only when that is more than the bundle's price. `null` for other kinds, a bundle without items,
- * a missing or unpriced item. Shown as "Summe der Einzelpreise" (`productBundleItemsTotal`), not as
+ * a missing or unpriced item. Shown as "Statt €X bei Einzelkauf" (`productBundleItemsTotal`), not as
  * a former price: the bundle never cost this.
  */
 export function bundleItemsTotal(

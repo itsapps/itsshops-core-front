@@ -64,7 +64,8 @@ export default {
   product: {
     taxShippingInfoText: "Incl. VAT / Excl. shipping costs",
     taxFreeShippingInfoText: "Incl. VAT / Free shipping",
-    bundleItemsTotal: "Sum of single prices: {{amount}}",
+    bundleItemsTotal: "Instead of {{amount}} bought singly",
+    bundleSaving: "You save {{amount}}",
     freeShipping: "Free shipping",
     cartButton: {
       addToCart: "Add to cart",

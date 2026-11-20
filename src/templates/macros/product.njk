@@ -38,8 +38,9 @@
 
 
 {# ─── Bundle: sum of single prices ────────────────────────────────────────────
- # "Summe der Einzelpreise: €54,00" when a bundle's items cost more bought singly. Its own line,
- # not a strikethrough: the bundle never cost this (a "was" price would announce a reduction).
+ # "Statt €54,00 bei Einzelkauf – Sie sparen €6,00" when a bundle's items cost more bought
+ # singly. Its own line, not a strikethrough: the bundle never cost this (a "was" price would
+ # announce a reduction) — the text names the single purchase as the comparison.
  # Hidden when an editor set compareAtPrice (that one is shown by productPrice).
  #
  # @param product   ResolvedVariant
@@ -47,7 +48,7 @@
  #}
 {% macro productBundleItemsTotal(product, class="product__bundle-total") %}
 {%- if product.bundleItemsTotal and not product.compareAtPrice %}
-<p class="{{ class }}">{{ 'product.bundleItemsTotal' | trans({ lng: product.locale, amount: product.bundleItemsTotal | formatPrice(product.locale) }) }}</p>
+<p class="{{ class }}">{{ 'product.bundleItemsTotal' | trans({ lng: product.locale, amount: product.bundleItemsTotal | formatPrice(product.locale) }) }} – {{ 'product.bundleSaving' | trans({ lng: product.locale, amount: (product.bundleItemsTotal - product.price) | formatPrice(product.locale) }) }}</p>
 {%- endif %}
 {% endmacro %}
 

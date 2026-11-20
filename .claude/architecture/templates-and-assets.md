@@ -439,7 +439,8 @@ image shortcodes/filters that wrap `src/image/`, and `src/schema/` schema.org ou
 `ResolvedVariant.bundleItemsTotal` (`bundleItemsTotal()` in `src/data/resolve/variants.ts`): a
 bundle's items at their single prices (variant's, else product's) × quantity, set only when more
 than the bundle's price (null for a missing/unpriced item). Rendered by the macro
-`productBundleItemsTotal(product, class)` ("Summe der Einzelpreise: €X", `product.bundleItemsTotal`)
+`productBundleItemsTotal(product, class)` ("Statt €X bei Einzelkauf – Sie sparen €Y": keys
+`product.bundleItemsTotal` + `product.bundleSaving`, Y = `bundleItemsTotal − price`)
 as its own muted line under the price — **not** in `productPrice` and not struck through: the
 bundle never cost this, so a "was" price would announce a reduction it isn't. Hidden when the
 editor set `compareAtPrice`. Core calls it on the product page and in the card's

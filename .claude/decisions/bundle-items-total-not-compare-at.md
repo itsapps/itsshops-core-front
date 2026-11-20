@@ -12,8 +12,10 @@ change.
 ## Decision
 
 `ResolvedVariant.bundleItemsTotal` (sum of the items' single prices × quantity, only when above the
-bundle price) is rendered by its own macro `productBundleItemsTotal` as a plain line ("Summe der
-Einzelpreise: €X") — `productPrice` is unchanged. Hidden when an editor set `compareAtPrice`, so a
+bundle price) is rendered by its own macro `productBundleItemsTotal` as a plain line — `productPrice`
+is unchanged. Its text names the single purchase as the comparison: "Statt €X bei Einzelkauf – Sie
+sparen €Y" (2026-11-20, Tinhof found the first wording "Summe der Einzelpreise: €X" too
+technical; a bare "Statt €X" was rejected — it reads as a former price). Hidden when an editor set `compareAtPrice`, so a
 page never shows two comparison prices.
 
 Why not `compareAtPrice`: the bundle never cost the sum. A struck-through "was" price (screen
