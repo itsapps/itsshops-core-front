@@ -204,7 +204,10 @@ email and invoice PDF), WooCommerce per line. On orders with several items at on
   `price` + `quantity` + `subtotal_tax` (or `taxes[0]`). Real WooCommerce sends the same rounded
   values (`subtotal_tax` rounded per line, `taxes[]` formatted to `dp` = 2), so this also hits
   wineNET on real WC shops — a wineNET bug. Reported to wineNET; don't work around it by sending
-  more tax decimals (breaks WC parity).
+  more tax decimals (breaks WC parity). **Bundles make it frequent:** their items become lines at
+  small price shares, and roughly any line under ~€10 net can miss, depending on the exact cent
+  (Tinhof test bundle at €50: 3 of 4 lines miss on staging 000029/000030, 2026-11-21; recomputed
+  at €200 the juice share still misses, at €150 none).
 - **Status PUT on Auftrag:** turning a Vormerkung into an Auftrag in wineNET immediately sends
   `PUT orders/:id {status: completed}` — automatic, the shop can't choose a status (Tinhof,
   2026-10-23; user agent = the operator's browser). So `completed` means "accepted", not shipped:

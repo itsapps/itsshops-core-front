@@ -61,7 +61,7 @@ Owner, 2026-11-17/18 (1–5 and 7–9 confirmed 2026-11-18):
 4. **VAT for pickup = the pickup location's country** (place of supply where the customer takes
    the goods; `pickupAddress.country`, fallback `shopSettings.defaultCountry`) — not the
    customer's address. Tinhof: AT and DE have the same rates today, so no visible change for
-   Tinhof, but core must be right for other shops. *Confirm with the tax advisor.*
+   Tinhof, but core must be right for other shops. **Confirmed** (confirmed by Tinhof (tax advisor), also for non-EU customers, 2026-11-21).
 5. **Address for pickup = billing address only**, still required (name, street, zip, city,
    country — wineNET needs a customer, invoices > €400 need the address). No shipping address is
    stored for pickup orders; the "different billing address" toggle is hidden. The pickup
@@ -132,7 +132,7 @@ Owner, 2026-11-17/18 (1–5 and 7–9 confirmed 2026-11-18):
     countries. The reasons for the tax-country list don't apply to pickup: VAT is the pickup
     location's (decision 4), there are no per-country shipping rates, and no destination-country
     excise duty, since the goods are handed over at the pickup location. Delivery keeps the
-    tax-country list. *Confirm with the tax advisor together with decision 4* (incl. a non-EU
+    tax-country list. **Confirmed together with decision 4** (confirmed by Tinhof (tax advisor), also for non-EU customers, 2026-11-21; incl. a non-EU
     customer, e.g. CH: Austrian VAT, no export). **Studio side:** the order stores the billing
     address as core-back `addressStrict`, whose `country` field lists
     `ctx.constants.countryOptions` = `localization.countries` (default: the 52 European codes,
@@ -789,7 +789,7 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
 
 ## Rollout (Tinhof)
 
-1. Owner decisions (below), tax advisor on decision 4.
+1. Owner decisions (below), ~~tax advisor on decision 4~~ (confirmed 2026-11-21).
 2. Build core-back + core-front (feature branches), push them, pin the commits in Tinhof
    backend/frontend (no config change — pickup needs only a pickup method in the data).
    `wc-api-erp-completed-accepted.md` (on Tinhof staging, branch `fix/express-no-wallet` +
@@ -806,6 +806,8 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
    copy, `AT-13`). Open: "Abgeholt", DE billing, coupon, withdrawal on an "Abholbereit" order;
    wineNET questions (mail drafted for Andi: shipping country use, `pickup_location` vs
    `local_pickup`, non-EU customers, re-reading `completed` orders).
+   2026-11-21: 000030 (pickup + code `WEBSHOP26` + bundle, Apple Pay) — totals, VAT, wc-api
+   correct (coupon case done; Tinhof staging pins core-front `698ac99`).
    "release tinhof staging": test orders — pickup via form and via Apple/Google Pay and Klarna
    (the express element offers it; tested on staging 2026-11-17), with a DE
    billing address, with a non-tax-country (e.g. CH) billing address, with a coupon; status "Abholbereit" + mail, "Abgeholt"; refund/cancel of a
@@ -814,7 +816,8 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
    address in the shipping line's meta) and ask the questions in "Behaviour" → wineNET; check
    the first one there.
 6. Update the AGB (delivery section, pickup hold period) and the "Versand & Zahlung" page;
-   owner approval.
+   owner approval. **Moved after step 7** (owner, 2026-11-21): the AGB are checked once
+   production is released — not a release blocker. Affected passages: Tinhof `CLAUDE.md`.
 7. Release core tags + Tinhof production release; create the pickup method in production +
    Deploy.
 8. Tell the owner: how pickup orders look in the Studio (Abholbereit/Abgeholt), the
@@ -838,10 +841,10 @@ wc-api, shipping, order-builder, snapshot, express). Deviations from the steps:
   no hold period and no "ready in" time. AGB: no pickup period to mention.
 - ~~Only Tinhof now, or switch it on for Jurtschitsch / Lichtenau too?~~ — only Tinhof at
   start (owner, 2026-11-18); the others get a pickup method when they ask for it.
-- Tax advisor: VAT of a pickup order by the pickup location (decision 4), also for customers
+- ~~Tax advisor: VAT of a pickup order by the pickup location (decision 4), also for customers
   from other EU and non-EU countries (decision 12). **Build as planned, confirm before the
   production release** (owner, 2026-11-18) — a go-live blocker (Rollout 1/7), not a build
-  blocker.
+  blocker~~ — confirmed by Tinhof (tax advisor), incl. non-EU customers, 2026-11-21.
 - ~~(round 2) An uncollected order ends as **"Storniert"** (steps 4b/16b: pickup `shipped` →
   `canceled`), not "Retourniert"~~ — confirmed by the owner 2026-11-18 (cancel mail: step 16c).
 - ~~(round 2) wc-api `method_id`~~ — `pickup_location` (owner, 2026-11-18); switch only if

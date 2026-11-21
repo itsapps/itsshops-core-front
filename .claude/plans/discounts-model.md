@@ -208,8 +208,8 @@ additions (marked "(round 2)") against them.
   discount. Per-customer automatic rules wait for login-based conditions (Extension points).
 - ~~Q2~~ **Decided (owner, 2026-11-20):** the shipping VAT rate always uses the **undiscounted**
   gross per rate (as today), independent of `shopSettings.freeShippingCalculation` (that setting
-  only governs the free-shipping threshold). Tax advisor to confirm, together with the pickup VAT
-  question; if they say "after discount", change it for all shops in core — no new setting.
+  only governs the free-shipping threshold). Tax advisor to confirm (still open; the pickup VAT
+  question was confirmed 2026-11-21); if they say "after discount", change it for all shops in core — no new setting.
 
 ## Behaviour
 
@@ -798,6 +798,12 @@ per-email limit, express checkout (Apple Pay line items).
    redeployed (old) staging `wc_api` on the migrated data = new `mapOrder`, 24/24. Open:
    `discountExclusions` = kind bundle, the matrix incl. a 100 % code (minimum-charge message),
    `TEST_LIVE` integration tests, deleting the local backup.
+   **Log (2026-11-21):** orders 000029 (DPD AT) and 000030 (pickup), each 3 × wine + the test
+   bundle with `WEBSHOP26`: the code discounts only the wine line (bundle excluded, so
+   `discountExclusions` = kind bundle is in effect), the automatic bundle rule frees shipping
+   (000029: €25.50, `freeShippingReason: discount`); totals, VAT and wc-api output correct. On the
+   pickup order the shipping rule is stored with `amount: 0` — harmless (mails and invoice drop
+   shipping discounts, `maxPerEmail` only counts code discounts, Q3).
 3. Decide: release together with store pickup or after it.
 4. Release (`consuming-core-and-deploy.md` → Release flow, majors). The old frontend reads
    `_type == "coupon"` and `grantsFreeShipping`, the new one `discount` — whichever runs against
@@ -810,6 +816,8 @@ per-email limit, express checkout (Apple Pay line items).
    3. Production frontend Netlify project: **stop auto publishing**, push `production` (new
       frontend builds but is not published).
    4. Run the migration on `production` (user runs it, `!` command).
+      Then set `discountExclusions` = kind bundle (shop settings → Rabatte → "Nie rabattieren")
+      in `production` before 5 — otherwise the live code also discounts bundles.
    5. Publish the new deploy, re-enable auto publishing.
    6. Run the migration once more, **right after** 5 (idempotent — catches orders the old frontend
       created between 4 and 5; they are old-shape). Until then the new wc-api reads such a coupon
