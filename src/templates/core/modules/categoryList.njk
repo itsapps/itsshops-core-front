@@ -1,0 +1,17 @@
+<div class="category-list">
+  {% if module.title %}
+    <h2 class="category-list__title">{{ module.title }}</h2>
+  {% endif %}
+  {% if module.categories.length %}
+    <div class="category-list__list">
+      {% for catId in module.categories %}
+        {%- set resolvedCat = cms[_locale].categories | findById(catId) -%}
+        {% if resolvedCat %}
+          <a href="{{ resolvedCat.url }}" class="category-card">
+            <span class="category-card-title">{{ resolvedCat.title }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

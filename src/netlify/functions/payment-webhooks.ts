@@ -1,0 +1,281 @@
+import type { Context } from '@netlify/functions'
+import type Stripe from 'stripe'
+import { constructWebhookEvent, retrievePaymentIntentWithCharge } from '../services/stripe'
+import {
+  fetchOrderMeta,
+  commitOrderTransaction,
+  updateOrderPaymentStatus,
+  findOrderByPaymentIntent,
+  getNextInvoiceNumber,
+} from '../services/sanity'
+import { buildOrder, formatOrderNumber } from '../lib/order-builder'
+import { syncOrderRefunds } from '../lib/order-refunds'
+import { mapPaymentMethodDetails } from '../lib/payment-method'
+import type { ComponentType } from 'react'
+import {
+  sendOrderNotification,
+  sendShopOrderNotification,
+  type SendOrderNotificationOptions,
+} from '../lib/order-notifier'
+import type { ShopOrderEmailProps } from '../templates/email/types'
+import { log } from '../utils/logger'
+import type { OrderDocument, OrderPaymentMethod } from '../types/checkout'
+import { type ServerConfig, resolveServerConfig } from '../types/config'
+
+export type WebhookHandlerOptions = ServerConfig & {
+  onOrderCreated?: (order: OrderDocument & { _id: string }) => Promise<void>
+  /**
+   * Template / invoice / baseUrl overrides forwarded to the order-confirmation
+   * email sent automatically when an order is created. Same shape as the
+   * options passed to `createNotifyHandler`.
+   */
+  notify?: SendOrderNotificationOptions
+  /**
+   * New-order mail to the shop inbox (own wording, shop's `defaultLocale`, Reply-To the
+   * customer). Default on; `false` turns it off, `{ template }` replaces `ShopOrderEmail`.
+   */
+  shopNotification?: boolean | { template?: ComponentType<ShopOrderEmailProps> }
+}
+
+type ShopNotify = { locale: string; template?: ComponentType<ShopOrderEmailProps> } | null
+
+/**
+ * What was actually charged, from the PaymentIntent's latest charge. Never blocks order
+ * creation: on a Stripe error it logs and returns null (the mail then omits the line).
+ */
+export async function fetchChargedPaymentMethod(paymentIntentId: string): Promise<OrderPaymentMethod | null> {
+  try {
+    const pi = await retrievePaymentIntentWithCharge(paymentIntentId)
+    const charge = typeof pi.latest_charge === 'object' ? pi.latest_charge : null
+    return mapPaymentMethodDetails(charge?.payment_method_details)
+  } catch (err) {
+    log.error('Payment method lookup failed', {
+      paymentIntentId,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
+}
+
+async function handlePaymentSucceeded(
+  paymentIntent: Stripe.PaymentIntent,
+  hasStock: boolean,
+  onOrderCreated?: WebhookHandlerOptions['onOrderCreated'],
+  notifyOptions?: SendOrderNotificationOptions,
+  shopNotify?: ShopNotify,
+): Promise<void> {
+  const orderMetaId = paymentIntent.metadata?.orderMetaId
+  if (!orderMetaId) {
+    log.error('PaymentIntent missing orderMetaId metadata', { paymentIntentId: paymentIntent.id })
+    return
+  }
+
+  const existingOrder = await findOrderByPaymentIntent(paymentIntent.id)
+  if (existingOrder) {
+    log.debug('Order already exists, skipping', { orderId: existingOrder })
+    return
+  }
+
+  const orderMeta = await fetchOrderMeta(orderMetaId)
+  if (!orderMeta) {
+    log.error('OrderMeta not found', { orderMetaId })
+    return
+  }
+
+  log.debug('OrderMeta loaded', {
+    orderMetaId,
+    appliedDiscounts: orderMeta.appliedDiscounts?.length ?? 0,
+    legacyCoupons: (orderMeta as { appliedCoupons?: unknown[] }).appliedCoupons?.length ?? 0,
+  })
+
+  const { invoiceNumber, orderNumberPrefix, invoiceNumberPrefix } = await getNextInvoiceNumber()
+
+  const orderDoc = buildOrder({
+    orderMeta,
+    orderNumber: formatOrderNumber(orderNumberPrefix, invoiceNumber),
+    invoiceNumber: formatOrderNumber(invoiceNumberPrefix, invoiceNumber),
+    // When the customer placed the order — for async methods the order is created days later.
+    orderDate: new Date(paymentIntent.created * 1000).toISOString(),
+    payment: await fetchChargedPaymentMethod(paymentIntent.id),
+  })
+
+  log.debug('Order doc built', {
+    orderNumber: orderDoc.orderNumber,
+    appliedDiscounts: orderDoc.appliedDiscounts?.length ?? 0,
+  })
+
+  const stockDecrements = hasStock
+    ? orderDoc.orderItems
+        .filter((item): item is typeof item & { variantId: string } => !!item.variantId)
+        .map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
+    : []
+
+  // Every applied discount with a document (migrated "Versandkostenfrei durch Produkt" entries
+  // have none); `commitOrderTransaction` skips ids that no longer exist.
+  const discountIncrements = [...new Set(
+    (orderDoc.appliedDiscounts ?? []).flatMap((d) => (d.discountRef?._ref ? [d.discountRef._ref] : [])),
+  )].map((discountId) => ({ discountId, by: 1 }))
+
+  const created = await commitOrderTransaction({
+    doc: orderDoc,
+    stockDecrements,
+    discountIncrements,
+  })
+  log.debug('Order created', {
+    orderId: created._id,
+    orderNumber: orderDoc.orderNumber,
+    stockUpdates: stockDecrements.length,
+    discountUpdates: discountIncrements.length,
+  })
+
+  // Send the order confirmation email. Failures here must NOT abort the
+  // webhook (Stripe would retry and we'd duplicate the order) — log and move on.
+  try {
+    const result = await sendOrderNotification(created._id, 'orderConfirmation', {
+      ...notifyOptions,
+      historySource: 'system',
+    })
+    log.debug('Order confirmation sent', {
+      orderId: created._id,
+      messageId: result.messageId,
+    })
+  } catch (err) {
+    log.error('Order confirmation failed', {
+      orderId: created._id,
+      error: err instanceof Error ? err.message : String(err),
+    })
+  }
+
+  // New-order mail to the shop inbox — separate from the customer's confirmation, so a failure
+  // of one doesn't block the other.
+  if (shopNotify) {
+    try {
+      const result = await sendShopOrderNotification(created._id, {
+        ...shopNotify,
+        ...(notifyOptions?.baseUrl && { baseUrl: notifyOptions.baseUrl }),
+      })
+      log.debug('Shop order notification sent', { orderId: created._id, messageId: result.messageId })
+    } catch (err) {
+      log.error('Shop order notification failed', {
+        orderId: created._id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
+  if (onOrderCreated) {
+    try {
+      await onOrderCreated({ ...orderDoc, _id: created._id })
+    } catch (err) {
+      log.error('onOrderCreated hook failed', {
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
+  const paymentIntentId = typeof charge.payment_intent === 'string'
+    ? charge.payment_intent
+    : charge.payment_intent?.id
+
+  if (!paymentIntentId) {
+    log.warn('Charge has no payment_intent', { chargeId: charge.id })
+    return
+  }
+
+  // Sync first: updateOrderPaymentStatus appends a history entry on every run, so a sync throw
+  // after it would make Stripe's retry append a duplicate. Thrown here, nothing was appended yet.
+  await syncOrderRefunds(paymentIntentId)
+
+  const status = charge.amount_refunded === charge.amount ? 'refunded' as const : 'partiallyRefunded' as const
+  await updateOrderPaymentStatus(paymentIntentId, status)
+  log.info('Order payment status updated', { paymentIntentId, status })
+}
+
+/**
+ * A refund's status changed after creation (pending → succeeded, failed, canceled). Only the
+ * stored refunds follow: paymentStatus / status / statusHistory are not reverted — the editor
+ * refunds again in the Stripe dashboard, whose charge.refunded then heals paymentStatus from
+ * the lowered `amount_refunded`.
+ */
+async function handleRefundUpdated(refund: Stripe.Refund): Promise<void> {
+  const paymentIntentId = typeof refund.payment_intent === 'string'
+    ? refund.payment_intent
+    : refund.payment_intent?.id
+
+  if (!paymentIntentId) {
+    log.warn('Refund has no payment_intent', { refundId: refund.id })
+    return
+  }
+
+  await syncOrderRefunds(paymentIntentId)
+  if (refund.status === 'failed') {
+    log.error('Refund failed asynchronously', {
+      paymentIntentId,
+      refundId: refund.id,
+      failureReason: refund.failure_reason,
+    })
+  }
+}
+
+export function createWebhookHandler(options: WebhookHandlerOptions = {}) {
+  const { hasStock, defaultLocale } = resolveServerConfig(options)
+  const shopNotify: ShopNotify =
+    options.shopNotification === false
+      ? null
+      : {
+          locale: defaultLocale,
+          ...(typeof options.shopNotification === 'object' && options.shopNotification.template && {
+            template: options.shopNotification.template,
+          }),
+        }
+
+  return async (request: Request, _context: Context): Promise<Response> => {
+    if (request.method !== 'POST') return new Response(null, { status: 405 })
+
+    const signature = request.headers.get('stripe-signature')
+    if (!signature) {
+      log.warn('Missing stripe-signature header')
+      return new Response(null, { status: 400 })
+    }
+
+    let body: string
+    try {
+      body = await request.text()
+    } catch {
+      log.warn('Failed to read request body')
+      return new Response(null, { status: 400 })
+    }
+
+    try {
+      const event = constructWebhookEvent(body, signature)
+
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          await handlePaymentSucceeded(
+            event.data.object as Stripe.PaymentIntent,
+            hasStock,
+            options.onOrderCreated,
+            options.notify,
+            shopNotify,
+          )
+          break
+        case 'charge.refunded':
+          await handleChargeRefunded(event.data.object as Stripe.Charge)
+          break
+        case 'refund.updated':
+          await handleRefundUpdated(event.data.object as Stripe.Refund)
+          break
+      }
+    } catch (err) {
+      log.error('Webhook error', {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      })
+      return new Response(null, { status: 400 })
+    }
+
+    return new Response(null, { status: 200 })
+  }
+}

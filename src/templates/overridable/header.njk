@@ -1,0 +1,147 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- set _settings = cms[_locale].settings -%}
+<header class="site-header">
+  <div class="site-header__inner">
+
+    {# ── Logo ──────────────────────────────────────────────────────────── #}
+    {#- No aria-label: the visible title is the link's name (WCAG 2.5.3 Label in Name). #}
+    <a href="{{ cms[_locale].homeUrl }}" class="site-header__logo">
+      {{ _settings.siteTitle }}
+    </a>
+
+    {%- if _settings and _settings.mainMenus.length %}
+
+    {# ── Mobile menu toggle (only with a menu to open) ─────────────────── #}
+    <button
+      type="button"
+      class="site-header__menu-toggle"
+      aria-label="{{ 'navigation.ariaOpenMainMenu' | trans }}"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      data-menu-toggle
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    {# ── Main navigation ───────────────────────────────────────────────── #}
+      <nav id="site-nav" class="site-nav" aria-label="{{ 'navigation.mainMenu' | trans }}">
+        <ul class="site-nav__list" role="list">
+          {%- for _menuId in _settings.mainMenus -%}
+            {%- set _menu = cms[_locale].menus | findById(_menuId) -%}
+            {%- set _menuIdx = loop.index -%}
+            {%- if _menu -%}
+              {%- for item in _menu.items -%}
+                {%- set _submenuId = "site-nav-sub-" + _menuIdx + "-" + loop.index -%}
+
+                {%- if item.linkType == 'internal' and item.internal -%}
+                  {%- set _itemTitle = item.title or (item.internal._id | docById).title -%}
+                  <li class="site-nav__item{% if item.children.length %} site-nav__item--has-children{% endif %}">
+                    <a
+                      href="{{ item.internal._id | pageUrl }}"
+                      class="site-nav__link"
+                      {{ item.internal._id | pageUrl | linkActiveState | safe }}
+                    >{{ _itemTitle }}</a>
+                    {%- if item.children.length -%}
+                      <button
+                        type="button"
+                        class="site-nav__submenu-toggle"
+                        aria-expanded="false"
+                        data-submenu-toggle
+                        aria-controls="{{ _submenuId }}"
+                      ><span class="sr-only">{{ 'navigation.ariaOpenSubmenu' | trans }}: {{ _itemTitle }}</span></button>
+                      <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
+                        {%- for child in item.children -%}
+                          {%- if child.linkType == 'internal' and child.internal -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink" {{ child.internal._id | pageUrl | linkActiveState | safe }}>{{ child.title or (child.internal._id | docById).title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'system' and child.url -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" {{ child.url | linkActiveState | safe }}>{{ child.title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'external' -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" rel="noopener noreferrer">{{ child.title }}</a>
+                            </li>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </ul>
+                    {%- endif -%}
+                  </li>
+
+                {%- elif item.linkType == 'system' and item.url -%}
+                  <li class="site-nav__item">
+                    <a href="{{ item.url }}" class="site-nav__link" {{ item.url | linkActiveState | safe }}>{{ item.title }}</a>
+                  </li>
+                {%- elif item.linkType == 'external' -%}
+                  <li class="site-nav__item">
+                    <a href="{{ item.url }}" class="site-nav__link" rel="noopener noreferrer">{{ item.title }}</a>
+                  </li>
+
+                {%- elif item.linkType == 'submenu' -%}
+                  <li class="site-nav__item site-nav__item--submenu{% if item.children.length %} site-nav__item--has-children{% endif %}">
+                    <button
+                      type="button"
+                      class="site-nav__trigger"
+                      aria-expanded="false"
+                      data-submenu-toggle
+                      aria-controls="{{ _submenuId }}"
+                    >{{ item.title }}</button>
+                    {%- if item.children.length -%}
+                      <ul class="site-nav__submenu" id="{{ _submenuId }}" role="list">
+                        {%- for child in item.children -%}
+                          {%- if child.linkType == 'internal' and child.internal -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.internal._id | pageUrl }}" class="site-nav__sublink" {{ child.internal._id | pageUrl | linkActiveState | safe }}>{{ child.title or (child.internal._id | docById).title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'system' and child.url -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" {{ child.url | linkActiveState | safe }}>{{ child.title }}</a>
+                            </li>
+                          {%- elif child.linkType == 'external' -%}
+                            <li class="site-nav__subitem">
+                              <a href="{{ child.url }}" class="site-nav__sublink" rel="noopener noreferrer">{{ child.title }}</a>
+                            </li>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </ul>
+                    {%- endif -%}
+                  </li>
+
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {# ── Actions (locale switcher, theme switch, cart) ─────────────────── #}
+    <div class="site-header__actions">
+
+      {%- if coreConfig.locales.length > 1 -%}
+        {%- set _currentId = pageDoc._id -%}
+        <nav class="locale-switcher" aria-label="{{ 'language.ariaSelect' | trans }}">
+          {%- for _l in coreConfig.locales -%}
+            {%- if _l != _locale -%}
+              <a
+                href="{{ cms[_l].urlMap[_currentId] or (pageKey and cms[_l][pageKey]) or cms[_l].homeUrl }}"
+                hreflang="{{ _l }}"
+                lang="{{ _l }}"
+                class="locale-switcher__link"
+              >{{ _l | upper }}</a>
+            {%- endif -%}
+          {%- endfor -%}
+        </nav>
+      {%- endif -%}
+
+      {%- include "overridable/partials/theme-toggle.njk" -%}
+
+      {%- include "overridable/partials/cart-toggle.njk" -%}
+
+    </div>
+
+  </div>
+</header>

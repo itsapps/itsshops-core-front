@@ -1,0 +1,58 @@
+import type { Locale, PermalinkTranslations, UserPaths } from '../types'
+import deShared from './translations/de_shared'
+import enShared from './translations/en_shared'
+
+const defaults: Record<Locale, Required<PermalinkTranslations>> = {
+  de: {
+    product:     'produkte',
+    category:    'kategorien',
+    blog:        'blog',
+    checkout:    'kasse',
+    orderThanks: 'danke',
+  },
+  en: {
+    product:     'products',
+    category:    'categories',
+    blog:        'blog',
+    checkout:    'checkout',
+    orderThanks: 'thank-you',
+  },
+}
+
+export function buildPermalinkTranslations(
+  overrides?: Partial<Record<Locale, PermalinkTranslations>>
+): Record<Locale, Required<PermalinkTranslations>> {
+  if (!overrides) return defaults
+
+  return (Object.keys(defaults) as Locale[]).reduce((acc, locale) => {
+    acc[locale] = { ...defaults[locale], ...overrides[locale] }
+    return acc
+  }, {} as Record<Locale, Required<PermalinkTranslations>>)
+}
+
+const sharedTranslations: Record<string, { urlPaths: UserPaths }> = {
+  de: deShared as { urlPaths: UserPaths },
+  en: enShared as { urlPaths: UserPaths },
+}
+
+export function buildUserPaths(): Record<Locale, UserPaths> {
+  return (Object.keys(sharedTranslations) as Locale[]).reduce((acc, locale) => {
+    acc[locale] = sharedTranslations[locale].urlPaths
+    return acc
+  }, {} as Record<Locale, UserPaths>)
+}
+
+/** Per-locale segments for the newsletter confirm/unsubscribe landing pages. */
+export function buildNewsletterPaths(): Record<
+  Locale,
+  { newsletterConfirm: string; newsletterUnsubscribe: string }
+> {
+  return (Object.keys(sharedTranslations) as Locale[]).reduce((acc, locale) => {
+    const paths = sharedTranslations[locale].urlPaths
+    acc[locale] = {
+      newsletterConfirm: paths.newsletterConfirm,
+      newsletterUnsubscribe: paths.newsletterUnsubscribe,
+    }
+    return acc
+  }, {} as Record<Locale, { newsletterConfirm: string; newsletterUnsubscribe: string }>)
+}

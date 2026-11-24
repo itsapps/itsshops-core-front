@@ -1,0 +1,22 @@
+# Misc
+*.log
+npm-debug.*
+*.log
+*.swp
+.DS_Store
+Thumbs.db
+.env
+.cache
+_cache/
+
+# netlify.toml is automatically generated before build
+netlify.toml
+# Local Netlify folder
+.netlify
+
+# Node modules and output
+node_modules
+
+# Output
+dist
+.yalc

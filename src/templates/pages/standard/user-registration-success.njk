@@ -1,0 +1,13 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].registrationSuccessUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+titleKey: staticPages.userRegistrationSuccess.title
+---
+{%- include "overridable/user-registration-success.njk" -%}

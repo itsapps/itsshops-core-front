@@ -1,0 +1,31 @@
+{%- set _minAge = coreConfig.ageGate.minAge -%}
+<div
+  class="age-gate"
+  data-age-gate
+  data-min-age="{{ _minAge }}"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="age-gate-title"
+  hidden
+>
+  <div class="age-gate__backdrop" aria-hidden="true"></div>
+
+  <div class="age-gate__dialog">
+    <h2 id="age-gate-title" class="age-gate__title">
+      {{ 'ageGate.title' | trans({ age: _minAge }) }}
+    </h2>
+    <p class="age-gate__text">{{ 'ageGate.text' | trans }}</p>
+    <div class="age-gate__actions">
+      <button type="button" class="age-gate__btn age-gate__btn--confirm" data-age-gate-confirm>
+        {{ 'ageGate.confirm' | trans({ age: _minAge }) }}
+      </button>
+      <button type="button" class="age-gate__btn age-gate__btn--deny" data-age-gate-deny>
+        {{ 'ageGate.deny' | trans }}
+      </button>
+    </div>
+    <p class="age-gate__denied-msg" data-age-gate-denied-msg role="alert" hidden>
+      {{ 'ageGate.deniedText' | trans({ age: _minAge }) }}
+    </p>
+    <p class="age-gate__note">{{ 'ageGate.note' | trans }}</p>
+  </div>
+</div>

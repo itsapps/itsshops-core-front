@@ -1,0 +1,10 @@
+// Discount pipeline (pure, browser-safe) — checkout and build. Plan: `.claude/plans/discounts-model.md`.
+export * from './types'
+export { matchesSelector, matchesCriteria, hasCriteria, isExcluded, withAncestors } from './selector'
+export { allocateLargestRemainder, allocateToChildren } from './allocate'
+export { discountConditions, checkConditions, isUnconditional } from './conditions'
+export type { ConditionContext, DiscountCondition } from './conditions'
+export { areCompatible, pickCompatible, sortBySaving } from './combine'
+export { evaluateDiscounts, eligibleLines, computeLineAmounts, appliesToPickup, waivesShipping } from './apply'
+export { DISCOUNT_PROJECTION, SELECTOR_PROJECTION, toDiscountInput } from './projection'
+export type { RawDiscount, LocaleValue } from './projection'

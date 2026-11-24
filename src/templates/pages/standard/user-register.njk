@@ -1,0 +1,14 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].registerUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+pageKey: registerUrl
+titleKey: staticPages.userRegistration.title
+---
+{%- include "overridable/user-register.njk" -%}

@@ -1,0 +1,192 @@
+/**
+ * GROQ projection fragments for use in extensions.fields / extensions.modules
+ * and as building blocks inside queries.ts.
+ *
+ * Naming convention:
+ *   - Raw string (embeddable fragment):  camelCase noun  e.g. `seo`, `i18nAltImage`
+ *   - Field helper (includes field name): camelCase + Field  e.g. `i18nStringField('title')`
+ */
+
+
+
+// ---------------------------------------------------------------------------
+// Localized fields
+// ---------------------------------------------------------------------------
+export const i18nStringField = (fieldName: string) => `${fieldName}[]{ language, value }`
+
+/**
+ * i18nSlugField — localized slug stored as an internationalized array of slug values.
+ * Flattens each entry's `value.current` to a plain string so it resolves like an
+ * i18nString: `[{ language, value: '<slug>' }]`.
+ */
+export const i18nSlugField = (fieldName: string) => `${fieldName}[]{ language, "value": value.current }`
+
+// ---------------------------------------------------------------------------
+// Asset
+// ---------------------------------------------------------------------------
+
+export const asset = `_id, url, "dimensions": metadata.dimensions { width, height, aspectRatio }, "palette": metadata.palette`
+
+export const imageAssetField = `asset->{ ${asset} }`
+
+// ---------------------------------------------------------------------------
+// Image variants
+// ---------------------------------------------------------------------------
+
+/** cropHotspotImage — plain Sanity image with crop + hotspot */
+export const cropHotspotImage = `{ _type, ${imageAssetField}, crop, hotspot }`
+
+/**
+ * localeImage — { image: i18nCropImage[], alt: i18nString[] }
+ * Used on product/category images where both image and alt text are localized.
+ */
+export const i18nImage = `{
+  "image": image[]{ language, value { _type, ${imageAssetField}, crop, hotspot } },
+  ${i18nStringField('alt')}
+}`
+
+export const i18nImageField = (fieldName: string) => `${fieldName} ${i18nImage}`
+
+/**
+ * localeAltImage — Sanity image with hotspot + i18nString alt.
+ * Used in carousels and wherever a single image has per-locale alt text.
+ */
+// export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, "alt": alt[]{ language, value } }`
+export const i18nAltImage = `{ ${imageAssetField}, crop, hotspot, ${i18nStringField('alt')} }`
+
+export const i18nAltImageField = (fieldName: string) => `${fieldName} ${i18nAltImage}`
+
+/** baseImage — plain Sanity image with plain string alt */
+export const baseImage = `{ ${imageAssetField}, crop, hotspot, alt }`
+
+export const baseImageField = (fieldName: string) => `${fieldName} ${baseImage}`
+
+// ---------------------------------------------------------------------------
+// Portable text
+// ---------------------------------------------------------------------------
+
+/**
+ * The internalLink annotation mark — resolves internalLinkReference to id/type/slug.
+ * Embedded inside markDefs projections.
+ */
+const internalLinkMark = `_type == "internalLink" => {
+    "reference": internalLinkReference->{ _id, _type, "slug": slug.current },
+    "systemPage": internalLinkSystemPage,
+    "displayType": internalLinkDisplayType
+  }`
+
+/**
+ * portableTextBlocks — plain portableText[] array.
+ * Use for non-localized rich text fields.
+ */
+export const portableTextBlocks = `[]{
+  ...,
+  markDefs[]{
+    ...,
+    ${internalLinkMark}
+  },
+  _type == "image" => {
+    ${imageAssetField},
+    crop,
+    hotspot,
+    alt
+  }
+}`
+
+export const portableTextField = (fieldName: string) => `${fieldName} ${portableTextBlocks}`
+
+/**
+ * i18nPortableText — localized rich text stored as i18nText (array of { language: locale, value: blocks[] }).
+ * Use for fields of type i18nText / i18nStandardContent.
+ */
+export const i18nPortableText = `[]{
+  language,
+  value[]{
+    ...,
+    markDefs[]{
+      ...,
+      ${internalLinkMark}
+    },
+    _type == "image" => {
+      ${imageAssetField},
+      crop,
+      hotspot,
+      alt
+    }
+  }
+}`
+
+export const i18nTextField = (fieldName: string) => `${fieldName} ${i18nPortableText}`
+
+/**
+ * i18nStandardContent — localized rich text stored as i18nStandardContent
+ * (value is a standardContent object wrapping a content[] array).
+ * Flattens to [{ _key, value: blocks[] }] so resolvePortableText handles it directly.
+ */
+export const i18nStandardContentField = (fieldName: string) =>
+  `${fieldName}[]{ language, "value": value.content ${portableTextBlocks} }`
+
+// ---------------------------------------------------------------------------
+// SEO
+// ---------------------------------------------------------------------------
+
+export const seo = `{
+  ${i18nStringField('metaTitle')},
+  ${i18nStringField('metaDescription')},
+  ${i18nStringField('shareTitle')},
+  ${i18nStringField('shareDescription')},
+  ${i18nAltImageField('shareImage')}
+}`
+
+// ---------------------------------------------------------------------------
+// Carousel
+// ---------------------------------------------------------------------------
+
+/** carousel — carousel object field (autoplay settings + localeAltImage slides) */
+export const carousel = `{
+  autoplay,
+  autoplayDelay,
+  loop,
+  fade,
+  slides[] ${i18nAltImage}
+}`
+
+export const carouselField = (fieldName = 'carousel') => `"${fieldName}": ${fieldName} ${carousel}`
+
+/** Projects an actionGroup field (array of internalLink objects with optional title/displayType) */
+export const actionsField = (
+  fieldName = 'actions',
+  options?: { includeTitle?: boolean; includeDisplayType?: boolean },
+) => {
+  const fields = [
+    ...(options?.includeTitle ? [i18nStringField('internalLinkTitle')] : []),
+    `"internal": internalLinkReference->{ _id, _type }`,
+    ...(options?.includeDisplayType ? ['internalLinkDisplayType'] : []),
+  ]
+  return `"${fieldName}": ${fieldName}[]{ ${fields.join(', ')} }`
+}
+
+// ---------------------------------------------------------------------------
+// Reference arrays
+// ---------------------------------------------------------------------------
+
+/** refsField — projects an array of references to a plain string[] of IDs without dereferencing */
+export const refsField = (fieldName: string) => `"${fieldName}": ${fieldName}[]._ref`
+
+/** Product/variant specifications — label/value pairs (`productSpecification`), both i18n. */
+export const specificationsField = (fieldName = 'specifications') =>
+  `"${fieldName}": ${fieldName}[]{ ${i18nStringField('label')}, ${i18nStringField('value')} }`
+
+// ---------------------------------------------------------------------------
+// Shared document fragments
+// ---------------------------------------------------------------------------
+
+export const category = `{
+  _id,
+  ${i18nStringField('title')}
+}`
+
+export const manufacturer = `{
+  _id,
+  ${i18nStringField('name')}
+}`

@@ -1,0 +1,554 @@
+{# ─── Product macros ──────────────────────────────────────────────────────────
+ #
+ # Usage:
+ #   {% from "macros/product.njk" import productPrice, productStatus,
+ #      productSiblings, productVariantSelector, productWineDetails,
+ #      productBundleItems, productOptions, productCategories,
+ #      productManufacturers, productFreeShipping, productBundleItemsTotal, qtyControl,
+ #      addToCartButton %}
+ #
+ #}
+
+{# ─── Price ───────────────────────────────────────────────────────────────────
+ # Renders price + optional compare-at (strikethrough) price.
+ # When perLiter is enabled, appends the base price per liter in brackets for
+ # wine variants (e.g. "16,00 € (21,33 €/l)") — legally required in AT/DE for
+ # goods sold by volume. Computed from price (cents) and wine.volume (ml).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class on the wrapper (default: "product-price")
+ # @param perLiter  append the per-liter base price for wine variants (default: false)
+ #}
+{% macro productPrice(product, class="product__price", perLiter=false) %}
+{#- No price (status `unavailable`) → nothing, never "€0,00". -#}
+{%- if product.price %}
+<div class="{{ class }}">
+  {%- if product.compareAtPrice %}
+    <s class="{{ class }}-compare">
+      <span class="sr-only">{{ 'product.price.was' | trans({ lng: product.locale }) }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
+    </s>
+  {%- endif %}
+  <span class="{{ class }}-amount">{{ product.price | formatPrice(product.locale) }}</span>
+  {%- if perLiter and product.kind == "wine" and product.wine and product.wine.volume and product.price %}
+    <span class="{{ class }}-per-liter">({{ (product.price / product.wine.volume * 1000) | round | formatPrice(product.locale) }}/l)</span>
+  {%- endif %}
+</div>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Bundle: sum of single prices ────────────────────────────────────────────
+ # "Statt €54,00 bei Einzelkauf – Sie sparen €6,00" when a bundle's items cost more bought
+ # singly. Its own line, not a strikethrough: the bundle never cost this (a "was" price would
+ # announce a reduction) — the text names the single purchase as the comparison.
+ # Hidden when an editor set compareAtPrice (that one is shown by productPrice).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__bundle-total")
+ #}
+{% macro productBundleItemsTotal(product, class="product__bundle-total") %}
+{%- if product.bundleItemsTotal and not product.compareAtPrice %}
+<p class="{{ class }}">{{ 'product.bundleItemsTotal' | trans({ lng: product.locale, amount: product.bundleItemsTotal | formatPrice(product.locale) }) }} – {{ 'product.bundleSaving' | trans({ lng: product.locale, amount: (product.bundleItemsTotal - product.price) | formatPrice(product.locale) }) }}</p>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Free shipping note ──────────────────────────────────────────────────────
+ # "Versandkostenfrei" when the variant makes the whole order ship free. Plain text (part of the
+ # card link's name). Callers gate it on checkout (macros are imported without context).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__free-shipping")
+ #}
+{% macro productFreeShipping(product, class="product__free-shipping") %}
+{%- if product.grantsFreeShipping %}
+<p class="{{ class }}">{{ 'product.freeShipping' | trans({ lng: product.locale }) }}</p>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Status ──────────────────────────────────────────────────────────────────
+ # Renders a status badge when the product is not active.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-status")
+ #}
+{% macro productStatus(product, class="product__status") %}
+{%- if product.status != "active" %}
+  <span class="{{ class }} {{ class }}--not-active {{ class }}--{{ product.status }}">
+    {{- ('product.states.' + product.status) | trans({ lng: product.locale }) -}}
+  </span>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Siblings / variant switcher ─────────────────────────────────────────────
+ # Renders a nav of sibling variants. The current variant is marked aria-current.
+ # Unavailable siblings get a modifier class.
+ #
+ # @param product   ResolvedVariant  (current variant)
+ # @param class     optional CSS class (default: "product-siblings")
+ #}
+{% macro productSiblings(product, class="product__siblings") %}
+{%- if product.siblings.length %}
+  <nav class="{{ class }}" aria-label="{{ 'product.ariaVariants' | trans({ lng: product.locale }) }}">
+    <a
+      class="{{ class }}__item {{ class }}__item--current"
+      href="{{ product.url }}"
+      aria-current="page"
+    >{{ product.label }}</a>
+    {%- for sibling in product.siblings %}
+      <a
+        class="{{ class }}__item{% if sibling.status != 'active' %} {{ class }}__item--unavailable{% endif %}"
+        href="{{ sibling.url }}"
+      >{{ sibling.label }}</a>
+    {%- endfor %}
+  </nav>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Options ─────────────────────────────────────────────────────────────────
+ # Renders option names for physical/digital products.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-options")
+ #}
+{% macro productOptions(product, class="product__options") %}
+{%- if product.options.length %}
+  <ul class="{{ class }}">
+    {%- for option in product.options %}
+      <li class="{{ class }}__item">{{ option.name }}</li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Variant selector ─────────────────────────────────────────────────────────
+ # One selector for switching between a product's variants — dispatches on
+ # product.kind internally, so templates never branch on the type.
+ #
+ # Two knobs, resolved per kind from `config` (merged over built-in defaults):
+ #   mode:    "axes"     → one control per varying dimension (option groups, or
+ #                         wine vintage/volume), with nearest-fallback
+ #            "combined" → one control listing whole variants (siblings)
+ #   control: "dropdown" | "list" | "cms" (cms = use each option group's own
+ #            displayMode; only meaningful for option axes)
+ #
+ # Built-in defaults: wine → axes/dropdown, physical|digital → axes/cms,
+ # everything else with siblings → combined/dropdown. Bundles render nothing.
+ #
+ # `config` is a per-kind map, e.g.
+ #   { wine: { mode: "combined", control: "dropdown" },
+ #     options: { mode: "axes", control: "cms" },
+ #     default: { mode: "combined", control: "dropdown" } }
+ # ("options" is an alias covering both physical and digital.)
+ #
+ # Every value's URL is precomputed (resolver), so switching is plain navigation;
+ # dropdowns reuse [data-variant-select]. Non-active targets render greyed with
+ # their status label.
+ #
+ # @param product   ResolvedVariant
+ # @param config    optional per-kind config map
+ # @param class     optional CSS base class (default: "product__variants")
+ #}
+{% macro productVariantSelector(product, config={}, class="product__variants") %}
+{%- set _isOptionKind = product.kind == 'physical' or product.kind == 'digital' -%}
+{%- set _cfg = config[product.kind] or (config.options if _isOptionKind else null) or config.default or {} -%}
+{%- set _mode = _cfg.mode or ('axes' if (product.kind == 'wine' or _isOptionKind) else 'combined') -%}
+{%- set _control = _cfg.control or ('cms' if _isOptionKind else 'dropdown') -%}
+{%- set _showLabels = _cfg.showLabels if _cfg.showLabels is defined else true -%}
+{# axes requested but nothing varies → fall back to the flat sibling list #}
+{%- if _mode == 'axes' and not product.variantAxes.length -%}{%- set _mode = 'combined' -%}{%- endif -%}
+
+{%- if _mode == 'axes' and product.variantAxes.length -%}
+  <div class="{{ class }}">
+    {%- for axis in product.variantAxes -%}
+      {%- set _ctl = (axis.displayMode or 'dropdown') if _control == 'cms' else _control -%}
+      {%- set _labelId = class + '-label-' + axis.key -%}
+      {%- set _title = axis.title or (('product.wine.' + axis.key) | trans({ lng: product.locale })) -%}
+      <div class="{{ class }}__axis {{ class }}__axis--{{ _ctl }}" role="group" aria-labelledby="{{ _labelId }}">
+        {%- if _showLabels %}<span class="{{ class }}__label" id="{{ _labelId }}">{{ _title }}</span>{% endif %}
+        {%- if _ctl == 'list' %}
+          <div class="{{ class }}__list">
+            {%- for opt in axis.options %}
+              {%- set _label = (opt.value | formatVolume) if axis.format == 'volume' else opt.label -%}
+              <a
+                class="{{ class }}__option{% if opt.selected %} {{ class }}__option--selected{% endif %}{% if opt.status != 'active' %} {{ class }}__option--unavailable{% endif %}"
+                href="{{ opt.url }}"
+                {%- if opt.selected %} aria-current="page"{% endif %}
+              >{{ _label }}{% if opt.status != 'active' %} <span class="{{ class }}__note">({{ ('product.states.' + opt.status) | trans({ lng: product.locale }) }})</span>{% endif %}</a>
+            {%- endfor %}
+          </div>
+        {%- else %}
+          <select class="{{ class }}__select" aria-labelledby="{{ _labelId }}" data-variant-select>
+            {%- for opt in axis.options %}
+              {%- set _label = (opt.value | formatVolume) if axis.format == 'volume' else opt.label -%}
+              <option value="{{ opt.url }}"{% if opt.selected %} selected{% endif %}>{{ _label }}{% if opt.status != 'active' %} — {{ ('product.states.' + opt.status) | trans({ lng: product.locale }) }}{% endif %}</option>
+            {%- endfor %}
+          </select>
+        {%- endif %}
+      </div>
+    {%- endfor %}
+  </div>
+{%- elif _mode == 'combined' and product.siblings.length -%}
+  <div class="{{ class }} {{ class }}--combined">
+    {%- if _control == 'list' %}
+      <div class="{{ class }}__list">
+        <a class="{{ class }}__option {{ class }}__option--selected" href="{{ product.url }}" aria-current="page">{{ product.label }}</a>
+        {%- for s in product.siblings %}
+          <a class="{{ class }}__option{% if s.status != 'active' %} {{ class }}__option--unavailable{% endif %}" href="{{ s.url }}">{{ s.label }}{% if s.status != 'active' %} <span class="{{ class }}__note">({{ ('product.states.' + s.status) | trans({ lng: product.locale }) }})</span>{% endif %}</a>
+        {%- endfor %}
+      </div>
+    {%- else %}
+      <select class="{{ class }}__select" data-variant-select aria-label="{{ 'product.ariaVariants' | trans({ lng: product.locale }) }}">
+        <option value="{{ product.url }}" selected>{{ product.label }}</option>
+        {%- for s in product.siblings %}
+          <option value="{{ s.url }}">{{ s.label }}{% if s.status != 'active' %} — {{ ('product.states.' + s.status) | trans({ lng: product.locale }) }}{% endif %}</option>
+        {%- endfor %}
+      </select>
+    {%- endif %}
+  </div>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Bundle items ────────────────────────────────────────────────────────────
+ # Renders the list of items in a bundle variant.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__bundle")
+ #}
+{% macro productBundleItems(product, class="product__bundle") %}
+{%- if product.bundleItems.length %}
+  <ul class="{{ class }}">
+    {%- for item in product.bundleItems %}
+      <li class="{{ class }}__item">
+        <span class="{{ class }}__qty">{{ item.quantity }}×</span>
+        {%- if item.variant.url %}
+          <a class="{{ class }}__link" href="{{ item.variant.url }}">{{ item.variant.title }}</a>
+        {%- else %}
+          <span class="{{ class }}__name">{{ item.variant.title }}</span>
+        {%- endif %}
+        {%- if item.variant.kind == "wine" and (item.variant.volume or item.variant.vintage) %}
+          <span class="{{ class }}__meta">
+            {%- if item.variant.volume %}{{ item.variant.volume | formatVolume }}{% endif %}
+            {%- if item.variant.volume and item.variant.vintage %} · {% endif %}
+            {%- if item.variant.vintage %}{{ item.variant.vintage }}{% endif -%}
+          </span>
+        {%- elif item.variant.options.length %}
+          <span class="{{ class }}__meta">{{ item.variant.options | map('name') | join(', ') }}</span>
+        {%- endif %}
+      </li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Categories ──────────────────────────────────────────────────────────────
+ # Renders a list of category links.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-categories")
+ #}
+{% macro productCategories(product, class="product__categories") %}
+{%- if product.categories.length %}
+  <ul class="{{ class }}">
+    {%- for cat in product.categories %}
+      <li class="{{ class }}__item">
+        <a class="{{ class }}__link" href="{{ cat.url }}">{{ cat.title }}</a>
+      </li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Manufacturers ───────────────────────────────────────────────────────────
+ # Renders a list of manufacturer names.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product-manufacturers")
+ #}
+{% macro productManufacturers(product, class="product__manufacturers") %}
+{%- if product.manufacturers.length %}
+  <ul class="{{ class }}">
+    {%- for m in product.manufacturers %}
+      <li class="{{ class }}__item">{{ m.name }}</li>
+    {%- endfor %}
+  </ul>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Quantity control ────────────────────────────────────────────────────────
+ # Renders a quantity stepper (−/+) for add-to-cart forms.
+ #
+ # @param class     optional CSS class on the wrapper (default: "qty-control")
+ #}
+{% macro qtyControl(locale="", class="qty-control") %}
+<div
+  class="{{ class }}"
+  data-qty-control
+  data-t-decrease="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}"
+  data-t-increase="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}"
+  data-t-quantity="{{ 'cart.counter.quantity' | trans({ lng: locale }) }}"
+>
+  <button
+    type="button"
+    class="{{ class }}__btn"
+    data-qty-decrease
+    aria-label="{{ 'cart.counter.decreaseQuantity' | trans({ lng: locale }) }}"
+  >−</button>
+  <output
+    class="{{ class }}__value"
+    data-qty-value
+    aria-live="polite"
+  >1</output>
+  <button
+    type="button"
+    class="{{ class }}__btn"
+    data-qty-increase
+    aria-label="{{ 'cart.counter.increaseQuantity' | trans({ lng: locale }) }}"
+  >+</button>
+</div>
+{% endmacro %}
+
+
+{# ─── Add to cart button ─────────────────────────────────────────────────────
+ # Renders an add-to-cart button with all required data attributes.
+ # Automatically builds a subtitle from wine data when available.
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "add-to-cart")
+ # @param label     optional button label (default: translation key)
+ # @param subtitle  optional explicit subtitle (overrides auto-generated wine subtitle). Don't pass
+ #                  one for a bundle: checkout composes a bundle's subtitle from its current items
+ #                  and would report a custom one as "contents changed".
+ # @param imageSize image size preset for thumb (required — pass imageSizes.thumb or similar)
+ #}
+{% macro addToCartButton(product, class="add-to-cart", label="", subtitle="", imageSize=null, locale="") %}
+{%- set _locale = locale if locale else product.locale -%}
+{%- set _imageSize = imageSize -%}
+{%- set _label = label if label else ('product.cartButton.addToCart' | trans({ lng: _locale })) -%}
+{%- set _subtitle = subtitle -%}
+{%- if not _subtitle -%}
+  {%- set _parts = [] -%}
+  {%- if product.kind == "wine" and product.wine -%}
+    {%- if product.wine.volume %}{%- set _parts = _parts.concat([product.wine.volume | formatVolume]) %}{% endif -%}
+    {%- if product.wine.vintage %}{%- set _parts = _parts.concat([product.wine.vintage]) %}{% endif -%}
+  {%- elif product.kind == "bundle" and product.bundleItems and product.bundleItems.length -%}
+    {%- for item in product.bundleItems %}{%- set _parts = _parts.concat([item.quantity + '× ' + item.variant.title]) %}{% endfor -%}
+  {%- elif product.options and product.options.length -%}
+    {%- set _parts = _parts.concat([product.options | map('name') | join(', ')]) -%}
+  {%- endif -%}
+  {%- set _subtitle = _parts | join(', ') -%}
+{%- endif -%}
+<button
+  type="button"
+  class="{{ class }}"
+  aria-label="{{ _label }}: {{ product.title }}"
+  data-add-to-cart
+  data-aria-add-template="{{ 'product.cartButton.ariaAddToCart' | trans({ lng: _locale }) }}"
+  data-product-id="{{ product._id }}"
+  data-sku="{{ product.sku or '' }}"
+  data-price="{{ product.price }}"
+  data-title="{{ product.title }}"
+  {%- if _subtitle %} data-subtitle="{{ _subtitle }}"{% endif %}
+  {%- if product.kind == "bundle" and product.bundleItems and product.bundleItems.length %}
+    {#- Locale-independent contents key ("id:qty" entries, sorted, joined ","): checkout reports
+      "contents changed" when the server's key differs (same format: `bundleContentsKey`). -#}
+    {%- set _keyParts = [] -%}
+    {%- for item in product.bundleItems %}{%- set _keyParts = _keyParts.concat([item.variant._id + ':' + item.quantity]) %}{% endfor %} data-bundle-key="{{ _keyParts | sort(false, true) | join(',') }}"
+  {%- endif %}
+  data-url="{{ product.url }}"
+  data-added-to-cart="{{ 'product.cartButton.addedToCart' | trans({ lng: _locale }) }}"
+  {%- if product.image and _imageSize %} data-image="{{ product.image | imageSizeUrl(_imageSize) }}"{% endif %}
+>{{ _label }}</button>
+{% endmacro %}
+
+
+{# ─── Wine details ────────────────────────────────────────────────────────────
+ # Renders a <dl> of wine facts from Vinofact data.
+ # Only renders rows for fields that are present on the wine object.
+ #
+ # @param product   ResolvedVariant  (must be kind == "wine")
+ # @param class     optional CSS class (default: "wine-details")
+ #}
+{% macro productWineDetails(product, class="product__wine-details") %}
+{%- if product.kind == "wine" and product.wine %}
+  {%- set wine = product.wine %}
+  <dl class="{{ class }}">
+
+    {%- if wine.volume %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.volume' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.volume | formatVolume }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.vintage %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.vintage' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.vintage }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.color %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.color' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.color }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.type %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.type' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.type }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.alcohol %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.alcohol' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.alcohol }}%</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.tartaricAcid %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.tartaricAcid' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.tartaricAcid }} g/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.freeSulfur %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.freeSulfur' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.freeSulfur }} mg/l</dd>
+      </div>
+    {%- endif %}
+    
+    {%- if wine.residualSugar %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.residualSugar' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.residualSugar }} g/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.totalSulfur %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.totalSulfur' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.totalSulfur }} mg/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.phValue %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.phValue' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.phValue }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.histamine %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.histamine' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.histamine }} mg/l</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.varietals and wine.varietals.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.varietals' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.varietals | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.classifications and wine.classifications.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.classifications' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.classifications | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+    
+    {%- if wine.qualityGrades and wine.qualityGrades.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.qualityGrades' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.qualityGrades | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.terroir and wine.terroir.name %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.terroir' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.terroir.name }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.terroir and wine.terroir.soils and wine.terroir.soils.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.soils' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">{{ wine.terroir.soils | map('name') | join(', ') }}</dd>
+      </div>
+    {%- endif %}
+
+    {%- if wine.awards and wine.awards.length %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ 'product.wine.awards' | trans({ lng: product.locale }) }}</dt>
+        <dd class="{{ class }}__value">
+          <ul class="{{ class }}__awards">
+            {%- for award in wine.awards %}
+              <li>{{ award.name }}{% if award.value %}: {{ award.value }}{% endif %}</li>
+            {%- endfor %}
+          </ul>
+        </dd>
+      </div>
+    {%- endif %}
+
+  </dl>
+{%- endif %}
+{% endmacro %}
+
+
+{# ─── Description ─────────────────────────────────────────────────────────────
+ # The editor's plain-text description (paragraphs), else — for wines — the VinoFact
+ # description (HTML from VinoFact).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__description")
+ #}
+{% macro productDescription(product, class="product__description") %}
+{%- if product.description %}
+  <div class="{{ class }}">{{ product.description | paragraphs | safe }}</div>
+{%- elif product.wine and product.wine.description %}
+  <div class="{{ class }}">{{ product.wine.description | safe }}</div>
+{%- endif %}
+{% endmacro %}
+
+{# ─── Specifications ──────────────────────────────────────────────────────────
+ # Renders a <dl> of the editor-entered label/value lines ("Material: 100% Baumwolle"),
+ # for any product kind. Uses the variant's own list, else the product's (resolved).
+ #
+ # @param product   ResolvedVariant
+ # @param class     optional CSS class (default: "product__specifications")
+ #}
+{% macro productSpecifications(product, class="product__specifications") %}
+{%- if product.specifications and product.specifications.length %}
+  <dl class="{{ class }}">
+    {%- for spec in product.specifications %}
+      <div class="{{ class }}__row">
+        <dt class="{{ class }}__label">{{ spec.label }}</dt>
+        <dd class="{{ class }}__value">{{ spec.value }}</dd>
+      </div>
+    {%- endfor %}
+  </dl>
+{%- endif %}
+{% endmacro %}
+
+{% macro productFilterResetButton(locale) %}
+  <button type="button" class="product-filters__reset" data-filter-reset hidden>
+    {{ "filters.reset" | trans( { lng: locale }) }}
+  </button>
+{% endmacro %}

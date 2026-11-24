@@ -1,0 +1,103 @@
+/**
+ * Resolved Vinofact types — all locale-keyed JSONObject fields are resolved
+ * to plain strings by resolveLocaleMaps() before these types are applied.
+ *
+ * Fields marked optional are only present when included in VinofactConfig.fields.
+ * Base fields (id, slug, title) are always fetched.
+ */
+
+export type VinofactVarietal = {
+  id: string
+  varietalId: string
+  name: string | null
+  amount: number | null
+  varietalAge: number | null
+  varietalAgeTo: number | null
+  varietalYield: number | null
+  varietalYieldTo: number | null
+  plantDensity: number | null
+  plantDensityTo: number | null
+  botrytisAmount: number | null
+  trainingSystem: string | null
+}
+
+export type VinofactClassification = {
+  id: string
+  classificationId: string
+  name: string | null
+}
+export type VinofactQualityGrade = {
+  id: string
+  qualityGradeId: string
+  name: string | null
+}
+
+export type VinofactCertificate = {
+  name: string | null
+  url: string | null
+  description: string | null
+  image: VinofactImage | null
+}
+
+export type VinofactAward = {
+  name: string | null
+  value: string | null
+}
+
+export type VinofactTerroir = {
+  id: string
+  name: string | null
+  description: string | null
+  soils: Array<{
+    id: string
+    name: string | null
+  }>
+}
+
+export type VinofactImage = {
+  url: string
+  /** Per locale (dated API `LocalizedString`, resolved to the page locale); `null` when VinoFact has none. */
+  alt: string | null
+  /** Original image dimensions — present only if the Vinofact API exposes them.
+   *  Used to derive aspect-ratio-aware heights for null-height PictureSize entries. */
+  width?: number | null
+  height?: number | null
+}
+
+/** Fields that can be requested via VinofactConfig.fields (excludes always-fetched base fields). */
+export type VinofactField =
+  | 'year' | 'color' | 'flavor' | 'type' | 'description'
+  | 'alcohol' | 'residualSugar' | 'tartaricAcid' | 'totalSulfur' | 'freeSulfur' | 'phValue' | 'histamine'
+  | 'varietals' | 'classifications' | 'qualityGrades' | 'certificates' | 'awards' | 'bottleImage' | 'terroir'
+  | 'factsheetPdfUrl' | 'factsheetHtmlUrl' | 'elabelUrl'
+
+/** Resolved wine data from the Vinofact API (all locale maps already resolved to strings). */
+export type VinofactWine = {
+  // Base fields — always present
+  id: string
+  slug: string
+  title: string
+  // Optional — included via VinofactConfig.fields
+  year?: string | null
+  color?: string | null
+  flavor?: string | null
+  type?: string | null
+  description?: string | null
+  alcohol?: number | null
+  residualSugar?: number | null
+  tartaricAcid?: number | null
+  totalSulfur?: number | null
+  freeSulfur?: number | null
+  phValue?: number | null
+  histamine?: number | null
+  varietals?: VinofactVarietal[]
+  classifications?: VinofactClassification[]
+  qualityGrades?: VinofactQualityGrade[]
+  certificates?: VinofactCertificate[]
+  awards?: VinofactAward[]
+  bottleImage?: VinofactImage | null
+  terroir?: VinofactTerroir | null
+  factsheetPdfUrl?: string | null
+  factsheetHtmlUrl?: string | null
+  elabelUrl?: string | null
+}

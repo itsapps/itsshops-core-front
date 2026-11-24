@@ -1,0 +1,69 @@
+{% from "macros/product.njk" import addToCartButton, productPrice, productBundleItemsTotal, productStatus, qtyControl, productSiblings,
+  productWineDetails, productDescription, productSpecifications, productBundleItems, productOptions,
+  productCategories, productManufacturers %}
+
+<article class="product" data-product-id="{{ product._id }}" data-kind="{{ product.kind }}" data-status="{{ product.status }}">
+
+  {#- Override only the image (e.g. with a gallery) via {% extends %} + this block. #}
+  {% block product_image %}
+  <figure class="product__image">
+    {% if product.image %}
+      {% image product.image, imageSizes.product, { loading: "eager", fetchpriority: "high" } %}
+    {% else %}
+      {% include "overridable/product/placeholder.njk" %}
+    {% endif %}
+  </figure>
+  {% endblock %}
+
+  <div class="product__body">
+    <header class="product__header">
+      <h1 class="product__title">{{ product.title }}</h1>
+      {%- if product.sku %}
+        <p class="product__sku">{{ product.sku }}</p>
+      {%- endif %}
+    </header>
+
+    {{ productDescription(product) }}
+
+    {{ productSiblings(product) }}
+
+    <div class="product__purchase">
+      {{ productPrice(product, perLiter=true) }}
+      {{ productBundleItemsTotal(product) }}
+
+      {% block product_cart_control %}
+      {%- if coreConfig.features.shop.checkout -%}
+        <p class="product__tax-info">{{ ('product.taxFreeShippingInfoText' if product.grantsFreeShipping else 'product.taxShippingInfoText') | trans }}</p>
+        
+        <div class="product__actions" data-product-actions>
+        {%- if product.status == "active" %}
+          {{ qtyControl(locale=product.locale) }}
+          {{ addToCartButton(product, label=('product.cartButton.addToCartShort' | trans), imageSize=imageSizes.cart) }}
+        {%- else %}
+          {{ productStatus(product) }}
+        {%- endif %}
+        </div>
+      {%- endif -%}
+      {% endblock %}
+    </div>
+
+    {%- if product.kind == "wine" and product.wine %}
+      {{ productWineDetails(product) }}
+    {%- endif %}
+
+    {%- if product.kind == "bundle" %}
+      {{ productBundleItems(product) }}
+    {%- endif %}
+
+    {%- if product.kind == "physical" or product.kind == "digital" %}
+      {{ productOptions(product) }}
+    {%- endif %}
+
+    {{ productSpecifications(product) }}
+
+    {{ productCategories(product) }}
+    {{ productManufacturers(product) }}
+
+  </div>
+
+</article>

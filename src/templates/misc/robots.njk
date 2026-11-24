@@ -1,0 +1,10 @@
+---
+permalink: /robots.txt
+eleventyExcludeFromCollections: true
+excludeFromSitemap: true
+---
+User-agent: *
+{% if not coreConfig.doIndexPages %}Disallow: /
+{% else %}Disallow: /404.html
+Sitemap: {{ coreConfig.baseUrl }}/sitemap.xml
+{% endif %}

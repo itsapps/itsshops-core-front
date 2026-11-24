@@ -1,0 +1,331 @@
+import type { SanityClient } from '@sanity/client'
+import { imageUrl as buildImageUrl, imageSrcsetData } from '../image'
+import type { CoreContext } from '../types'
+import type { CmsData, CmsLocaleData, Sitemap, SitemapEntry } from '../types/data'
+import { buildPermalinkTranslations } from '../i18n/permalinks'
+import {
+  buildProductQuery,
+  buildVariantQuery,
+  buildCategoryQuery,
+  buildPageQuery,
+  buildPostQuery,
+  buildMenuQuery,
+  buildSettingsQuery,
+  buildShopSettingsQuery,
+  buildShippingMethodsQuery,
+} from './queries'
+import { fetchBuildShippingDiscounts } from './build-discounts'
+import { fetchVinofactWines } from './vinofact'
+import { makeCtx } from './resolve/context'
+import { resolveCategories } from './resolve/categories'
+import { resolvePages } from './resolve/pages'
+import { resolvePosts } from './resolve/posts'
+import { resolveVariants, applyBuildShippingDiscounts } from './resolve/variants'
+import { resolveMenus, ensureSystemPageLink, addSystemUrls } from './resolve/menus'
+import { resolveSettings, resolveShopSettings, resolveShippingMethods } from './resolve/settings'
+import { buildFilterGroups, type FilterAccumulator } from './resolve/filters'
+import { buildSearchIndex, resolveSearchFields } from './search'
+import { formatVolumeMl } from '../filters'
+import { intlLocale } from '../i18n/format-locale'
+
+export async function buildCmsData(
+  client: SanityClient,
+  context: CoreContext,
+): Promise<CmsData> {
+  const { config, translate, imageBuilder } = context
+
+  console.log('\n\x1b[36m▶ Fetching CMS data from Sanity...\x1b[0m\n')
+
+  const permalinks = buildPermalinkTranslations(config.permalinks)
+  const features   = config.features
+  const extensions = config.extensions ?? {}
+  const isPreview  = config.buildMode === 'preview'
+
+  const fetchQuery = (query: string, params?: Record<string, unknown>): Promise<any> =>
+    client.fetch(query, params ?? {}, isPreview && config.sanity.studioUrl ? {
+      resultSourceMap: true,
+      stega: { enabled: true, studioUrl: config.sanity.studioUrl },
+    } : {})
+
+  // ─── Fetch raw data ────────────────────────────────────────────────────────
+  //
+  // Even in preview we fetch ALL documents (no per-doc _id filter): the preview
+  // build only renders the single previewed doc (non-preview templates are skipped,
+  // and preview/*.njk selects it by preview.documentId), but cross-document
+  // references — menu titles/urls, internal links, the locale switcher — resolve
+  // via docMap/urlMap, which must be complete or they fall back to "#"/empty.
+
+  const [
+    rawProducts, rawVariants, rawCategories,
+    rawPages, rawPosts, rawMenus, rawSettings, rawShopSettings, rawShippingMethods,
+    buildShippingDiscounts,
+  ] = await Promise.all([
+    features.shop.enabled ? fetchQuery(buildProductQuery(extensions))  : Promise.resolve([]),
+    features.shop.enabled ? fetchQuery(buildVariantQuery(extensions))  : Promise.resolve([]),
+    features.shop.enabled && features.shop.category
+      ? fetchQuery(buildCategoryQuery(extensions)) : Promise.resolve([]),
+    fetchQuery(buildPageQuery(extensions)),
+    features.blog ? fetchQuery(buildPostQuery(extensions)) : Promise.resolve([]),
+    fetchQuery(buildMenuQuery(extensions, config.menu.maxDepth)),
+    fetchQuery(buildSettingsQuery(extensions.fields)),
+    features.shop.enabled ? fetchQuery(buildShopSettingsQuery()) : Promise.resolve(null),
+    features.shop.enabled ? fetchQuery(buildShippingMethodsQuery()) : Promise.resolve([]),
+    // Derives `grantsFreeShipping` (never stega-encoded — see the function).
+    fetchBuildShippingDiscounts(client, features),
+  ])
+
+  // ─── Extension queries (fetched once, resolved per-locale via resolveData) ──
+
+  const rawExtensionEntries = await Promise.all(
+    Object.entries(extensions.queries ?? {}).map(([key, query]) =>
+      fetchQuery(query).then(result => [key, result] as const)
+    )
+  )
+  const rawExtensionData = Object.fromEntries(rawExtensionEntries)
+
+  extensions.onRawDataFetched?.({
+    products: rawProducts, variants: rawVariants, categories: rawCategories,
+    pages: rawPages, posts: rawPosts, menus: rawMenus,
+    settings: rawSettings, shopSettings: rawShopSettings,
+    ...rawExtensionData,
+  })
+
+  // ─── Pre-compute shared maps ───────────────────────────────────────────────
+
+  const productMap = new Map<string, any>(rawProducts.map((p: any) => [p._id, p]))
+
+  const siblingsMap = new Map<string, any[]>()
+  for (const v of rawVariants) {
+    if (!siblingsMap.has(v.productId)) siblingsMap.set(v.productId, [])
+    siblingsMap.get(v.productId)!.push(v)
+  }
+
+  // ─── Vinofact ──────────────────────────────────────────────────────────────
+
+  let vinofactMap: Map<string, any> = new Map()
+  const vinofact = features.shop.vinofact
+  if (vinofact.enabled && vinofact.integration) {
+    const wineIds: string[] = [...new Set(
+      (rawVariants as any[])
+        .map((v) => v.wine?.vinofactWineId as string | undefined)
+        .filter((id): id is string => !!id)
+    )]
+    if (wineIds.length > 0) {
+      vinofactMap = await fetchVinofactWines(vinofact, wineIds, config.locales)
+    }
+  }
+
+  // ─── Per-locale resolution ────────────────────────────────────────────────
+
+  const cms: CmsData = { products: [], categories: [], pages: [], posts: [], sitemaps: [], llms: '' }
+
+  const localesToProcess = isPreview && config.preview.locale
+    ? [config.preview.locale]
+    : config.locales
+
+  for (const locale of localesToProcess) {
+    const defaultLocale = config.defaultLocale
+    const resolve = extensions.resolve ?? {}
+
+    const ctx = makeCtx(locale, defaultLocale, translate, config.units)
+
+    const extensionData = extensions.resolveData
+      ? extensions.resolveData(rawExtensionData, ctx)
+      : rawExtensionData
+
+    const categories = resolveCategories(rawCategories, ctx, permalinks, resolve.category)
+    const categoryMap = new Map(categories.map(c => [c._id, c]))
+
+    const filterAcc: FilterAccumulator = new Map()
+    const products = features.shop
+      ? resolveVariants(rawVariants, productMap, ctx, permalinks, categoryMap, siblingsMap, vinofactMap, resolve, filterAcc)
+      : []
+    applyBuildShippingDiscounts(products, buildShippingDiscounts, new Map(categories.map(c => [c._id, c.parentId])))
+    const filterGroups = buildFilterGroups(filterAcc)
+
+    const homePageId = rawSettings?.homePage?._ref ?? null
+
+    if (rawSettings && !homePageId) {
+      console.warn(`[itsshops] No home page configured in settings for locale "${locale}". Set a home page in Sanity settings to generate /${locale}/.`)
+    }
+
+    const pages = resolvePages(rawPages, ctx, homePageId, resolve.module, resolve.page)
+
+    const posts = features.blog
+      ? resolvePosts(rawPosts, ctx, permalinks, resolve.module, resolve.post)
+      : []
+
+    // Withdrawal form only with online purchases (checkout) — '#' drops it from menus, legal texts
+    const orderWithdrawUrl = features.shop.enabled && features.shop.checkout
+      ? `/${locale}/${context.config.userPaths[locale].orderWithdraw}/`
+      : '#'
+    const systemUrls = { orderWithdraw: orderWithdrawUrl }
+
+    const menus = resolveMenus(rawMenus, ctx, resolve.menuItem, systemUrls)
+    ensureSystemPageLink(menus, 'orderWithdraw', {
+      main:   (rawSettings?.mainMenus   ?? []).map((m: any) => m._ref),
+      footer: (rawSettings?.footerMenus ?? []).map((m: any) => m._ref),
+    }, ctx, systemUrls)
+
+    const urlMap: Record<string, string> = {}
+    const docMap: Record<string, any> = {}
+    for (const p of pages)      { urlMap[p._id] = p.url; docMap[p._id] = p }
+    for (const c of categories) { urlMap[c._id] = c.url; docMap[c._id] = c }
+    for (const v of products)   { urlMap[v._id] = v.url; docMap[v._id] = v }
+    for (const p of posts)      { urlMap[p._id] = p.url; docMap[p._id] = p }
+    addSystemUrls(urlMap, systemUrls)
+
+    const settings     = rawSettings     ? resolveSettings(rawSettings, ctx, extensions)     : null
+    const shopSettings = rawShopSettings ? resolveShopSettings(rawShopSettings, ctx)               : null
+
+    const localeData: CmsLocaleData = {
+      products,
+      filterGroups,
+      categories,
+      pages,
+      posts,
+      menus,
+      settings,
+      shopSettings,
+      shippingMethods: resolveShippingMethods(rawShippingMethods, ctx, shopSettings?.defaultCountry?.countryCode),
+      hasFreeShippingProducts: products.some(v => v.grantsFreeShipping && v.status === 'active'),
+      urlMap,
+      docMap,
+      homeUrl:     urlMap[settings?.homePageId ?? '']         ?? `/${locale}/`,
+      shopUrl:     urlMap[shopSettings?.shopPageId ?? '']    ?? '#',
+      privacyUrl:  urlMap[settings?.privacyPageId ?? '']     ?? '#',
+      termsUrl:    urlMap[shopSettings?.termsPageId ?? '']       ?? '#',
+      withdrawalPolicyUrl: urlMap[shopSettings?.withdrawalPolicyPageId ?? ''] ?? '#',
+      shippingInfoUrl: urlMap[shopSettings?.shippingInfoPageId ?? ''] ?? '#',
+      checkoutUrl:    features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/`    : '#',
+      orderThanksUrl: features.shop.checkout  ? `/${locale}/${permalinks[locale].checkout}/${permalinks[locale].orderThanks}/` : '#',
+      loginUrl:               features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userLogin}/` : '#',
+      registerUrl:            features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userRegistration}/` : '#',
+      registrationSuccessUrl: features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userRegistrationSuccess}/` : '#',
+      confirmUrl:             features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userConfirm}/` : '#',
+      confirmSuccessUrl:      features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userConfirmSuccess}/` : '#',
+      recoverUrl:             features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userRecover}/` : '#',
+      recoverSuccessUrl:      features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userRecoverSuccess}/` : '#',
+      resetUrl:               features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userReset}/` : '#',
+      resetSuccessUrl:        features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userResetSuccess}/` : '#',
+      accountUrl:             features.users.enabled ? `/${locale}/${context.config.userPaths[locale].userOrders}/` : '#',
+      newsletterConfirmUrl:            features.newsletter.enabled ? `/${locale}/${context.config.userPaths[locale].newsletterConfirm}/` : '#',
+      newsletterConfirmSuccessUrl:     features.newsletter.enabled ? `/${locale}/${context.config.userPaths[locale].newsletterConfirmSuccess}/` : '#',
+      newsletterUnsubscribeUrl:        features.newsletter.enabled ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribe}/` : '#',
+      newsletterUnsubscribeSuccessUrl: features.newsletter.enabled ? `/${locale}/${context.config.userPaths[locale].newsletterUnsubscribeSuccess}/` : '#',
+      orderWithdrawUrl,
+      orderWithdrawSuccessUrl: orderWithdrawUrl !== '#' ? `/${locale}/${context.config.userPaths[locale].orderWithdrawSuccess}/` : '#',
+      searchIndex: extensions.search
+        ? buildSearchIndex(products, extensions.search, locale, {
+            imageUrl: (img, width) => buildImageUrl(imageBuilder, img, width),
+            imageSrcset: (img, sizeName) => {
+              const size = context.imageSizes[sizeName]
+              if (!size) return null
+              return imageSrcsetData(imageBuilder, img, size)
+            },
+            imageSizes: context.imageSizes,
+            formatVolume: (ml, locale) => formatVolumeMl(ml, config.units.volume, intlLocale(locale, config.formatLocales)),
+          })
+        : [],
+      searchFields: extensions.search
+        ? resolveSearchFields(extensions.search)
+        : [],
+      ...extensionData,
+    }
+
+    cms[locale] = localeData
+
+    for (const item of products) cms.products.push(item)
+    for (const item of categories) cms.categories.push(item)
+    for (const item of pages)      cms.pages.push(item)
+    for (const item of posts)      cms.posts.push(item)
+  }
+
+  cms.sitemaps = buildSitemaps(cms, config)
+  cms.llms = buildLlmsTxt(cms, config)
+
+  extensions.onCmsBuilt?.(cms)
+
+  return cms
+}
+
+/**
+ * Build the /llms.txt content (llmstxt.org convention): an H1 site name, a
+ * blockquote summary, and curated link sections for the default locale. Follows
+ * doIndexPages — a non-indexable site emits only the header/summary.
+ */
+function buildLlmsTxt(cms: CmsData, config: CoreContext['config']): string {
+  const { defaultLocale, locales, baseUrl, features, doIndexPages } = config
+  const data = cms[defaultLocale] as CmsLocaleData | undefined
+  const s = data?.settings
+  const abs = (url: string) => `${baseUrl}${url}`
+
+  const lines: string[] = [`# ${s?.siteTitle ?? ''}`.trimEnd()]
+  if (s?.siteShortDescription) lines.push('', `> ${s.siteShortDescription}`)
+  lines.push('', `Available languages: ${locales.join(', ')}.`)
+
+  if (doIndexPages && data) {
+    const pageLinks = (data.pages ?? [])
+      .filter(p => p.url !== data.homeUrl)
+      .map(p => `- [${p.title}](${abs(p.url)})`)
+    lines.push('', '## Pages', '', `- [Home](${abs(data.homeUrl)})`, ...pageLinks)
+
+    const hasShopUrl = !!data.shopUrl && data.shopUrl !== '#'
+    if (features.shop.enabled && (data.categories?.length || hasShopUrl)) {
+      const shopLines = hasShopUrl ? [`- [Shop](${abs(data.shopUrl)})`] : []
+      for (const c of data.categories ?? []) shopLines.push(`- [${c.title}](${abs(c.url)})`)
+      lines.push('', '## Shop', '', ...shopLines)
+    }
+
+    const otherLocaleLinks = locales
+      .filter(l => l !== defaultLocale)
+      .map(l => {
+        const ld = cms[l] as CmsLocaleData | undefined
+        return ld?.homeUrl ? `- [${l.toUpperCase()} version](${abs(ld.homeUrl)})` : null
+      })
+      .filter((x): x is string => x !== null)
+    if (otherLocaleLinks.length) lines.push('', '## Optional', '', ...otherLocaleLinks)
+  }
+
+  return lines.join('\n') + '\n'
+}
+
+function buildSitemaps(cms: CmsData, config: CoreContext['config']): Sitemap[] {
+  const { locales, defaultLocale, baseUrl, features } = config
+
+  const toEntry = (doc: { _id: string; _updatedAt: string | null; url: string }): SitemapEntry => ({
+    url: `${baseUrl}${doc.url}`,
+    lastmod: doc._updatedAt ?? null,
+    alternates: locales
+      .map(locale => {
+        const localeData = cms[locale] as CmsLocaleData | undefined
+        const url = localeData?.urlMap?.[doc._id]
+        return url ? { locale, url: `${baseUrl}${url}` } : null
+      })
+      .filter(Boolean) as { locale: string; url: string }[],
+  })
+
+  const defaultData = cms[defaultLocale] as CmsLocaleData
+
+  const sitemaps: Sitemap[] = []
+
+  const pages = (defaultData?.pages ?? []).map(toEntry)
+  if (pages.length) sitemaps.push({ permalink: '/sitemap-pages.xml', entries: pages })
+
+  if (features.shop.enabled) {
+    const products = (defaultData?.products ?? []).map(toEntry)
+    if (products.length) sitemaps.push({ permalink: '/sitemap-products.xml', entries: products })
+
+    if (features.shop.category) {
+      const categories = (defaultData?.categories ?? []).map(toEntry)
+      if (categories.length) sitemaps.push({ permalink: '/sitemap-categories.xml', entries: categories })
+    }
+  }
+
+  if (features.blog) {
+    const posts = (defaultData?.posts ?? []).map(toEntry)
+    if (posts.length) sitemaps.push({ permalink: '/sitemap-posts.xml', entries: posts })
+  }
+
+  return sitemaps
+}

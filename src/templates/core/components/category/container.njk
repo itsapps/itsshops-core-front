@@ -1,0 +1,37 @@
+<article class="category" data-category-id="{{ category._id }}">
+
+  {% block category_header %}
+    <header class="category-header">
+      <h1 class="category-title">{{ category.title }}</h1>
+      {% block category_description %}
+      {% if category.description %}
+        <div class="category-description">{{ category.description | paragraphs | safe }}</div>
+      {% endif %}
+      {% endblock %}
+    </header>
+  {% endblock %}
+
+  {% block category_products %}
+    {%- set categoryProducts = cms[category.locale].products | filterByCategory(category._id) -%}
+    {% if categoryProducts.length %}
+      {%- set filterGroups = cms[category.locale].filterGroups | filterGroupsForProducts(categoryProducts) -%}
+      {%- set activeFilterKeys = category.filters if category.filters.length else cms[category.locale].shopSettings.filters -%}
+      {% if activeFilterKeys.length %}
+        {% include "overridable/partials/product-filters.njk" %}
+      {% endif %}
+      <div class="category-products" data-product-list>
+        {% for product in categoryProducts %}
+          <div
+            class="category-products__item"
+            data-filter-item
+            data-filter-attrs="{{ product.filterAttributes | dump }}"
+            data-filter-price="{{ product.price }}"
+          >
+            {% include "overridable/product/card.njk" %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endblock %}
+
+</article>

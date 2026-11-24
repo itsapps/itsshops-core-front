@@ -1,0 +1,83 @@
+/* Lightbox gallery (scripts/lightbox.ts).
+   Structural + minimal look — import where the `gallery` shortcode is used.
+   Customers restyle freely (e.g. inset panel on desktop). Dialog fills the
+   viewport by default. */
+.lightbox {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  block-size: 100%;
+  max-block-size: 100%;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+}
+.lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.9);
+}
+.lightbox__viewport {
+  overflow: hidden;
+  block-size: 100%;
+}
+.lightbox__track {
+  display: flex;
+  block-size: 100%;
+}
+.lightbox__slide {
+  flex: 0 0 100%;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox__slide img {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  inline-size: auto;
+  block-size: auto;
+  object-fit: contain;
+}
+.lightbox__nav,
+.lightbox__close {
+  position: absolute;
+  z-index: 1;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+.lightbox__nav {
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+}
+.lightbox__nav--prev { inset-inline-start: 0; }
+.lightbox__nav--next { inset-inline-end: 0; }
+.lightbox__nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.lightbox__close {
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  font-size: 1.75rem;
+}
+.lightbox__bar {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.lightbox__caption { flex: 1; text-align: center; }
+.lightbox__download { color: inherit; }
+.lightbox--single .lightbox__nav,
+.lightbox--single .lightbox__counter {
+  display: none;
+}

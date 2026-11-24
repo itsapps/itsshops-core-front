@@ -1,0 +1,10 @@
+---
+layout: base.njk
+pagination:
+  data: cms.products
+  size: 1
+  alias: pageDoc
+permalink: "{{ pageDoc.url }}"
+---
+{%- set product = pageDoc -%}
+{%- include "overridable/product/container.njk" -%}

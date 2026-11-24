@@ -1,0 +1,257 @@
+import type { AddressInput } from '../shared/checkout-api'
+import { validateEmail } from '../shared/validation'
+
+// Manual form requires prename + lastname for UX, then combines them into `name`
+// before sending to the server. The server only requires `name`.
+const MANUAL_FORM_REQUIRED_FIELDS = ['prename', 'lastname', 'line1', 'zip', 'city', 'country'] as const
+
+const ZIP_PATTERNS: Record<string, RegExp> = {
+  AT: /^\d{4}$/,
+  BE: /^\d{4}$/,
+  BG: /^\d{4}$/,
+  CH: /^\d{4}$/,
+  CY: /^\d{4}$/,
+  CZ: /^\d{3}\s?\d{2}$/,
+  DE: /^\d{5}$/,
+  DK: /^\d{4}$/,
+  EE: /^\d{5}$/,
+  ES: /^\d{5}$/,
+  FI: /^\d{5}$/,
+  FR: /^\d{5}$/,
+  GB: /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i,
+  GR: /^\d{3}\s?\d{2}$/,
+  HR: /^\d{5}$/,
+  HU: /^\d{4}$/,
+  IE: /^[A-Z\d]{3}\s?[A-Z\d]{4}$/i,
+  IT: /^\d{5}$/,
+  LI: /^\d{4}$/,
+  LT: /^\d{5}$/,
+  LU: /^\d{4}$/,
+  LV: /^\d{4}$/,
+  MT: /^[A-Z]{3}\s?\d{4}$/i,
+  NL: /^\d{4}\s?[A-Z]{2}$/i,
+  NO: /^\d{4}$/,
+  PL: /^\d{2}-\d{3}$/,
+  PT: /^\d{4}-\d{3}$/,
+  RO: /^\d{6}$/,
+  SE: /^\d{3}\s?\d{2}$/,
+  SI: /^\d{4}$/,
+  SK: /^\d{3}\s?\d{2}$/,
+}
+
+type FieldError = { field: string; message: string }
+
+export type FormErrorLabels = {
+  email: string
+  prename: string
+  lastname: string
+  street: string
+  city: string
+  zip: string
+  zipFormat: string
+  country: string
+}
+
+export class CheckoutForm {
+  private form: HTMLFormElement
+  private onCountryChange: ((country: string) => void) | null = null
+  private errorLabels: FormErrorLabels
+
+  constructor(form: HTMLFormElement, errorLabels?: FormErrorLabels) {
+    this.form = form
+    this.errorLabels = errorLabels ?? {
+      email: 'Valid email required',
+      prename: 'First name is required',
+      lastname: 'Last name is required',
+      street: 'Address is required',
+      city: 'City is required',
+      zip: 'Postal code is required',
+      zipFormat: 'Invalid postal code format',
+      country: 'Country is required',
+    }
+    this.bindCountryListener()
+    this.bindBillingToggle()
+  }
+
+  setOnCountryChange(fn: (country: string) => void): void {
+    this.onCountryChange = fn
+  }
+
+  private bindBillingToggle(): void {
+    const checkbox = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    const billingFields = this.form.querySelector<HTMLElement>('[data-checkout-billing-fields]')
+    if (!checkbox || !billingFields) return
+
+    checkbox.addEventListener('change', () => {
+      billingFields.hidden = checkbox.checked
+    })
+  }
+
+  private pickup = false
+
+  isPickup(): boolean {
+    return this.pickup
+  }
+
+  /**
+   * Pickup mode: the address fields are the billing address — the legend says so, and the
+   * billing toggle fieldset and the shipping-method fieldset hide as a whole (an empty
+   * `.checkout__section` box would remain otherwise). Back on delivery the billing fields
+   * follow the "same as shipping" box again.
+   */
+  setPickupMode(pickup: boolean): void {
+    this.pickup = pickup
+    const legend = this.form.querySelector<HTMLElement>('[data-checkout-address-legend]')
+    const root = this.form.closest<HTMLElement>('[data-checkout]')
+    const text = pickup ? root?.dataset.tAddressBilling : root?.dataset.tAddressDelivery
+    if (legend && text) legend.textContent = text
+
+    const billingSection = this.form.querySelector<HTMLElement>('[data-checkout-billing-section]')
+    if (billingSection) billingSection.hidden = pickup
+    const billingFields = this.form.querySelector<HTMLElement>('[data-checkout-billing-fields]')
+    const checkbox = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    if (!pickup && billingFields && checkbox) billingFields.hidden = checkbox.checked
+
+    const shippingSection = this.form.querySelector<HTMLElement>('[data-checkout-shipping-section]')
+    if (shippingSection) shippingSection.hidden = pickup
+  }
+
+  private bindCountryListener(): void {
+    const countrySelect = this.form.querySelector<HTMLSelectElement>('[data-checkout-country]')
+    countrySelect?.addEventListener('change', () => {
+      this.onCountryChange?.(countrySelect.value)
+    })
+  }
+
+  getEmail(): string {
+    return this.getFieldValue('contactEmail')
+  }
+
+  getCountry(): string {
+    return this.getFieldValue('shipping.country') || this.getFieldValue('country') || ''
+  }
+
+  getShippingAddress(): AddressInput {
+    const prename = this.getFieldValue('shipping.prename')
+    const lastname = this.getFieldValue('shipping.lastname')
+    return {
+      name: `${prename} ${lastname}`.trim(),
+      prename,
+      lastname,
+      phone: this.getFieldValue('shipping.phone') || undefined,
+      line1: this.getFieldValue('shipping.line1'),
+      line2: this.getFieldValue('shipping.line2') || undefined,
+      zip: this.getFieldValue('shipping.zip'),
+      city: this.getFieldValue('shipping.city'),
+      country: this.getFieldValue('shipping.country'),
+      state: this.getFieldValue('shipping.state') || undefined,
+    }
+  }
+
+  getBillingAddress(): AddressInput | undefined {
+    // Pickup: the main fields are the billing address (sent as `address.shipping`).
+    if (this.pickup) return undefined
+    const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    if (useShippingAsBilling?.checked !== false) return undefined
+
+    const prename = this.getFieldValue('billing.prename')
+    const lastname = this.getFieldValue('billing.lastname')
+    return {
+      name: `${prename} ${lastname}`.trim(),
+      prename,
+      lastname,
+      phone: this.getFieldValue('billing.phone') || undefined,
+      line1: this.getFieldValue('billing.line1'),
+      line2: this.getFieldValue('billing.line2') || undefined,
+      zip: this.getFieldValue('billing.zip'),
+      city: this.getFieldValue('billing.city'),
+      country: this.getFieldValue('billing.country'),
+      state: this.getFieldValue('billing.state') || undefined,
+    }
+  }
+
+  validate(): FieldError[] {
+    const errors: FieldError[] = []
+
+    const email = this.getEmail()
+    if (!email || !validateEmail(email)) {
+      errors.push({ field: 'contactEmail', message: this.errorLabels.email })
+    }
+
+    this.validateAddressFields('shipping', errors)
+
+    // Validate billing if separate (never in pickup mode — its fields are hidden then)
+    const useShippingAsBilling = this.form.querySelector<HTMLInputElement>('[data-checkout-same-billing]')
+    if (!this.pickup && useShippingAsBilling?.checked === false) {
+      this.validateAddressFields('billing', errors)
+    }
+
+    return errors
+  }
+
+  private validateAddressFields(prefix: 'shipping' | 'billing', errors: FieldError[]): void {
+    const labelMap: Record<string, keyof FormErrorLabels> = {
+      prename: 'prename', lastname: 'lastname', line1: 'street',
+      zip: 'zip', city: 'city', country: 'country',
+    }
+    for (const field of MANUAL_FORM_REQUIRED_FIELDS) {
+      if (!this.getFieldValue(`${prefix}.${field}`).trim()) {
+        errors.push({ field: `${prefix}.${field}`, message: this.errorLabels[labelMap[field]] })
+      }
+    }
+
+    const zip = this.getFieldValue(`${prefix}.zip`).trim()
+    const country = this.getFieldValue(`${prefix}.country`).trim().toUpperCase()
+    const pattern = ZIP_PATTERNS[country]
+    if (zip && pattern && !pattern.test(zip)) {
+      errors.push({ field: `${prefix}.zip`, message: this.errorLabels.zipFormat })
+    }
+  }
+
+  showErrors(errors: FieldError[]): void {
+    // Clear previous errors
+    this.form.querySelectorAll('[data-checkout-error]').forEach(el => {
+      el.textContent = ''
+      el.removeAttribute('aria-live')
+    })
+    this.form.querySelectorAll('.is-invalid').forEach(el => {
+      el.classList.remove('is-invalid')
+    })
+
+    for (const error of errors) {
+      const errorEl = this.form.querySelector<HTMLElement>(`[data-checkout-error="${error.field}"]`)
+      if (errorEl) {
+        errorEl.textContent = error.message
+        errorEl.setAttribute('aria-live', 'polite')
+      }
+      const input = this.form.querySelector<HTMLElement>(`[name="${error.field}"]`)
+      input?.classList.add('is-invalid')
+    }
+
+    // Scroll to first error
+    if (errors.length > 0) {
+      const firstInput = this.form.querySelector<HTMLElement>(`[name="${errors[0].field}"]`)
+      firstInput?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstInput?.focus()
+    }
+  }
+
+  /** Mark one field invalid without moving focus (e.g. after a mode switch from a radio). */
+  markError(field: string, message: string): void {
+    const errorEl = this.form.querySelector<HTMLElement>(`[data-checkout-error="${field}"]`)
+    if (errorEl) {
+      errorEl.textContent = message
+      errorEl.setAttribute('aria-live', 'polite')
+    }
+    this.form.querySelector<HTMLElement>(`[name="${field}"]`)?.classList.add('is-invalid')
+  }
+
+  clearErrors(): void {
+    this.showErrors([])
+  }
+
+  private getFieldValue(name: string): string {
+    const el = this.form.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)
+    return el?.value ?? ''
+  }
+}

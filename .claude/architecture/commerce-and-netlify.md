@@ -1,0 +1,804 @@
+# Commerce & Netlify backend
+
+The dynamic side of the shop — checkout, users, newsletter — runs as **Netlify Functions** in
+`src/netlify/`, with typed client counterparts in `src/scripts/` talking to them through
+`src/shared/*-api.ts`.
+
+## How customer projects use these functions
+
+Core does **not** auto-register functions in the customer's Netlify site. Instead core builds each
+function to its own `dist/<name>.js` (tsup entries in `tsup.config.*`) and exposes it as a **package
+subpath export** `@itsapps/itsshops-core-front/functions/<name>`, each exporting a **factory**
+`create<Name>Handler(config?)`.
+
+A customer opts a function in by dropping a **thin wrapper** in its own `netlify/functions/<name>.mts`
+that sets the Netlify route and re-exports the handler:
+
+```ts
+// netlify/functions/newsletter-confirm.mts (customer project)
+import type { Config } from '@netlify/functions'
+import { createNewsletterConfirmHandler } from '@itsapps/itsshops-core-front/functions/newsletter-confirm'
+
+export const config: Config = { path: '/api/newsletter/confirm' }
+export default createNewsletterConfirmHandler()
+```
+
+Rules of thumb:
+- **One wrapper file per function you want live.** Omit the wrapper → that endpoint doesn't exist on
+  that site. (A full shop wires newsletter, payment-create/-webhooks/-refund,
+  order-notify/-withdraw/-withdraw-notify/-status, preview.)
+- **`config.path` must match the route core's client code calls.** The browser scripts
+  (`src/scripts/*`) + `src/shared/*-api.ts` call fixed `/api/...` paths; copy the paths from the
+  starter's function wrappers (or an existing customer's `netlify/functions/`) as the canonical set.
+- Some factories take an optional config object (`create...Handler(config)`); most are zero-arg.
+- The functions need their server env vars at runtime (Stripe secret, Supabase, Mailgun/Resend,
+  Sanity token, `SERVER_FUNCTIONS_*` etc.) — set them on the Netlify site, not in client config.
+  (`SANITY_STUDIO_*` vars are Studio-side and **public**: they're compiled into the Studio bundle.
+  See core-back `CLAUDE.md` → "Config".)
+- `netlify.toml` controls bundling: the preview function declares `included_files` and excludes the
+  bundler/React/Stripe node_modules it doesn't need (see the customer's `netlify.toml`).
+- **pdfkit's standard fonts must be shipped by hand** (`@react-pdf/renderer` ≥ 4.9, which uses
+  upstream `pdfkit` 0.20 instead of `@react-pdf/pdfkit`): pdfkit loads the font metrics
+  (Helvetica, … — `InvoicePdf.tsx` uses Helvetica) from `pdfkit/js/standard-fonts/*.cjs` via a
+  `createRequire` + `#standard-fonts/*` subpath import that Netlify's file tracer doesn't follow,
+  and the renderer's font store loads Helvetica **on import**. So every function that imports
+  `lib/order-notifier.tsx` (`payment-webhooks`, `order-notify`, `wc-api`) crashes on every call —
+  with or without a PDF — with `Cannot find module …/pdfkit/js/standard-fonts/Helvetica.cjs`.
+  Fix per customer `netlify.toml`, for each of those functions it has:
+  `[functions.payment_webhooks] included_files = ["node_modules/pdfkit/js/standard-fonts/**"]`
+  (the whole folder: the font files require a hashed `chunks/standardGlyphNames-*.cjs`). Shipped by
+  the starter's checkout package; a lockfile still on renderer 4.4 (`@react-pdf/pdfkit`, fonts
+  built in) doesn't need it — add it before that lockfile moves to ≥ 4.9.
+  `check:functions` can't catch this (it runs against a full `node_modules`).
+
+### Function catalog (subpath → factory)
+
+| Subpath `@itsapps/itsshops-core-front/functions/…` | Factory | Purpose |
+|---|---|---|
+| `preview` | `preview` (wrapper calls `preview({ request, context })`) | Sanity Presentation draft render, session-gated — see "Draft preview" below (overlay script: `templates-and-assets.md` → "Static assets") |
+| `preview-enable` | `createPreviewEnableHandler` | Validates Presentation's preview secret, hands out the preview session — see "Draft preview" below |
+| `payment-create` | `createPaymentHandler` | Create a Stripe payment / checkout intent |
+| `payment-webhooks` | `createWebhookHandler` | Stripe webhook receiver (order fulfilment, customer confirmation + shop new-order mail) |
+| `payment-refund` | `createRefundHandler` | Studio refund of a shop **order** (by order id) |
+| `order-notify` | `createNotifyHandler` | Studio-triggered order mails (status change / manual send, optional customer message) |
+| `order-withdraw` | `createOrderWithdrawHandler` | Process a right-of-withdrawal request |
+| `order-status` | `createOrderStatusHandler` | `GET /api/order/status?payment_intent=pi_…` → order number only (thanks page, pending-payment cart cleanup) |
+| `order-withdraw-notify` | `createWithdrawNotifyHandler` | Withdrawal notification email |
+| `user-register` / `-login` / `-logout` / `-confirm` / `-recover` / `-reset` | `createUser…Handler` | Supabase-backed auth flows |
+| `auth-webhooks` | `createAuthWebhookHandler` | Supabase auth webhook receiver |
+| `newsletter-subscribe` / `-confirm` / `-unsubscribe` | `createNewsletter…Handler` | Double-opt-in newsletter |
+| `wc-api` | `createWcApiHandler` | WooCommerce API bridge — read by **Winenet** (third party: reads orders, updates their status, issues invoices / accounting). See "WooCommerce API bridge" below |
+| `supabase-keep-alive` | `createKeepAliveHandler` | Scheduled ping to keep Supabase warm |
+| `order-meta-cleanup` | `createOrderMetaCleanupHandler` | Scheduled (wrapper: `schedule: '@daily'`): deletes `orderMeta` not updated for `ORDER_META_RETENTION_DAYS` (30, `config/constants`) — the privacy policy states this period |
+
+The full built set is the tsup `entry` map; the exposed set is the `exports` map in `package.json`.
+
+**`./functions/utils`** (`src/netlify/functions/utils.ts` → `dist/functions-utils.js`) is not a
+handler: it re-exports existing helpers for **customer-only** functions (e.g. a shop's own
+interest list), so customers don't copy core code — `sanityClient`, `fetchEmailSettings`,
+`buildEmailShopSettings`, `sendMail` (+ types), `renderSimpleEmail` (core's `SimpleEmail` in the shop
+layout → HTML, `lib/simple-email.tsx` — use it so customer mails look like core's), `validateEmail`, `normalizeEmail`,
+`prepareSubscription` / `confirmSubscription`, `serverT` (core's bundled translations only — not
+the customer's `translations` config), `success` / `badRequest` / `errorResponse` /
+`methodNotAllowed`, `ErrorCode`, `log`. **Re-exports only** — new behaviour for one customer stays
+in the customer repo (core `CLAUDE.md` → "What goes into core"). Add a helper here when a customer
+function needs it.
+
+### Adding a new function — what to update
+
+All four are required (verified against the current wiring); miss one and customers can't consume it:
+1. `src/netlify/functions/<name>.ts` exporting a factory `create<Name>Handler(config?)`.
+2. A tsup **`entry`** line in `tsup.config.ts`: `'<name>': 'src/netlify/functions/<name>.ts'`
+   (builds `dist/<name>.js`).
+3. A **`package.json` `exports`** subpath:
+   `"./functions/<name>": { "types": "./dist/<name>.d.ts", "import": "./dist/<name>.js" }`.
+   Unlike CSS, functions *are* consumed through `exports` (normal JS module resolution), so this is
+   mandatory.
+4. Shared request/response types in `src/shared/` if the browser side calls it.
+**Functions run as plain Node ESM on Netlify.** Vitest resolves imports more leniently, so a passing
+test suite doesn't prove a function loads: never import an extensionless package subpath of a
+package without an `exports` map (e.g. `lodash/merge` — it broke every function once). Run
+`npm run check:functions` after `npm run build` before pushing a core commit that touches
+`src/netlify/` or anything it imports.
+
+Then each customer adds a thin `netlify/functions/<name>.mts` wrapper (set `config.path`,
+`export default create<Name>Handler()`).
+
+Public, unauthenticated endpoints (`order-status`, `order-withdraw`, and `newsletter-subscribe` when
+it runs without captcha) get a per-IP limit in that
+wrapper (for `order-withdraw` it is the only abuse guard besides the honeypot — no captcha) via Netlify's `config.rateLimit` (e.g. `windowSize: 60`, `windowLimit: 5`,
+`aggregateBy: ['ip', 'domain']`) — not in core. Code-based rate limits work on every Netlify plan, capped at 2 rules per site on
+Free/Personal, 5 on Pro (`workflows/netlify-plans.md`), and over-limit requests are answered by Netlify (429) before the function runs.
+
+**Captcha or not — the rule for public forms** (owner, 2026-11-04; why: [../decisions/captcha-only-for-account-forms.md](../decisions/captcha-only-for-account-forms.md)):
+- **Forms that only collect something** (newsletter, withdrawal, a customer's interest list):
+  honeypot + per-IP `rateLimit`, a minimum fill time where the form has a script, and double
+  opt-in where the law allows it. **No captcha by default**; add one only when abuse shows up
+  (Resend dashboard, a flood in the Studio). Worst case there is spam mail and an empty mail quota.
+- **Forms that protect accounts** (user recover/register, later login if needed): hCaptcha from
+  the start (`captchaSiteKey`, core's per-path CSP). The stakes are account access and probing
+  which addresses have accounts.
+- **No daily mail cap** on collect forms: under an attack it blocks real sign-ups too, so it
+  doesn't help them. Stop bots before they send instead.
+
+Mail-sending forms all use the shop's provider quota (Resend free: 100/day), so a flood also
+blocks order mails. Parked hardening for the withdrawal form: handbook `plans/withdrawal-spam-hardening.md`.
+
+> Note: the JS `exports` subpaths are the public API and are in active use across the ecosystem —
+> `.` (~30 files), `./core`, `./scripts`, `./test-utils`, and the `./functions/*` set (all wired by
+> customers except `auth-webhooks`, which is exposed but currently unused). Keep them, `auth-webhooks`
+> included — it's a valid endpoint a customer may wire. Only the **CSS** export subpaths were unused
+> (removed 2026-10-02); CSS ships via `dist/` + the `onSuccess` copy instead.
+
+### Integration test helpers (`./test-utils`)
+
+`orderNotifyTests`, `paymentCreateTests`, `paymentWebhookTests`, `orderWithdrawTests`,
+`userRegisterTests` — customers call them from `tests/integration/*.test.ts`. They run the real handlers against the services in the customer's `.env` (Sanity
+dataset, Stripe test key, mail provider, Supabase). Everything with a side effect outside the test
+run sits in a `describeLive` block (`src/test-utils/live.ts`) and **only runs with
+`TEST_LIVE=1`**: mails (order confirmation/invoice/shipping, withdrawal receipt, signup), Stripe
+test payments, and orders / `orderMeta` / withdrawals / users written to the dataset (payment tests
+delete theirs and reset `lastInvoiceNumber`). A plain `npm test` only does read-only checks and
+requests rejected before any write. `orderNotifyTests` mails the order from `getOrderId`, default
+`TEST_ORDER_ID` — a fixed test order with your own address, never "the newest order" (a real
+customer's in any dataset with real orders); each mail it sends leaves a `mail` history entry
+(`source: 'admin'`) on that order — accepted, it's a fixed test order. The webhook tests send no shop new-order mail
+(`shopNotification: false`); the customer confirmation goes to `test@example.com`. Why opt-in:
+[../decisions/integration-tests-side-effects-opt-in.md](../decisions/integration-tests-side-effects-opt-in.md).
+
+## Functions (`src/netlify/functions/`)
+
+HTTP entry points, one file per endpoint:
+
+- **payments**: `payment-create.ts`, `payment-refund.ts`, `payment-webhooks.ts`
+- **orders**: `order-notify.ts`, `order-withdraw.ts`, `order-withdraw-notify.ts`
+- **users/auth**: `user-register.ts`, `user-login.ts`, `user-logout.ts`, `user-confirm.ts`,
+  `user-recover.ts`, `user-reset.ts`, `auth-webhooks.ts`
+- **newsletter**: `newsletter-subscribe.ts`, `newsletter-confirm.ts`, `newsletter-unsubscribe.ts`
+- **misc**: `preview.ts` + `preview-enable.ts` (Sanity preview, built to `dist/preview.js` /
+  `dist/preview-enable.js`), `wc-api.ts`,
+  `supabase-keep-alive.ts`, `order-meta-cleanup.ts`
+
+### Netlify Functions vs. Edge Functions
+
+Every core endpoint is a **Netlify Function** (serverless Node.js on AWS Lambda); core ships **no
+Edge Functions**. The two are different runtimes for different jobs:
+
+| | Netlify Functions (core) | Edge Functions |
+|---|---|---|
+| Runtime | Node.js, one region | Deno / V8 isolates on every CDN node |
+| Cold start | noticeable (≈100 ms–1 s) | near zero |
+| Limits | 10 s sync (15 min background), ~1 GB RAM, ~6 MB payload | ~50 ms CPU, little memory |
+| npm / Node APIs | full (Stripe, Supabase, Sanity write client, `crypto`) | Web-standard APIs; not every npm package runs |
+| Invocation | own endpoint (`/.netlify/functions/…`, our `/api/…`) | intercepts **any** matching request (static pages too), can rewrite request/response |
+| Use for | backend logic: checkout, webhooks, DB, email | middleware: geo/language redirects, headers, A/B, auth gates, HTML rewrites |
+| Billing ([netlify-plans.md](../workflows/netlify-plans.md)) | compute | web requests, not compute |
+
+Keep backend logic in Functions — it needs the SDKs, longer runtimes and explicit invocation.
+Consider an Edge Function only for something that must happen **before** a static page is served
+and that `_redirects`/`_headers` can't express, e.g. smarter `Accept-Language` matching for `/`
+([i18n.md](i18n.md) → "Root URL → locale"), geo redirects, a password gate for staging, or a
+server-side gate for gated commerce without client JS. None exists yet; adding one would need a
+build/deploy path for `netlify/edge-functions/` in the customer project (not designed).
+
+## Business logic (`src/netlify/lib/`) — unit-tested
+
+Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
+
+- `cart-validator.ts` — re-validates the client cart server-side (never trust client prices).
+  **Bundles:** unavailable when they have no items, an item reference dangles, an item isn't
+  `active`, or an item has no price (own or its product's). The page agrees: the build resolver's
+  `effectiveStatus` (`src/data/resolve/variants.ts`) shows such a bundle `soldOut` (missing/inactive
+  item) or `unavailable` (unpriced item; also any variant with no own and no product price —
+  resolved-only status, label `product.states.unavailable`, price macro renders nothing). The
+  bundle's subtitle is always composed from its current items ("2× A, 1× B", `composeSubtitle`) —
+  the client's is ignored; other kinds keep the client subtitle. Composed subtitles (bundle
+  items, loose lines without one) use `addToCartButton`'s default format — wine "0,75l, 2025"
+  (`formatVolumeMl`, `src/shared/format-volume.ts`; unit from the function config `units.volume`,
+  default `l`), options "Rot, L". A shop's own frontend wording (e.g. a
+  `wineSubtitle` with Vinofact varietals) reaches loose lines only, not bundle items — sending
+  the items' display text from the page is an open option. Item stock isn't checked and paid
+  orders don't reduce it: handbook `plans/stock-tracking.md` (parked).
+- **Bundle VAT** (`validateBundleItems` in `cart-validator.ts`, `splitBundlePrice` + `vatParts` in
+  `tax.ts`): a bundle has no own tax category (hidden in the Studio). Its unit price is split over
+  its items in the ratio of their single gross prices (item price ?? product price, × item qty),
+  whole cents, the last item takes the remainder (works when the bundle is cheaper). Each share is
+  taxed at the item's own rate (variant category ?? product category ?? shop default — same as a
+  loose line). `calculateTotals` (discount factor, `buildVatBreakdown`) and `dominantItemVatRate`
+  run over `vatParts` (a bundle's parts × line qty, else the line). The parent line keeps the
+  required fields: `vatAmount` = sum of the parts, `vatRate` = rate of the largest part (display
+  only). Decision F (a tax advisor to confirm the split by single prices).
+- **Order snapshot** (`order-builder.ts`): `orderItem.bundle.items[]` (`orderItemBundleItem`:
+  `variantId, productId, title, subtitle, sku, quantity` per bundle, `price` = gross share of
+  **one** bundle for all its units, `vatRate`, `vatAmount` = VAT in share × line qty). Stored, never
+  recomputed. Mails (`ItemRow`, also the shop's copy) list the contents as a nested `<ul>` (per
+  bundle), the invoice PDF one line per item (units over the whole line + rate), both from
+  `bundleItemLines()` (`order-item-display.ts`); where the list shows, the bundle's subtitle
+  doesn't. **Invoice VAT** (`InvoicePdf.tsx`): every line prints its rate (`lineVatRate`: a
+  bundle with items → per item instead), and the summary prints one row per rate from
+  `totals.vatBreakdown` (net + VAT, shipping included) before the VAT total — invoices must state
+  the rate (AT § 11 UStG, DE § 33 UStDV for small invoices).
+- **Invoices issued elsewhere:** notify option `invoices: false` (the customer's `order-notify`
+  wrapper) refuses `orderInvoice` and `attachInvoice` with 400 before anything is fetched; core-back
+  `features.shop.invoices: false` hides both in the Studio's "Send mail" action. Core still assigns
+  an `invoiceNumber` to every order (the mails don't print it), e.g. when wineNET issues the invoices. Older orders without `items` render as before. wc-api: `wc-api.md` → Bundles.
+- `totals.ts`, `tax.ts`, `shipping.ts` + the discount pipeline (`src/shared/discounts/`) — money math. VAT is extracted from gross
+  prices and rounded once per rate (`buildVatBreakdown`). **Shipping VAT rate**
+  (`dominantItemVatRate`, called in `payment-create.ts`): the rate whose items have the largest
+  **gross** goods value (sum of shop prices; the owner's choice) — not the most VAT, which favoured
+  the higher rate; ties → higher rate; 0 % items ignored. The shipping method's `taxCategoryCode` is not used. Shipping VAT is
+  rounded on its own and stored as `fulfillment.taxSnapshot`. Why: ADR
+  `shipping-vat-largest-gross-goods-value.md`. The basis is always the **undiscounted** gross,
+  also with shop-wide discount exclusions (owner 2026-11-20, tax advisor to confirm).
+- **Wine packaging** (`calcWinePackagingCost` in `shipping.ts`): a delivery method with
+  `packagingGroups` prices wine by boxes. A group = a box type: `packages[]{ places, price }` +
+  `bottles[]{ volume, perPlace }` (`perPlace` bottles share one place, e.g. 2 × 375 ml in a 750 ml
+  place). Per group the places are summed and rounded up **once** (exact, integer units via the LCM
+  of `perPlace`), then `calcMinPackagingCost` picks the cheapest boxes (DP, may over-cover: 4 places
+  → a 6-box if cheaper). A size no group lists goes into the group of the smallest listed size ≥ it,
+  1 per place (`log.warn`); a larger size, a wine without volume, or a group without boxes → method
+  not offered. Non-wine items (incl. non-wine bundle children) are priced by the weight `rates` on
+  top. Each box size → one `fulfillment.packagingLines[]` entry `{ volumes[], packSize, quantity,
+  price }` (`volumes` = the group's sizes, largest first; orders before core-back 4.0.0 have a single
+  `volume`). Info page: `shippingInfoModule.njk` renders one table per group, the caption lists the
+  sizes (`formatVolumeList`) plus a note per shared size. Studio enforces each size in one group per
+  method. A size in several box types (e.g. half-bottle-only boxes, 2 × 750 in a magnum box) is not
+  supported — it would need boxes that accept only certain sizes and a split search.
+- **Free-shipping threshold** (`isFreeShipping` in `shipping.ts`): a delivery method's
+  `freeShippingThreshold` (cents, **gross**) is compared with the **gross goods subtotal** —
+  shipping itself never counts — using `>=` ("ab €150"). It stays on the shipping method (per
+  method and country), it is **not** a discount. `shopSettings.freeShippingCalculation`:
+  `beforeDiscount` (also when **unset**) compares the subtotal before discounts; `afterDiscount`
+  re-resolves shipping with the items + order discounts subtracted (`payment-create.ts` pass 2),
+  so a discount can push an order back under the threshold. The same default is used by the
+  schema.org shipping details and the `cms` settings.
+- **Discounts** (plan handbook `plans/discounts-model.md`, ADR `discounts-model.md`; core-back
+  `discount` document). One pure pipeline in `src/shared/discounts/` —
+  `evaluateDiscounts(PipelineInput): DiscountResult` — shared by checkout and the build:
+  - **Data:** `CHECKOUT_QUERY` reads `codeDiscount` (the typed code, any state — only with
+    `hasCoupons`, else no code lookup), `automaticDiscounts` (`enabled == true`; dates are checked
+    in `conditions.ts` for both), `shopSettings.discountExclusions` and all categories with their
+    parent (ancestors for the category criterion). One projection, `DISCOUNT_PROJECTION`
+    (`projection.ts`), selector references flattened to id arrays. **The data is the switch:**
+    core-front has no `automaticDiscounts` flag; `hasCoupons` gates only the code input + lookup.
+  - **Selector** (`matchesSelector`): a line matches when (`include` empty or any include
+    criterion) and no exclude criterion — kinds, categories (variant's if non-empty else the
+    product's, **plus ancestors**; a bundle by its own categories only), manufacturers, products,
+    variants, `hasCompareAtPrice`. Bundle items are never matched. Each side builds a
+    `SelectorLine` with an adapter (`selectorLineFromVariant` in `cart-validator.ts`,
+    `selectorLineFromResolved` in `data/resolve/variants.ts`).
+  - **Eligible lines** for items/order discounts: matching `appliesTo` and not matched by
+    `shopSettings.discountExclusions` (unless `ignoreShopExclusions`). Shipping discounts: the
+    cart must contain a matching non-digital line; exclusions never apply.
+  - **Conditions** (`conditions.ts`, one entry per condition — the extension point): enabled,
+    dates, `maxRedemptions`, `maxPerEmail` (codes only), applicable, `minSubtotal` (whole cart or
+    matching lines), `minQuantity` (units of matching lines; a bundle = 1 per quantity). A failing
+    code → `couponError` with the first failing condition's `ErrorCode`. Codes match
+    case-insensitively (`lower(code) == lower($couponCode)` in `CHECKOUT_QUERY`; core-back's
+    uniqueness check compares the same way), the response shows the stored spelling.
+  - **Minimum charge:** `createPayment` with `grandTotal` < 50 cents (Stripe's EUR minimum — a
+    100 % code, stacked discounts) answers `ORDER_TOTAL_BELOW_MINIMUM` (400, message
+    `api.errors.payment.belowMinimum`) before any PaymentIntent or `orderMeta`; a calculate call
+    still returns the totals. Free orders (no payment) are not supported.
+  - **Combinability:** at most one code. A, B compatible iff each one's `combinesWith` contains
+    the other's target; never two shipping discounts. Automatic set (greedy by saving) vs. code set
+    (code + compatible automatic ones): the larger saving wins, tie → the code; automatic wins →
+    `COUPON_NOT_COMBINABLE` with `discountTitle` (the client fills "Nicht mit Aktion „{title}“
+    kombinierbar").
+  - **Apply order** items → order → shipping, each on what the earlier left. percent =
+    `floor(Σ remaining eligible × value / 100)` (today's coupon rounding), allocated by largest
+    remainder; items + fixed per line `min(value, remaining unit) × qty`; order + fixed
+    `min(value, Σ)` by largest remainder. A bundle line's share is split again over its items by
+    their price shares (`allocateToChildren`). Sums exact at both levels.
+  - **VAT** (`calculateTotals(items, shipping, rate, result)`): each VAT part (a bundle: one per
+    item) is taxed on its gross minus its allocated discount — no global factor; excluded lines
+    keep their full VAT. `orderItem.vatAmount` stays the undiscounted line VAT.
+  - **Shipping discounts** are applied **after** `selectShippingMethod` (both passes select on
+    real prices; `resolveShippingMethods` knows only the threshold): `waivesShipping(result, type)`
+    zeroes every delivery method in the response — pickup methods only with `appliesToPickup`
+    (unset = codes yes, automatic no). `amount` = the selected method's price before the waiver
+    (0 when it was already free — a code still shows as applied).
+  - **Per-email limit** (`maxPerEmail`, codes only): on `createPayment` only, one
+    `countOrdersWithDiscountForEmail` fetch (all orders, case-insensitive email). Over the limit →
+    the pipeline re-runs with `emailRedemptions`, the code drops out with
+    `COUPON_LIMIT_PER_EMAIL`, the total changes and the client's reconfirm stops the payment.
+  - **Re-submit replaces the `orderMeta`** (`createOrderMeta` = `createOrReplace`; there is no
+    merge update any more), so a dropped discount never survives in it.
+  - **Order snapshot:** `orderItem.discount` / bundle item `discount` (gross cents, whole line,
+    only when > 0 — never recomputed), `appliedDiscounts[]` `{ discountRef (weak), code?, title
+    (order locale), trigger, target, valueType, value?, amount }` (`buildAppliedDiscountSnapshots`),
+    `totals.discount` = items + order discounts. The webhook increments `redemptionCount` of every
+    entry with a ref — published **and** an open draft, existing ids only (`existingDiscountDocIds`,
+    raw perspective; a patch on a deleted doc would fail the order transaction), with
+    `setIfMissing({ redemptionCount: 0 })`.
+  - **Response:** `appliedDiscounts` (`{ title, code?, trigger, target, amount }`, apply order),
+    `notDiscountedVariantIds` (lines the applied code skipped — the checkout hint), `couponError`
+    (+ `discountTitle`).
+  - **Webhook transition** (remove ≥ 30 days after the last live shop's 6.0.0 release):
+    `buildOrder` converts an old-shape `orderMeta` (`appliedCoupons`, reason `product`/`coupon`)
+    with `convertLegacyOrderMeta` (`discount-migration.ts`).
+- **Why shipping was free** → `fulfillment.freeShippingReason` (`threshold` / `discount`, Studio
+  order view only). `resolveShippingMethods` sets `freeReason: 'threshold'` (server only);
+  `freeShippingReason(selected, waived)` adds `discount` when a shipping discount waived a
+  delivery method; `buildOrderMeta` stores it only for delivery at shipping 0. Threshold beats
+  discount (before 6.0.0 `product` beat `threshold`; old values `product` / `coupon` are migrated
+  to `discount`). A shipping discount on an already free method stays in `appliedDiscounts` with
+  `amount: 0` (counted on the webhook).
+- **Product free shipping** is an automatic shipping discount since 6.0.0 ("cart contains kind
+  bundle → shipping free", migrated from the removed variant flag `grantsFreeShipping`). The
+  build still exposes `ResolvedVariant.grantsFreeShipping` (card note, product-page tax line,
+  "Versand & Zahlung", schema.org rate 0) — **derived** from the automatic shipping discounts
+  without conditions (`data-layer.md`).
+- **Shipping weight** (grams): `resolveVariantWeight` (physical: variant/product `weight`; wine: the
+  same, else estimated from the volume) and `resolveBundleWeight` in `shipping.ts`, used by
+  `cart-validator.ts` **and** the schema.org markup (`src/schema/shipping.ts`), so both price the
+  same. The shipping functions take `ShippingCartItem` (the fields they read), not the full
+  `ValidatedCartItem`; `resolveShippingMethods(…, { quiet: true })` silences the packaging warning
+  (the build prices every product page). A bundle's weight = its items' `resolveVariantWeight`
+  (explicit weight first, wine estimated) × item qty — the same per-item weight as
+  `bundleItems[].weight`, so markup = checkout.
+- **Store pickup** (click & collect; plan handbook `plans/store-pickup.md`). A pickup location is a
+  `shippingMethod` with `methodType: 'pickup'` (core-back: `pickupFee`, `pickupAddress`,
+  `pickupInstructions`, `pickupHoldDays`). **No feature flag — the data is the switch:** a
+  published pickup method makes the checkout offer it.
+  - **Offered for any address country.** `CHECKOUT_QUERY` returns delivery methods of the address
+    country + every pickup method, and `pickupTaxCountries` (rules of the pickup countries + the
+    default country). `payment-create` rejects a non-ISO country (`isCountryCode`,
+    `src/shared/countries.ts` — the one country list, also behind the `countryList` filter); an
+    address country that is no tax country is possible only for pickup (methods = pickups only).
+  - **VAT = the pickup location's country** (place of supply; `pickupAddress.country`, fallback
+    `shopSettings.defaultCountry`), decided from the raw methods before `validateCart`. A pickup
+    whose country has no enabled tax country is dropped with a warning. ADR
+    `decisions/pickup-tax-country-is-pickup-location.md`.
+  - **Only ever chosen explicitly:** `selectShippingMethod` picks a pickup only by its requested
+    id; without a delivery method it returns `null` (a calculate answers
+    `selectedShippingMethodId: null`, a `createPayment` without a pickup id fails with
+    `SHIPPING_UNAVAILABLE`). No weight/packaging limit, no threshold; a shipping discount waives
+    a pickup fee only with `appliesToPickup` (migrated codes: yes; the migrated bundle rule: no) —
+    0 discount on a free pickup.
+  - **Address:** the form's main fields (still `address.shipping` on the wire) are the billing
+    address; the order stores **no** `customer.shippingAddress` (optional in the types —
+    `buildOrderMeta` writes it only for delivery and throws for a delivery without one). The
+    pickup location is snapshotted as `fulfillment.pickupAddress` / `pickupInstructions` /
+    `pickupHoldDays` (`buildFulfillment`; throws for a pickup method without address).
+  - **States reused** (ADR `decisions/pickup-reuses-shipped-delivered-states.md`): `shipped` =
+    "Abholbereit", `delivered` = "Abgeholt". `isHandedOver()` (`src/shared/pickup.ts`) is true for
+    pickup only at `delivered`: a full refund (webhook `updateOrderPaymentStatus`) auto-cancels an
+    "Abholbereit" order, and the withdrawal receipt says "not collected, nothing to return"
+    (`emails.orderWithdrawalCustomer.notCollected`). The wc-api's `PRE_DISPATCH` is unchanged.
+  - **Mails:** `templates/email/mail-keys.ts` — `mailKey()` takes `emails.pickup.<mailType>.<part>`
+    for the parts in `PICKUP_MAIL_KEYS` (confirmation/processing text, ready/collected
+    subject+preview+text, cancel text "not collected" once the order was "Abholbereit");
+    `pickupExtraLines()` adds the hold period (confirmation) and the deadline (ready mail:
+    `pickupDeadline()` = latest `fulfillment/shipped` entry + `pickupHoldDays`, calendar days in
+    `SHOP_TIMEZONE`) to the HTML body **and** the plain text. Addresses: billing + "Abholort"
+    (`PickupBlock`); totals/invoice row "Abholung"; the shop mail starts with "ABHOLUNG – nicht
+    versenden". The cancel mail's generic text no longer says "falls Sie bereits bezahlt haben".
+  - **Announcing the ready mail** is the method's checkbox `pickupAnnounceReady` ("Abholbereit-Mail
+    ankündigen", default off; snapshotted on the order's `fulfillment`, sent in the checkout
+    response). On = the shop prepares the order first: the confirmation/processing text is
+    `textReadyLater` ("Wir melden uns, sobald sie zur Abholung bereit ist") and the thanks page
+    shows `nextStepsPickupReadyLater`. Off = the goods can be collected right away: no
+    ready mail is announced, the thanks page points to the confirmation. Not derived from
+    `deliveryTime` ("Abholbereit in"): free text per language, so set/empty would differ by
+    locale (owner, 2026-11-21). The Studio still needs "Abholbereit"
+    before "Abgeholt" (`processing` → `shipped` only); "Kunde benachrichtigen" can be unticked.
+  - **Thanks page:** the snapshot keeps the pickup location instead of the customer's address;
+    heading/totals say "Abholung", next steps by `pickupAnnounceReady` (above, also in the snapshot). **Info page:** pickup facts
+    (address, ready in, hold period, instructions); leftover rates/countries are ignored.
+  - Client side (fulfillment choice, pickup mode, express without shipping address):
+    `ui-contracts.md` → "Fulfillment choice"; wc-api mapping: `wc-api.md` → "Pickup orders".
+- **Phone** (optional, every shop): `shipping.phone` / `billing.phone` fields in the checkout
+  (`type="tel"`, max 40 chars, checked by `validateAddress`), printed in the mails' address
+  blocks. Express doesn't ask for it.
+- **Stock flag default differs:** the functions' `resolveServerConfig` treats `features.shop.stock`
+  as **on unless `false`**, the plugin's `resolveConfig` as **off unless `true`**. Wrappers must
+  pass the same value as `itsshops.config` (e.g. pass `stock: false` explicitly).
+- `order-builder.ts`, `order-item-display.ts` — order construction
+- `*-notifier.tsx` — React-email templates (auth, order, newsletter, withdraw)
+- `payment-method.ts` — Stripe charge → `order.payment` snapshot + readable label
+- `email-settings.ts`, `auth-urls.ts`, `newsletter-urls.ts`
+
+When touching pricing/tax/shipping/discount math, **update or add a test in `__tests__/`** — this is
+the one part of core-front with real coverage, keep it that way.
+
+## Services (`src/netlify/services/`)
+
+External integrations: `stripe.ts`, `supabase.ts` (users), `sanity.ts`, `email.ts` dispatching to
+`mailgun.ts` / `resend.ts`. **All clients are lazy** (memoised on first use; `sanityClient` and
+`supabase` are proxies over the real client), so importing a function or helper needs no env and
+has no side effects — `check:functions` loads every function without any env to prove it. A missing
+env var throws on first use. Keep new clients lazy the same way. Config/keys come from env (see plugin-and-config doc) — Stripe publishable
+key is the only one surfaced client-side.
+
+## Utils & types (`src/netlify/utils/`, `src/netlify/types/`)
+
+`utils/`: `response.ts`, `retry.ts`, `server-auth.ts` (CORS + `requireServerSecret` +
+`allowedOrigins()` + constant-time `safeEqual`), `preview-session.ts` / `preview-headers.ts` (draft
+preview), `captcha.ts`, `i18n.ts`, `logger.ts`,
+`validation.ts`, helpers. `types/`: `api.ts`, `checkout.ts`, `config.ts`, `errors.ts`,
+`orderTransitions.ts` (order state machine).
+
+## Client ↔ server contract (`src/shared/`)
+
+`src/shared/{checkout,newsletter,order,user}-api.ts` + `validation.ts` are imported by **both** the
+browser scripts and the functions, so request/response shapes and validation rules stay in sync. When
+changing an endpoint's payload, change it in `src/shared/` and both sides follow.
+
+## Checkout → Stripe → order thanks (client flow)
+
+1. Checkout submit (`scripts/checkout.ts`, also the express path) → `POST /api/payment/create` →
+   `clientSecret`. Calculate and create are the same endpoint: `createPayment: false` returns
+   only the calculation, `true` also writes the `orderMeta` and creates/updates the
+   PaymentIntent (`metadata.orderMetaId`; the webhook builds the order from that `orderMeta`). Right before `stripe.confirmPayment`, an **order snapshot** is written to
+   **sessionStorage** (`scripts/order-snapshot.ts`, `v: 2` since the discounts model — other
+   versions are dropped): items, totals, applied discounts, shipping method,
+   email, first name, shipping address — keyed to the PaymentIntent id. No phone, billing address,
+   client secret or `orderMetaId`.
+2. Stripe redirects to `orderThanksUrl` with `payment_intent`, `payment_intent_client_secret`,
+   `redirect_status`. `scripts/order-thanks.ts` reads them and **strips them from the URL**
+   (`history.replaceState`).
+3. By status: `succeeded` / `processing` → clear the cart, show the status text, render the
+   snapshot (only if PaymentIntent matches and < 30 min old; deleted on read); `failed` → back to
+   checkout, cart + snapshot kept; none → generic page. All values via `textContent`.
+4. **Order number** (`succeeded` only): the page polls `order-status` (≤ 5 requests over ~15 s,
+   `scripts/order-status.ts`) and fills an `aria-live` region; gives up silently (the email has it).
+   The endpoint returns **only** `{ orderNumber }` (404 until the webhook ran), never personal data,
+   `no-store`; per-IP rate limit via `config.rateLimit` in the customer wrapper.
+5. **Pending-payment marker** (`scripts/pending-payment.ts`, localStorage, no PII: PaymentIntent id
+   + cart signature): written before confirm, removed by the thanks page. If the customer never got
+   there (tab closed during 3DS, returned in another browser), opening the cart or the checkout asks
+   `order-status` once per page; order exists + cart unchanged → cart cleared. Expires after 7 days.
+6. **Cart changes at checkout** (every kind): the site only changes on a deploy, so the cart can
+   hold stale prices/contents. After every calculate **and** create, `syncCartFromServer`
+   (`scripts/cart-store.ts`) writes the server's answer into the stored cart — removes
+   `unavailableItems`, takes prices, capped quantities (only while the stored quantity is still the
+   one sent) and, for bundles, `subtitle` + `bundleKey` — and returns the changes. "Contents
+   changed" is decided by the locale-independent `bundleKey` ("variantId:qty" sorted, `,`-joined;
+   `data-bundle-key` from `addToCartButton`, server `bundleContentsKey`), not by the subtitle;
+   carts without a key never report it. The notice is `[data-checkout-changes]` (`role="status"`,
+   `tabindex="-1"`, always in the DOM, empty when nothing changed) above the summary items, one
+   `<li>` per change (`scripts/checkout-changes.ts`, labels `checkout.changes.*`); event
+   `checkout:cart-changed`. A `CART_EMPTY` error (all items gone) removes its ids
+   (`details.unavailable`, `', '`-joined), shows the notice, then the empty cart. Overlapping
+   calculates: only the latest (`calcSeq`) writes the cart and renders. **Before paying**, no
+   `confirmPayment` and no snapshot/pending marker when the customer didn't see what would be
+   charged — manual (`mustReconfirm`): the create response changed the stored cart or its total
+   differs from `lastResponse`; express (`expressMustReconfirm`): the response's total or lines
+   differ from the wallet sheet's last calculation (`CheckoutExpress.shownCalculation`, `null`
+   after cancel → blocks) — a price changed before the sheet opened, shown there, doesn't block.
+   The page then shows the new totals + "please confirm again" and focuses the notice; express
+   returns an error and recalculates the page. **Express amount:** each address/rate change sets
+   the Elements amount to the sheet's total before answering (Stripe refuses line items above the
+   amount — the sheet hung on "IntegrationError: The amount … is less than the total amount of the
+   line items"), any failure rejects the event; cancel restores the page's amount (`onCancel`).
+   Re-submitting reuses `orderMetaId` (same PaymentIntent). **Express availability:**
+   `[data-checkout-express]` starts `hidden` and is shown together with the "— or —" divider only
+   when the element's `ready` event reports at least one method; with none, `CheckoutExpress`
+   unmounts the element (no blank box). Which wallets a browser gets is Stripe's per-browser
+   table ([docs](https://docs.stripe.com/elements/express-checkout-element#supported-browsers)):
+   e.g. Firefox desktop gets **none** with core's options (no Klarna; Apple/Google Pay only with
+   `paymentMethods.*: 'always'`, which core doesn't set), Firefox on iOS only Apple Pay, Safari /
+   Chrome on iOS Apple Pay + Klarna. Klarna shows wherever it's enabled in the Stripe dashboard
+   (core only sets `amazonPay`/`link`/`paypal: 'never'`). Apple Pay needs a registered HTTPS
+   domain — never on `localhost`; test it on staging.
+7. Orders are created **only** by the webhook on `payment_intent.succeeded` — the thanks page
+   never creates or trusts anything (`redirect_status` is user-controllable; it only affects this
+   visitor's view and cart). Delayed methods (SEPA, `processing`) have no order/email/stock
+   reservation until they succeed and no failure handling; core doesn't restrict payment methods —
+   shop owners are told not to enable them.
+
+**Stripe "Incomplete" payments are expected:** a PaymentIntent is created on submit (express: on the
+wallet's `confirm` event, after the customer approved the sheet — address/rate changes only
+calculate) and stays `requires_payment_method` if the customer leaves, a card fails, or
+3DS is abandoned; the live `paymentCreateTests` / `paymentWebhookTests` leave theirs too (they
+delete the `orderMeta`, not the intent). Nothing is charged; core doesn't cancel them.
+
+Markup: `overridable/order-thanks.njk` (sections start `hidden`, filled by JS; item rows/totals via
+`macros/cart.njk`, see templates doc). A customer frontend needs the `order_status` function
+wrapper (`netlify/functions/order_status.mts`) for the order number; why the summary comes from
+sessionStorage: `decisions/order-thanks-summary-from-session-snapshot.md`.
+
+### Draft preview (`preview` + `preview-enable`)
+
+Sanity Presentation renders drafts through the shop's own functions; without a session nobody gets
+draft content. Flow (core-back `presentation/index.ts` sets `previewMode: { enable:
+'/api/preview-enable', shareAccess: false }`):
+
+1. Presentation creates a short-lived secret doc (needs a Studio login) and loads
+   `/api/preview-enable?sanity-preview-secret=…&sanity-preview-pathname=…` in its iframe.
+2. `preview-enable` validates it with `@sanity/preview-url-secret` (`validatePreviewUrl`; client
+   from `SANITY_PROJECT_ID`/`SANITY_DATASET`/`SANITY_TOKEN`, built per request — it **throws** on a
+   bad token or API error → 500). Invalid → 401; no or non-`/api/preview/` `redirectTo` → 400.
+   Valid → a tiny page whose nonce'd script stores the signed token
+   (`base64url(exp).hmacSHA256`, 1 h, `PREVIEW_SESSION_SECRET`; `utils/preview-session.ts`) in
+   **`sessionStorage`** (`itsshops_preview`) and `location.replace`s the preview path.
+3. `preview` validates params first (`locale` `^[a-z]{2}$`, type ∈ page/post/productVariant/category,
+   id `^[A-Za-z0-9_.-]{1,128}$`; `/api/preview/:locale` alone = the **home page** via
+   `settings.homePageId`) → 400. **No `x-preview-session` header → loader page** (no draft content):
+   it reads the token, re-fetches the same URL with the header and `document.write`s the result;
+   no token → "Preview session expired — reload the Presentation tool". Invalid/expired header →
+   401. Valid → Eleventy render (`process.env.PREVIEW_*`; perspective `published` stays, anything
+   else → `drafts`). Errors → fixed text, never input echoed into the HTML.
+
+Why `sessionStorage` + header and not a cookie: Safari drops every cookie in a cross-site iframe
+(`Partitioned` too), and a URL token is lost on Presentation's reloads —
+`decisions/preview-session-in-sessionstorage.md`. Response headers (`frame-ancestors` etc.):
+`csp-and-headers.md` → "Preview function responses". Wrappers: `preview_enable.mts` (`path:
+'/api/preview-enable'` — not under `/api/preview/`, it would collide) and `preview.mts` (`path:
+['/api/preview/:locale', '/api/preview/:locale/:documentType/:documentId']`). Only `pages.njk`
+exists as a preview template, so post/product/category previews render nothing yet.
+
+### Refunds (Studio order action → `payment-refund`)
+
+Triggered only from core-back's "Status aktualisieren" (core-back `studio-components.md` →
+Document actions) and the withdrawal "Refund & close". `payment-refund` (`x-server-secret`) takes
+`{ orderId, amount?, expectedRefunded? }` — `amount` in **integer cents** (non-integers → 400), omitted = full
+refund = the rest. The **PaymentIntent comes from the order** (`fetchOrderById`), never from the
+request, so only a shop order can be refunded: unknown id, a `drafts.` id, a non-`order` document or
+an order without `paymentIntentId` → 404 `ORDER_NOT_FOUND` (fixed text). No amount cap of our own —
+Stripe rejects more than what's left. It calls `stripe.refunds.create` with
+`metadata.itsshopsSource = 'studio'` (the function is only called from the Studio).
+**Duplicate guards** (same order confirmed in two tabs / by two editors):
+1. `expectedRefunded` = the counted refund total the Studio dialog showed; compared with Stripe's
+   **live** refunds (failed/canceled not counted) — not `order.refunds`, which is synced 2–3 s
+   after Stripe, so the Studio's own re-fetch misses a refund made seconds earlier. Mismatch → 409
+   `REFUND_CONFLICT`, nothing refunded, no sync; the Studio shows "changed meanwhile". Covers any
+   amount. (A two-tab test on staging, 2026-11-12, refunded twice before this check — the key
+   below alone doesn't cover it.)
+2. **Idempotency key** `refund:<orderId>:<refundCount>:<amount|full>` (`refundCount` =
+   `listRefunds(pi).length`) only for requests so close that both read the refunds before either
+   was created: same key → one refund (in-flight twin: Stripe's 409 → `REFUND_FAILED` 502); a
+   replay (`lastResponse.headers['idempotent-replayed']`) → 409 `REFUND_CONFLICT` (sync still runs).
+   A request after the first refund exists sees a higher count → a new key — that's guard 1's job.
+   Not the charge's `amount_refunded`: an asynchronously failed refund drops out of it. The secret is readable by every Studio member (core-back
+secrets document), which is why the server validates all of this. The Studio then patches `paymentStatus`; the
+`charge.refunded` webhook (`handleChargeRefunded` → `updateOrderPaymentStatus`) sets the same status
+(`refunded` if `amount_refunded === amount`, else `partiallyRefunded`) and appends its own history
+entry (`source: 'stripe'`, on every run — a Studio refund therefore has an `admin` and a `stripe`
+entry, and a resent event adds another; accepted, not fixed — the order view's "Rückerstattungen"
+card (`order.refunds`, below) is the authoritative refund record). A full refund of an undispatched
+order also sets `canceled`; a partial one leaves fulfillment alone (the order still ships).
+Dashboard refunds take the same webhook path (one `stripe` entry, no mail).
+
+**`order.refunds` — Stripe is the source of truth, core-front the only writer.**
+`syncOrderRefunds(paymentIntentId)` (`lib/order-refunds.ts`) rebuilds the whole array from
+`stripe.refunds.list` (`_key = refundId`, `amount` cents, `createdAt`, Stripe `status` — `null` →
+`pending`, `failureReason`, `reason`, `source` `studio` via the metadata else `stripe`, oldest first)
+and writes it with `ifRevisionId`. Called by `payment-refund` right after the refund (a throw is
+only logged — the money is refunded, the webhook syncs again), by `charge.refunded` **before** the
+status update (a throw → 400 → Stripe retries before any history entry was appended) and by
+`refund.updated`. Stripe sends `charge.refunded` and `refund.updated` in the **same second**: the
+revision and stored refunds are read via `getDocument` (the query index lags behind writes — a
+`_rev` from a query made the retry conflict again, seen on staging 2026-11-09), an unchanged list
+isn't written, and a 409 is retried twice (250/750 ms); a further one is thrown. No order for the
+payment → null (another system on the same Stripe account). Orders are `liveEdit` (core-back), so
+there is no draft to keep in sync. Orders refunded before core-front 3.10.0 have no `refunds` until
+their next refund event syncs the full list (old refunds then show `source: 'stripe'`); the
+one-off fix is running `syncOrderRefunds` for their PaymentIntents.
+
+**`refund.updated`** (status change after creation: pending → succeeded, failed, canceled) only
+syncs; it reverts nothing (`paymentStatus`, `status`, history stay — the editor refunds again in the
+dashboard, whose `charge.refunded` heals `paymentStatus`). A failed one logs `Refund failed
+asynchronously` (`refundId`, `failureReason`); the order view shows it as failed. Subscribe it on
+the Stripe endpoint (`go-live-checklist.md`); without it statuses stay as of creation.
+"Counted" refunds exclude `failed` / `canceled` (Stripe's `amount_refunded` doesn't count them).
+
+**Refund mails** (`orderRefunded` / `orderRefundedPartially`, `sendOrderNotification`): amount =
+explicit `refundAmount` (status dialog / "Refund & close" pass what Stripe just refunded) ?? the
+latest counted stored refund ("Send mail") ?? (full mail only) the grand total. Partial mail with
+none → 400 "No refund is stored …". Full mail without an explicit amount while stored refunds
+don't cover the total → 400 "The order is not fully refunded …" (it would claim a full refund).
+`refundMailText` picks `emails.orderRefunded.textRemainder` ("den Restbetrag von {{amount}} …
+Ihre Zahlung von {{total}} vollständig erstattet") when a full-refund mail's amount is below the
+total; the texts and subjects name the order (`{{orderNumber}}`). core-back's "Send mail" offers
+and disables the refund mails by the same rules. Partial refunds don't reach ERPs via `wc-api`
+(`wc-api.md` → known gaps).
+
+## Withdrawal (Widerruf) — declaration only (FAGG §13a)
+
+`order-withdraw` never cancels or refunds. The form (`core/components/order/order-withdraw.njk`,
+`scripts/order-withdraw.ts`) asks for **name**, order number, email, optional reason. Labels are fixed
+by law: page/links "Vertrag widerrufen", button "Widerruf bestätigen". Only with
+`shop.checkout` — pages, `orderWithdrawUrl` and the guaranteed menu link; without checkout the URL is
+`'#'` (nothing bought online, nothing to withdraw from; see
+[withdrawal-link-as-menu-system-link](../decisions/withdrawal-link-as-menu-system-link.md)). Always available (no date
+check), **no captcha** — the customer wrapper's Netlify `rateLimit` (429 → translated "try again
+later" in the client) plus a hidden **honeypot** field (`website`; filled → same success, nothing
+stored/sent). Name and order number are capped and URL-like input is rejected
+(`checkWithdrawText` in `shared/validation.ts`) — both are echoed in a mail to any typed address.
+
+**A declaration is never lost** — every valid submission is stored as an `orderWithdrawal`
+(name/email/orderNumber/locale/reason/`declaredAt` as submitted):
+- order number + email match → linked to the order, status `received`;
+- otherwise → status **`unmatched`**, no order; the shop mail is flagged (+ "order exists, email
+  differs" hint, shop-only). Editors assign the order in the Studio ("Bestellung zuordnen") or delete it
+  (core-back: guarded delete, unmatched only; 30-day retention rule for editors).
+- Same response either way (no order-number probing).
+- Repeat submission (open record for that order / same email + number) → receipt re-sent, no new
+  record, no shop mail. Double submits: deterministic `_id` (`withdrawal-<orderId | u-hash>-<n>`) +
+  `createIfNotExists`.
+- Known gap: once the order's withdrawal is closed, a further submission is a new record (`-<n>`
+  counts on) — also on a fully refunded order (new open record, receipt + shop mail again). Planned
+  fix: handbook `plans/withdrawal-already-refunded.md`.
+
+Every mail is built from the **stored record** (`buildWithdrawalMails` in
+`lib/order-withdraw-notifier.tsx`): the receipt repeats name, order number, reason (matched only) and
+date + time (`formatShopDate`, shop timezone), then return instructions (`returnShippingBorneBy`,
+`returnPolicyNote`) or "not dispatched → refund". The admin resend (`order-withdraw-notify`,
+`fetchWithdrawal`) uses the same record → original timestamp; editors assign an unmatched record with
+the Studio action "Bestellung zuordnen" (withdrawals are `liveEdit`; the action can send the receipt
+right away). **Receipt recipients** (`buildWithdrawalMails` → `customer.to` / `alsoTo`): matched →
+the order's `contactEmail`, **plus** the submitted email as a separate mail when it differs
+(case-insensitive) — the declarant gets the return instructions at the address they gave, the buyer
+is informed at the order's verified address (each mail greets its own recipient — order's customer
+name vs. submitted name; the details repeat the submission in both); unmatched → the submitted email
+only. One `mail`
+history entry either way; a failed second mail throws ("sent to X, but not to Y"). Why:
+`decisions/withdrawal-receipt-to-both-addresses.md`. Processing stays manual in the Studio (core-back
+`WithdrawalActions.tsx`, guided by a next-step box with the 14-day deadline): **"Refund & close"**
+does a full **or partial** Stripe refund (or only closes when something was refunded already), sets
+the order refunded / partially refunded (canceled if undispatched, optionally returned) and closes the
+withdrawal. Kept manual on
+purpose: the refund may be withheld until the goods are back, and its amount varies. Generated withdrawal
+instructions: "Legal texts generated from settings" below.
+
+## Order confirmation content & shop inbox
+
+- **Customer message** (all order mails, from the studio status/mail dialogs): `order-notify` takes an
+  optional `customerMessage` (trimmed, ≤ `CUSTOMER_MESSAGE_MAX_LENGTH` = 2000, else 400) →
+  `sendOrderNotification({ customerMessage })` → `OrderEmail` / `SimpleEmail` render it via
+  `components/CustomerMessage.tsx` below the intro text (plain text, lines → paragraphs, left rule),
+  and it's appended to the plain-text part. The message is stored on the mail's `mail` history
+  entry (below) — the Studio's own status entry no longer carries it (older ones may). The studio's
+  internal `statusHistory[].note` is never mailed.
+- **Mail history entries:** every customer mail `sendOrderNotification` sends appends one
+  `statusHistory` entry **after** a successful send (`appendOrderHistory`, `services/sanity.ts`):
+  `type: 'mail'`, `status` = the `MailType`, `source` = option `historySource` — `admin` (default,
+  `order-notify`: status dialog, "Send mail", "Refund & close"), `system` (webhook confirmation),
+  `wc-api` (ERP shipping mail, only with `notify`) — plus the sent `customerMessage`. A failed mail
+  writes none; a failed append is logged (`Mail history entry failed`) and the send still succeeds.
+  The shop-inbox mail (`sendShopOrderNotification`) writes none. The **withdrawal receipt**
+  (`sendWithdrawalNotifications`) writes its own `mail` entry (`status: 'withdrawalReceipt'`) on
+  the linked order after the receipt is sent — `system` from the web form (`order-withdraw`, also
+  a repeat submission), `admin` (default) from the Studio create / resend (`order-withdraw-notify`);
+  an `unmatched` record has no order and writes none, nor does the shop's withdrawal mail. The Studio
+  shows them as "E-Mail - Versendet" with the source translated (core-back `OrderView`). Why:
+  [../decisions/mail-history-entries-after-send.md](../decisions/mail-history-entries-after-send.md).
+
+- **Order details** (`OrderEmail.tsx` → `OrderDetails`): order date (`order.orderDate` = PaymentIntent
+  `created`, fallback first status entry), payment method, shipping method, delivery time, pickup
+  location — each only when present; statutory warranty sentence on `orderConfirmation`.
+- **Payment method:** the webhook retrieves the PaymentIntent with `latest_charge` expanded and maps
+  `payment_method_details` to `order.payment` (`lib/payment-method.ts`: type, card brand, last4,
+  wallet; SEPA last4) — order only, not orderMeta (the method isn't final before payment). A Stripe
+  error logs and stores nothing; never blocks the order. `paymentMethodLabel` → "Apple Pay (Visa ••••
+  4242)". `wc-api` reports `payment_method` = type (`stripe` for old orders) and
+  `payment_method_title` = that label to Winenet.
+- **Delivery time:** optional `shippingMethod.deliveryTime` (i18n), snapshotted into
+  `order.fulfillment.deliveryTime` at checkout.
+- **Withdrawal section** in the confirmation is **default on** (`withdrawalNotice`, opt out with
+  `false`). It carries the **full generated instructions + model form** (see "Legal texts" below);
+  incomplete settings → the short notice + link and a `log.warn`, never a half-filled legal text.
+- **Harmonised warranty notice** (FAGG §4 (1) + Anhang II): the official EU graphic as an image
+  (`${baseUrl}/assets/legal/legal-guarantee-notice-<de|en>-1200.png`, served by the shop site) in every
+  order confirmation.
+- **Shop inbox:** `settings.shopNotificationEmail` (fallback `senderEmail`, resolved in
+  `buildEmailShopSettings`) receives the new-order mail and withdrawal notifications. `From:`
+  stays `senderName <senderEmail>`.
+- **New-order mail to the shop** (`sendShopOrderNotification` in `lib/order-notifier.tsx`, template
+  `ShopOrderEmail.tsx`): sent by the payment webhook right after the customer's confirmation, in its
+  own try/catch (no longer a BCC of the customer mail). Shop's `defaultLocale`, neutral wording
+  (`emails.shopOrderConfirmation.*`, subject "Neue Bestellung <nr> – <name>"; the customer mails'
+  subjects carry the order number too, `subjectFor(ctx, mailType, order)`), customer contact
+  (email, phone, language) up front, Reply-To = customer; reuses the order summary blocks exported
+  from `OrderEmail.tsx`; no greeting, warranty image, withdrawal text, invoice or footer. Button
+  "Bestellung im Studio öffnen" when `SANITY_STUDIO_URL` is set (needs the functions scope on
+  Netlify): `studioOrderUrlFor` → `<studio>/<defaultLocale>/intent/edit/id=<id>;type=order`
+  (core-back names workspaces after UI languages and always has the default locale's). Webhook option
+  `shopNotification`: default on, `false` off, `{ template }` override. `bccSender` still works on
+  `sendOrderNotification` but core doesn't use it.
+- **Footer** (`MailFooter.tsx`, all business mails): `settings.company` — name, owner, address,
+  phone, email, VAT ID, register number/court — only filled fields; falls back to shop name, billing
+  address, sender email. The invoice PDF still uses the shopSettings billing address.
+
+All mail notifiers throw when `settings.senderEmail` / `senderName` / `siteTitle` are missing —
+core-back makes them required when shop/users/newsletter is on (core-back `schemas.md` → "Settings
+validation").
+
+## Legal texts generated from settings
+
+One builder, `src/shared/withdrawal-instructions.ts` (`buildWithdrawalInstructions`), produces the
+withdrawal instructions + model form (FAGG Anhang I / Directive 2011/83/EU Annex I) for the website
+module (`withdrawalPolicyModule`, Nunjucks filter `withdrawalInstructions`) **and** the order
+confirmation (`withdrawalInstructionsFor` in `lib/order-notifier.tsx`) — page and mail can't
+contradict each other. It only chooses the statutory variants and fills the gaps:
+period start ← `shopSettings.withdrawalPeriodStart`; trader identity ← `settings.company` (fallback
+billing address / sender email); online-function sentence ← always; refund-withheld sentence ←
+always (core never collects goods); return address + costs ← `returnAddress` /
+`returnShippingBorneBy`. `withdrawalExceptions` (§ 18) and `returnPolicyNote` render as separate
+blocks, never inside the model text. Missing name/address/email → `null`.
+
+**Output shape:** paragraphs (and the form's "An …" line) are arrays of segments
+`{ text, href? }` (`WithdrawalRichText`; `richToText` flattens): the trader's phone (`tel:`, without
+"(0)"), email (`mailto:`) and the withdrawal URL become links on the page and in the mail. Links pass
+through the translator as opaque tokens, so the statutory wording stays untouched; on the website the
+filter calls i18next with `escapeValue: false` (Nunjucks escapes the output itself).
+
+**Wording rule:** the texts in `shared` translations (`withdrawalInstructions.*`) are copied
+**verbatim** — German from RIS (FAGG, version from 2026-10-01), English from the EUR-Lex consolidated
+Directive 2011/83/EU (2026-09-27). Never reword them; the "Du" overlay changes only the forms of
+address. The harmonised warranty notice is an unaltered official graphic (`src/assets/legal/`, from
+the Commission's package; colours untouched, QR code must scan) — no "Du" variant.
+
+Placement before ordering: checkout — a **compact** notice above the order confirmations
+(`partials/legal-guarantee-compact.njk`: official thumbnail + one line, linking to the full notice at
+`shippingInfoUrl#<legalGuarantee.anchor>` — a translated fragment, e.g. `#gesetzliche-gewaehrleistung`, else the full-size graphic) and the "Versand & Zahlung" link at the
+top and above the order button when `shippingInfoPage` is set; the full notice on the
+`shippingInfoModule` page (with the shipping methods from `cms[locale].shippingMethods`) and in the
+order confirmation. The compact form stays visible (not behind a click): WKO reads "hervorgehoben" as
+clearly noticeable before ordering, not hidden or only on request.
+
+### Privacy policy (`privacyPolicyModule`)
+
+`src/shared/privacy-policy.ts` (`buildPrivacyPolicy`) builds the Art. 13 GDPR text from what the shop
+runs; filter `privacyPolicy` (`src/filters/index.ts`) feeds it, `core/modules/privacyPolicyModule.njk`
+renders it (website only — no mail). Same rules as the withdrawal builder: rich segments with links
+(provider privacy policies, company email, DSB), missing company name/address/email → `null` +
+preview-only hint.
+
+Each section has a condition, so the text follows the features:
+
+| Section | When |
+|---|---|
+| controller (+ DPO from `module.dpoContact`), overview, hosting (Netlify), content (Sanity CDN) | always |
+| orders (+ carrier paragraph if a non-pickup shipping method exists), payment (Stripe, Apple/Google Pay) | `shop.checkout` |
+| email (Resend / Mailgun EU / US) | checkout, users or newsletter — provider from `CoreConfig.services`; without checkout `email.textNoShop` (no order/shipping mails), with neither checkout nor users `email.textNewsletterOnly` (no account mails, consent only) |
+| withdrawal | checkout + `orderWithdrawUrl` |
+| orderSystem (wineNET, hardcoded) | checkout + `services.wcApi` (`WC_CONSUMER_KEY` set) |
+| account (Supabase), newsletter | `users` / `newsletter`; account without checkout `account.textNoShop` (no "orders are kept") |
+| captcha (hCaptcha, lists the forms) | `captchaSiteKey` + users or newsletter (the forms that load it; newsletter only with `features.newsletter.captcha`) |
+| vinofact | vinofact on **and** `'bottleImage'` in `vinofact.fields` (only bottle images load from `i.vinofact.com`) |
+| `module.extraSections` (editor: map, embeds …) | after vinofact, before storage |
+| storage (list: cart/coupon, pending payment, order snapshot, age gate, recent searches — the last only with `extensions.search`; nothing stored → one "no cookies, no browser storage" sentence) | always, items filtered |
+| required data, automated decisions (+ Stripe fraud screening) | checkout / always |
+| rights, complaint (DSB), "Stand" line | always |
+
+- Wording: `privacyPolicy.*` in `de_11ty.ts` / `en_11ty.ts` + `de_11ty.informal.ts` ("Du");
+  provider names + privacy-policy URLs are data (`PRIVACY_PROVIDERS`). Unlike withdrawal it's our
+  own wording (no statutory model).
+- **Bump `PRIVACY_POLICY_UPDATED`** (YYYY-MM, rendered as "Stand: …") whenever the wording or a
+  section condition changes.
+- Facts the text states must stay true in code: unpaid `orderMeta` deleted after
+  `ORDER_META_RETENTION_DAYS` (`order-meta-cleanup` function — the shop must wire it), no personal
+  data in function logs (`configuration.md` → Logging), Stripe.js only on the checkout page (loaded
+  from `checkout.ts`, which `scripts/index.ts` imports only with `[data-checkout]`), hCaptcha only
+  where a captcha form is shown, no analytics. A shop adding an external service (CSP
+  `headers.extra` host) adds an extra section.
+- No section covers enquiries by email/phone (a shop's contact runs through orders/accounts). A
+  site that invites contact (content sites) adds it as an `extraSections` entry.
+- Customers may override `privacyPolicy.*` via `config.translations` (e.g. first person "ich" for
+  a one-person business). Such overrides are a frozen copy: they don't follow a
+  core wording change or a `PRIVACY_POLICY_UPDATED` bump, and a section that starts rendering
+  later (feature switched on) comes in core's wording.
+
+## WooCommerce API bridge (`wc-api`, read by Winenet)
+
+`src/netlify/functions/wc-api.ts` — orders as a WooCommerce REST v3 subset for an ERP (wineNET):
+routes, status overrides, WooCommerce rounding, known gaps, wineNET's behaviour, tests →
+**`.claude/architecture/wc-api.md`**.
+
+## Customer names
+
+Orders require only the full `name` (`REQUIRED_ADDRESS_FIELDS`, Sanity `addressStrict`).
+`prename`/`lastname` are stored only when the customer typed them (manual checkout form). Express
+checkout (Apple/Google Pay) delivers just the full name and **must not guess** a split. Where
+separate fields are needed — the `wc-api` export to Winenet — `netlify/utils/name.ts`
+(`splitNameForExport`) splits at export time (last word → last name; a single word → last name).
+Customer-facing text uses `name`, or `prename` only if present (order thanks heading).
+
+## Gating
+
+Checkout, users, and newsletter are feature-flagged (`shop.checkout`, `users`, `newsletter`). CSP /
+Permissions-Policy for payment is tied to checkout being enabled (`setupHeaders`). A customer with
+checkout disabled ships none of the payment surface.

@@ -1,0 +1,37 @@
+{#- Generated privacy policy (Art. 13 GDPR) from features, function-side services and
+    settings.company (shared/privacy-policy.ts). Sections appear only for processing the shop
+    runs; wording from the `privacyPolicy.*` translations — don't hand-edit it here. Shop-specific
+    extras come from module.extraSections. Outline: h2 per section. -#}
+{#- Rich paragraph: segments with an href (email, provider privacy policies) become links. -#}
+{%- macro richText(segments) -%}
+  {%- for segment in segments -%}
+    {%- if segment.href -%}<a href="{{ segment.href }}">{{ segment.text }}</a>{%- else -%}{{ segment.text }}{%- endif -%}
+  {%- endfor -%}
+{%- endmacro -%}
+{%- set _pp = cms[_locale] | privacyPolicy(module) -%}
+{%- set _ppData = _pp.policy -%}
+{%- if _ppData %}
+<div class="privacy-policy">
+  {%- for section in _ppData.sections %}
+  <section class="privacy-policy__section">
+    <h2>{{ section.heading }}</h2>
+    {%- for paragraph in section.paragraphs %}
+    <p>{{ richText(paragraph) }}</p>
+    {%- if loop.first and section.items %}
+    <ul>
+      {%- for item in section.items %}
+      <li>{{ item }}</li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+    {%- endfor %}
+  </section>
+  {%- endfor %}
+  <p class="privacy-policy__updated">{{ _ppData.updated }}</p>
+</div>
+{%- else %}
+  {{- ("privacyPolicyModule: settings incomplete (" + (_pp.missing | join(', ')) + ") — nothing rendered") | log -}}
+  {%- if coreConfig.buildMode == 'preview' %}
+  <p class="editor-hint" role="note">{{ 'privacyPolicy.missing' | trans({ fields: _pp.missing | join(', ') }) }}</p>
+  {%- endif %}
+{%- endif %}

@@ -1,0 +1,15 @@
+<article class="post" data-post-id="{{ pageDoc._id }}">
+
+  {% block post_header %}
+    <header class="post-header">
+      <h1 class="post-title">{{ pageDoc.title }}</h1>
+    </header>
+  {% endblock %}
+
+  {% block post_modules %}
+    {%- set _locale = pageDoc.locale -%}
+    {%- set modules = pageDoc.modules -%}
+    {% include "overridable/partials/modules.njk" %}
+  {% endblock %}
+
+</article>

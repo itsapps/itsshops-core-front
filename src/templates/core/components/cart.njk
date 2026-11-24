@@ -1,0 +1,53 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- if page.url != cms[_locale].checkoutUrl -%}
+<div
+  class="cart-sidebar"
+  id="cart-sidebar"
+  aria-hidden="true"
+  inert
+  aria-label="{{ 'cart.ariaMain' | trans }}"
+  role="region"
+  tabindex="-1"
+  data-cart-sidebar
+  data-currency="{{ coreConfig.units.price.currency }}"
+  {%- if coreConfig.units.price.currencyLabel %} data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+  data-t-remove="{{ 'cart.ariaRemoveProduct' | trans }}"
+  data-t-decrease="{{ 'cart.counter.decreaseQuantity' | trans }}"
+  data-t-increase="{{ 'cart.counter.increaseQuantity' | trans }}"
+  data-t-manuallySetQuantity="{{ 'cart.counter.manuallySetQuantity' | trans }}"
+  data-cart-image-width="{{ imageSizes.cart.sizes[0][0] }}" data-cart-image-height="{{ imageSizes.cart.sizes[0][1] }}"
+>
+  <div class="cart-sidebar__inner">
+
+    <div class="cart-sidebar__header">
+      <h2 class="cart-sidebar__title">{{ 'cart.title' | trans }}</h2>
+      <button
+        type="button"
+        class="cart-sidebar__close"
+        aria-label="{{ 'cart.ariaClose' | trans }}"
+        data-cart-close
+      >{% block cart_close_icon %}{% endblock %}</button>
+    </div>
+
+    <div class="cart-sidebar__items" data-cart-items>
+      <p class="cart-sidebar__empty" data-cart-empty>{{ 'cart.empty' | trans }}</p>
+    </div>
+
+    <div class="cart-sidebar__footer">
+      <div class="cart-sidebar__total-row">
+        <span class="cart-sidebar__total-label">{{ 'cart.subtotal' | trans }}</span>
+        <span class="cart-sidebar__total-amount" data-cart-total></span>
+      </div>
+      <p class="cart-sidebar__total-note">{{ 'cart.subtotalNote' | trans }}</p>
+      <a href="{{ cms[_locale].checkoutUrl }}" class="cart-sidebar__checkout btn" data-cart-checkout-link>
+        {{ 'cart.toCheckout' | trans }}
+      </a>
+    </div>
+
+  </div>
+</div>
+<div class="cart-overlay" data-cart-overlay aria-hidden="true"></div>
+
+{% from "macros/cart.njk" import cartItem with context %}
+<template id="cart-item-template">{{ cartItem() }}</template>
+{%- endif -%}

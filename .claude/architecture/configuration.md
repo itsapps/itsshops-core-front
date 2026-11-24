@@ -1,0 +1,169 @@
+# Configuration reference (`Config`)
+
+The object a customer passes to `shopCoreFrontendPlugin` (in `itsshops.config.mts`). Canonical type:
+`src/types/config.ts` (`Config`). Resolution order is **config value ?? env var ?? default**;
+`resolveConfig` (`src/config/config.ts`) produces the internal `CoreConfig`. For the resolution
+mechanics / feature-flag normalization see [plugin-and-config.md](plugin-and-config.md); this file is
+the field reference.
+
+```ts
+// itsshops.config.mts
+import { type Config } from '@itsapps/itsshops-core-front'
+export const projectConfig: Config = { /* … */ }
+```
+
+## Fields
+
+### Project identity & locales
+- `locales?: Locale[]` — default `['de','en']`. **Core ships UI translations for de/en only** — any
+  other locale needs full `translations` (see [i18n.md](i18n.md)) or the build throws on missing keys.
+- `defaultLocale?: Locale` — default `'de'`.
+- `localeRegions?: Partial<Record<Locale, string>>` — region (ISO 3166-1 alpha-2) per locale, used
+  only where a region is required: `og:locale` (`de_DE`). Default `{ de: 'DE', en: 'GB' }`;
+  normalised to upper case, an invalid value warns and keeps the default (`resolveLocaleRegions` in
+  `src/config/config.ts`). Build-only. Rule (language vs. region): [i18n.md](i18n.md).
+- `sanity?: SanityClientConfig` — `{ projectId, dataset, token?, studioUrl?, … }`. `projectId` and
+  `dataset` are **required** (hard-fail) and usually come from env (`SANITY_PROJECT_ID`,
+  `SANITY_DATASET`); `token`/`studioUrl` from `SANITY_TOKEN`/`SANITY_STUDIO_URL`. The payment
+  webhook also reads `SANITY_STUDIO_URL` at runtime (Studio link in the shop's new-order mail) — so
+  on Netlify it needs the Functions scope, not only Builds.
+
+### Features (`features?: ItsshopsFeatures`)
+Omitting `shop` disables the shop; sub-flags default to `false`.
+```ts
+features: {
+  shop?: { checkout?, manufacturer?, stock?, category?, coupons?, checkoutAgeConfirmation?,
+           vinofact?: { enabled, fields? } },
+  blog?: boolean,
+  users?: boolean | { registrationFields?: UserRegistrationField[] },
+  newsletter?: boolean | { captcha?: boolean },   // captcha default true
+}
+```
+`newsletter: { captcha: false }` drops hCaptcha from the newsletter form only (no widget, no
+site-wide hCaptcha CSP, privacy policy lists only the user forms); register/recover keep it. Pass
+`captcha: false` to `createNewsletterSubscribeHandler` too and rate-limit that wrapper
+(`commerce-and-netlify.md` → per-IP limits).
+`checkout` gates the Stripe flow, the order pages and the withdrawal form (+ its menu link and legal
+texts); core-back's `features.shop.checkout` must match (it hides the checkout-only shop settings). `vinofact.fields` lists extra wine fields to fetch (`VinofactField` in `src/types/vinofact.ts`; an
+unknown name — e.g. the old `normClassifications`, now `qualityGrades` — is dropped silently, and
+the Eleventy build doesn't typecheck the config, so run `tsc` in the customer repo);
+the connection comes from env only — `VINOFACT_API_TOKEN` + `VINOFACT_PROFILE_SLUG` (required),
+`VINOFACT_API_URL` (optional, only its origin counts, default `https://www.vinofact.com`; for a
+local VinoFact dev server). Backend feature flags are a superset — keep both
+repos' configs aligned.
+
+### i18n & URLs
+- `translations?: Record<string, any>` — per-locale overrides deep-merged over core (`common` /
+  `shared` namespaces). See [i18n.md](i18n.md).
+- `permalinks?: Partial<Record<Locale, PermalinkTranslations>>` — per-locale URL **segments** for
+  content types and the checkout: `product`, `category`, `blog`, `checkout`, `orderThanks`. Defaults
+  (`src/i18n/permalinks.ts`): de `produkte` / `kategorien` / `blog` / `kasse` / `danke`, en
+  `products` / `categories` / `blog` / `checkout` / `thank-you`. (User/account/newsletter/withdraw segments live in
+  `translations.<locale>.shared.urlPaths` instead — see [i18n.md](i18n.md).)
+
+### Data extensions
+- `extensions?: Extensions` — custom GROQ fields/queries/modules, resolve hooks, portable-text sets,
+  search. Full guide: [extending.md](extending.md).
+- `imageSizes?: Record<string, PictureSize>` — responsive-image presets, merged with core defaults.
+- `imagePlaceholders?: Record<string, string>`.
+
+### Presentation / CSS / JS
+- `css?: Css` — `{ cssPath?, minify?, inline?, viewport?{min,max}, screens?, colors?, fontFamilies?,
+  textSizes?, spacings? }`. `cssPath` points at the exported Tailwind config; the token arrays drive
+  the design-token system (see [templates-and-assets.md](templates-and-assets.md)).
+- `js?: Js` — `{ minify? }`.
+- `manifest?` — `{ themeBgColor '#ffffff', themeColor '#000000', themeBgColorDark (default: themeColor),
+  colorScheme 'light' }`. `themeBgColor` = light page background (light `theme-color` meta + the web
+  app manifest's `background_color`), `themeColor` = brand colour (web app manifest `theme_color`),
+  `themeBgColorDark` = dark page background (dark `theme-color` meta). `colorScheme: 'light dark'`
+  turns on the theme switch (`ui-contracts.md` → "Theme switch").
+- `menu?: { maxDepth? }` — menu **levels, top level included**, default `1` (flat; no `children`
+  fetched). `2` = top-level links + one level of submenu children. Same meaning as core-back's
+  `schemaSettings.menus.maxDepth` — set both to the same value.
+- `units?: { volume?, price?: { currency?, currencyLabel? } }` — `price.currency` default `'EUR'`;
+  `currencyLabel` replaces the Intl symbol. ⚠️ `units.volume` **defaults to `'l'` in
+  `resolveConfig`**, though the `Config` JSDoc says `'ml'` — code wins; verify if it matters.
+- `ageGate?: { enabled? (false), minAge? (16) }`.
+- `developer?: { name?, website? }` — also from `PUBLIC_DEVELOPER_*` env.
+
+### Headers / CSP
+- `headers?: { extra?: CspDirectives, routes?: [{ path, extra }] }` — extra CSP sources appended to
+  every route (and per-route). Directive keys: `script-src`, `connect-src`, `frame-src`, `img-src`,
+  `media-src`, `style-src`. Payment CSP is auto-managed when checkout is enabled. Full mechanism +
+  when to use which directive (e.g. map tiles): [csp-and-headers.md](csp-and-headers.md).
+
+### Redirects
+- `redirects?: Redirect[]` — `{ from, to, status? (301), force? (false) }`, extra Netlify rules
+  (old URLs after a relaunch, short links). Core owns `_redirects` (`templates/misc/
+  netlify_redirects.njk`, protected) and writes them after the `/` language redirect and **before
+  the 404 catch-alls** — that's why `[[redirects]]` in a customer `netlify.toml` don't work for
+  missing pages (Netlify reads `_redirects` first; `/*` → 404 matches). Netlify syntax: `*` ↔
+  `:splat`, `:placeholder`. Not forced by default: an existing page at `from` wins. Validated in
+  `config/redirects.ts` (build throws on `from` not starting with `/`, `from: '/'`, whitespace,
+  bad `to`/status, duplicate `from`). Skipped in maintenance mode.
+
+### Env-overridable runtime flags
+Each has an env default; the config value wins when set:
+`baseUrl` (`URL`), `doIndexPages` (`DO_INDEX_PAGES`), `maxProducts` (`MAX_PRODUCTS`),
+`debug.enabled` (`ITSSHOPS_DEBUG`), `serve.{port,liveReload,refetchData}` (`SERVE_*`),
+`preview.{documentType,documentId,locale}` (`PREVIEW_*`), `css/js.minify` (`MINIFY`), `css.inline`
+(`INLINE_CSS`), `stripe.publishableApiKey` (`STRIPE_PUBLISHABLE_API_KEY`), `captchaSiteKey`
+(`CAPTCHA_SITE_KEY`), `supportEmail` (`SUPPORT_EMAIL`). Build mode: `IS_PREVIEW`→preview,
+`MAINTENANCE`→maintenance, else normal.
+
+### Env-only shop settings (build **and** functions)
+No `Config` field — both runtimes must see the same value, so set them on the Netlify site for
+**all scopes** (and in the shop's `.env` for local dev):
+- `SHOP_FORMALITY` = `formal` (default, "Sie") | `informal` ("Du") — German form of address for every
+  core text: website, emails, server messages. Build-only would give a "Du" site with "Sie" mails.
+  Mechanism: [i18n.md](i18n.md) → "Form of address".
+- `SHOP_FORMAT_LOCALES` — opt-in regional formatting (dates, numbers, prices), e.g. `en:en-GB` or
+  `de:de-AT,en:en-GB`. Unset = bare `de`/`en` (no change). Visible: `de-AT` gives "€ 1.234,50",
+  "Jänner", "1 234 567,5"; `en-GB` changes dates only ("5 January 2027"). Mechanism:
+  [i18n.md](i18n.md) → "Language vs. region".
+- `SHOP_TIMEZONE` — IANA name for dates/times in mails (default `Europe/Vienna`; invalid → warning +
+  default). Helper: `formatShopDate` in `src/netlify/utils/i18n.ts`.
+
+### Env-only function settings (Netlify functions scope)
+No `Config` field; read by the Netlify functions at runtime (checked against `src/netlify/`).
+Mechanisms: [commerce-and-netlify.md](commerce-and-netlify.md).
+- **Stripe:** `STRIPE_SECRET_API_KEY` (`services/stripe.ts`), `STRIPE_ENDPOINT_SECRET` (webhook
+  signature).
+- **Mail:** `EMAIL_PROVIDER` = `mailgun` (default) | `resend` (`services/email.ts`).
+  Resend: `RESEND_API_KEY`. Mailgun: `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`,
+  `MAILGUN_USE_EU_REGION_URL` (default **true**; `false` → US endpoint).
+- **Studio → functions** (refund, send mail, …): `SERVER_FUNCTIONS_SECRET` (shared secret in the
+  `x-server-secret` header, compared in constant time) and `SERVER_FUNCTIONS_ALLOWED_ORIGINS`
+  (comma-separated CORS allowlist = the Studio origins; also the preview's `frame-ancestors`).
+  Missing → fail closed (`utils/server-auth.ts`). The Studio reads the secret from its secrets
+  document (core-back `plugin-and-config.md` → "Secrets"), so every Studio **member** can read it —
+  the endpoints validate everything themselves (refunds: `commerce-and-netlify.md` → "Refunds").
+  One value per frontend project (staging ≠ production).
+- **Draft preview:** `PREVIEW_SESSION_SECRET` (≥ 32 random bytes; signs the preview session token;
+  missing → `preview-enable` 500, `preview` 401) plus `SANITY_TOKEN` (reads drafts and Sanity's
+  preview secrets). Mechanism: `commerce-and-netlify.md` → "Draft preview".
+- **Users (Supabase):** `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_EMAIL_HOOKS_SECRET`
+  (`auth-webhooks`), `SUPABASE_KEEP_ALIVE_URL` (`supabase-keep-alive`). `SKIP_AUTH_EMAILS=true`
+  suppresses auth + newsletter mails (tests). `PUBLIC_URL` overrides `URL` as the base for links in
+  those mails.
+- **Captcha:** `CAPTCHA_SECRET_KEY` — unset → captcha check skipped (`utils/captcha.ts`).
+- **Logging:** `LOG_LEVEL` = `debug` | `info` (default) | `warn` | `error` (`utils/logger.ts`); the
+  wc-api `Request` / `List orders` lines are `debug`. **No personal data in logs** (the privacy
+  policy relies on it): log ids (`orderId`, `paymentIntentId`, `requestId`), never names, addresses,
+  emails (at most the 4-character `emailObfuscated` prefix) or request bodies.
+- **wc-api:** `WC_CONSUMER_KEY` / `WC_CONSUMER_SECRET` (missing → every request 401), `WC_TIMEZONE`
+  (fallback when the wrapper passes no `timezone`). `WC_API_BASE_URL` is **test-only** (customer
+  `tests/integration/wc-api.test.ts`). Details: [wc-api.md](wc-api.md).
+- Shared with the build: `SANITY_*`, `SHOP_FORMALITY`, `SHOP_FORMAT_LOCALES`, `SHOP_TIMEZONE`, `SUPPORT_EMAIL`,
+  `VINOFACT_*` (see above), and — for the generated privacy policy — `EMAIL_PROVIDER`,
+  `MAILGUN_USE_EU_REGION_URL` and whether `WC_CONSUMER_KEY` is set. The build reads them into
+  `CoreConfig.services` (`emailProvider`, `mailgunEu`, `wcApi`; flags only, never the secrets, same
+  defaults as the functions) — so these need the **build** scope too, or the policy names the wrong
+  mail provider / omits wineNET.
+
+## Env var → config field map
+The authoritative list is the comment block in `src/types/config.ts` (above `Config`). Env is the
+fallback; the matching `Config` field overrides it. `SANITY_PROJECT_ID` / `SANITY_DATASET` are the
+only ones with no safe default — missing → the build throws.
+
+Every customer project's `itsshops.config.mts` (+ `src/_config/`) is a worked example; the starter's base shows the default shape.

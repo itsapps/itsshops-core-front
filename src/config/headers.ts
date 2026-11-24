@@ -1,0 +1,220 @@
+import { createHash } from 'crypto'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import type { CoreConfig, CoreContext, ResolvedCspDirectives } from '../types'
+import type { CmsData, CmsLocaleData } from '../types/data'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const coreInlineDir = path.join(__dirname, 'templates/scripts/inline')
+
+// ─── Inline script hashing ────────────────────────────────────────────────────
+
+function hashDir(dir: string): string[] {
+  if (!fs.existsSync(dir)) return []
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.js'))
+    .map(f => {
+      const content = fs.readFileSync(path.join(dir, f), 'utf8')
+      const hash = createHash('sha256').update(content, 'utf8').digest('base64')
+      return `'sha256-${hash}'`
+    })
+}
+
+const CONDITIONAL_CORE_SCRIPTS = new Set(['theme.js', 'age-gate.js'])
+
+function hashFile(dir: string, filename: string): string | null {
+  const filePath = path.join(dir, filename)
+  if (!fs.existsSync(filePath)) return null
+  const content = fs.readFileSync(filePath, 'utf8')
+  return `'sha256-${createHash('sha256').update(content, 'utf8').digest('base64')}'`
+}
+
+function getInlineScriptHashes(config: CoreConfig): string[] {
+  const customerInlineDir = path.join(process.cwd(), 'src/assets/scripts/inline')
+  const hashes: string[] = []
+
+  if (config.manifest.colorScheme !== 'light') {
+    const h = hashFile(customerInlineDir, 'theme.js') ?? hashFile(coreInlineDir, 'theme.js')
+    if (h) hashes.push(h)
+  }
+  if (config.ageGate.enabled && !config.preview.enabled) {
+    const h = hashFile(customerInlineDir, 'age-gate.js') ?? hashFile(coreInlineDir, 'age-gate.js')
+    if (h) hashes.push(h)
+  }
+
+  // Any extra customer inline scripts not managed by core conditions
+  if (fs.existsSync(customerInlineDir)) {
+    for (const file of fs.readdirSync(customerInlineDir).filter(f => f.endsWith('.js') && !CONDITIONAL_CORE_SCRIPTS.has(f))) {
+      const h = hashFile(customerInlineDir, file)
+      if (h) hashes.push(h)
+    }
+  }
+
+  return hashes
+}
+
+// ─── CSP / headers building ───────────────────────────────────────────────────
+
+type CspSources = {
+  scriptSrc:  string[]
+  connectSrc: string[]
+  imgSrc:     string[]
+  mediaSrc:   string[]
+  styleSrc:   string[]
+  frameSrc:   string[]
+}
+
+function buildCsp(s: CspSources): string {
+  return [
+    "default-src 'self'",
+    `script-src ${s.scriptSrc.join(' ')}`,
+    `connect-src ${s.connectSrc.join(' ')}`,
+    `img-src ${s.imgSrc.join(' ')}`,
+    `media-src ${s.mediaSrc.join(' ')}`,
+    `style-src ${s.styleSrc.join(' ')}`,
+    `frame-src ${s.frameSrc.join(' ')}`,
+    "frame-ancestors 'none'",
+  ].join('; ')
+}
+
+const DISABLED_FEATURES = [
+  'autoplay=()',
+  'camera=()',
+  'gyroscope=()',
+  'magnetometer=()',
+  'microphone=()',
+]
+
+/**
+ * The `payment` directive governs the Payment Request API, which is what Apple
+ * Pay and Google Pay ride on. Stripe invokes it from its own iframe, so a shop
+ * has to allow it — but only for us and Stripe, never `*`, which would let any
+ * embedded third party raise a payment sheet.
+ *
+ * Granted ONLY on the checkout route (least privilege) — that's the only place
+ * Stripe express pay is mounted (see components/checkout.njk + checkout.ts). The
+ * `payment` directive fails silently and only on real devices, so IF an express
+ * button is ever added elsewhere (e.g. the cart overlay), widen the grant to
+ * that route too — and test on a real device.
+ *
+ * Everywhere else (and sites without checkout) get `payment=()`.
+ */
+function permissionsPolicy(allowPayment: boolean): string {
+  // The Stripe allowlist mirrors the checkout-route frame-src below. The wildcard
+  // is included because Stripe reserves js.stripe.com subdomains to move assets to
+  // without notice — and a wildcard origin does not match the bare origin, so both
+  // are needed.
+  const payment = allowPayment
+    ? 'payment=(self "https://js.stripe.com" "https://*.js.stripe.com")'
+    : 'payment=()'
+  return `Permissions-Policy: ${[...DISABLED_FEATURES, payment].join(', ')}`
+}
+
+function securityHeaders(allowPayment: boolean): string[] {
+  return [
+    'X-Content-Type-Options: nosniff',
+    'Referrer-Policy: strict-origin-when-cross-origin',
+    permissionsPolicy(allowPayment),
+    'Strict-Transport-Security: max-age=63072000; includeSubDomains; preload',
+  ]
+}
+
+function buildRoute(routePath: string, csp: string, security: string[]): string {
+  return [routePath, `  Content-Security-Policy: ${csp}`, ...security.map(h => `  ${h}`)].join('\n')
+}
+
+function mergeExtra(base: CspSources, extra: ResolvedCspDirectives): CspSources {
+  return {
+    scriptSrc:  [...base.scriptSrc,  ...extra['script-src']],
+    connectSrc: [...base.connectSrc, ...extra['connect-src']],
+    imgSrc:     [...base.imgSrc,     ...extra['img-src']],
+    mediaSrc:   [...base.mediaSrc,   ...extra['media-src']],
+    styleSrc:   [...base.styleSrc,   ...extra['style-src']],
+    frameSrc:   [...base.frameSrc,   ...extra['frame-src']],
+  }
+}
+
+function buildNetlifyHeaders(cms: CmsData, config: CoreConfig): string {
+  const gtmId = (cms[config.defaultLocale] as CmsLocaleData | undefined)?.settings?.gtmId
+  const inlineScriptHashes = getInlineScriptHashes(config)
+
+  const base: CspSources = {
+    scriptSrc:  ["'self'", ...inlineScriptHashes,                      ...(gtmId ? ['https://www.googletagmanager.com'] : [])],
+    connectSrc: ["'self'",                                              ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com'] : [])],
+    imgSrc:     ["'self'", 'data:', 'https://cdn.sanity.io',           ...(config.features.shop.vinofact.enabled ? ['https://i.vinofact.com'] : []), ...(gtmId ? ['https://www.googletagmanager.com', 'https://*.google-analytics.com'] : [])],
+    mediaSrc:   ["'self'", 'https://cdn.sanity.io'],
+    styleSrc:   ["'self'", "'unsafe-inline'"],
+    frameSrc:   ["'self'"],
+  }
+
+  const merged = mergeExtra(base, config.headers.extra)
+  const security = securityHeaders(false)          // payment disabled — base, captcha, custom routes
+  const securityCheckout = securityHeaders(true)   // payment granted — checkout route only
+
+  // hCaptcha origins. Whitelisted per-route for auth/withdrawal pages below, but
+  // the newsletter signup form is typically placed site-wide (e.g. the footer)
+  // and renders the widget whenever captchaSiteKey is set. So when newsletter +
+  // captcha are both active, hCaptcha must be allowed on the base /* CSP that
+  // covers every page — otherwise the footer widget is blocked everywhere.
+  const captcha = ['https://hcaptcha.com', 'https://*.hcaptcha.com']
+  const withCaptcha = (sources: CspSources): CspSources =>
+    mergeExtra(sources, {
+      'script-src':  captcha,
+      'connect-src': captcha,
+      'img-src':     [],
+      'media-src':   [],
+      'style-src':   captcha,
+      'frame-src':   captcha,
+    })
+
+  const newsletterCaptchaSiteWide =
+    config.features.newsletter.enabled && config.features.newsletter.captcha && !!config.captchaSiteKey
+  const rootSources = newsletterCaptchaSiteWide ? withCaptcha(merged) : merged
+  const routes: string[] = [buildRoute('/*', buildCsp(rootSources), security)]
+
+  if (config.features.shop.checkout) {
+    const checkoutSrc = mergeExtra(merged, {
+      'script-src':  ['https://js.stripe.com', 'https://*.js.stripe.com'],
+      'connect-src': ['https://api.stripe.com'],
+      'img-src':     [],
+      'media-src':   [],
+      'style-src':   ['https://m.stripe.network'],
+      'frame-src':   ['https://js.stripe.com', 'https://*.js.stripe.com', 'https://hooks.stripe.com'],
+    })
+    for (const locale of config.locales) {
+      routes.push(buildRoute(`/${locale}/${config.resolvedPermalinks[locale].checkout}/*`, buildCsp(checkoutSrc), securityCheckout))
+    }
+  }
+
+  // Routes that render an hCaptcha widget need the hcaptcha origins whitelisted.
+  // The widget is shown whenever `captchaSiteKey` is set (see the form templates),
+  // so the CSP must cover every captcha-bearing page: auth (register/recover).
+  // (The site-wide newsletter form is already covered by the base /* CSP above;
+  // the withdrawal form has no captcha — FAGG §13a, rate-limited instead.)
+  const captchaCsp = buildCsp(withCaptcha(merged))
+  const captchaRoutes: string[] = []
+  if (config.features.users.enabled) {
+    for (const locale of config.locales) {
+      captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRegistration}/*`)
+      captchaRoutes.push(`/${locale}/${config.userPaths[locale].userRecover}/*`)
+    }
+  }
+  for (const route of captchaRoutes) {
+    routes.push(buildRoute(route, captchaCsp, security))
+  }
+
+  for (const route of config.headers.routes) {
+    routes.push(buildRoute(route.path, buildCsp(mergeExtra(merged, route.extra)), security))
+  }
+
+  return routes.join('\n\n')
+}
+
+// ─── Setup ────────────────────────────────────────────────────────────────────
+
+export const setupHeaders = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
+  if (config.preview.enabled) return
+  eleventyConfig.addShortcode('buildNetlifyHeaders', (cms: CmsData) => buildNetlifyHeaders(cms, config))
+}

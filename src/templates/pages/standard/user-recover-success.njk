@@ -1,0 +1,13 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].recoverSuccessUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+titleKey: staticPages.userRecoverSuccess.title
+---
+{%- include "overridable/user-recover-success.njk" -%}

@@ -1,0 +1,46 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{#
+  Reusable newsletter signup form. Include anywhere (e.g. the footer):
+    {% include "overridable/newsletter-form.njk" %}
+  Requires the `newsletter` feature to be enabled.
+#}
+<div class="newsletter-signup" data-newsletter-subscribe
+  data-api="/api/newsletter/subscribe"
+  data-locale="{{ _locale }}"
+  data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+  data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
+  data-t-error-service="{{ 'forms.errors.service' | trans }}"
+>
+  {% block newsletter_intro %}
+  <p class="newsletter-signup__intro">{{ 'forms.newsletter.intro' | trans }}</p>
+  {% endblock %}
+
+  <form class="form form--newsletter" novalidate>
+    <div class="form-field">
+      <label for="newsletter-email">{{ 'forms.fields.email.label' | trans }}</label>
+      <input type="email" id="newsletter-email" name="email" required autocomplete="email">
+      <span class="form-field__error" data-field-error="email"></span>
+    </div>
+
+    {%- if coreConfig.captchaSiteKey and coreConfig.features.newsletter.captcha %}
+    <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
+    {%- endif %}
+
+    <div class="form__error" role="alert" hidden data-form-error></div>
+
+    {% block newsletter_privacy_notice %}
+    <p class="newsletter-signup__notice">{{ 'forms.newsletter.privacyNotice' | trans({url: cms[_locale].privacyUrl}) | safe }}</p>
+    {% endblock %}
+
+    <div class="form__actions">
+      <button type="submit" class="btn newsletter-signup__submit">
+        <span data-submit-text>{{ 'forms.newsletter.submit.text' | trans }}</span>
+        <span data-submit-loading hidden>{{ 'forms.newsletter.submit.loadingText' | trans }}</span>
+      </button>
+    </div>
+  </form>
+
+  <p class="newsletter-signup__success" role="status" hidden data-newsletter-success>
+    {{ 'forms.newsletter.successNotice' | trans }}
+  </p>
+</div>

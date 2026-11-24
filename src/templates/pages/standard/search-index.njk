@@ -1,0 +1,10 @@
+---
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "/{{ _locale }}/search.json"
+eleventyExcludeFromCollections: true
+---
+{{ cms[_locale].searchIndex | dump | safe }}

@@ -1,0 +1,336 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="static-page checkout">
+  <h1>{{ 'staticPages.checkout.title' | trans }}</h1>
+  {#- FAGG §8 (3): delivery restrictions + accepted payment methods at the start of the ordering
+      process — linked "Versand & Zahlung" page (shopSettings.shippingInfoPage), when set. -#}
+  {%- set _shippingInfoUrl = cms[_locale].shippingInfoUrl -%}
+  {% block checkout_shipping_info %}
+    {%- if _shippingInfoUrl and _shippingInfoUrl != '#' %}
+    <p class="checkout__shipping-info">{{ 'checkout.shippingInfo' | trans({ url: _shippingInfoUrl }) | safe }}</p>
+    {%- endif %}
+  {% endblock %}
+
+  <div
+    id="checkout"
+    data-checkout
+    data-checkout-state="loading"
+    aria-busy="true"
+    data-checkout-api="/api/payment/create"
+    data-stripe-key="{{ coreConfig.stripe.publishableApiKey }}"
+    data-return-url="{{ coreConfig.baseUrl }}{{ cms[_locale].orderThanksUrl }}"
+    data-currency="{{ coreConfig.units.price.currency | default('EUR') | upper }}"
+    {% if coreConfig.units.price.currencyLabel %}data-currency-label="{{ coreConfig.units.price.currencyLabel }}"{% endif %}
+    data-t-subtotal="{{ 'checkout.subtotal' | trans }}"
+    data-t-shipping="{{ 'checkout.shipping' | trans }}"
+    data-t-pickup="{{ 'checkout.pickup' | trans }}"
+    data-t-address-delivery="{{ 'checkout.sections.delivery' | trans }}"
+    data-t-address-billing="{{ 'checkout.sections.billing' | trans }}"
+    data-t-fulfillment-delivery="{{ 'checkout.fulfillment.delivery' | trans }}"
+    data-t-fulfillment-free="{{ 'checkout.fulfillment.free' | trans }}"
+    data-t-fulfillment-ready-in="{{ 'checkout.fulfillment.readyIn' | trans }}"
+    data-t-fulfillment-hold-period="{{ 'checkout.fulfillment.holdPeriod' | trans }}"
+    data-t-fulfillment-delivery-unavailable="{{ 'checkout.fulfillment.deliveryUnavailable' | trans }}"
+    data-t-fulfillment-delivery-unavailable-short="{{ 'checkout.fulfillment.deliveryUnavailableShort' | trans }}"
+    data-t-fulfillment-pickup-selected="{{ 'checkout.fulfillment.pickupSelected' | trans }}"
+    data-t-fulfillment-delivery-selected="{{ 'checkout.fulfillment.deliverySelected' | trans }}"
+    data-t-total="{{ 'checkout.total' | trans }}"
+    data-t-vat="{{ 'checkout.vat' | trans }}"
+    data-t-vat-exempt="{{ 'checkout.vatExempt' | trans }}"
+    data-t-free-shipping="{{ 'checkout.freeShipping' | trans }}"
+    data-t-cart-empty="{{ 'checkout.cartEmpty' | trans }}"
+    data-t-error="{{ 'checkout.error' | trans }}"
+    data-t-service-error="{{ 'checkout.serviceError' | trans }}"
+    data-t-changes-intro="{{ 'checkout.changes.intro' | trans }}"
+    data-t-changes-removed="{{ 'checkout.changes.removed' | trans }}"
+    data-t-changes-price="{{ 'checkout.changes.price' | trans }}"
+    data-t-changes-quantity="{{ 'checkout.changes.quantity' | trans }}"
+    data-t-changes-contents="{{ 'checkout.changes.contents' | trans }}"
+    data-t-changes-reconfirm="{{ 'checkout.changes.reconfirm' | trans }}"
+    data-t-available="{{ 'checkout.available' | trans }}"
+    data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+    data-t-error-prename="{{ 'forms.fields.prename.errorMessage' | trans }}"
+    data-t-error-lastname="{{ 'forms.fields.lastname.errorMessage' | trans }}"
+    data-t-error-street="{{ 'forms.fields.street.errorMessage' | trans }}"
+    data-t-error-city="{{ 'forms.fields.city.errorMessage' | trans }}"
+    data-t-error-zip="{{ 'forms.fields.zip.errorMessage' | trans }}"
+    data-t-error-zip-format="{{ 'forms.fields.zip.errorMessageFormat' | trans }}"
+    data-t-error-country="{{ 'forms.fields.country.errorMessage' | trans }}"
+    {#- Fallback label of a discount row (automatic discounts too, not only codes). #}
+    data-t-discount="{{ 'checkout.discount' | trans }}"
+    {%- if coreConfig.features.shop.coupons %}
+    data-t-coupon-apply="{{ 'checkout.coupon.apply' | trans }}"
+    data-t-coupon-remove="{{ 'checkout.coupon.remove' | trans }}"
+    data-t-coupon-applied="{{ 'checkout.coupon.applied' | trans }}"
+    data-t-coupon-error="{{ 'checkout.coupon.error.fallback' | trans }}"
+    data-t-coupon-not-found="{{ 'checkout.coupon.error.notFound' | trans }}"
+    data-t-coupon-disabled="{{ 'checkout.coupon.error.disabled' | trans }}"
+    data-t-coupon-expired="{{ 'checkout.coupon.error.expired' | trans }}"
+    data-t-coupon-not-yet="{{ 'checkout.coupon.error.notYet' | trans }}"
+    data-t-coupon-exhausted="{{ 'checkout.coupon.error.exhausted' | trans }}"
+    data-t-coupon-below-minimum="{{ 'checkout.coupon.error.belowMinimum' | trans }}"
+    data-t-coupon-not-applicable="{{ 'checkout.coupon.error.notApplicable' | trans }}"
+    data-t-coupon-limit-per-email="{{ 'checkout.coupon.error.limitPerEmail' | trans }}"
+    data-t-coupon-below-min-quantity="{{ 'checkout.coupon.error.belowMinQuantity' | trans }}"
+    data-t-coupon-not-combinable="{{ 'checkout.coupon.error.notCombinable' | trans }}"
+    data-t-coupon-not-discounted="{{ 'checkout.coupon.notDiscounted' | trans }}"
+    {%- endif %}
+  >
+    {# Top progress bar — drives loading feedback without layout shift #}
+    <div data-checkout-progress class="checkout__progress" aria-hidden="true"></div>
+
+    {# Error slot — reserved height prevents jumpy layout when toggled #}
+    <div class="checkout__errors" data-checkout-errors>
+      {# Validation error #}
+      <div data-checkout-error-global class="checkout__error" role="alert" hidden></div>
+
+      {# Service error (IO/server) — shown with requestId for support #}
+      <div data-checkout-service-error class="checkout__service-error" role="alert" hidden>
+        <p>{{ 'checkout.serviceError' | trans }}</p>
+        <p class="checkout__request-id">Request ID: <code data-request-id></code></p>
+        {% if coreConfig.supportEmail %}
+          <a href="mailto:{{ coreConfig.supportEmail }}?subject={{ 'checkout.serviceErrorContact' | trans | urlencode }}&amp;body=RequestId:" class="checkout__service-error-link">
+            {{ 'checkout.serviceErrorContact' | trans }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Express checkout (Apple Pay / Google Pay / Klarna) — mounts after the first calculate, hidden
+       until Stripe reports at least one available method (none, e.g. Firefox desktop → stays
+       hidden, no empty box). #}
+    <div data-checkout-express class="checkout-express" hidden></div>
+
+    {# "— or —" divider between express and manual checkout. Hidden until express mounts. #}
+    <div data-checkout-or-divider class="checkout__or-divider" role="separator" aria-hidden="true" hidden>
+      <span>{{ 'checkout.orDivider' | trans }}</span>
+    </div>
+
+    <form data-checkout-form class="form form--checkout" novalidate>
+      <div class="checkout__columns">
+        {# ── Left column: form fields ──────────────────────────────────── #}
+        <div class="checkout__fields">
+
+          {# Contact #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.contact' | trans }}</legend>
+            <div class="form-field">
+              <label for="checkout-email">{{ 'forms.fields.email.label' | trans }}</label>
+              <input type="email" id="checkout-email" name="contactEmail" required autocomplete="email">
+              <span data-checkout-error="contactEmail" class="form-field__error"></span>
+            </div>
+          </fieldset>
+
+          {#- Delivery or pickup — shown by the script only when the calculation lists a pickup
+              method. A sibling of the address fieldset (whose legend becomes "Rechnungsadresse"
+              in pickup mode). Hooks: ui-contracts.md → "Fulfillment choice". -#}
+          <fieldset class="checkout__section checkout-fulfillment" data-checkout-fulfillment hidden>
+            <legend>{{ 'checkout.fulfillment.legend' | trans }}</legend>
+            <div data-checkout-fulfillment-options class="checkout-fulfillment__options"></div>
+            <div data-checkout-pickup-details id="checkout-pickup-details" class="checkout-fulfillment__details" hidden></div>
+          </fieldset>
+          {#- Announces mode switches (auto-switch to pickup, …). Outside the hidden fieldset and
+              never hidden: a live region is only announced reliably when it exists first. -#}
+          <p data-checkout-fulfillment-status class="sr-only" role="status"></p>
+
+          {# Shipping address (pickup mode: the billing address) #}
+          <fieldset class="checkout__section" data-checkout-address-section>
+            <legend data-checkout-address-legend>{{ 'checkout.sections.delivery' | trans }}</legend>
+            <div class="form__row">
+              <div class="form-field">
+                <label for="checkout-prename">{{ 'forms.fields.prename.label' | trans }}</label>
+                <input type="text" id="checkout-prename" name="shipping.prename" required autocomplete="given-name">
+                <span data-checkout-error="shipping.prename" class="form-field__error"></span>
+              </div>
+              <div class="form-field">
+                <label for="checkout-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
+                <input type="text" id="checkout-lastname" name="shipping.lastname" required autocomplete="family-name">
+                <span data-checkout-error="shipping.lastname" class="form-field__error"></span>
+              </div>
+            </div>
+            <div class="form-field">
+              <input type="hidden" name="shipping.name" value="">
+              <label for="checkout-line1">{{ 'forms.fields.street.label' | trans }}</label>
+              <input type="text" id="checkout-line1" name="shipping.line1" required autocomplete="address-line1">
+              <span data-checkout-error="shipping.line1" class="form-field__error"></span>
+            </div>
+            <div class="form__row">
+              <div class="form-field form-field--zip">
+                <label for="checkout-zip">{{ 'forms.fields.zip.label' | trans }}</label>
+                <input type="text" id="checkout-zip" name="shipping.zip" required autocomplete="postal-code">
+                <span data-checkout-error="shipping.zip" class="form-field__error"></span>
+              </div>
+              <div class="form-field">
+                <label for="checkout-city">{{ 'forms.fields.city.label' | trans }}</label>
+                <input type="text" id="checkout-city" name="shipping.city" required autocomplete="address-level2">
+                <span data-checkout-error="shipping.city" class="form-field__error"></span>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="checkout-country">{{ 'forms.fields.country.label' | trans }}</label>
+              <select id="checkout-country" name="shipping.country" data-checkout-country required autocomplete="country">
+                <option value="">{{ 'forms.fields.country.none' | trans }}</option>
+              </select>
+              <span data-checkout-error="shipping.country" class="form-field__error"></span>
+            </div>
+            <div class="form-field">
+              <label for="checkout-phone">{{ 'forms.fields.phone.labelOptional' | trans }}</label>
+              <input type="tel" id="checkout-phone" name="shipping.phone" autocomplete="tel" maxlength="40">
+              <span data-checkout-error="shipping.phone" class="form-field__error"></span>
+            </div>
+          </fieldset>
+
+          {# Billing toggle + address (hidden as a whole in pickup mode) #}
+          <fieldset class="checkout__section" data-checkout-billing-section>
+            {#- The fieldset's name must be its first child; the visible heading is in the div. -#}
+            <legend class="sr-only">{{ 'checkout.sections.billing' | trans }}</legend>
+            <label class="form-field__checkbox">
+              <input type="checkbox" data-checkout-same-billing checked>
+              {{ 'forms.checkout.useShippingAsBilling' | trans }}
+            </label>
+            <div data-checkout-billing-fields class="checkout__billing" hidden>
+              <p class="checkout__billing-heading" aria-hidden="true">{{ 'checkout.sections.billing' | trans }}</p>
+              <div class="form__row">
+                <div class="form-field">
+                  <label for="checkout-billing-prename">{{ 'forms.fields.prename.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-prename" name="billing.prename" autocomplete="billing given-name">
+                  <span data-checkout-error="billing.prename" class="form-field__error"></span>
+                </div>
+                <div class="form-field">
+                  <label for="checkout-billing-lastname">{{ 'forms.fields.lastname.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-lastname" name="billing.lastname" autocomplete="billing family-name">
+                  <span data-checkout-error="billing.lastname" class="form-field__error"></span>
+                </div>
+              </div>
+              <div class="form-field">
+                <input type="hidden" name="billing.name" value="">
+                <label for="checkout-billing-line1">{{ 'forms.fields.street.label' | trans }}</label>
+                <input type="text" id="checkout-billing-line1" name="billing.line1" autocomplete="billing address-line1">
+                <span data-checkout-error="billing.line1" class="form-field__error"></span>
+              </div>
+              <div class="form__row">
+                <div class="form-field form-field--zip">
+                  <label for="checkout-billing-zip">{{ 'forms.fields.zip.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-zip" name="billing.zip" autocomplete="billing postal-code">
+                  <span data-checkout-error="billing.zip" class="form-field__error"></span>
+                </div>
+                <div class="form-field">
+                  <label for="checkout-billing-city">{{ 'forms.fields.city.label' | trans }}</label>
+                  <input type="text" id="checkout-billing-city" name="billing.city" autocomplete="billing address-level2">
+                  <span data-checkout-error="billing.city" class="form-field__error"></span>
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="checkout-billing-country">{{ 'forms.fields.country.label' | trans }}</label>
+                <select id="checkout-billing-country" name="billing.country" data-checkout-billing-country autocomplete="billing country">
+                  <option value="">{{ 'forms.fields.country.none' | trans }}</option>
+                </select>
+                <span data-checkout-error="billing.country" class="form-field__error"></span>
+              </div>
+              <div class="form-field">
+                <label for="checkout-billing-phone">{{ 'forms.fields.phone.labelOptional' | trans }}</label>
+                <input type="tel" id="checkout-billing-phone" name="billing.phone" autocomplete="billing tel" maxlength="40">
+                <span data-checkout-error="billing.phone" class="form-field__error"></span>
+              </div>
+            </div>
+          </fieldset>
+
+        </div>
+
+        {# ── Right column: summary → shipping → payment → submit ───────── #}
+        <aside class="checkout__summary">
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.summary' | trans }}</legend>
+            {#- Cart changes found by checkout (price, availability, stock, bundle contents).
+              Always in the DOM and not hidden — a polite live region is only announced reliably
+              when it exists before it's filled. Empty = nothing to report. -#}
+            <div data-checkout-changes class="checkout__changes" role="status" tabindex="-1"></div>
+            <div data-checkout-items class="checkout-items"></div>
+            <dl data-checkout-totals class="checkout-totals"></dl>
+          </fieldset>
+
+          {%- if coreConfig.features.shop.coupons -%}
+          {# Coupon code #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.coupon' | trans }}</legend>
+            <div data-checkout-coupon class="checkout-coupon">
+              <div class="checkout-coupon__row">
+                <label class="sr-only" for="checkout-coupon-input">{{ 'checkout.coupon.label' | trans }}</label>
+                <input
+                  type="text"
+                  id="checkout-coupon-input"
+                  data-checkout-coupon-input
+                  class="checkout-coupon__input"
+                  placeholder="{{ 'checkout.coupon.placeholder' | trans }}"
+                  autocomplete="off"
+                  spellcheck="false"
+                >
+                <button type="button" data-checkout-coupon-apply class="checkout-coupon__apply btn btn--secondary">
+                  {{ 'checkout.coupon.apply' | trans }}
+                </button>
+                <button type="button" data-checkout-coupon-remove class="checkout-coupon__remove btn btn--secondary" hidden>
+                  {{ 'checkout.coupon.remove' | trans }}
+                </button>
+              </div>
+              <p data-checkout-coupon-applied class="checkout-coupon__applied" hidden>
+                {{ 'checkout.coupon.applied' | trans }}: <code data-checkout-coupon-applied-code></code>
+              </p>
+              <p data-checkout-coupon-error class="checkout-coupon__error" role="alert" hidden></p>
+              {#- Always in the DOM (a polite live region is announced reliably only then); empty = nothing to say. #}
+              <p data-checkout-coupon-hint class="checkout-coupon__hint" role="status"></p>
+            </div>
+          </fieldset>
+          {%- endif -%}
+
+          {# Shipping method (hidden in pickup mode) #}
+          <fieldset class="checkout__section" data-checkout-shipping-section>
+            <legend>{{ 'checkout.sections.shippingMethod' | trans }}</legend>
+            <div data-checkout-shipping class="checkout-shipping"></div>
+          </fieldset>
+
+          {# Payment #}
+          <fieldset class="checkout__section">
+            <legend>{{ 'checkout.sections.payment' | trans }}</legend>
+            <div data-checkout-payment class="checkout-payment"></div>
+          </fieldset>
+
+          {#- Statutory warranty notice before ordering (FAGG §4 (1), harmonised notice): compact
+              thumbnail + line, linking to the full notice. -#}
+          {% block checkout_legal_guarantee %}
+            {% include "core/components/partials/legal-guarantee-compact.njk" %}
+          {% endblock %}
+
+          {%- if _shippingInfoUrl and _shippingInfoUrl != '#' %}
+            <p class="checkout__confirmation">{{ 'checkout.shippingInfo' | trans({ url: _shippingInfoUrl }) | safe }}</p>
+          {%- endif %}
+
+          {% block checkout_confirmations %}
+            {%- if coreConfig.features.shop.checkoutAgeConfirmation %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.age' | trans }}
+              </p>
+            {%- endif %}
+            {%- set _termsUrl = cms[_locale].termsUrl -%}
+            {%- if _termsUrl and _termsUrl != '#' %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.terms' | trans({ url: _termsUrl }) | safe }}
+              </p>
+            {%- endif %}
+            {%- set _withdrawalPolicyUrl = cms[_locale].withdrawalPolicyUrl -%}
+            {%- if _withdrawalPolicyUrl and _withdrawalPolicyUrl != '#' %}
+              <p class="checkout__confirmation">
+                {{ 'checkout.confirmations.withdrawalPolicy' | trans({ url: _withdrawalPolicyUrl }) | safe }}
+              </p>
+            {%- endif %}
+          {% endblock %}
+          <button type="submit" data-checkout-submit class="checkout__submit btn">
+            {{ 'forms.checkout.submit.text' | trans }}
+          </button>
+        </aside>
+      </div>
+    </form>
+  </div>
+
+  {% from "macros/cart.njk" import cartItem, totalsRow with context %}
+  <template id="checkout-item-template">{{ cartItem(stockNote=true) }}</template>
+  <template id="checkout-totals-row-template">{{ totalsRow() }}</template>
+</article>

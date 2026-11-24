@@ -1,0 +1,123 @@
+# The `itsshops` CLI
+
+Source: `src/bin/itsshops.ts` (commander) → built to `dist/itsshops.js`, exposed via
+`"bin": { "itsshops": … }` in `package.json`.
+
+## Which binary runs
+
+- **In a customer frontend:** npm scripts call it (`dev` = `itsshops eleventy --env=.env --serve --dev`,
+  `build` = `itsshops eleventy`, `clean`, `netlify`, `preview`/`maintenance` = `--mode=…`).
+- **Anywhere else (e.g. a customer backend):** `npm link` in core-front also installs a global
+  symlink (`~/.nvm/versions/node/<v>/bin/itsshops` → core-front `dist/itsshops.js`), so `itsshops` is
+  on the PATH in every folder.
+- Either way it runs core-front's **built** `dist/` — after changing `src/bin/itsshops.ts`, run
+  `npm run build` (or keep `npm run dev` watching).
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `eleventy [-e <path>] [--serve] [--watch] [--mode normal\|preview\|maintenance] [--dev] [--debug [ns]]` | Runs Eleventy with `--env-file`. A one-off build (no `--serve`/`--watch`) deletes `dist/` first (Netlify's build cache would otherwise redeploy stale pages). `--mode` sets `IS_PREVIEW`/`MAINTENANCE`, `--dev` sets `ITSSHOPS_DEBUG`, `--debug` sets `DEBUG=Eleventy…` namespaces. |
+| `netlify` | `netlify dev` (needs the global netlify CLI); `URL` defaults to `http://localhost:8888`. Env files come from `netlify.toml` (`[dev] envFiles`), not from a CLI flag. |
+| `init [--force]` | Writes a default `netlify.toml` (skips existing unless `--force`). |
+| `clean` | Removes `dist`, `src/_includes/css`, `src/_includes/scripts`. |
+| `sanity [-e <path>] query <groq>` | Runs a GROQ query, prints JSON to stdout. |
+| `sanity [-e <path>] count <type1,type2>` | Document count per type. |
+| `sanity [-e <path>] migrate-discounts [--dry-run] [-y\|--yes] [--locales de,en]` | One-off data migration to the discounts model (core-back 7 / core-front 6): coupons → `discount-<id>`, `grantsFreeShipping` → one automatic shipping discount, orders get line discounts + `appliedDiscounts`. Plans and checks everything first; writes nothing on a problem. Idempotent. See below. |
+| `sanity [-e <path>] delete <type1,type2> [--dry-run] [-y\|--yes]` | Deletes **all** documents of those types — drafts and release versions too (raw perspective) — in **one transaction**, after a typed confirmation. |
+
+## Examples
+
+```bash
+# frontend (customer npm scripts call these)
+itsshops eleventy --env=.env --serve --dev          # local dev server with debug features
+itsshops eleventy --env=.env --serve --mode=preview # preview build locally
+itsshops eleventy --debug Benchmark                 # one-off build with Eleventy benchmark output
+itsshops eleventy                                   # production build (cleans dist/ first)
+itsshops netlify                                    # netlify dev (functions on :8888)
+itsshops init                                       # scaffold netlify.toml in a new project
+itsshops clean
+
+# sanity data ops (from a customer frontend folder, default .env)
+itsshops sanity count order,orderMeta
+itsshops sanity query '*[_type == "order"][0...5]{_id, orderNumber, _createdAt}'
+itsshops sanity query 'count(*[_type == "product"])'
+itsshops sanity query '*[_type == "order"]' 2>/dev/null > orders.json   # JSON only, no status lines
+
+# another env file (e.g. production vars, or from a backend folder)
+itsshops sanity -e .env.production count order
+itsshops sanity count order -e ../webshop-frontend/.env                 # option after the subcommand works too
+
+# delete: dry-run first, check the printed "Sanity: <project> / <dataset>" line
+itsshops sanity -e .env.production delete orderWithdrawal,orderMeta,order --dry-run
+itsshops sanity -e .env.production delete orderWithdrawal,orderMeta,order   # prompts: type "production" to confirm
+itsshops sanity delete orderWithdrawal,orderMeta,order --yes               # scripts: no prompt (no TTY → required)
+
+# one-off override without editing a file (shell vars win over the env file)
+SANITY_DATASET=development itsshops sanity count order
+```
+
+## `sanity` commands — env & safety
+
+- Need `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN`. A customer **frontend** `.env` has
+  them (core-front reads them for content). A customer **backend** `.env` does not — it uses
+  `SANITY_STUDIO_*` names — so from a backend folder add the three vars or point `-e` at a file
+  that has them.
+- `-e, --env <path>` (default `.env`, resolved against the cwd) selects the env file, e.g.
+  `itsshops sanity -e .env.production count order`. Accepted before or after the subcommand. A
+  missing default `.env` is skipped; a missing custom file exits 1.
+- Variables **already set in the shell win** over the file (same as Node `--env-file`).
+- Status lines (`✅ Env loaded`, `Sanity: <projectId> / <dataset>`) go to **stderr**, so
+  `sanity query … > out.json` stays clean JSON. A `SANITY_*` shell var that differs from the file
+  prints `⚠️  SANITY_DATASET from the shell overrides <file>`. Check the dataset before deleting —
+  a customer's plain `.env` may point at `production`.
+- `delete` guards (`src/bin/itsshops.ts`):
+  - prints per-type counts, then asks to **type the dataset name**; anything else (or Ctrl+C/D)
+    aborts with nothing deleted. `--yes` skips the prompt; without a TTY (piped/CI) it refuses
+    unless `--yes`. `--dry-run` stops after the counts.
+  - all deletes go in **one transaction** — all or nothing. A failure (e.g. a remaining reference
+    from a type you didn't list: deleting `order` alone while an `orderWithdrawal` points to it)
+    deletes nothing. Referrer and referenced doc in the same run are fine in any order.
+  - needs a token with write access (a read-only token makes `query`/`count` work, `delete` fail).
+  - one transaction holds all IDs; for very large deletes (thousands of docs) it may hit Sanity's
+    request-size limit — split by type then.
+- `migrate-discounts` (`src/netlify/lib/discount-migration-run.ts`, pure conversions in
+  `discount-migration.ts`; plan `discounts-model.md` → Migration): reads `raw` (the preflight must
+  see drafts) and first **plans** every step — 0. refuse while a `drafts.*`/`versions.*` coupon or
+  flagged variant exists; 1. each coupon → `discount-<old _id>` (create-if-missing + delete the
+  coupon, one transaction each); 2. flagged variants → `discount-product-free-shipping` (kind
+  bundle when every active bundle and only bundles are flagged, else the variants), then unset
+  `grantsFreeShipping` on every variant; 3. each old-shape order → line discounts by the **old**
+  wc-api algorithm (so wineNET's numbers stay), `appliedCoupons` → `appliedDiscounts`, reason
+  `product`/`coupon` → `discount`, a `system` history entry; one transaction per order with
+  `ifRevisionId`. Every order is checked (amounts unchanged, line discounts = `totals.discount`,
+  bundle items sum to their line); any problem → exit 1, **nothing written**. `--dry-run` prints
+  the plan and the checks. Same typed-dataset confirmation / TTY / `--yes` rules as `delete`. A
+  write error stops the run — what ran is done; run it again (idempotent). Backup first
+  (`sanity-dataset-backups.md`); production runs go to the user as a `!` command (below).
+  `orderMeta` docs are not migrated (the webhook converts unpaid ones).
+- Apart from `migrate-discounts` there is **no write/patch command.** For bulk content edits use a one-off Node script with
+  `@sanity/client` (a dependency of core-front, not of the customer frontend — resolve it with
+  `createRequire(path.join(process.cwd(), 'node_modules/@itsapps/itsshops-core-front/package.json'))`,
+  which works linked and installed; run from the customer frontend with `node --env-file=.env`): fetch each doc, edit `internationalizedArray*` entries by
+  `language` (append new ones with a fresh `_key`), `set` the whole field in one transaction, and
+  dry-run + guard the dataset name first.
+  **Claude Code auto mode** may block running such a script ("Modify Shared Resources") — often
+  when it *can* write `production`, even if the run targets `development` (not always: a single
+  dev write and a single user-requested production write ran on 2026-11-04); production
+  **reads** too (blocked as "Production Reads" when looping a dry run over several customers'
+  `.env.production`). Keep each run a single
+  write (no bundled reads/builds), guard dev scripts to `development` only, and hand production
+  runs to the user as a one-line `! cd <frontend> && SANITY_DATASET=production node <script> --production`
+  (short path — a long scratchpad path tends to get cut off when pasted).
+- The CLI **bypasses studio guards.** E.g. the studio only lets editors delete *unmatched*
+  withdrawals (matched ones are the legal proof a declaration was received —
+  core-back `src/schemas/documents/orders/orderWithdrawal.ts`); `delete orderWithdrawal` removes all
+  of them. Use it for test data; on a live shop's production data only deliberately.
+- **`query` and `count` see published documents only.** Their client sets no `perspective`, and
+  with `apiVersion: 'v2025-05-25'` the default is `published` — no `drafts.…` (checked 2026-11-09:
+  a production dataset had 2 drafts, the CLI counted 0). To find drafts, query the HTTP API with
+  `perspective=raw` (e.g. `curl` with the `.env` token; don't print it). **`delete`** reads with
+  `perspective: 'raw'`, so it lists and removes the types' drafts and release versions too (the
+  per-type line says how many). Up to core-front 3.10.0 it read `published` and left them
+  behind — a customer pinned to 3.10.0 or older still does.

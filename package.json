@@ -1,0 +1,204 @@
+{
+  "name": "@itsapps/itsshops-core-front",
+  "version": "6.1.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "import": "./dist/core.js"
+    },
+    "./functions/preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.js"
+    },
+    "./functions/preview-enable": {
+      "types": "./dist/preview-enable.d.ts",
+      "import": "./dist/preview-enable.js"
+    },
+    "./functions/payment-create": {
+      "types": "./dist/payment-create.d.ts",
+      "import": "./dist/payment-create.js"
+    },
+    "./functions/payment-webhooks": {
+      "types": "./dist/payment-webhooks.d.ts",
+      "import": "./dist/payment-webhooks.js"
+    },
+    "./functions/payment-refund": {
+      "types": "./dist/payment-refund.d.ts",
+      "import": "./dist/payment-refund.js"
+    },
+    "./functions/order-notify": {
+      "types": "./dist/order-notify.d.ts",
+      "import": "./dist/order-notify.js"
+    },
+    "./functions/order-status": {
+      "types": "./dist/order-status.d.ts",
+      "import": "./dist/order-status.js"
+    },
+    "./functions/order-withdraw": {
+      "types": "./dist/order-withdraw.d.ts",
+      "import": "./dist/order-withdraw.js"
+    },
+    "./functions/order-withdraw-notify": {
+      "types": "./dist/order-withdraw-notify.d.ts",
+      "import": "./dist/order-withdraw-notify.js"
+    },
+    "./functions/user-confirm": {
+      "types": "./dist/user-confirm.d.ts",
+      "import": "./dist/user-confirm.js"
+    },
+    "./functions/user-login": {
+      "types": "./dist/user-login.d.ts",
+      "import": "./dist/user-login.js"
+    },
+    "./functions/user-logout": {
+      "types": "./dist/user-logout.d.ts",
+      "import": "./dist/user-logout.js"
+    },
+    "./functions/user-recover": {
+      "types": "./dist/user-recover.d.ts",
+      "import": "./dist/user-recover.js"
+    },
+    "./functions/user-register": {
+      "types": "./dist/user-register.d.ts",
+      "import": "./dist/user-register.js"
+    },
+    "./functions/user-reset": {
+      "types": "./dist/user-reset.d.ts",
+      "import": "./dist/user-reset.js"
+    },
+    "./functions/auth-webhooks": {
+      "types": "./dist/auth-webhooks.d.ts",
+      "import": "./dist/auth-webhooks.js"
+    },
+    "./functions/newsletter-subscribe": {
+      "types": "./dist/newsletter-subscribe.d.ts",
+      "import": "./dist/newsletter-subscribe.js"
+    },
+    "./functions/newsletter-confirm": {
+      "types": "./dist/newsletter-confirm.d.ts",
+      "import": "./dist/newsletter-confirm.js"
+    },
+    "./functions/newsletter-unsubscribe": {
+      "types": "./dist/newsletter-unsubscribe.d.ts",
+      "import": "./dist/newsletter-unsubscribe.js"
+    },
+    "./functions/wc-api": {
+      "types": "./dist/wc-api.d.ts",
+      "import": "./dist/wc-api.js"
+    },
+    "./functions/supabase-keep-alive": {
+      "types": "./dist/supabase-keep-alive.d.ts",
+      "import": "./dist/supabase-keep-alive.js"
+    },
+    "./functions/order-meta-cleanup": {
+      "types": "./dist/order-meta-cleanup.d.ts",
+      "import": "./dist/order-meta-cleanup.js"
+    },
+    "./scripts": {
+      "import": "./dist/scripts/index.ts"
+    },
+    "./test-utils": {
+      "types": "./dist/test-utils.d.ts",
+      "import": "./dist/test-utils.js"
+    },
+    "./functions/utils": {
+      "types": "./dist/functions-utils.d.ts",
+      "import": "./dist/functions-utils.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "assets/",
+    "templates/",
+    "CLAUDE.md",
+    ".claude/architecture",
+    ".claude/decisions",
+    ".claude/workflows"
+  ],
+  "bin": {
+    "itsshops": "./dist/itsshops.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch & node scripts/watch-templates.mjs",
+    "test": "vitest run",
+    "check:functions": "node scripts/check-functions.mjs",
+    "test:watch": "vitest",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-img": "^6.0.4",
+    "@iarna/toml": "^2.2.5",
+    "@netlify/functions": "5.0.0",
+    "@portabletext/to-html": "^5.0.2",
+    "@react-email/components": "^1.0.11",
+    "@react-email/render": "^1.3.3",
+    "@react-pdf/renderer": "^4.4.0",
+    "@sanity/client": "^7.26.2",
+    "@sanity/image-url": "^2.0.3",
+    "@sanity/preview-url-secret": "^4.1.5",
+    "@sindresorhus/slugify": "^3.0.0",
+    "@stripe/stripe-js": "^9.0.1",
+    "@supabase/supabase-js": "^2.102.1",
+    "autoprefixer": "^10.4.27",
+    "commander": "^14.0.2",
+    "countries-list": "^3.3.0",
+    "cssnano": "^7.1.3",
+    "daisyui": "^5.5.18",
+    "dayjs": "^1.11.19",
+    "debug": "^4.4.3",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-fade": "^8.6.0",
+    "esbuild": "^0.27.3",
+    "form-data": "^4.0.5",
+    "fs-extra": "^11.3.3",
+    "i18n-iso-countries": "^7.14.0",
+    "i18next": "^25.8.18",
+    "lodash": "^4.17.23",
+    "mailgun.js": "^12.2.0",
+    "minisearch": "^7.2.0",
+    "nunjucks": "^3.2.4",
+    "postcss": "^8.5.8",
+    "postcss-cli": "11.0.0",
+    "postcss-custom-media": "^12.0.1",
+    "postcss-import": "^16.1.1",
+    "postcss-import-ext-glob": "^2.1.1",
+    "postcss-js": "^5.0.3",
+    "postcss-load-config": "6.0.1",
+    "postcss-nesting": "^13.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "resend": "^6.12.4",
+    "standardwebhooks": "^1.0.0",
+    "stripe": "^21.0.1",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@sanity/visual-editing": "^6.2.0",
+    "@types/11ty__eleventy-img": "^4.0.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^25.0.9",
+    "@types/nunjucks": "^3.2.6",
+    "@types/postcss-import": "^14.0.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "11ty.ts": "^0.0.7",
+    "jsdom": "^30.1.2",
+    "styled-components": "^6.6.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

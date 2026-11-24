@@ -1,0 +1,36 @@
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+<article class="static-page user-recover">
+  {% block page_header %}<h1>{{ 'staticPages.userRecover.title' | trans }}</h1>{% endblock %}
+  {% block page_info %}<p>{{ 'staticPages.userRecover.info' | trans }}</p>{% endblock %}
+
+  <div data-user-recover
+    data-api="/api/user/recover"
+    data-locale="{{ _locale }}"
+    data-t-error-email="{{ 'forms.fields.email.errorMessage' | trans }}"
+    data-t-error-captcha="{{ 'forms.fields.captcha.errorMessage' | trans }}"
+    data-t-error-service="{{ 'forms.errors.service' | trans }}"
+  >
+    <form class="form" novalidate>
+      <div class="form-field">
+        <label for="recover-email">{{ 'forms.fields.email.label' | trans }}</label>
+        <input type="email" id="recover-email" name="email" required autocomplete="email">
+        <span class="form-field__error" data-field-error="email"></span>
+      </div>
+
+      {%- if coreConfig.captchaSiteKey %}
+      <div class="form__captcha h-captcha" data-sitekey="{{ coreConfig.captchaSiteKey }}" data-hl="{{ _locale }}"></div>
+      {%- endif %}
+
+      <div class="form__error" role="alert" hidden data-form-error></div>
+
+      <button type="submit" class="btn user-recover__submit">
+        <span data-submit-text>{{ 'forms.userRecover.submit.text' | trans }}</span>
+        <span data-submit-loading hidden>{{ 'forms.userRecover.submit.loadingText' | trans }}</span>
+      </button>
+    </form>
+
+    <a href="{{ cms[_locale].loginUrl }}">
+      {{ 'staticPages.userLogin.title' | trans }}
+    </a>
+  </div>
+</article>

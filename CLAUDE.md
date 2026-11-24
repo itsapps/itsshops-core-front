@@ -1,0 +1,200 @@
+# CLAUDE.md — itsshops-core-front
+
+Entry point for any Claude session in this repo. Read this fully first, then load the
+`.claude/` file that matches what you're working on. `.claude/` content is loaded on demand —
+this file stays the always-loaded router.
+
+| Working on… | Read next |
+|---|---|
+| Plugin wiring, config resolution, env vars, feature flags, build modes | `.claude/architecture/plugin-and-config.md` |
+| Configuring the plugin — full `Config` field reference + env-var map | `.claude/architecture/configuration.md` |
+| Translations (UI strings + URL segments, "Sie"/"Du" via `SHOP_FORMALITY`) and how to override them / add a locale; language vs. region (`og:locale` via `localeRegions`, opt-in regional formats via `SHOP_FORMAT_LOCALES`) | `.claude/architecture/i18n.md` |
+| Extending for custom schemas/fields/modules — `config.extensions`, resolve hooks, portable text, search | `.claude/architecture/extending.md` |
+| GROQ queries, projections, locale resolution, slug generation, extension *internals*, vinofact | `.claude/architecture/data-layer.md` |
+| Templates (core vs overridable), CSS/Tailwind, images, gallery, client JS, schema.org JSON-LD (merchant listings) | `.claude/architecture/templates-and-assets.md` |
+| UI contracts — markup hooks, JS states, required CSS and a11y per part (menu, submenus, cart, newsletter dialog, theme switch, filter panel, checkout fulfillment choice, …), `hidden` vs state class, the look classes customers must style (`btn`, `btn--secondary`) | `.claude/architecture/ui-contracts.md` |
+| Nunjucks filters & shortcodes available in templates (catalog) | `.claude/architecture/filters-and-shortcodes.md` |
+| CSP / security headers — how `_headers` is built, adding allowed hosts (e.g. map tiles). Same-origin scripts, fetches (`/api/…`) and styles are always allowed; only an **external** host needs `headers.extra` — no external host, no CSP change or check | `.claude/architecture/csp-and-headers.md` |
+| The `itsshops` CLI — eleventy/netlify/init/clean + `sanity query\|count\|delete` data ops (+ one-off migrations, e.g. `migrate-discounts`), `-e` env file | `.claude/architecture/cli.md` |
+| Checkout/Stripe, refunds, draft preview (`preview` + `preview-enable`, session), users/Supabase, newsletter, email, orders/tax/shipping/free shipping/discounts (codes + automatic)/store pickup (Netlify functions + client scripts; Functions vs. Edge Functions); generated legal texts (withdrawal, privacy policy); integration test helpers (`test-utils`, `TEST_LIVE`) | `.claude/architecture/commerce-and-netlify.md` |
+| WooCommerce API for ERPs (`wc-api`, read by wineNET): routes, status mapping, WC rounding, known gaps | `.claude/architecture/wc-api.md` |
+| Releasing a new version / relinking into a customer project | `.claude/workflows/relink-and-release.md` |
+| How customers consume core (git dep + lockfile pin, tag pins), release to production and deploy (Netlify branches, push identity, Node.js version) | `.claude/workflows/consuming-core-and-deploy.md` |
+| What changed between core versions / what a customer must change when upgrading | `CHANGELOG.md` |
+| Checking that a customer still renders the same after a core CSS change (side-by-side builds, HTML + computed-style diff, dead rules) | `.claude/workflows/compare-customer-builds.md` |
+| What every shop needs before go-live (env, settings, legal pages, approvals, tests) and right after (relaunch redirects, Search Console/Bing) | `.claude/workflows/go-live-checklist.md` |
+| Backing up a customer's Sanity production dataset (daily docs + weekly full, encrypted GitHub artifacts) / restoring it | `.claude/workflows/sanity-dataset-backups.md` |
+| Why a non-obvious choice was made | `.claude/decisions/` |
+
+Keep these docs current: update them in the same change that moves a path, adds a subsystem or
+establishes a rule. **This repo is public (MIT):** no customer names, customer data or business
+internals in its docs, code comments or `CHANGELOG.md` — write "a shop", "a live site".
+
+---
+
+## What this is
+
+`@itsapps/itsshops-core-front` (version: `package.json` / git tags) — a shared npm **library + Eleventy plugin** consumed
+by customer Eleventy shop frontends. It provides the full frontend: data layer (Sanity → resolved
+`cms` global), templates, CSS/Tailwind, client-side JS, and a Netlify-function commerce/users backend.
+
+Consumers register it in `eleventy.config.mts`:
+
+```ts
+import { createEleventyConfig } from '@itsapps/itsshops-core-front'
+export default createEleventyConfig(projectConfig)   // projectConfig: type Config; optional
+                                                     // 2nd arg (eleventyConfig) => {…} for extras
+```
+
+(`createEleventyConfig` adds `shopCoreFrontendPlugin`, which is also exported.)
+
+## Commands
+
+```bash
+npm run build   # tsup → dist/
+npm run dev     # tsup --watch + watch-templates.mjs (consumers npm link this)
+npm run test    # vitest (`src/**/__tests__/` — netlify functions/commerce logic, data-layer menus,
+                #   browser scripts; DOM tests opt in with `// @vitest-environment jsdom`)
+npm run check:functions  # after build: loads every dist function in plain Node ESM (as Netlify does)
+```
+
+No dev server here — develop against a consumer project that has `npm link`ed this package.
+**Rebuild after every core change:** the link serves `dist/`, so a consumer only sees a change once
+`npm run build` ran (or while `npm run dev` is watching) — then restart the consumer's dev server.
+**Do not use yalc** to push/publish.
+
+## Accessibility (non-negotiable)
+
+Accessibility is a core quality requirement, not a nice-to-have. Every template, component, and
+client script — in core **and** in customer overrides — must stay accessible; **a change that
+regresses accessibility is a bug.** Aim for WCAG 2.2 AA. When adding or changing UI:
+
+- **Semantic HTML first** (`<button>`, `<nav>`, `<dialog>`, headings in order, labelled form
+  fields); ARIA only where native semantics don't suffice.
+- **Keyboard:** everything operable without a mouse, visible focus (`:focus-visible`), logical tab
+  order. Overlays/menus/dialogs trap focus by inerting the rest of the page
+  (`lockInertOutside()` in `src/scripts/inert-lock.ts`; `{ deep: true }` when the overlay lives
+  inside `<main>`), close on Escape, and restore focus.
+- **State & names:** keep `aria-expanded`/`aria-controls`/`aria-current`/`aria-busy` in sync from
+  JS; icon-only controls get an `aria-label` (translated via i18n, never hardcoded); decorative
+  icons/images `aria-hidden` / `alt=""`, meaningful images get real `alt`.
+- **Announcements:** dynamic results (cart, filters, search, form errors) go through `aria-live`
+  regions; visually hidden text uses `sr-only`.
+- **Motion & contrast:** respect `prefers-reduced-motion`; design-token colours must keep AA
+  contrast.
+
+Follow the existing patterns (header/menu, cart, filters, newsletter dialog, lightbox, carousel)
+rather than inventing new ones, and check a11y when reviewing any UI diff.
+
+## Entry point (`src/index.ts`)
+
+`shopCoreFrontendPlugin(eleventyConfig, config)`:
+1. `resolveConfig(config)` → `CoreConfig` (merges config + env, resolves features/permalinks/CSP)
+2. creates Sanity client + image builder, sets up translation, builds a `CoreContext`
+3. wires setup modules: ignores, plugins, css, filters, shortcodes, assets, js, headers, templates
+4. registers global data: `cms` (lazy, cached unless `serve.refetchData`), `coreConfig`, `imageSizes`, `pageDoc`
+
+`cms` is produced by `buildCmsData()` (async) — see data-layer doc.
+
+## Config (`src/types/config.ts`) & resolution (`src/config/config.ts`)
+
+Customer passes a `Config`; `resolveConfig()` merges it with env vars into `CoreConfig`. Most values
+fall back to env, a few (`SANITY_PROJECT_ID`, `SANITY_DATASET`) hard-fail if missing. Feature flags
+live under `config.features` (`shop{checkout,manufacturer,stock,category,coupons,vinofact,...}`,
+`blog`, `users`, `newsletter`). `buildMode` is `preview` | `maintenance` | `normal`. Full field list
+and env mapping: `.claude/architecture/plugin-and-config.md`.
+
+## `cms` global data shape
+
+Templates read `cms[locale]` (per-locale `CmsLocaleData`) and `cms.products/categories/pages/posts`
+(flat, locale-stamped, for pagination). All localized fields are pre-resolved to plain strings — no
+locale filters in templates. `CmsLocaleData` carries `products`, `categories`, `filterGroups`,
+`pages`, `posts`, `menus`, `settings`, `shopSettings`, `urlMap`, `docMap`, `searchIndex`, a large set
+of well-known page URLs (`shopUrl`, `checkoutUrl`, `loginUrl`, …), plus any extension query results.
+Canonical type: `src/types/data.ts`.
+
+## Source layout
+
+```
+src/
+├── index.ts             # plugin entry + public re-exports
+├── config/              # resolveConfig, feature resolution, setup modules, tailwind/
+├── data/                # queries, projections, resolve/ (per-type resolvers), slug, portableText, vinofact, search
+├── i18n/                # permalinks + translations (de/en, 11ty/server/shared)
+├── image/ · gallery/    # responsive image URLs/srcset + lightbox render
+├── filters/ · shortcodes/ · schema/ · shared/   # Eleventy filters, shortcodes, schema.org, shared validation/API clients
+├── preview/             # Presentation overlay entry (visual-editing.ts) — bundled self-contained, not via eleventy
+├── scripts/             # client-side JS (cart, checkout, user auth, newsletter, filters, search); scripts/inline/ = head-inlined
+├── netlify/             # commerce/users backend: functions/, lib/, services/, utils/, types/ (+ __tests__)
+├── templates/           # Nunjucks: core/ (protected) + overridable/ + layouts/ + pages/ + macros/ + misc/
+├── types/               # Config, resolved data shapes, vinofact — hand-written; no generated sanity.types
+│                        #   (order/checkout shapes: netlify/types/; data-layer.md → resolved output types)
+├── test-utils/          # integration-test suites customers run (`./test-utils`); side effects only with TEST_LIVE=1
+└── bin/                 # itsshops CLI (see .claude/architecture/cli.md)
+```
+
+## Build outputs (tsup)
+
+| Entry | Output | Purpose |
+|---|---|---|
+| `src/index.ts` | `dist/index.js` | Main plugin + all public exports/types |
+| `src/core/index.ts` | `dist/core.js` | Sanity client only |
+| `src/bin/itsshops.ts` | `dist/itsshops.js` | CLI binary |
+| `src/config/tailwind/tailwind.config.ts` | `dist/tailwind.js` | Tailwind config |
+| `src/netlify/functions/preview.ts` | `dist/preview.js` | Netlify preview function (+ `preview-enable.ts` → `dist/preview-enable.js`, its session gate) |
+| `src/netlify/functions/<name>.ts` | `dist/<name>.js` | Function factories (`./functions/*`; catalog in `commerce-and-netlify.md`) |
+| `src/test-utils/index.ts` | `dist/test-utils.js` | Integration-test suites for customers (`./test-utils`) |
+| `src/preview/visual-editing.ts` | `dist/assets/visual-editing/` | Presentation overlay (JS + CSS, esbuild in `onSuccess`), shipped at `/assets/visual-editing/` |
+
+`src/templates/` and `src/assets/` are copied to `dist/` post-build.
+
+## What goes into core (and what doesn't)
+
+Core (front **and** back) only gets what more than one shop uses. A feature only one customer
+needs is **customer code** (customer schema, Netlify function wrappers, template overrides,
+`extensions`) until a second shop needs it — then promote it. Core may still gain, for a
+customer-only feature: **exports of existing helpers** (no new behaviour, so the customer copies
+nothing) and a **flag** where core itself builds something the customer can't remove by override
+(e.g. a page core generates). Plans must state which side each part lands on. Owner's rule,
+2026-11-04.
+
+**Page modules:** a content module (how something looks on a page: FAQ, hero, teaser, download,
+embed, …) belongs in `itsshops-starter` (`modules/`), not in core — even when every customer uses
+it. Core gets a module only when core itself produces its data (product/category lists, legal texts
+generated from settings); `carousel` and `youtube` are older exceptions. Core never reads a starter
+module's type: anything a starter module needs on top (e.g. `FAQPage` JSON-LD) is built inside the
+module or the starter's `extensions.mts`, and core offers only generic infrastructure (e.g. a
+click-to-load mechanism, the `schemas` bundle). Owner, 2026-11-19.
+
+## No credentials in the Studio bundle
+
+The Studio is a public SPA: every `SANITY_STUDIO_*` var and everything in a customer's
+`sanity.config.ts` is downloadable without a login. Never put a token or secret there. The Studio's
+credentials live in the dataset's secrets document (core-back `CLAUDE.md` → rule, Integrations
+dialog); a Netlify account token is not used at all (Deploy = build hook). Server functions called
+from the Studio treat the shared secret as readable by every Studio member and validate everything
+themselves (e.g. refunds load the PaymentIntent from the order). Owner's rule, 2026-11-11; why:
+core-back `decisions/studio-secrets-in-dataset.md`.
+
+## Features that span frontend and backend
+
+If a feature needs new or changed CMS data, it spans both stacks: the **schema/studio** side in
+core-back (or the customer backend's schema extensions), and the **projection/rendering** side here
+in the data layer (or the customer frontend's `src/_config/extensions.mts`). Before touching the
+backend side, read core-back's `CLAUDE.md` and the customer backend's `CLAUDE.md` (next to the
+frontend, under `web/<customer>/`) — they aren't loaded in a frontend session. Same reuse order: core first,
+customer extension only for customer-specific data. After a core-back change, run its
+`npm run build` (or `npm run watch`) and restart the customer's `sanity dev`. Data-layer side:
+`.claude/architecture/data-layer.md` + `extending.md`.
+
+## Ecosystem
+
+| Repo | Path | Role |
+|---|---|---|
+| core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
+| core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
+| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest), assembled with its `scripts/assemble.mjs`, never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `2.0.0`, fits core-front 6.x / core-back 7.x) |
+| customers | `~/Documents/programming/web/<customer>/…` | customer frontends + backends, each with its own `CLAUDE.md` |
+
+Customers consume core via `npm link`. A customer frontend registers the plugin in
+`eleventy.config.mts` and configures it via `itsshops.config.mts` (type `Config`).

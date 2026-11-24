@@ -1,0 +1,1657 @@
+[
+  {
+    "order": {
+      "_id": "order-000007",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000007",
+      "invoiceNumber": "000007",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000007",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 3200,
+        "shipping": 600,
+        "discount": 320,
+        "tax": 580,
+        "grandTotal": 3480,
+        "vatBreakdown": [
+          {
+            "rate": 20,
+            "net": 2900,
+            "vat": 580
+          }
+        ],
+        "totalVat": 580,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "wine",
+          "variantId": "v000007-0",
+          "productId": "p0",
+          "title": "Wein 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 3200,
+          "quantity": 1,
+          "vatRate": 20,
+          "vatAmount": 533
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 600,
+        "taxSnapshot": {
+          "rate": 20,
+          "net": 500,
+          "vat": 100
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-ZEHN",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-ZEHN",
+            "_weak": true
+          },
+          "code": "ZEHN",
+          "discountType": "percent",
+          "value": 10,
+          "discountAmount": 320
+        }
+      ]
+    },
+    "wc": {
+      "id": 7,
+      "number": "000007",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "2.67",
+      "discount_tax": "0.53",
+      "shipping_total": "5.00",
+      "shipping_tax": "1.00",
+      "total": "34.80",
+      "total_tax": "5.80",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000007",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 163923234,
+          "name": "Wein 0",
+          "product_id": 5863654,
+          "variation_id": 1526584320,
+          "quantity": 1,
+          "sku": "SKU0",
+          "price": 24,
+          "subtotal": "26.67",
+          "subtotal_tax": "5.33",
+          "total": "24.00",
+          "total_tax": "4.80",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "5.33",
+              "total": "4.80"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000007-0"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-20",
+          "rate_id": 1147055383,
+          "label": "20%",
+          "compound": false,
+          "rate_percent": "20.00",
+          "tax_total": "4.80",
+          "shipping_tax_total": "1.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "5.00",
+          "total_tax": "1.00",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "total": "1.00",
+              "subtotal": "1.00"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  },
+  {
+    "order": {
+      "_id": "order-000008",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000008",
+      "invoiceNumber": "000008",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000008",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 2000,
+        "shipping": 650,
+        "discount": 200,
+        "tax": 305,
+        "grandTotal": 2450,
+        "vatBreakdown": [
+          {
+            "rate": 13,
+            "net": 1770,
+            "vat": 230
+          },
+          {
+            "rate": 20,
+            "net": 375,
+            "vat": 75
+          }
+        ],
+        "totalVat": 305,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "wine",
+          "variantId": "v000008-0",
+          "productId": "p0",
+          "title": "Wein 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 1500,
+          "quantity": 1,
+          "vatRate": 13,
+          "vatAmount": 173
+        },
+        {
+          "_key": "k1",
+          "kind": "wine",
+          "variantId": "v000008-1",
+          "productId": "p1",
+          "title": "Wein 1",
+          "subtitle": null,
+          "sku": "SKU1",
+          "weight": null,
+          "price": 500,
+          "quantity": 1,
+          "vatRate": 20,
+          "vatAmount": 83
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 650,
+        "taxSnapshot": {
+          "rate": 13,
+          "net": 575,
+          "vat": 75
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-ZEHN",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-ZEHN",
+            "_weak": true
+          },
+          "code": "ZEHN",
+          "discountType": "percent",
+          "value": 10,
+          "discountAmount": 200
+        }
+      ]
+    },
+    "wc": {
+      "id": 8,
+      "number": "000008",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "1.74",
+      "discount_tax": "0.26",
+      "shipping_total": "5.75",
+      "shipping_tax": "0.75",
+      "total": "24.50",
+      "total_tax": "3.05",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000008",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 163959171,
+          "name": "Wein 0",
+          "product_id": 5863654,
+          "variation_id": 1526585409,
+          "quantity": 1,
+          "sku": "SKU0",
+          "price": 11.946902654867259,
+          "subtotal": "13.27",
+          "subtotal_tax": "1.73",
+          "total": "11.95",
+          "total_tax": "1.55",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "1.73",
+              "total": "1.55"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000008-0"
+            }
+          ]
+        },
+        {
+          "id": 163959172,
+          "name": "Wein 1",
+          "product_id": 5863655,
+          "variation_id": 1526585410,
+          "quantity": 1,
+          "sku": "SKU1",
+          "price": 3.75,
+          "subtotal": "4.17",
+          "subtotal_tax": "0.83",
+          "total": "3.75",
+          "total_tax": "0.75",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "0.83",
+              "total": "0.75"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000008-1"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-13",
+          "rate_id": 1147055353,
+          "label": "13%",
+          "compound": false,
+          "rate_percent": "13.00",
+          "tax_total": "1.55",
+          "shipping_tax_total": "0.75"
+        },
+        {
+          "id": 2,
+          "rate_code": "AT-20",
+          "rate_id": 1147055383,
+          "label": "20%",
+          "compound": false,
+          "rate_percent": "20.00",
+          "tax_total": "0.75",
+          "shipping_tax_total": "0.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "5.75",
+          "total_tax": "0.75",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "total": "0.75",
+              "subtotal": "0.75"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  },
+  {
+    "order": {
+      "_id": "order-000101",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000101",
+      "invoiceNumber": "000101",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000101",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 8580,
+        "shipping": 0,
+        "discount": 858,
+        "tax": 953,
+        "grandTotal": 7722,
+        "vatBreakdown": [
+          {
+            "rate": 13,
+            "net": 5719,
+            "vat": 743
+          },
+          {
+            "rate": 20,
+            "net": 1050,
+            "vat": 210
+          }
+        ],
+        "totalVat": 953,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "bundle",
+          "variantId": "v000101-0",
+          "productId": "p0",
+          "title": "Paket 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 4990,
+          "quantity": 1,
+          "vatRate": 13,
+          "vatAmount": 646,
+          "bundle": {
+            "itemCount": 2,
+            "items": [
+              {
+                "_key": "b0",
+                "variantId": "bv0",
+                "productId": "bp0",
+                "title": "Inhalt 0",
+                "subtitle": null,
+                "sku": "BSKU0",
+                "quantity": 2,
+                "price": 3590,
+                "vatRate": 13,
+                "vatAmount": 413
+              },
+              {
+                "_key": "b1",
+                "variantId": "bv1",
+                "productId": "bp1",
+                "title": "Inhalt 1",
+                "subtitle": null,
+                "sku": "BSKU1",
+                "quantity": 1,
+                "price": 1400,
+                "vatRate": 20,
+                "vatAmount": 233
+              }
+            ]
+          }
+        },
+        {
+          "_key": "k1",
+          "kind": "wine",
+          "variantId": "v000101-1",
+          "productId": "p1",
+          "title": "Wein 1",
+          "subtitle": null,
+          "sku": "SKU1",
+          "weight": null,
+          "price": 1795,
+          "quantity": 2,
+          "vatRate": 13,
+          "vatAmount": 413
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 0,
+        "freeShippingReason": "threshold",
+        "taxSnapshot": {
+          "rate": 13,
+          "net": 0,
+          "vat": 0
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-ZEHN",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-ZEHN",
+            "_weak": true
+          },
+          "code": "ZEHN",
+          "discountType": "percent",
+          "value": 10,
+          "discountAmount": 858
+        }
+      ]
+    },
+    "wc": {
+      "id": 101,
+      "number": "000101",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "7.53",
+      "discount_tax": "1.05",
+      "shipping_total": "0.00",
+      "shipping_tax": "0.00",
+      "total": "77.22",
+      "total_tax": "9.54",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000101",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 749170057,
+          "name": "Inhalt 0",
+          "product_id": 193487464,
+          "variation_id": 193487662,
+          "quantity": 2,
+          "sku": "BSKU0",
+          "price": 14.296460176991152,
+          "subtotal": "31.77",
+          "subtotal_tax": "4.13",
+          "total": "28.59",
+          "total_tax": "3.72",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "4.13",
+              "total": "3.72"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "bp0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "bv0"
+            },
+            {
+              "key": "_bundle_title",
+              "value": "Paket 0"
+            },
+            {
+              "key": "_bundle_sku",
+              "value": "SKU0"
+            },
+            {
+              "key": "_bundle_variant_id",
+              "value": "v000101-0"
+            }
+          ]
+        },
+        {
+          "id": 749170058,
+          "name": "Inhalt 1",
+          "product_id": 193487465,
+          "variation_id": 193487663,
+          "quantity": 1,
+          "sku": "BSKU1",
+          "price": 10.5,
+          "subtotal": "11.67",
+          "subtotal_tax": "2.33",
+          "total": "10.50",
+          "total_tax": "2.10",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "2.33",
+              "total": "2.10"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "bp1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "bv1"
+            },
+            {
+              "key": "_bundle_title",
+              "value": "Paket 0"
+            },
+            {
+              "key": "_bundle_sku",
+              "value": "SKU0"
+            },
+            {
+              "key": "_bundle_variant_id",
+              "value": "v000101-0"
+            }
+          ]
+        },
+        {
+          "id": 202843006,
+          "name": "Wein 1",
+          "product_id": 5863655,
+          "variation_id": 1527763708,
+          "quantity": 2,
+          "sku": "SKU1",
+          "price": 14.296460176991152,
+          "subtotal": "31.77",
+          "subtotal_tax": "4.13",
+          "total": "28.59",
+          "total_tax": "3.72",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "4.13",
+              "total": "3.72"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000101-1"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-13",
+          "rate_id": 1147055353,
+          "label": "13%",
+          "compound": false,
+          "rate_percent": "13.00",
+          "tax_total": "7.44",
+          "shipping_tax_total": "0.00"
+        },
+        {
+          "id": 2,
+          "rate_code": "AT-20",
+          "rate_id": 1147055383,
+          "label": "20%",
+          "compound": false,
+          "rate_percent": "20.00",
+          "tax_total": "2.10",
+          "shipping_tax_total": "0.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "0.00",
+          "total_tax": "0.00",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "total": "0.00",
+              "subtotal": "0.00"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  },
+  {
+    "order": {
+      "_id": "order-000102",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000102",
+      "invoiceNumber": "000102",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000102",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 1668,
+        "shipping": 500,
+        "discount": 116,
+        "tax": 252,
+        "grandTotal": 2052,
+        "vatBreakdown": [
+          {
+            "rate": 13,
+            "net": 1542.158273381295,
+            "vat": 200
+          },
+          {
+            "rate": 20,
+            "net": 257.841726618705,
+            "vat": 52
+          }
+        ],
+        "totalVat": 252,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "wine",
+          "variantId": "v000102-0",
+          "productId": "p0",
+          "title": "Wein 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 333,
+          "quantity": 1,
+          "vatRate": 13,
+          "vatAmount": 38
+        },
+        {
+          "_key": "k1",
+          "kind": "wine",
+          "variantId": "v000102-1",
+          "productId": "p1",
+          "title": "Wein 1",
+          "subtitle": null,
+          "sku": "SKU1",
+          "weight": null,
+          "price": 333,
+          "quantity": 1,
+          "vatRate": 20,
+          "vatAmount": 56
+        },
+        {
+          "_key": "k2",
+          "kind": "wine",
+          "variantId": "v000102-2",
+          "productId": "p2",
+          "title": "Wein 2",
+          "subtitle": null,
+          "sku": "SKU2",
+          "weight": null,
+          "price": 334,
+          "quantity": 3,
+          "vatRate": 13,
+          "vatAmount": 115
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 500,
+        "taxSnapshot": {
+          "rate": 13,
+          "net": 442,
+          "vat": 58
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-SIEBEN",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-SIEBEN",
+            "_weak": true
+          },
+          "code": "SIEBEN",
+          "discountType": "percent",
+          "value": 7,
+          "discountAmount": 116
+        }
+      ]
+    },
+    "wc": {
+      "id": 102,
+      "number": "000102",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "1.03",
+      "discount_tax": "0.14",
+      "shipping_total": "4.42",
+      "shipping_tax": "0.58",
+      "total": "20.52",
+      "total_tax": "2.53",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000102",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 202878942,
+          "name": "Wein 0",
+          "product_id": 5863654,
+          "variation_id": 1527764796,
+          "quantity": 1,
+          "sku": "SKU0",
+          "price": 2.7433628318584073,
+          "subtotal": "2.95",
+          "subtotal_tax": "0.38",
+          "total": "2.74",
+          "total_tax": "0.36",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "0.38",
+              "total": "0.36"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000102-0"
+            }
+          ]
+        },
+        {
+          "id": 202878943,
+          "name": "Wein 1",
+          "product_id": 5863655,
+          "variation_id": 1527764797,
+          "quantity": 1,
+          "sku": "SKU1",
+          "price": 2.583333333333334,
+          "subtotal": "2.78",
+          "subtotal_tax": "0.56",
+          "total": "2.58",
+          "total_tax": "0.52",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "0.56",
+              "total": "0.52"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000102-1"
+            }
+          ]
+        },
+        {
+          "id": 202878944,
+          "name": "Wein 2",
+          "product_id": 5863656,
+          "variation_id": 1527764798,
+          "quantity": 3,
+          "sku": "SKU2",
+          "price": 2.7492625368731565,
+          "subtotal": "8.87",
+          "subtotal_tax": "1.15",
+          "total": "8.25",
+          "total_tax": "1.07",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "1.15",
+              "total": "1.07"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p2"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000102-2"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-13",
+          "rate_id": 1147055353,
+          "label": "13%",
+          "compound": false,
+          "rate_percent": "13.00",
+          "tax_total": "1.43",
+          "shipping_tax_total": "0.58"
+        },
+        {
+          "id": 2,
+          "rate_code": "AT-20",
+          "rate_id": 1147055383,
+          "label": "20%",
+          "compound": false,
+          "rate_percent": "20.00",
+          "tax_total": "0.52",
+          "shipping_tax_total": "0.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "4.42",
+          "total_tax": "0.58",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "total": "0.58",
+              "subtotal": "0.58"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  },
+  {
+    "order": {
+      "_id": "order-000103",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000103",
+      "invoiceNumber": "000103",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000103",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 11480,
+        "shipping": 0,
+        "discount": 500,
+        "tax": 1475,
+        "grandTotal": 10980,
+        "vatBreakdown": [
+          {
+            "rate": 13,
+            "net": 6077.282229965157,
+            "vat": 790
+          },
+          {
+            "rate": 20,
+            "net": 3427.717770034843,
+            "vat": 685
+          }
+        ],
+        "totalVat": 1475,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "bundle",
+          "variantId": "v000103-0",
+          "productId": "p0",
+          "title": "Paket 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 4990,
+          "quantity": 2,
+          "vatRate": 13,
+          "vatAmount": 1293,
+          "bundle": {
+            "itemCount": 2,
+            "items": [
+              {
+                "_key": "b0",
+                "variantId": "bv0",
+                "productId": "bp0",
+                "title": "Inhalt 0",
+                "subtitle": null,
+                "sku": "BSKU0",
+                "quantity": 2,
+                "price": 3590,
+                "vatRate": 13,
+                "vatAmount": 826
+              },
+              {
+                "_key": "b1",
+                "variantId": "bv1",
+                "productId": "bp1",
+                "title": "Inhalt 1",
+                "subtitle": null,
+                "sku": "BSKU1",
+                "quantity": 1,
+                "price": 1400,
+                "vatRate": 20,
+                "vatAmount": 467
+              }
+            ]
+          }
+        },
+        {
+          "_key": "k1",
+          "kind": "wine",
+          "variantId": "v000103-1",
+          "productId": "p1",
+          "title": "Wein 1",
+          "subtitle": null,
+          "sku": "SKU1",
+          "weight": null,
+          "price": 500,
+          "quantity": 3,
+          "vatRate": 20,
+          "vatAmount": 250
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 0,
+        "freeShippingReason": "product",
+        "taxSnapshot": {
+          "rate": 13,
+          "net": 0,
+          "vat": 0
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-FUENF",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-FUENF",
+            "_weak": true
+          },
+          "code": "FUENF",
+          "discountType": "fixed",
+          "value": 500,
+          "discountAmount": 500
+        }
+      ]
+    },
+    "wc": {
+      "id": 103,
+      "number": "000103",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "4.32",
+      "discount_tax": "0.68",
+      "shipping_total": "0.00",
+      "shipping_tax": "0.00",
+      "total": "109.80",
+      "total_tax": "14.75",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000103",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 1332105995,
+          "name": "Inhalt 0",
+          "product_id": 193487464,
+          "variation_id": 193487662,
+          "quantity": 4,
+          "sku": "BSKU0",
+          "price": 15.192477876106196,
+          "subtotal": "63.54",
+          "subtotal_tax": "8.26",
+          "total": "60.77",
+          "total_tax": "7.90",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "8.26",
+              "total": "7.90"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "bp0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "bv0"
+            },
+            {
+              "key": "_bundle_title",
+              "value": "Paket 0"
+            },
+            {
+              "key": "_bundle_sku",
+              "value": "SKU0"
+            },
+            {
+              "key": "_bundle_variant_id",
+              "value": "v000103-0"
+            }
+          ]
+        },
+        {
+          "id": 1332105996,
+          "name": "Inhalt 1",
+          "product_id": 193487465,
+          "variation_id": 193487663,
+          "quantity": 2,
+          "sku": "BSKU1",
+          "price": 11.158333333333335,
+          "subtotal": "23.33",
+          "subtotal_tax": "4.67",
+          "total": "22.32",
+          "total_tax": "4.46",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "4.67",
+              "total": "4.46"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "bp1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "bv1"
+            },
+            {
+              "key": "_bundle_title",
+              "value": "Paket 0"
+            },
+            {
+              "key": "_bundle_sku",
+              "value": "SKU0"
+            },
+            {
+              "key": "_bundle_variant_id",
+              "value": "v000103-0"
+            }
+          ]
+        },
+        {
+          "id": 202914880,
+          "name": "Wein 1",
+          "product_id": 5863655,
+          "variation_id": 1527765886,
+          "quantity": 3,
+          "sku": "SKU1",
+          "price": 3.9861111111111116,
+          "subtotal": "12.50",
+          "subtotal_tax": "2.50",
+          "total": "11.96",
+          "total_tax": "2.39",
+          "taxes": [
+            {
+              "id": 1147055383,
+              "subtotal": "2.50",
+              "total": "2.39"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p1"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000103-1"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-13",
+          "rate_id": 1147055353,
+          "label": "13%",
+          "compound": false,
+          "rate_percent": "13.00",
+          "tax_total": "7.90",
+          "shipping_tax_total": "0.00"
+        },
+        {
+          "id": 2,
+          "rate_code": "AT-20",
+          "rate_id": 1147055383,
+          "label": "20%",
+          "compound": false,
+          "rate_percent": "20.00",
+          "tax_total": "6.85",
+          "shipping_tax_total": "0.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "0.00",
+          "total_tax": "0.00",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "total": "0.00",
+              "subtotal": "0.00"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  },
+  {
+    "order": {
+      "_id": "order-000104",
+      "_createdAt": "2026-11-01T10:00:00Z",
+      "orderNumber": "000104",
+      "invoiceNumber": "000104",
+      "status": "created",
+      "paymentStatus": "succeeded",
+      "paymentIntentId": "pi_000104",
+      "payment": null,
+      "hasOpenWithdrawal": false,
+      "erpAcceptedAt": null,
+      "customer": {
+        "contactEmail": "test@example.com",
+        "locale": "de",
+        "billingAddress": null,
+        "shippingAddress": {
+          "name": null,
+          "prename": "A",
+          "lastname": "B",
+          "line1": "Str 1",
+          "line2": null,
+          "zip": "7000",
+          "city": "Eisenstadt",
+          "country": "AT",
+          "state": null,
+          "phone": null
+        }
+      },
+      "totals": {
+        "subtotal": 3000,
+        "shipping": 0,
+        "discount": 0,
+        "tax": 345,
+        "grandTotal": 3000,
+        "vatBreakdown": [
+          {
+            "rate": 13,
+            "net": 2655,
+            "vat": 345
+          }
+        ],
+        "totalVat": 345,
+        "currency": "EUR"
+      },
+      "orderItems": [
+        {
+          "_key": "k0",
+          "kind": "wine",
+          "variantId": "v000104-0",
+          "productId": "p0",
+          "title": "Wein 0",
+          "subtitle": null,
+          "sku": "SKU0",
+          "weight": null,
+          "price": 1500,
+          "quantity": 2,
+          "vatRate": 13,
+          "vatAmount": 345
+        }
+      ],
+      "fulfillment": {
+        "methodTitle": "DPD (AT)",
+        "methodType": "delivery",
+        "shippingCost": 0,
+        "freeShippingReason": "coupon",
+        "taxSnapshot": {
+          "rate": 13,
+          "net": 0,
+          "vat": 0
+        },
+        "trackingCode": null,
+        "packagingLines": null,
+        "pickupAddress": null,
+        "pickupInstructions": null
+      },
+      "appliedCoupons": [
+        {
+          "_key": "c-GRATIS",
+          "_type": "appliedCoupon",
+          "couponRef": {
+            "_type": "reference",
+            "_ref": "coupon-GRATIS",
+            "_weak": true
+          },
+          "code": "GRATIS",
+          "discountType": "freeShipping",
+          "value": null,
+          "discountAmount": 650
+        }
+      ]
+    },
+    "wc": {
+      "id": 104,
+      "number": "000104",
+      "status": "processing",
+      "currency": "EUR",
+      "prices_include_tax": true,
+      "date_created": "2026-11-01T11:00:00",
+      "date_created_gmt": "2026-11-01T10:00:00",
+      "date_paid": "2026-11-01T11:00:00",
+      "date_paid_gmt": "2026-11-01T10:00:00",
+      "discount_total": "0.00",
+      "discount_tax": "0.00",
+      "shipping_total": "0.00",
+      "shipping_tax": "0.00",
+      "total": "30.00",
+      "total_tax": "3.45",
+      "customer_id": 0,
+      "customer_note": "",
+      "billing": {
+        "first_name": "",
+        "last_name": "",
+        "company": "",
+        "address_1": "",
+        "address_2": "",
+        "city": "",
+        "state": "",
+        "postcode": "",
+        "country": "",
+        "phone": "",
+        "email": "test@example.com"
+      },
+      "shipping": {
+        "first_name": "A",
+        "last_name": "B",
+        "company": "",
+        "address_1": "Str 1",
+        "address_2": "",
+        "city": "Eisenstadt",
+        "state": "",
+        "postcode": "7000",
+        "country": "AT",
+        "phone": ""
+      },
+      "payment_method": "stripe",
+      "payment_method_title": "Stripe",
+      "transaction_id": "pi_000104",
+      "meta_data": [],
+      "line_items": [
+        {
+          "id": 202950816,
+          "name": "Wein 0",
+          "product_id": 5863654,
+          "variation_id": 1527766974,
+          "quantity": 2,
+          "sku": "SKU0",
+          "price": 13.274336283185841,
+          "subtotal": "26.55",
+          "subtotal_tax": "3.45",
+          "total": "26.55",
+          "total_tax": "3.45",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "subtotal": "3.45",
+              "total": "3.45"
+            }
+          ],
+          "meta_data": [
+            {
+              "key": "_sanity_product_id",
+              "value": "p0"
+            },
+            {
+              "key": "_sanity_variant_id",
+              "value": "v000104-0"
+            }
+          ]
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": 1,
+          "rate_code": "AT-13",
+          "rate_id": 1147055353,
+          "label": "13%",
+          "compound": false,
+          "rate_percent": "13.00",
+          "tax_total": "3.45",
+          "shipping_tax_total": "0.00"
+        }
+      ],
+      "shipping_lines": [
+        {
+          "id": 1,
+          "method_id": "delivery",
+          "method_title": "DPD (AT)",
+          "total": "0.00",
+          "total_tax": "0.00",
+          "taxes": [
+            {
+              "id": 1147055353,
+              "total": "0.00",
+              "subtotal": "0.00"
+            }
+          ]
+        }
+      ],
+      "fee_lines": []
+    }
+  }
+]

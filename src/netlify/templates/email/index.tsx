@@ -1,0 +1,134 @@
+/**
+ * Email template registry + render helper.
+ *
+ * Customers can override individual templates by passing a `templates` map
+ * to the notify function factory:
+ *
+ * ```ts
+ * import { createNotifyHandler } from '@itsapps/itsshops-core-front/functions/order-notify'
+ * import { OrderConfirmation } from './emails/OrderConfirmation'
+ *
+ * export default createNotifyHandler({
+ *   templates: { orderConfirmation: OrderConfirmation }
+ * })
+ * ```
+ */
+import * as React from 'react'
+import { render } from '@react-email/render'
+import type { ComponentType } from 'react'
+
+import { OrderEmail } from './OrderEmail'
+import { SimpleEmail } from './SimpleEmail'
+import type { EmailContext, OrderEmailProps, SimpleEmailProps } from './types'
+import type { MailType } from '../../types/orderTransitions'
+import { ORDER_SUMMARY_MAIL_TYPES } from '../../types/orderTransitions'
+import type { OrderDocument } from '../../types/checkout'
+import { mailKey } from './mail-keys'
+
+export { mailKey, pickupExtraLines } from './mail-keys'
+
+export { EmailLayout } from './EmailLayout'
+export { OrderEmail } from './OrderEmail'
+export { SimpleEmail } from './SimpleEmail'
+export { ShopOrderEmail } from './ShopOrderEmail'
+export type {
+  EmailAddress,
+  EmailBankAccount,
+  EmailContext,
+  EmailFormatPrice,
+  EmailShopSettings,
+  EmailTranslator,
+  OrderEmailProps,
+  ShopOrderEmailProps,
+  SimpleEmailProps,
+} from './types'
+
+/**
+ * Customer-supplied template overrides. Each entry replaces the built-in
+ * template for the given MailType. Both order-summary and simple templates
+ * receive their respective prop shapes.
+ */
+export type EmailTemplateOverrides = Partial<{
+  [K in MailType]: K extends (typeof ORDER_SUMMARY_MAIL_TYPES)[number]
+    ? ComponentType<OrderEmailProps>
+    : ComponentType<SimpleEmailProps>
+}>
+
+/**
+ * Render the matching email template for a given mailType.
+ *
+ * - Order-summary mailTypes render `OrderEmail` (or its override).
+ * - Refund mailTypes render `SimpleEmail` (or its override) using the
+ *   localized `emails.<mailType>.text` as the body and `emails.headline` as
+ *   the heading.
+ *
+ * Returns the rendered HTML string.
+ */
+/**
+ * Localized body of a refund mail for `amountCents`. A full-refund mail for less than the order
+ * total (the rest after earlier partial refunds) names the remainder and the total.
+ */
+export function refundMailText(
+  ctx: EmailContext,
+  mailType: MailType,
+  order: OrderDocument,
+  amountCents: number,
+): string {
+  // The order number tells the customer which order the refund belongs to.
+  const params = { amount: ctx.formatPrice(amountCents), orderNumber: order.orderNumber }
+  if (mailType === 'orderRefunded' && amountCents < order.totals.grandTotal) {
+    return ctx.t('emails.orderRefunded.textRemainder', {
+      ...params,
+      total: ctx.formatPrice(order.totals.grandTotal),
+    })
+  }
+  return ctx.t(`emails.${mailType}.text`, params)
+}
+
+export async function renderMailFor(
+  mailType: MailType,
+  ctx: EmailContext,
+  order: OrderDocument,
+  overrides?: EmailTemplateOverrides,
+  extras: {
+    /**
+     * Refunded amount in cents — interpolated as `{{amount}}` into the refund emails
+     * (resolved by `sendOrderNotification`; default: the order total).
+     */
+    refundAmount?: number
+    /** Personal message from the shop admin (plain text), shown below the intro text. */
+    customerMessage?: string
+  } = {},
+): Promise<string> {
+  const { refundAmount, customerMessage } = extras
+  const isOrderSummary = (ORDER_SUMMARY_MAIL_TYPES as readonly MailType[]).includes(mailType)
+
+  if (isOrderSummary) {
+    const Component =
+      (overrides?.[mailType] as ComponentType<OrderEmailProps> | undefined) ?? OrderEmail
+    return render(
+      <Component ctx={ctx} order={order} mailType={mailType} customerMessage={customerMessage} />,
+    )
+  }
+
+  const Component =
+    (overrides?.[mailType] as ComponentType<SimpleEmailProps> | undefined) ?? SimpleEmail
+  const headline = ctx.t('emails.headline', { customerName: order.customer.billingAddress.name })
+  // The simple mail types are the refund notifications, whose text states the refunded amount.
+  const text = refundMailText(ctx, mailType, order, refundAmount ?? order.totals.grandTotal)
+  return render(
+    <Component ctx={ctx} headline={headline} text={text} customerMessage={customerMessage} />,
+  )
+}
+
+/**
+ * Look up the localized subject for a mailType. With the order, `{{orderNumber}}` is filled in
+ * (used by the refund subjects) and a pickup order gets its pickup subject.
+ */
+export function subjectFor(
+  ctx: EmailContext,
+  mailType: MailType,
+  order?: Pick<OrderDocument, 'orderNumber' | 'fulfillment'>,
+): string {
+  return ctx.t(mailKey(mailType, order, 'subject'), order ? { orderNumber: order.orderNumber } : undefined)
+}

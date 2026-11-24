@@ -1,0 +1,271 @@
+import type { Config } from '../types'
+import * as proj from './projections'
+import { DISCOUNT_PROJECTION } from '../shared/discounts/projection'
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+export function extraFields(type: string, extensions?: Config['extensions']): string {
+  const extra = extensions?.fields?.[type]
+  return extra ? `,\n  ${extra}` : ''
+}
+
+export function buildModulesProjection(docType: string, extensions?: Config['extensions']): string {
+  const modules: Record<string, string> = { ...CORE_MODULE_PROJECTIONS }
+  for (const [type, ext] of Object.entries(extensions?.modules?.[docType] ?? {})) {
+    if (typeof ext === 'string') {
+      modules[type] = ext
+    } else {
+      const core = CORE_MODULE_PROJECTIONS[type] ?? '{ _type }'
+      modules[type] = core.trimEnd().replace(/\}$/, `,\n    ${ext.extraFields}\n  }`)
+    }
+  }
+  const conditions = Object.entries(modules)
+    .map(([type, projection]) => `_type == '${type}' => ${projection}`)
+    .join(',\n    ')
+  return `modules[disabled != true]{\n    _type,\n    ${conditions}\n  }`
+}
+
+// ---------------------------------------------------------------------------
+// Core module projections
+// ---------------------------------------------------------------------------
+
+export const CORE_MODULE_PROJECTIONS: Record<string, string> = {
+  carousel: `{
+    _type,
+    autoplay,
+    autoplayDelay,
+    loop,
+    fade,
+    preload,
+    "slides": slides[]${proj.i18nAltImage}
+  }`,
+  categoryList: `{
+    _type,
+    ${proj.i18nStringField('title')},
+    ${proj.refsField('categories')}
+  }`,
+  productList: `{
+    _type,
+    ${proj.i18nStringField('title')},
+    ${proj.refsField('products')},
+    "filters": filters[]{
+      _type == 'productFieldFilter' => { _type, field },
+      _type == 'wineFieldFilter' => { _type, field },
+      _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
+    }
+  }`,
+  productVariantList: `{
+    _type,
+    ${proj.i18nStringField('title')},
+    ${proj.refsField('products')}
+  }`,
+  shippingInfoModule: `{
+    _type,
+    ${proj.i18nStringField('paymentInfo')}
+  }`,
+  privacyPolicyModule: `{
+    _type,
+    "extraSections": extraSections[]{ ${proj.i18nStringField('heading')}, ${proj.i18nStringField('text')} },
+    ${proj.i18nStringField('dpoContact')}
+  }`,
+  youtube: `{ _type, url, showControls, autoload, autopause, start }`,
+}
+
+// ---------------------------------------------------------------------------
+// Document queries
+// ---------------------------------------------------------------------------
+
+export function buildProductQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'product']{
+  _id,
+  kind,
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('description')},
+  price,
+  compareAtPrice,
+  weight,
+  ${proj.i18nAltImageField('image')},
+  seo ${proj.seo},
+  ${proj.specificationsField()},
+  "categories": categories[]->${proj.category},
+  "manufacturers": manufacturers[]->${proj.manufacturer},
+  "taxCategory": taxCategory{ _ref }${extraFields('product', extensions)}
+}`
+}
+
+export function buildVariantQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'productVariant' && status != 'archived']{
+  _id,
+  _type,
+  _updatedAt,
+  status,
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('description')},
+  sku,
+  kind,
+  price,
+  compareAtPrice,
+  weight,
+  ${proj.i18nAltImageField('image')},
+  seo ${proj.seo},
+  ${proj.specificationsField()},
+  stock,
+  "categories": categories[]->${proj.category},
+  "manufacturers": manufacturers[]->${proj.manufacturer},
+  "taxCategory": taxCategory{ _ref },
+  wine,
+  "options": options[]->{ _id, sortOrder, "name": ${proj.i18nStringField('title')}, "group": group->{ _id, sortOrder, displayMode, "title": ${proj.i18nStringField('title')} } },
+  "bundleItems": bundleItems[]{ quantity, "variantId": product._ref },
+  "productId": product._ref${extraFields('variant', extensions)}
+}`
+}
+
+export function buildCategoryQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'category']{
+  _id,
+  _type,
+  _updatedAt,
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('description')},
+  sortOrder,
+  "parent": parent{ _ref },
+  seo ${proj.seo},
+  "filters": filters[]{
+    _type == 'productFieldFilter' => { _type, field },
+    _type == 'wineFieldFilter' => { _type, field },
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
+  }${extraFields('category', extensions)}
+}`
+}
+
+export function buildPageQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'page']{
+  _id,
+  _type,
+  _updatedAt,
+  ${proj.i18nStringField('title')},
+  "slug": ${proj.i18nSlugField('slug')},
+  ${buildModulesProjection('page', extensions)},
+  seo ${proj.seo}${extraFields('page', extensions)}
+}`
+}
+
+export function buildPostQuery(extensions?: Config['extensions']): string {
+  return `*[_type == 'post']{
+  _id,
+  _type,
+  _updatedAt,
+  ${proj.i18nStringField('title')},
+  "slug": ${proj.i18nSlugField('slug')},
+  publishedAt,
+  ${buildModulesProjection('post', extensions)},
+  seo ${proj.seo}${extraFields('post', extensions)}
+}`
+}
+
+function buildMenuItemProjection(depth: number, extraFields: string): string {
+  const children = depth > 0
+    ? `,\n    "children": children[]${buildMenuItemProjection(depth - 1, extraFields)}`
+    : ''
+  return `{
+    _key,
+    ${proj.i18nStringField('title')},
+    linkType,
+    "url": ${proj.i18nStringField('url')},
+    systemPage,
+    "internal": internalLinkReference->{ _id, _type, "slug": slug.current }${extraFields}${children}
+  }`
+}
+
+/** `maxDepth` = menu levels, top level included (as core-back): 1 = flat, no `children` fetched;
+ *  2 = one level of submenu children. */
+export function buildMenuQuery(extensions?: Config['extensions'], maxDepth = 1): string {
+  const itemProjection = buildMenuItemProjection(Math.max(0, maxDepth - 1), extraFields('menuItem', extensions))
+  return `*[_type == 'menu']{
+  _id,
+  "title": ${proj.i18nStringField('title')},
+  "items": items[]${itemProjection}
+}`
+}
+
+export function buildSettingsQuery(extensions: Record<string, string> = {}): string {
+  const companyFields = extensions.company ? `,\n    ${extensions.company}` : ''
+  return `*[_type == 'settings'][0]{
+  _id,
+  ${proj.i18nStringField('siteTitle')},
+  ${proj.i18nStringField('siteShortDescription')},
+  "defaultShareImage": defaultShareImage ${proj.baseImage},
+  "homePage": homePage{ _ref },
+  "privacyPage": privacyPage{ _ref },
+  "mainMenus": mainMenus[]{ _ref },
+  "footerMenus": footerMenus[]{ _ref },
+  gtmId,
+  "company": company {
+    ${proj.i18nStringField('name')},
+    owner,
+    email,
+    phone,
+    vatId,
+    registerNumber,
+    registerCourt,
+    "address": address { line1, line2, zip, ${proj.i18nStringField('city')}, country }${companyFields}
+  }
+}`
+}
+
+/** Shipping methods for the "Versand & Zahlung" module — the same documents the checkout prices with. */
+export function buildShippingMethodsQuery(): string {
+  return `*[_type == 'shippingMethod'] | order(_createdAt asc){
+  _id,
+  ${proj.i18nStringField('title')},
+  ${proj.i18nStringField('deliveryTime')},
+  methodType,
+  pickupFee,
+  "pickupAddress": pickupAddress{ line1, line2, zip, ${proj.i18nStringField('city')}, country },
+  ${proj.i18nStringField('pickupInstructions')},
+  pickupHoldDays,
+  freeShippingThreshold,
+  "countries": eligibleCountries[]->{ countryCode, enabled },
+  rates[]{ maxWeight, price },
+  packagingGroups[]{ packages[]{ places, price }, bottles[]{ volume, perPlace } }
+}`
+}
+
+export function buildShopSettingsQuery(): string {
+  return `*[_type == 'shopSettings'][0]{
+  _id,
+  "shopPage": shopPage{ _ref },
+  "termsPage": termsPage{ _ref },
+  "withdrawalPolicyPage": withdrawalPolicyPage{ _ref },
+  "shippingInfoPage": shippingInfoPage{ _ref },
+  "defaultCountry": defaultCountry->{ _id, countryCode },
+  freeShippingCalculation,
+  stockThreshold,
+  "defaultTaxCategory": defaultTaxCategory->{ _id, ${proj.i18nStringField('title')}, "code": code.current },
+  orderNumberPrefix,
+  invoiceNumberPrefix,
+  billingAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
+  bankAccount { name, bic, iban },
+  returnAddress { line1, line2, zip, ${proj.i18nStringField('city')}, country },
+  returnShippingBorneBy,
+  ${proj.i18nStringField('returnPolicyNote')},
+  withdrawalPeriodStart,
+  withdrawalExceptions,
+  "filters": filters[]{
+    _type == 'productFieldFilter' => { _type, field },
+    _type == 'wineFieldFilter' => { _type, field },
+    _type == 'reference' => { _type, "_ref": _ref, "title": @->${proj.i18nStringField('title')} }
+  }
+}`
+}
+
+/**
+ * The build's automatic shipping discounts (enabled; dates/limits filtered by `isUnconditional`)
+ * — they derive `ResolvedVariant.grantsFreeShipping`. Same projection as checkout's
+ * `CHECKOUT_QUERY`, so both sides read one shape.
+ */
+export function buildAutomaticShippingDiscountsQuery(): string {
+  return `*[_type == "discount" && trigger == "automatic" && target == "shipping" && enabled == true]${DISCOUNT_PROJECTION}`
+}

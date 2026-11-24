@@ -1,0 +1,483 @@
+import type { WithdrawalPeriodStart } from '../shared/withdrawal-instructions'
+import type { VinofactWine } from './vinofact'
+
+type SanityImageHotspot = {
+  _type: 'sanity.imageHotspot'
+  x?: number
+  y?: number
+  height?: number
+  width?: number
+}
+
+type SanityImageCrop = {
+  _type: 'sanity.imageCrop'
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
+
+export type SearchEntry = {
+  /** Unique identifier — required by MiniSearch */
+  id: string
+  /** Page URL — required for linking results */
+  slug: string
+  [key: string]: unknown
+}
+
+/**
+ * Standard search result shape understood by the core search renderer.
+ * Return this from buildEntry / buildProductEntry for zero-config rendering.
+ * Extends SearchEntry — extra fields are passed through to custom renderers.
+ */
+export type SearchItem = SearchEntry & {
+  title: string
+  /** Secondary line, e.g. "2021 · 750 ml" or option values */
+  subtitle?: string | null
+  /** Price in cents */
+  price?: number | null
+  image?: import('./config').SearchImageData | null
+}
+
+/**
+ * Resolved types — all localized fields are plain strings, ready for templates.
+ * These are what the cms global data exposes to Nunjucks.
+ */
+
+export type ResolvedImage = {
+  asset: {
+    _ref: string
+    dimensions?: { width: number; height: number; aspectRatio: number }
+    palette: any
+  }
+  alt: string
+  hotspot?: SanityImageHotspot
+  crop?: SanityImageCrop
+}
+
+/**
+ * What the image functions (`image`, `preload`, `imageSrcsetData`, `imageUrl`, …) accept: a
+ * `ResolvedImage`, or a raw Sanity image straight from a query. Following the asset reference
+ * (`asset->{ _id, … }`) yields the asset document's `_id` instead of the reference's `_ref` — both
+ * hold the same id. Portable-text image blocks reach the image functions in that raw form.
+ */
+export type SanityImageInput = {
+  asset: ({ _ref: string; _id?: string } | { _id: string; _ref?: string }) & {
+    dimensions?: { width: number; height: number; aspectRatio: number }
+    palette?: any
+  }
+  alt?: string | null
+  hotspot?: SanityImageHotspot
+  crop?: SanityImageCrop
+}
+
+export type ResolvedCarousel = {
+  autoplay: boolean
+  autoplayDelay: number
+  loop: boolean
+  fade: boolean
+  preload: boolean
+  slides: ResolvedImage[]
+}
+
+export type ResolvedSeo = {
+  metaTitle: string
+  metaDescription: string
+  shareTitle: string
+  shareDescription: string
+  shareImage: ResolvedImage | null
+}
+
+export type ResolvedCategory = {
+  _id: string
+  _type: 'category'
+  _updatedAt: string | null
+  title: string
+  description: string
+  slug: string
+  url: string
+  locale: string
+  sortOrder: number
+  parentId: string | null
+  seo: ResolvedSeo
+  /** Filter group keys to show on the category page (resolved from Sanity filter config) */
+  filters: ResolvedFilterKey[]
+}
+
+export type ResolvedManufacturer = {
+  _id: string
+  /** Named `name`, not `title`, all the way down: the Sanity field, the GROQ
+   *  projection, the resolver and the product macro all use it. Only this type
+   *  said `title`, which is what the compiler was complaining about. */
+  name: string
+}
+
+export type ResolvedOption = {
+  _id: string
+  name: string
+  /** Editor-defined order within its group. */
+  sortOrder: number
+  /** Lightweight back-ref to the owning group; the full group axis lives in ResolvedVariantAxis. */
+  group: { _id: string; title: string }
+}
+
+/**
+ * A dimension a product varies along: an option group (physical/digital) or
+ * vintage / volume (wine). Only axes that actually vary are emitted. Each value
+ * carries its nearest-fallback target variant, precomputed in the resolver.
+ */
+export type ResolvedVariantAxis = {
+  /** 'vintage' | 'volume' for wine, or the option group's _id for physical/digital. */
+  key: string
+  /** Group title for options; null for wine axes (the frontend labels those by key via i18n). */
+  title: string | null
+  /** CMS display hint for option groups (dropdown | list); null for wine / legacy groups. */
+  displayMode: 'dropdown' | 'list' | null
+  /** Value formatting hint for the frontend ('volume' → apply formatVolume). */
+  format: 'volume' | null
+  options: {
+    /** Raw axis value: option _id (options), or the vintage / volume number (wine). */
+    value: string | number
+    /** Display label (option name, or the raw vintage/volume as text — volume is reformatted via `format`). */
+    label: string
+    /** Nearest-fallback target variant URL when this value is chosen from the current variant. */
+    url: string
+    /** True if this is the current variant's value on this axis. */
+    selected: boolean
+    /** Status of the target variant — anything other than 'active' should render greyed with its label. */
+    status: 'active' | 'comingSoon' | 'soldOut' | 'archived' | 'unavailable'
+  }[]
+}
+
+export type ResolvedSpecification = {
+  label: string
+  value: string
+}
+
+export type ResolvedBundleItem = {
+  quantity: number
+  variant: {
+    _id: string
+    title: string
+    label: string
+    labels: string[]
+    url: string | null
+    kind: string
+    volume: number | null
+    vintage: string | null
+    /** Explicit shipping weight (grams) of the child variant, else its product's; null when unset. */
+    weight: number | null
+    options: { _id: string; name: string }[]
+  }
+}
+
+export type ResolvedMenuItem = {
+  _key: string
+  title: string
+  linkType: 'internal' | 'external' | 'submenu' | 'system'
+  /** External URL, or the resolved route for `linkType: 'system'`. */
+  url: string | null
+  internal: { _id: string; _type: string; slug: string } | null
+  /** Fixed core route this item links to (`linkType: 'system'`), e.g. `'orderWithdraw'`. */
+  systemPage: string | null
+  children: ResolvedMenuItem[]
+  // extended fields land here at runtime (e.g. extra images)
+  [key: string]: unknown
+}
+
+export type ResolvedMenu = {
+  _id: string
+  title: string
+  items: ResolvedMenuItem[]
+}
+
+export type ResolvedAddress = {
+  line1: string
+  line2: string
+  zip: string
+  city: string
+  country: string
+}
+
+export type ResolvedCompany = {
+  name: string
+  owner: string
+  address: ResolvedAddress | null
+  email: string | null
+  phone: string | null
+  vatId: string | null
+  registerNumber: string | null
+  registerCourt: string | null
+  [key: string]: unknown
+}
+
+export type ResolvedSettings = {
+  _id: string
+  siteTitle: string
+  siteShortDescription: string
+  homePageId: string | null
+  privacyPageId: string | null
+  mainMenus: string[]
+  footerMenus: string[]
+  gtmId: string | null
+  company: ResolvedCompany | null
+  defaultShareImage: ResolvedImage | null
+}
+
+/** A shipping method as the "Versand & Zahlung" module shows it (prices: gross cents). */
+export type ResolvedShippingMethod = {
+  _id: string
+  title: string
+  deliveryTime: string | null
+  methodType: 'delivery' | 'pickup'
+  pickupFee: number | null
+  /** Pickup only: where the order is collected, the instructions, the hold period (days). */
+  pickupAddress: ResolvedAddress | null
+  pickupInstructions: string | null
+  pickupHoldDays: number | null
+  freeShippingThreshold: number | null
+  /** Enabled tax countries this method ships to (ISO codes). */
+  countries: string[]
+  /** Weight rates, ascending: up to `maxWeight` kg → `price`. */
+  rates: Array<{ maxWeight: number | null; price: number }>
+  /** Wine packaging: box types — bottle sizes (ml, largest first, `perPlace` bottles per place)
+   *  and boxes (places ascending, gross price). */
+  packagingGroups: Array<{
+    bottles: Array<{ volume: number; perPlace: number }>
+    packages: Array<{ places: number; price: number }>
+  }>
+}
+
+export type ResolvedShopSettings = {
+  _id: string
+  shopPageId: string | null
+  termsPageId: string | null
+  withdrawalPolicyPageId: string | null
+  shippingInfoPageId: string | null
+  defaultCountry: { _id: string; countryCode: string } | null
+  freeShippingCalculation: 'beforeDiscount' | 'afterDiscount'
+  stockThreshold: number | null
+  defaultTaxCategory: { _id: string; title: string; code: string } | null
+  orderNumberPrefix: string | null
+  invoiceNumberPrefix: string | null
+  billingAddress: ResolvedAddress | null
+  bankAccount: { name: string; bic: string; iban: string } | null
+  /** Where withdrawn goods go; null → company / billing address. */
+  returnAddress: ResolvedAddress | null
+  /** Who pays return postage — drives the withdrawal instructions + mails. Unset → 'customer'. */
+  returnShippingBorneBy: 'customer' | 'merchant'
+  returnPolicyNote: string | null
+  /** FAGG Anhang I note [1] variant — see `shared/withdrawal-instructions.ts`. */
+  withdrawalPeriodStart: WithdrawalPeriodStart
+  /** Statutory exceptions (§ 18 FAGG) listed next to the instructions. */
+  withdrawalExceptions: string[]
+  /** Global default filters applied when a module/category defines no local filters */
+  filters: ResolvedFilterKey[]
+}
+
+/**
+ * Resolved wine data: Sanity fields (volume, vintage) merged with Vinofact API data.
+ * Vinofact fields are optional — only present when vinofact is enabled and the field
+ * is included in VinofactConfig.fields.
+ */
+export type ResolvedWine = {
+  volume: number | null
+  vintage: string | null
+} & Partial<VinofactWine>
+
+export type FilterValue = {
+  value: string   // URL-safe slug
+  label: string   // display label
+  count: number   // number of active variants with this value
+}
+
+export type FilterGroup = {
+  key: string         // URL param key (e.g. 'vintage', 'groesse')
+  label: string       // display label (e.g. 'Jahrgang', 'Größe')
+  values: FilterValue[]
+}
+
+/** Resolved filter key — references either a wine field key or a slugified option group title */
+export type ResolvedFilterKey = string
+
+export type ResolvedVariant = {
+  _id: string
+  _type: 'productVariant'
+  _updatedAt: string | null
+  slug: string
+  url: string
+  locale: string
+  /**
+   * Effective status (`effectiveStatus` in `resolve/variants.ts`): a bundle with a missing or
+   * inactive item is `soldOut`; `unavailable` (resolved only, not a schema value) = no price to
+   * sell at (the variant's, its product's, or a bundle item's).
+   */
+  status: 'active' | 'comingSoon' | 'soldOut' | 'archived' | 'unavailable'
+  title: string
+  label: string
+  sku: string
+  kind: 'wine' | 'physical' | 'digital' | 'bundle'
+  price: number
+  compareAtPrice: number | null
+  image: ResolvedImage | null
+  productImage: ResolvedImage | null
+  seo: ResolvedSeo
+  categories: ResolvedCategory[]
+  manufacturers: ResolvedManufacturer[]
+  taxCategoryId: string | null
+  stock: number | null
+  /** Explicit shipping weight (grams) — the variant's, else the product's; null when unset (wines
+   *  are then estimated from the volume, see `resolveVariantWeight`). */
+  weight: number | null
+  /** Bundles only: the items at their single prices × quantity, when more than the bundle's price;
+   *  else null. Not a former price — rendered by `productBundleItemsTotal`, never struck through. */
+  bundleItemsTotal: number | null
+  /** The whole order ships free when the cart holds this variant — derived from the automatic
+   *  shipping discounts without conditions (`applyBuildShippingDiscounts`); false for digital. */
+  grantsFreeShipping: boolean
+  wine: ResolvedWine | null
+  options: ResolvedOption[]
+  /** The dimensions the product varies along (option groups, or wine vintage/volume). Drives the variant selector. */
+  variantAxes: ResolvedVariantAxis[]
+  bundleItems: ResolvedBundleItem[]
+  /** Editor plain-text description (variant's, else product's); null when unset. For wines it takes
+   *  precedence over `wine.description` (VinoFact HTML). Render with the `paragraphs` filter. */
+  description: string | null
+  /** Label/value lines ("Material: 100% Baumwolle") — the variant's own list, else the product's. */
+  specifications: ResolvedSpecification[]
+  /** The parent product; `description` is the product's own (not the variant's) plain text. */
+  product: { _id: string; title: string; description: string | null }
+  siblings: Array<{ _id: string; title: string; label: string; labels: string[]; url: string; status: string; kind: string; price: number | null; volume: number | null; vintage: string | null }>
+  /** URL-safe filter attributes for client-side filtering. Key = filter group key, value = slugified values. */
+  filterAttributes: Record<string, string[]>
+  // extended fields land here at runtime (e.g. isLimited from customer extensions)
+  [key: string]: unknown
+}
+
+export type ResolvedPage = {
+  _id: string
+  _type: 'page'
+  _updatedAt: string | null
+  title: string
+  slug: string
+  url: string
+  locale: string
+  modules: unknown[]
+  seo: ResolvedSeo
+  [key: string]: unknown
+}
+
+export type ResolvedPost = {
+  _id: string
+  _type: 'post'
+  _updatedAt: string | null
+  title: string
+  slug: string
+  url: string
+  locale: string
+  publishedAt: string | null
+  modules: unknown[]
+  seo: ResolvedSeo
+  [key: string]: unknown
+}
+
+/** The full cms global data object exposed to Eleventy templates */
+export type CmsLocaleData = {
+  products: ResolvedVariant[]
+  categories: ResolvedCategory[]
+  filterGroups: FilterGroup[]
+  pages: ResolvedPage[]
+  posts: ResolvedPost[]
+  menus: ResolvedMenu[]
+  settings: ResolvedSettings | null
+  shopSettings: ResolvedShopSettings | null
+  /** Shipping methods (shop only) — rendered by the shippingInfoModule. */
+  shippingMethods: ResolvedShippingMethod[]
+  /** Any active variant makes the whole order ship free (`grantsFreeShipping`, derived from the
+   *  automatic shipping discounts) — the "Versand & Zahlung" module then says so. Follows the
+   *  content, not a config flag. */
+  hasFreeShippingProducts: boolean
+  /** Sanity _id → resolved URL for the current locale. Used by portableTextToHTML for internal links. */
+  urlMap: Record<string, string>
+  /** Sanity _id → resolved document (variant, category, page, or post) for the current locale. */
+  docMap: Record<string, ResolvedVariant | ResolvedCategory | ResolvedPage | ResolvedPost>
+  /** URL of the home page for the current locale. */
+  homeUrl: string
+  /** URL of the shop page for the current locale. */
+  shopUrl: string
+  /** URL of the privacy page for the current locale. */
+  privacyUrl: string
+  /** URL of the terms page for the current locale. */
+  termsUrl: string
+  /** URL of the withdrawal-policy (Widerrufsbelehrung) page for the current locale. */
+  withdrawalPolicyUrl: string
+  /** "Versand & Zahlung" page (`shopSettings.shippingInfoPage`), `'#'` when unset. */
+  shippingInfoUrl: string
+  /** URL of the checkout page for the current locale. */
+  checkoutUrl: string
+  /** URL of the order confirmation page for the current locale. */
+  orderThanksUrl: string
+  /** URL of the login page for the current locale. */
+  loginUrl: string
+  /** URL of the register page for the current locale. */
+  registerUrl: string
+  /** URL of the password recovery page for the current locale. */
+  recoverUrl: string
+  /** URL of the account page for the current locale. */
+  accountUrl: string
+  /** URL of the email confirmation page for the current locale. */
+  confirmUrl: string
+  /** URL of the email confirmation success page for the current locale. */
+  confirmSuccessUrl: string
+  /** URL of the registration success page for the current locale. */
+  registrationSuccessUrl: string
+  /** URL of the password reset page for the current locale. */
+  resetUrl: string
+  /** URL of the password reset success page for the current locale. */
+  resetSuccessUrl: string
+  /** URL of the password recovery success page for the current locale. */
+  recoverSuccessUrl: string
+  /** URL of the newsletter confirmation (double opt-in) page for the current locale. */
+  newsletterConfirmUrl: string
+  /** URL of the newsletter confirmation success page for the current locale. */
+  newsletterConfirmSuccessUrl: string
+  /** URL of the newsletter unsubscribe page for the current locale. */
+  newsletterUnsubscribeUrl: string
+  /** URL of the newsletter unsubscribe success page for the current locale. */
+  newsletterUnsubscribeSuccessUrl: string
+  /** URL of the right-of-withdrawal ("Widerruf") page for the current locale. */
+  orderWithdrawUrl: string
+  /** URL of the withdrawal success page for the current locale. */
+  orderWithdrawSuccessUrl: string
+  /** Search index entries for the current locale. Empty array when search is not configured. */
+  searchIndex: SearchEntry[]
+  /** Fields passed to MiniSearch for full-text indexing. */
+  searchFields: string[]
+  [key: string]: unknown
+}
+
+export type SitemapEntry = {
+  url: string
+  lastmod: string | null
+  alternates: { locale: string; url: string }[]
+}
+
+export type Sitemap = {
+  permalink: string
+  entries: SitemapEntry[]
+}
+
+/**
+ * Top-level cms global data shape.
+ * - cms[locale]   → per-locale data for layout/component templates
+ * - cms.products  → flat array (all locales) for Eleventy pagination templates
+ */
+export type CmsData = {
+  products:   (ResolvedVariant  & { locale: string })[]
+  categories: (ResolvedCategory & { locale: string })[]
+  pages:      (ResolvedPage     & { locale: string })[]
+  posts:      (ResolvedPost     & { locale: string })[]
+  sitemaps:   Sitemap[]
+  llms:    string
+  [locale: string]: CmsLocaleData | unknown
+}

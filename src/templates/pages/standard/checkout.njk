@@ -1,0 +1,14 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].checkoutUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+pageKey: checkoutUrl
+titleKey: staticPages.checkout.title
+---
+{%- include "overridable/checkout.njk" -%}

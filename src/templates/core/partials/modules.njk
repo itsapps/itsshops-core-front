@@ -1,0 +1,25 @@
+{#
+  Renders a modules array.
+  Requires: modules (array), _locale (string)
+
+  Dispatch is purely file-based: for each module, looks up
+  overridable/modules/{_type}.njk — customer-overridable, ignore missing.
+  Core built-ins live in overridable/modules/ and can be overridden per project.
+  Custom module types: drop src/_includes/overridable/modules/{type}.njk.
+#}
+{% for module in modules %}
+  {%- set _isFirstModule = loop.first -%}
+  {%- set _moduleContent -%}
+    {%- include "overridable/modules/" + module._type + ".njk" ignore missing -%}
+  {%- endset -%}
+  {%- if not _moduleContent -%}
+    {{- ("No template found for module type: " + module._type) | log -}}
+  {%- endif -%}
+  {% block before_module %}{% endblock %}
+  <div class="module module--{{ module._type }}">
+    {% block module_content %}
+    {{- _moduleContent | safe -}}
+    {% endblock %}
+  </div>
+  {% block after_module %}{% endblock %}
+{% endfor %}

@@ -1,0 +1,141 @@
+/**
+ * Shared types for server-rendered email templates.
+ *
+ * Templates are decoupled from the GROQ projection: the notify function builds
+ * an `EmailShopSettings` from a fresh query and hands it (plus the loaded order)
+ * to whichever template the mailType resolves to.
+ */
+import type { OrderDocument } from '../../types/checkout'
+import type { WithdrawalInstructions, WithdrawalPeriodStart } from '../../../shared/withdrawal-instructions'
+import type { MailType } from '../../types/orderTransitions'
+
+export type EmailAddress = {
+  line1: string
+  line2?: string | null
+  zip: string
+  city: string
+  country: string
+}
+
+/** `settings.company` — business details (UGB §14 / ECG §5) for the mail footer. */
+export type EmailCompany = {
+  name: string | null
+  owner: string | null
+  email: string | null
+  phone: string | null
+  vatId: string | null
+  /** Firmenbuchnummer — only when registered. */
+  registerNumber: string | null
+  /** Firmenbuchgericht — only when registered. */
+  registerCourt: string | null
+  address: EmailAddress | null
+}
+
+export type EmailBankAccount = {
+  name: string
+  bic: string
+  iban: string
+}
+
+/**
+ * Minimal shop settings shape required to render emails.
+ * The notify function constructs this from a GROQ query against shopSettings + settings.
+ */
+export type EmailShopSettings = {
+  /** Display name for the shop (from settings.siteTitle or similar). */
+  shopName: string
+  /** Sender display name (from shopSettings.senderName). */
+  senderName: string
+  /** Sender email (from shopSettings.senderEmail). */
+  senderEmail: string
+  /** Public shop URL — used for header logo link and tracking links. */
+  baseUrl: string
+  /** Optional logo URL. When omitted, the header falls back to the shopName text. */
+  logoUrl?: string | null
+  /** Logo intrinsic width (px) — required if logoUrl is set. */
+  logoWidth?: number | null
+  /** Logo intrinsic height (px) — required if logoUrl is set. */
+  logoHeight?: number | null
+  /** Footer business address. */
+  billingAddress: EmailAddress | null
+  /** Bank account, optionally rendered on invoices. */
+  bankAccount: EmailBankAccount | null
+  /** Order/invoice prefixes (mainly used by the PDF invoice). */
+  orderNumberPrefix: string | null
+  invoiceNumberPrefix: string | null
+  /** Where withdrawn goods are returned. Falls back to billingAddress when absent. */
+  returnAddress?: EmailAddress | null
+  /** Who bears return postage (drives the withdrawal email wording). Defaults to 'customer'. */
+  returnShippingBorneBy?: 'customer' | 'merchant'
+  /** Optional extra return instructions shown in the withdrawal confirmation email. */
+  returnPolicyNote?: string | null
+  /**
+   * Recipient of every mail *to the shop* (order-confirmation BCC, withdrawal notifications):
+   * `settings.shopNotificationEmail`, falling back to `senderEmail`.
+   */
+  shopNotificationEmail?: string
+  /** Business details for the footer; only filled fields are rendered. */
+  company?: EmailCompany | null
+  /** FAGG Anhang I note [1] variant for the generated withdrawal instructions. */
+  withdrawalPeriodStart?: WithdrawalPeriodStart
+  /** § 18 exceptions listed next to the instructions. */
+  withdrawalExceptions?: string[]
+}
+
+/**
+ * Translator function passed into templates. Bound to a specific locale.
+ * Supports `{{name}}` interpolation via `params`.
+ */
+export type EmailTranslator = (key: string, params?: Record<string, string | number>) => string
+
+/**
+ * Localized currency formatter bound to a specific locale + currency.
+ */
+export type EmailFormatPrice = (cents: number) => string
+
+/**
+ * Context object passed to every email template render.
+ */
+export type EmailContext = {
+  locale: string
+  t: EmailTranslator
+  formatPrice: EmailFormatPrice
+  settings: EmailShopSettings
+  /** Absolute URL of the withdrawal page. Set when the withdrawal section is on (default). */
+  withdrawUrl?: string
+  /**
+   * Full withdrawal instructions + model form for the confirmation (same builder as the website
+   * module). Absent when settings are incomplete → the mail falls back to the short notice.
+   */
+  withdrawalInstructions?: WithdrawalInstructions | null
+}
+
+export type OrderEmailProps = {
+  ctx: EmailContext
+  order: OrderDocument
+  mailType: MailType
+  /** Optional personal message from the shop admin (plain text), shown below the intro text. */
+  customerMessage?: string
+}
+
+/** Props of the shop's new-order notification (`ShopOrderEmail`). `ctx.locale` = shop locale. */
+export type ShopOrderEmailProps = {
+  ctx: EmailContext
+  order: OrderDocument
+  /** Link that opens the order in the Studio (from `SANITY_STUDIO_URL`); absent when unset. */
+  studioOrderUrl?: string
+}
+
+export type SimpleEmailProps = {
+  ctx: EmailContext
+  /** Heading shown above the body text. Optional — falls back to a generic greeting. */
+  headline?: string
+  /** Body text shown in the email. Plain string; line breaks become `<br/>`. */
+  text: string
+  /** Optional call-to-action button rendered below the body. Used by auth emails (confirm, reset, invite). */
+  cta?: { url: string; label: string }
+  /** Optional small muted link below the CTA (e.g. a newsletter unsubscribe link). */
+  footerLink?: { url: string; label: string }
+  /** Optional personal message from the shop admin (plain text), shown below the body text. */
+  customerMessage?: string
+}

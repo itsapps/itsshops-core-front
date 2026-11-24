@@ -1,0 +1,23 @@
+import { sanityApiVersion } from '../../config/constants';
+import { SanityClientConfig } from '../../types';
+
+import { createClient } from '@sanity/client';
+import type { SanityClient } from '@sanity/client';
+import { createImageUrlBuilder, type ImageUrlBuilder } from '@sanity/image-url'
+
+export { type SanityClient } from '@sanity/client';
+
+export function createSanityClient(config: SanityClientConfig): SanityClient {
+  const retryDelay = config.retryDelay ?? (() => 100)
+  return createClient({
+    ...config,
+    useCdn: false,
+    apiVersion: sanityApiVersion,
+    maxRetries: config.maxRetries || 5,
+    retryDelay,
+  })
+}
+
+export function createImageBuilder(client: SanityClient): ImageUrlBuilder {
+  return createImageUrlBuilder(client)
+}

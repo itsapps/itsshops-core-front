@@ -1,0 +1,555 @@
+import { slugify as coreSlugify } from '../slugify'
+import { stegaClean } from '@sanity/client/stega'
+import type { Locale, ResolveContext, ResolveHooks, PermalinkTranslations } from '../../types'
+import type { ResolvedCategory, ResolvedVariant } from '../../types/data'
+import { resolveString } from '../localizers'
+import { formatVolumeMl } from '../../filters'
+import { buildFilterAttributes, accumulateFilterGroups, mergeBundleFilterAttributes, type FilterAccumulator } from './filters'
+import { intlLocale } from '../../i18n/format-locale'
+import { matchesSelector, withAncestors, type DiscountInput, type SelectorLine } from '../../shared/discounts'
+
+// ---------------------------------------------------------------------------
+// Slug generation
+// ---------------------------------------------------------------------------
+
+function buildVariantLabel(
+  title: string,
+  kind: string,
+  variant: any,
+  ctx: ResolveContext,
+): { labels: string[]; label: string } {
+  switch (kind) {
+    case 'wine': {
+      const parts: string[] = []
+      if (variant.wine?.volume)  parts.push(formatVolumeMl(variant.wine.volume, ctx.units.volume, intlLocale(ctx.locale)))
+      if (variant.wine?.vintage) parts.push(String(variant.wine.vintage))
+      return { label: parts.length ? parts.join(' · ') : title, labels: parts.length ? parts : [title] }
+    }
+    case 'physical':
+    case 'digital': {
+      const optionNames = (variant.options ?? [])
+        .map((o: any) => resolveString(o.name, ctx.locale, ctx.defaultLocale))
+        .filter(Boolean)
+      return {
+        label: optionNames.length ? optionNames.join(' · ') : title,
+        labels: optionNames.length ? optionNames : [title]
+      }
+    }
+    default:
+      return { label: title, labels: [title]}
+  }
+}
+
+function generateVariantSlug(
+  variant: any,
+  product: any,
+  locale: Locale,
+  defaultLocale: Locale,
+): string {
+  const title = stegaClean(
+    resolveString(variant.title, locale, defaultLocale)
+    || resolveString(product.title, locale, defaultLocale)
+    || variant.sku
+    || variant._id
+  )
+  const kind = variant.kind ?? product.kind
+  // Slugs use fixed 'ml' — volume unit config must not change existing URLs
+  switch (kind) {
+    case 'wine': {
+      const parts = [title]
+      if (variant.wine?.volume)  parts.push(`${variant.wine.volume}ml`)
+      if (variant.wine?.vintage) parts.push(variant.wine.vintage)
+      return coreSlugify(parts.join(' '))
+    }
+    case 'physical':
+    case 'digital': {
+      const optionNames = (variant.options ?? [])
+        .map((o: any) => resolveString(o.name, locale, defaultLocale))
+        .filter(Boolean)
+      return coreSlugify([title, ...optionNames].join(' '))
+    }
+    default:
+      return coreSlugify(title)
+  }
+}
+
+function deduplicateSlug(slug: string, used: Set<string>): string {
+  if (!used.has(slug)) { used.add(slug); return slug }
+  let n = 2
+  while (used.has(`${slug}-${n}`)) n++
+  const unique = `${slug}-${n}`
+  used.add(unique)
+  return unique
+}
+
+function mergeSeоFallback(variantSeo: any, productSeo: any): any {
+  if (!variantSeo && !productSeo) return null
+  if (!variantSeo) return productSeo
+  if (!productSeo) return variantSeo
+  return {
+    metaTitle:        variantSeo.metaTitle?.length        ? variantSeo.metaTitle        : productSeo.metaTitle,
+    metaDescription:  variantSeo.metaDescription?.length  ? variantSeo.metaDescription  : productSeo.metaDescription,
+    shareTitle:       variantSeo.shareTitle?.length       ? variantSeo.shareTitle       : productSeo.shareTitle,
+    shareDescription: variantSeo.shareDescription?.length ? variantSeo.shareDescription : productSeo.shareDescription,
+    shareImage:       variantSeo.shareImage               ?? productSeo.shareImage,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Wine enrichment
+// ---------------------------------------------------------------------------
+
+/**
+ * Recursively resolve locale maps ({ de: '...', en: '...', zhCn: '...' }) anywhere
+ * in a Vinofact API response — top-level fields, nested objects, and arrays.
+ * Plain scalars pass through unchanged.
+ *
+ * Vinofact exposes `LocalizedString` objects with one camelCased field per
+ * locale — `de`, `en`, `zhCn` (for `zh-cn`), etc.
+ */
+function localeFieldName(locale: string): string {
+  return locale.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+}
+
+function isLocaleKey(k: string): boolean {
+  return /^[a-z]{2}([A-Z][a-z]+)?$/.test(k)
+}
+
+/** Exported for tests only (not re-exported from the package). */
+export function resolveLocaleMaps(value: unknown, locale: string, defaultLocale: string): unknown {
+  if (value === null || value === undefined) return value
+  if (Array.isArray(value)) {
+    return value.map(item => resolveLocaleMaps(item, locale, defaultLocale))
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value as object)
+    if (keys.length > 0 && keys.every(isLocaleKey)) {
+      const v = value as Record<string, unknown>
+      return v[localeFieldName(locale)] ?? v[localeFieldName(defaultLocale)] ?? null
+    }
+    const resolved: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as object)) {
+      resolved[k] = resolveLocaleMaps(v, locale, defaultLocale)
+    }
+    return resolved
+  }
+  return value
+}
+
+function resolveWine(
+  sanityWine: any,
+  vinofactMap: Map<string, any>,
+  ctx: ResolveContext,
+): Record<string, unknown> {
+  const vinofactData = sanityWine.vinofactWineId
+    ? (vinofactMap.get(sanityWine.vinofactWineId) ?? {})
+    : {}
+
+  const resolved = resolveLocaleMaps(vinofactData, ctx.locale, ctx.defaultLocale) as Record<string, unknown>
+
+  const numbersMultipliedFields = ['alcohol', 'residualSugar', 'tartaricAcid', 'totalSulfur', 'freeSulfur', 'phValue', 'histamine']
+  for (const field of numbersMultipliedFields) {
+    if (typeof resolved[field] === 'number') {
+      resolved[field] = resolved[field] / 100
+    }
+  }
+  // if (typeof resolved.alcohol === 'number') {
+  //   resolved.alcohol = resolved.alcohol / 100
+  // }
+  // if (typeof resolved.tartaricAcid === 'number') {
+  //   resolved.tartaricAcid = resolved.tartaricAcid / 100
+  // }
+
+  return {
+    volume:  sanityWine.volume  ?? null,
+    vintage: sanityWine.vintage ?? null,
+    ...resolved,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Effective status
+// ---------------------------------------------------------------------------
+
+const hasPrice = (p: unknown) => p !== null && p !== undefined
+
+/**
+ * The status the page shows, agreeing with what checkout (`validateCart`) accepts. Only an
+ * `active` raw variant can change:
+ * - no price of its own and none on its product → `unavailable` (resolved-only status);
+ * - a bundle with no items, an item missing from `rawVariantMap` (archived/dangling) or an item
+ *   that isn't `active` → `soldOut`;
+ * - a bundle with an item that has no price (own or its product's) → `unavailable` (checkout
+ *   can't split the bundle's VAT over its items).
+ * Everything else keeps its status.
+ */
+export function effectiveStatus(
+  raw: any,
+  rawVariantMap: Map<string, any>,
+  productMap: Map<string, any>,
+): ResolvedVariant['status'] {
+  const status = stegaClean(raw.status ?? 'active') as ResolvedVariant['status']
+  if (status !== 'active') return status
+  if (!hasPrice(raw.price) && !hasPrice(productMap.get(raw.productId)?.price)) return 'unavailable'
+  const kind = stegaClean(raw.kind ?? productMap.get(raw.productId)?.kind)
+  if (kind !== 'bundle') return status
+
+  const items: any[] = raw.bundleItems ?? []
+  if (items.length === 0) return 'soldOut'
+  let unpriced = false
+  for (const b of items) {
+    const item = rawVariantMap.get(b.variantId)
+    if (!item || stegaClean(item.status ?? 'active') !== 'active') return 'soldOut'
+    if (!hasPrice(item.price) && !hasPrice(productMap.get(item.productId)?.price)) unpriced = true
+  }
+  return unpriced ? 'unavailable' : status
+}
+
+/**
+ * A bundle's items at their single prices (item variant's price, else its product's) × quantity —
+ * only when that is more than the bundle's price. `null` for other kinds, a bundle without items,
+ * a missing or unpriced item. Shown as "Statt €X bei Einzelkauf" (`productBundleItemsTotal`), not as
+ * a former price: the bundle never cost this.
+ */
+export function bundleItemsTotal(
+  raw: any,
+  bundlePrice: number,
+  rawVariantMap: Map<string, any>,
+  productMap: Map<string, any>,
+): number | null {
+  const kind = stegaClean(raw.kind ?? productMap.get(raw.productId)?.kind)
+  if (kind !== 'bundle') return null
+  const items: any[] = raw.bundleItems ?? []
+  if (items.length === 0) return null
+  let total = 0
+  for (const b of items) {
+    const item = rawVariantMap.get(b.variantId)
+    if (!item) return null
+    const price: number | null | undefined = hasPrice(item.price) ? item.price : productMap.get(item.productId)?.price
+    if (!hasPrice(price)) return null
+    total += (price as number) * (b.quantity ?? 1)
+  }
+  return total > bundlePrice ? total : null
+}
+
+// ---------------------------------------------------------------------------
+// Resolver
+// ---------------------------------------------------------------------------
+
+export function resolveVariants(
+  rawVariants: any[],
+  productMap: Map<string, any>,
+  ctx: ResolveContext,
+  permalinks: Record<Locale, Required<PermalinkTranslations>>,
+  categoryMap: Map<string, ResolvedCategory>,
+  siblingsMap: Map<string, any[]>,
+  vinofactMap: Map<string, any>,
+  resolveHooks?: ResolveHooks,
+  filterAcc?: FilterAccumulator,
+): ResolvedVariant[] {
+  const { locale, defaultLocale } = ctx
+  const usedSlugs = new Set<string>()
+  const rawVariantMap = new Map(rawVariants.map(v => [v._id, v]))
+
+  // First pass: generate slugs
+  const withSlugs = rawVariants.map(variant => {
+    const product = productMap.get(variant.productId)
+    if (!product) return null
+    const rawSlug = generateVariantSlug(variant, product, locale, defaultLocale)
+    const slug = deduplicateSlug(rawSlug, usedSlugs)
+    const url = `/${locale}/${permalinks[locale].product}/${slug}/`
+    return { variant, product, slug, url }
+  }).filter(Boolean) as Array<{ variant: any; product: any; slug: string; url: string }>
+
+  const variantUrlMap = new Map(withSlugs.map(({ variant, url }) => [variant._id, url]))
+
+  // Second pass: fully resolve
+  const resolvedVariants = withSlugs.map(({ variant, product, slug, url }): ResolvedVariant => {
+    const rawCategories: any[] = variant.categories?.length
+      ? variant.categories
+      : (product.categories ?? [])
+
+    const categories = rawCategories
+      .map((c: any) => categoryMap.get(c._id))
+      .filter(Boolean) as ResolvedCategory[]
+
+    const siblings = (siblingsMap.get(product._id) ?? [])
+      .filter((s: any) => s._id !== variant._id)
+      .map((s: any) => {
+        const sKind  = stegaClean(s.kind ?? product.kind ?? 'physical')
+        const sTitle = ctx.resolveString(s.title) || ctx.resolveString(product.title)
+        return {
+          _id:    s._id,
+          title:  sTitle,
+          ...buildVariantLabel(sTitle, sKind, s, ctx),
+          url:    variantUrlMap.get(s._id) ?? '',
+          status: effectiveStatus(s, rawVariantMap, productMap),
+          kind:   sKind,
+          price:   s.price ?? null,
+          volume:  s.wine?.volume ?? null,
+          vintage: s.wine?.vintage ?? null,
+        }
+      })
+
+    const kind      = stegaClean(variant.kind ?? product.kind ?? 'physical')
+    const wine      = variant.wine ? resolveWine(variant.wine, vinofactMap, ctx) as ResolvedVariant['wine'] : null
+    const rawOpts   = variant.options ?? []
+    const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx, categories)
+    if (filterAcc) accumulateFilterGroups(filterAcc, kind, wine, rawOpts, ctx, categories)
+    
+    const title = ctx.resolveString(variant.title) || ctx.resolveString(product.title)
+
+    // Variant axes: the dimensions a product varies along — option groups for
+    // physical/digital, vintage/volume for wine. Each value's nearest-fallback
+    // target variant is precomputed so the frontend only renders links / a
+    // <select> — no client-side matrix. Only dimensions that actually vary are
+    // emitted. `combo` maps an axis key to the variant's value on that axis.
+    const comboOf = (v: any): Map<string, string | number> => {
+      const combo = new Map<string, string | number>()
+      for (const o of (v.options ?? [])) {
+        if (o.group?._id && o._id != null) combo.set(o.group._id, o._id)
+      }
+      if (v.wine?.vintage != null) combo.set('vintage', v.wine.vintage)
+      if (v.wine?.volume != null) combo.set('volume', v.wine.volume)
+      return combo
+    }
+    const productVariants = (siblingsMap.get(product._id) ?? [variant]).map((v: any) => ({
+      combo:  comboOf(v),
+      url:    variantUrlMap.get(v._id) ?? '',
+      status: effectiveStatus(v, rawVariantMap, productMap),
+    }))
+    const currentCombo = comboOf(variant)
+
+    // Best existing variant when choosing `value` on `axisKey`: keep as many of
+    // the current variant's other-axis values as possible (nearest-fallback),
+    // preferring an active variant on ties.
+    const pickTarget = (axisKey: string, value: string | number) => {
+      let best: { url: string; status: string } | null = null
+      let bestScore = -1
+      for (const v of productVariants) {
+        if (v.combo.get(axisKey) !== value) continue
+        let score = 0
+        for (const [k, val] of currentCombo) {
+          if (k !== axisKey && v.combo.get(k) === val) score++
+        }
+        const better = score > bestScore || (score === bestScore && v.status === 'active' && best?.status !== 'active')
+        if (better) { best = { url: v.url, status: v.status }; bestScore = score }
+      }
+      return best
+    }
+    const axisOptions = (axisKey: string, values: { value: string | number; label: string }[]) =>
+      values.map(({ value, label }) => {
+        const target = pickTarget(axisKey, value)
+        return {
+          value,
+          label,
+          url:      target?.url ?? '',
+          selected: currentCombo.get(axisKey) === value,
+          status:   (target?.status ?? 'active') as ResolvedVariant['status'],
+        }
+      })
+
+    const variantAxes: ResolvedVariant['variantAxes'] = []
+    if (kind === 'wine') {
+      const distinct = (key: string) =>
+        [...new Set(productVariants.map(v => v.combo.get(key)).filter(v => v != null))] as number[]
+      const vintages = distinct('vintage').sort((a, b) => b - a) // newest first
+      const volumes  = distinct('volume').sort((a, b) => a - b)  // smallest first
+      if (vintages.length > 1) {
+        variantAxes.push({
+          key: 'vintage', title: null, displayMode: null, format: null,
+          options: axisOptions('vintage', vintages.map(v => ({ value: v, label: String(v) }))),
+        })
+      }
+      if (volumes.length > 1) {
+        variantAxes.push({
+          key: 'volume', title: null, displayMode: null, format: 'volume',
+          options: axisOptions('volume', volumes.map(v => ({ value: v, label: String(v) }))),
+        })
+      }
+    } else {
+      // option groups (physical/digital)
+      const groupAcc = new Map<string, {
+        _id: string
+        title: string
+        sortOrder: number
+        displayMode: 'dropdown' | 'list' | null
+        values: Map<string, { _id: string; name: string; sortOrder: number }>
+      }>()
+      for (const v of (siblingsMap.get(product._id) ?? [variant])) {
+        for (const o of (v.options ?? [])) {
+          const g = o.group
+          if (!g?._id) continue
+          let entry = groupAcc.get(g._id)
+          if (!entry) {
+            entry = {
+              _id:         g._id,
+              title:       ctx.resolveString(g.title),
+              sortOrder:   g.sortOrder ?? 0,
+              displayMode: g.displayMode ?? null,
+              values:      new Map(),
+            }
+            groupAcc.set(g._id, entry)
+          }
+          if (!entry.values.has(o._id)) {
+            entry.values.set(o._id, { _id: o._id, name: ctx.resolveString(o.name), sortOrder: o.sortOrder ?? 0 })
+          }
+        }
+      }
+      for (const g of [...groupAcc.values()].sort((a, b) => a.sortOrder - b.sortOrder)) {
+        // only emit an axis that actually varies (more than one value)
+        if (g.values.size < 2) continue
+        variantAxes.push({
+          key:         g._id,
+          title:       g.title,
+          displayMode: g.displayMode,
+          format:      null,
+          options: axisOptions(
+            g._id,
+            [...g.values.values()]
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map(val => ({ value: val._id, label: val.name })),
+          ),
+        })
+      }
+    }
+
+    const resolved: ResolvedVariant = {
+      _id:            variant._id,
+      _type:          'productVariant',
+      _updatedAt:     variant._updatedAt ?? null,
+      slug,
+      url,
+      locale:         locale,
+      status:         effectiveStatus(variant, rawVariantMap, productMap),
+      title,
+      ...buildVariantLabel(
+        title,
+        kind,
+        variant,
+        ctx,
+      ),
+      sku:            variant.sku ?? '',
+      kind,
+      price:          variant.price ?? product.price ?? 0,
+      compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
+      bundleItemsTotal: bundleItemsTotal(variant, variant.price ?? product.price ?? 0, rawVariantMap, productMap),
+      image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
+      productImage:   ctx.resolveLocaleAltImage(product.image),
+      seo:            ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),
+      categories,
+      manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
+        _id:  m._id,
+        name: ctx.resolveString(m.name),
+      })),
+      taxCategoryId: variant.taxCategory?._ref ?? product.taxCategory?._ref ?? null,
+      stock: variant.stock ?? null,
+      weight: variant.weight ?? product.weight ?? null,
+      // Set by `applyBuildShippingDiscounts` (resolver post-pass) from the automatic discounts.
+      grantsFreeShipping: false,
+      wine,
+      options: (variant.options ?? [])
+        // guard against an option with an unset/dangling group ref (group is
+        // only validation-required, so legacy/imported data may lack it)
+        .filter((o: any) => o.group?._id)
+        .map((o: any) => ({
+          _id:       o._id,
+          name:      ctx.resolveString(o.name),
+          sortOrder: o.sortOrder ?? 0,
+          group: {
+            _id:   o.group._id,
+            title: ctx.resolveString(o.group.title),
+          },
+        })),
+      variantAxes,
+      bundleItems: (variant.bundleItems ?? []).flatMap((b: any) => {
+        const rawV = rawVariantMap.get(b.variantId)
+        if (!rawV) return []
+        const rawP = productMap.get(rawV.productId)
+        return [{
+          quantity: b.quantity ?? 1,
+          variant: {
+            _id:     rawV._id,
+            title:   ctx.resolveString(rawV.title) || ctx.resolveString(rawP?.title),
+            url:     variantUrlMap.get(rawV._id) ?? null,
+            kind:    rawV.kind ?? rawP?.kind ?? 'physical',
+            volume:  rawV.wine?.volume  ?? null,
+            vintage: rawV.wine?.vintage ?? null,
+            weight:  rawV.weight ?? rawP?.weight ?? null,
+            options: (rawV.options ?? []).map((o: any) => ({
+              _id:  o._id,
+              name: ctx.resolveString(o.name),
+            })),
+          },
+        }]
+      }),
+      description:    ctx.resolveString(variant.description) || ctx.resolveString(product.description) || null,
+      // Variant's own list replaces the product's (no merge); incomplete lines are dropped.
+      specifications: ((variant.specifications?.length ? variant.specifications : product.specifications) ?? [])
+        .map((s: any) => ({ label: ctx.resolveString(s.label), value: ctx.resolveString(s.value) }))
+        .filter((s: { label: string; value: string }) => s.label && s.value),
+      product: {
+        _id:   product._id,
+        title: ctx.resolveString(product.title),
+        description: ctx.resolveString(product.description) || null,
+      },
+      siblings,
+      filterAttributes,
+      // Extended fields from product-level hook (variant hook wins on collision)
+      ...(resolveHooks?.product ? resolveHooks.product(product, ctx) : {}),
+      ...(resolveHooks?.variant ? resolveHooks.variant(variant, ctx) : {}),
+    }
+
+    // Description fallback for SEO meta description: own description first, then the wine's
+    if (!resolved.seo.metaDescription && resolved.description) {
+      resolved.seo = { ...resolved.seo, metaDescription: resolved.description.replace(/\s+/g, ' ').trim() }
+    }
+    if (!resolved.seo.metaDescription && resolved.wine) {
+      const wineDesc = (resolved.wine as any).description
+      if (typeof wineDesc === 'string' && wineDesc) {
+        resolved.seo = { ...resolved.seo, metaDescription: wineDesc }
+      }
+    }
+
+    return resolved
+  })
+
+  mergeBundleFilterAttributes(resolvedVariants, filterAcc)
+  return resolvedVariants
+}
+
+/**
+ * What the discount selector sees of a resolved variant (the build's adapter; checkout's is
+ * `selectorLineFromVariant` in `cart-validator.ts`). Categories, manufacturers and the
+ * compare-at price are already resolved with the variant → product fallbacks; ancestors via
+ * `parentById` (`ResolvedCategory.parentId`). Without `shop.category` the categories are empty.
+ */
+export function selectorLineFromResolved(
+  v: Pick<ResolvedVariant, '_id' | 'product' | 'kind' | 'categories' | 'manufacturers' | 'compareAtPrice' | 'price'>,
+  parentById: Map<string, string | null | undefined>,
+): SelectorLine {
+  return {
+    variantId: v._id,
+    productId: v.product._id,
+    kind: v.kind,
+    categoryIds: withAncestors(v.categories.map(c => c._id), parentById),
+    manufacturerIds: v.manufacturers.map(m => m._id),
+    hasCompareAtPrice: v.compareAtPrice != null && v.compareAtPrice > v.price,
+  }
+}
+
+/**
+ * Derive `grantsFreeShipping` from the automatic shipping discounts the build may state as a
+ * static claim (`isUnconditional`, filtered by the caller): a cart holding just this variant
+ * would ship free. Digital variants never ship. Mutates `variants`.
+ */
+export function applyBuildShippingDiscounts(
+  variants: ResolvedVariant[],
+  discounts: Pick<DiscountInput, 'appliesTo'>[],
+  parentById: Map<string, string | null | undefined>,
+): void {
+  for (const v of variants) {
+    v.grantsFreeShipping = v.kind !== 'digital' && discounts.length > 0
+      && discounts.some(d => matchesSelector(selectorLineFromResolved(v, parentById), d.appliesTo))
+  }
+}

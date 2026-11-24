@@ -1,0 +1,91 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+
+import { type CoreContext } from '../types'
+import { findUndefinedColorVars } from './css-color-check'
+
+export const cssConfig = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
+  eleventyConfig.addBundle('css', {hoist: true});
+
+  if (config.preview.enabled) {
+    return
+  }
+
+  const { cssPath, minify, ...tailwind } = config.css || {};
+  const inputDir   = eleventyConfig.directories.input
+  const includesDir = path.join(inputDir, '_includes')
+  eleventyConfig.addTemplateFormats('css');
+
+  eleventyConfig.addExtension('css', {
+    outputFileExtension: 'css',
+    compile: async (inputContent: string, inputPath: string) => {
+      const paths: string[] = [];
+      const defaultEntry = path.join(inputDir, 'assets/css/global/global.css')
+      if (inputPath.endsWith(cssPath || defaultEntry)) {
+        paths.push(path.join(includesDir, 'css/global.css'));
+      } else if (inputPath.includes('/assets/css/bundle/')) {
+        // Bundle files are passed through as-is (no PostCSS)
+        return async () => inputContent
+      } else {
+        return;
+      }
+
+      return async () => {
+        const [
+          { default: postcss },
+          { default: postcssImport },
+          { default: postcssImportExtGlob },
+          { default: postcssCustomMedia },
+          { default: postcssNesting },
+          { default: tailwindcss },
+          { default: tailwindcssnesting },
+          { default: autoprefixer },
+          { getTailwindConfig },
+        ] = await Promise.all([
+          import('postcss'),
+          import('postcss-import'),
+          import('postcss-import-ext-glob'),
+          import('postcss-custom-media'),
+          import('postcss-nesting'),
+          import('tailwindcss'),
+          import('tailwindcss/nesting/index.js'),
+          import('autoprefixer'),
+          import('./tailwind/tailwind.config.js'),
+        ])
+
+        const tailwindConfig = getTailwindConfig(tailwind);
+
+        const plugins: any[] = [
+          postcssImportExtGlob,
+          postcssImport,
+          postcssCustomMedia,
+          postcssNesting,
+          tailwindcssnesting,
+          tailwindcss(tailwindConfig),
+          postcssNesting,
+          autoprefixer,
+        ];
+        if (minify) {
+          const { default: cssnano } = await import('cssnano')
+          plugins.push(cssnano);
+        }
+        const result = await postcss(plugins).process(inputContent, {from: inputPath});
+
+        // Colour roles used without fallback but never defined (e.g. a renamed palette colour).
+        // Warn only — a template may define a property inline.
+        const undefinedColors = findUndefinedColorVars(result.css)
+        if (undefinedColors.length) {
+          console.warn('[itsshops] CSS uses colour roles that are never defined and have no fallback: ' + undefinedColors.join(', '))
+        }
+
+        for (const outputPath of paths) {
+          await fs.mkdir(path.dirname(outputPath), {recursive: true});
+          await fs.writeFile(outputPath, result.css);
+        }
+
+        return result.css;
+      };
+    }
+  });
+};

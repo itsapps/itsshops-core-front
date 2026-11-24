@@ -1,0 +1,83 @@
+{#
+  Product filter bar.
+  Expects: filterGroups (array of FilterGroup), activeFilterKeys (array of group keys to show)
+  activeFilterKeys: subset of filterGroups to render. If empty/undefined, renders all.
+#}
+{%- set _locale = page.lang or coreConfig.defaultLocale -%}
+{%- set _groups = [] -%}
+{%- if activeFilterKeys and activeFilterKeys.length -%}
+  {#- follow the editor-configured order (activeFilterKeys), not the accumulator order -#}
+  {%- for key in activeFilterKeys -%}
+    {%- for group in filterGroups -%}
+      {%- if group.key == key -%}
+        {%- set _groups = (_groups.push(group), _groups) -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+{%- else -%}
+  {%- for group in filterGroups -%}
+    {%- set _groups = (_groups.push(group), _groups) -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- set _showPrice = activeFilterKeys and 'price' in activeFilterKeys -%}
+{%- if _showPrice -%}
+  {%- set _priceMin = null -%}
+  {%- set _priceMax = null -%}
+  {%- for p in listProducts -%}
+    {%- if _priceMin === null or p.price < _priceMin %}{%- set _priceMin = p.price -%}{%- endif -%}
+    {%- if _priceMax === null or p.price > _priceMax %}{%- set _priceMax = p.price -%}{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{% if _groups.length or _showPrice %}
+  <div class="product-filters" data-product-filters data-t-results="{{ 'filters.results' | trans }}"{% if _filterGroupsOpen === false %} data-filter-auto-collapse{% endif %}>
+    {% for group in _groups %}
+      <details class="product-filters__group" data-filter-group="{{ group.key }}"{% if _filterGroupsOpen !== false %} open{% endif %}>
+        <summary class="product-filters__label">{{ group.label }}</summary>
+        <div class="product-filters__options">
+          {% for val in group.values %}
+            <label class="product-filters__option">
+              <input
+                type="checkbox"
+                class="sr-only"
+                data-filter-key="{{ group.key }}"
+                data-filter-value="{{ val.value }}"
+              >
+              <span>{{ val.label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+    {% if _showPrice and _priceMin !== null and _priceMin !== _priceMax %}
+      {%- set _priceMinEur = (_priceMin / 100) | round(0, 'floor') -%}
+      {%- set _priceMaxEur = (_priceMax / 100) | round(0, 'ceil') -%}
+      <details class="product-filters__group product-filters__group--price" data-filter-group="price"{% if _filterGroupsOpen !== false %} open{% endif %}>
+        <summary class="product-filters__label">{{ 'filters.price' | trans }}</summary>
+        <div class="product-filters__price-range" data-filter-price-range data-price-min="{{ _priceMin }}" data-price-max="{{ _priceMax }}">
+          <div class="product-filters__price-slider" aria-hidden="true">
+            <input type="range" data-filter-price-slider-min min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" value="{{ _priceMinEur }}" step="1">
+            <input type="range" data-filter-price-slider-max min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" value="{{ _priceMaxEur }}" step="1">
+          </div>
+          <div class="product-filters__price-inputs">
+            <label class="product-filters__price-field">
+              <span class="sr-only">{{ 'filters.priceMin' | trans }}</span>
+              <input type="number" data-filter-price-min placeholder="{{ _priceMin | formatPrice }}" min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" step="1">
+            </label>
+            <span class="product-filters__price-sep" aria-hidden="true">-</span>
+            <label class="product-filters__price-field">
+              <span class="sr-only">{{ 'filters.priceMax' | trans }}</span>
+              <input type="number" data-filter-price-max placeholder="{{ _priceMax | formatPrice }}" min="{{ _priceMinEur }}" max="{{ _priceMaxEur }}" step="1">
+            </label>
+          </div>
+        </div>
+      </details>
+    {% endif %}
+    {% block product_filter_reset_button %}
+      {% from "macros/product.njk" import productFilterResetButton %}
+      {{ productFilterResetButton(locale=_locale) }}
+    {% endblock %}
+    <p class="sr-only" aria-live="polite" aria-atomic="true" data-filter-count></p>
+  </div>
+{% endif %}

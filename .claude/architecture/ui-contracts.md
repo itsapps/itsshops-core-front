@@ -1,0 +1,258 @@
+# UI contracts — what core's JS expects from markup and CSS
+
+Per UI part core's scripts drive: the **markup hooks** a template must render, the **states** the
+script sets, what the **CSS must do** with them, and the **a11y** the markup provides (the script
+does the rest). A customer template override, a starter variant, or a part built from scratch must
+keep its part's contract — then core's JS works unchanged. Verified against `src/scripts/`
+2026-11-10. Keep this file in sync when a script's hooks or states change.
+
+## Global rule
+
+Core shows/hides almost everything with the `hidden` attribute, and any author `display` rule beats
+the UA's `[hidden] { display: none }`. So `reset.css` (4.0.0) sets
+`[hidden]:not([hidden='until-found']) { display: none !important; }`: an element with `hidden` is
+hidden, whatever its `display`. Consequences:
+
+- **Show or animate a part with a class or attribute** (`.is-open`), never by overriding
+  `display` on `[hidden]`. That no longer works (layered: core's `!important` beats a customer's).
+- Per-component `&[hidden] { display: none }` patches are redundant (harmless).
+- Every site imports `reset.css`. One that doesn't must set the rule itself.
+
+**When to use `hidden` and when a class** (for new parts, core and customer):
+- **Plain on/off, no animation → `hidden`.** One attribute hides visually, from screen readers
+  and from the tab order, works before CSS loads, and is trivial to toggle and test.
+- **Animated (overlay, drawer, dropdown that slides/fades) → a state class (`.is-open`) +
+  `visibility: hidden` when closed.** `display: none` can't animate, while `visibility` also
+  takes the element out of the a11y tree and tab order and can be delayed by `transition` until
+  the closing animation ends. The alternative: `opacity`/`transform` **plus `inert` (and
+  `aria-hidden`) in the markup**, which `menu.ts` removes on open and restores on close (itsapps'
+  overlay). Never `opacity`/`transform` alone: the element stays focusable and announced. The
+  cart sidebar is state-class based too (`.is-open`; how it hides is customer CSS). A menu that
+  animates must not start `hidden` (see Menu).
+
+## Menu (`menu.ts`, every `[data-menu-toggle]` button)
+
+- **Hooks:** a button `[data-menu-toggle]`; its target = the `data-menu-toggle` value or the
+  `aria-controls` id. Optional `[data-menu-close]` inside the target.
+- **Open:** removes `hidden` (only if the target started `hidden`), adds `is-open`,
+  `aria-hidden="false"`, removes `inert`, `aria-expanded="true"` on the button, inerts the rest of the
+  page (`lockInertOutside([target, button])`, not `deep` — so only `<body>` children containing
+  neither; in core's default header the logo and actions stay reachable, the overlay CSS must leave
+  them visible), focuses the first focusable element in the target.
+- **Close** (button, `[data-menu-close]`, Escape): the reverse; `data-closing` on the button for
+  300 ms (for a closing animation), focus back to the button.
+- **Resize:** when the button stops being rendered (`getClientRects()` empty — e.g. hidden from a
+  breakpoint on), an open menu closes **without** moving focus, and the target gets its initial
+  `hidden` / `inert` / `aria-hidden` back. So a menu shown inline on large screens is reachable
+  there again, an overlay never stays open with the page inert. The button's own CSS visibility is
+  the single source — no breakpoint in JS.
+- **CSS:** show/hide/animate on `.is-open`. A target visible inline on large screens must **not**
+  start `hidden` or `inert`. A separate mobile overlay is hidden with `display`/`visibility`, or
+  with `opacity`/`transform` when it starts `inert` + `aria-hidden="true"` in the markup. Never
+  with `opacity`/`transform` alone: it must be out of the a11y tree before the first toggle.
+- **A11y in markup:** the button has an accessible name (`aria-label` via i18n), `aria-expanded`,
+  `aria-controls`.
+- **No no-JS fallback** (owner, 2026-11-11): `@media (scripting: none)` only matches JS switched
+  off. It doesn't match a blocked, failed or still-loading script, so it covers only the case the
+  owner ignores. A JS-set marker would either miss those cases (inline) or flash (bundle).
+
+## Submenus (`submenu.ts`, every `[data-submenu-toggle]` button)
+
+- **Hooks:** a button `[data-submenu-toggle]` with `aria-controls` = the id of its list. Core's
+  default header renders it as `.site-nav__submenu-toggle` (item with link + children) and
+  `.site-nav__trigger` (item that is only a submenu).
+- **States:** the script sets `hidden` on every list at init (without JS all links stay visible),
+  click toggles `hidden` + `aria-expanded`; opening one closes the other open submenus of the same
+  `<nav>`; Escape closes and returns focus to the button if focus was inside; a click outside the
+  `<nav>` closes without moving focus.
+- **CSS:** position the open list (dropdown on wide screens, inline in the mobile overlay). No
+  `:hover`-only opening — the list is `hidden` until clicked.
+- **A11y in markup:** the button's name says what it opens (default header: sr-only
+  "Untermenü öffnen: <title>" or the visible title).
+
+## Cart (`cart-ui.ts`)
+
+- **Hooks:** `#cart-sidebar` containing `[data-cart-items]`, `[data-cart-total]`,
+  `[data-cart-empty]`, `[data-cart-close]`; any number of `[data-cart-toggle]` buttons
+  (`aria-controls="cart-sidebar"`, `aria-expanded` kept in sync) and `[data-cart-count]` elements
+  (text = item count; with `data-cart-count-hide` also `display: none` at 0); optional
+  `[data-cart-overlay]`. The sidebar exists only with `shop.checkout` (`layouts/base.njk`), so a
+  toggle must too — core's `overridable/partials/cart-toggle.njk` renders it only then and not on the
+  checkout page. Lines come from the `cartItem` macro (`[data-cart-item]`,
+  `[data-qty-decrease|value|increase]`, `[data-cart-remove]`). Add to cart: `[data-add-to-cart]`
+  inside `[data-product-actions]` or `.product-card__actions`, optional `[data-qty-control]`.
+- **States:** `.cart-sidebar.is-open`, overlay `.is-visible`, `[data-cart-empty]` `hidden`, Escape
+  closes; the add button gets `.is-added` briefly. No cart page exists — the sidebar is the only cart
+  UI.
+- **CSS:** the sidebar's open/closed look on `.is-open`, the overlay on `.is-visible`
+  (`shop.css` draws only the close/remove icon).
+- **A11y in markup:** the toggle's name includes the count — default partial: sr-only
+  "Zum Warenkorb, " + the visible count, no `aria-label` (an `aria-label` would replace the count).
+
+## Newsletter dialog (`newsletter-dialog.ts`)
+
+- **Hooks:** `[data-newsletter-dialog]` containing `[data-newsletter-open]`, a `<dialog>`,
+  `[data-newsletter-backdrop]` (toggled `hidden`), `[data-newsletter-subscribe]`,
+  `[data-newsletter-close]`.
+- **States:** `html.newsletter-dialog-open` while open — **no core CSS styles it**; the customer CSS
+  must lock scroll (`overflow: hidden`).
+- **CSS:** opened with the non-modal `dialog.show()`, and `reset.css` unsets the dialog's UA
+  `inset`/`max-width`/`max-height`. So the customer CSS positions the dialog (e.g. `position:
+  fixed` + `inset` + `margin: auto`) and gives it `max-block-size` (≤ `100dvh`) + `overflow: auto`.
+  Otherwise, on a small or landscape screen, part of the form lies off screen, unreachable
+  (WCAG 1.4.10).
+
+## Theme switch (`theme-toggle.ts` + inline `scripts/inline/theme.ts`)
+
+Only with `manifest.colorScheme: 'light dark'`. Without it, core renders, loads and inlines none of
+it.
+
+- **Hooks:** `[data-theme-toggle]` buttons, from `overridable/partials/theme-toggle.njk` (core's
+  default header includes it; an own header includes the partial). Icons in
+  `overridable/partials/theme-toggle-icons.njk`, two elements `.theme-toggle__icon--to-dark` /
+  `--to-light`. Override that file for other icons, keep the classes.
+- **States:** the choice lives in localStorage `theme` (`light`|`dark`) and as `data-theme` on
+  `<html>`. No choice = follow the system (`prefers-color-scheme`), the button only mirrors it.
+  The button works with JS only: `theme.css` hides it (`display: none !important`) until the
+  inline head script marks `<html>` with `data-theme-js` — before paint, so it is in the first
+  layout. Never render it `hidden` and reveal it from the deferred bundle: that shifts the header
+  after load (seen 2026-11-16). `aria-pressed="true"` = dark.
+- **Before paint** (inline script, CSP hash computed by `config/headers.ts`): sets
+  `data-theme-js` on `<html>`, applies the stored choice, and keeps the two `theme-color` meta tags (browser chrome: Safari's tab bar, mobile
+  toolbars) on the page's theme. With `data-theme` both tags get that theme's colour, without it
+  they follow the system. It watches `data-theme`, so any toggle that sets it is followed. Colours:
+  `manifest.themeBgColor` (light) / `manifest.themeBgColorDark` (dark); `themeColor` is only the
+  web app manifest's brand colour.
+- **CSS:**
+  - `theme.css` (import with `layer(core)`) hides the icon that doesn't apply, and sets
+    `scrollbar-color` from the roles (`--color-muted` on `--color-bg`; override via
+    `--color-scrollbar-thumb|-track`). Firefox on macOS otherwise draws scrollbars after the
+    system appearance.
+  - The toggle's look (size ≥ 24px target, colours, hover, `:focus-visible`) is customer CSS on
+    `.theme-toggle`.
+  - **Colour roles:** the customer defines every role three times: in `:root` (light,
+    `color-scheme: light dark`), in `@media (prefers-color-scheme: dark) { :root {…} }`, and in
+    `:root[data-theme='dark']` (`color-scheme: dark`), plus `:root[data-theme='light'] {
+    color-scheme: light }`. `color-scheme` switches the browser's own parts (scrollbars, form
+    fields, autofill). Reference: itsapps' `global/variables.css`.
+- **A11y in markup:** fixed label `theme.dark` ("Dunkles Design" / "Dark mode") with
+  `aria-pressed`, so screen readers say "Dunkles Design, gedrückt"; icons `aria-hidden`.
+
+## Product filter panel (`product-filter.ts`)
+
+See `templates-and-assets.md` → "Product filter panel": `[data-toggle-products-filter]` toggles
+`is-open` on `[data-filter-panel]`; `data-filter-panel-modal` opts into a modal dialog with
+`html.has-filter-panel-open` (scroll lock in `shop.css`); `[data-product-list][data-view]` for the
+grid/list toggle.
+
+## Other parts (states styled by core CSS)
+
+| Part | Hooks | States / core CSS |
+|---|---|---|
+| Carousel (`carousel.ts`) | `[data-carousel]`, `[data-carousel-pause]` | pause label swap; position in `carousel.css` |
+| Product gallery (`gallery.ts`) | `[data-gallery]` ancestor with `.embla__viewport` (+ optional `.embla-thumbs__viewport`) — partials `overridable/gallery/{main,thumbs}.njk` | `.embla-thumbs__slide--selected` + `aria-current="true"` on the selected thumb's button; **no core CSS** (customer styles `.embla*`) |
+| Lightbox (`lightbox.ts`, `{% gallery %}` shortcode) | `[data-gallery-open]` (optional `data-gallery-index` = start slide, so a grid of openers inside one `[data-lightbox]` works, e.g. an image-gallery module), `[data-lightbox]`, `[data-lightbox-items]` (JSON like `renderGallery`'s items), `[data-lb-prev|next|close]` | `lightbox.css` |
+| Search (`search.ts`) | `[data-search]`, `[data-search-open]`, `[data-search-modal]`, `[data-search-input]`, `[data-search-results]`, `[data-search-close]` | `search.css` |
+| Age gate (`age-gate.ts` + inline) | `[data-age-gate]`, `[data-age-gate-confirm|deny]`, `[data-age-gate-denied-msg]` | `html[data-age-gate-state="pending|open"]`; structure in `age-gate.css`, the buttons' look is customer CSS |
+| Checkout (`checkout.ts`) | `[data-checkout]` + `[data-checkout-*]` regions | `data-checkout-state`, `aria-busy` on the container; `checkout.css` |
+
+## Checkout discounts (`checkout-coupon.ts`, `order-totals.ts`)
+
+- **Totals rows:** one `totalsRow` (`macros/cart.njk`) per applied **items/order** discount with
+  `amount > 0`, code and automatic alike: label = the
+  discount's title (text), the code in the `code` slot (not repeated when it equals the title),
+  value `− €X`, modifier `--discount`. Empty title → the generic `data-t-discount` label, which is
+  on the container **whatever** `shop.coupons` (shops with automatic discounts and no codes need
+  it). A **shipping** discount gets no row of its own (under the subtotal "− €23" read like a
+  deduction from it): the shipping row reads "Versand (<its title>)" — "(<title> · <code>)" for a code whose code
+  differs from its title — with the value
+  `checkout.fulfillment.free` ("kostenlos" — `TotalsLabels.free`; checkout `data-t-fulfillment-free`,
+  thanks page `data-t-free`, a thanks-page override needs it too); shipping 0 without one
+  (threshold) is "Versand kostenlos", "—" without the label. All via `textContent`.
+- **Coupon box** (`[data-checkout-coupon]`, only with `shop.coupons`): `render(applied, error,
+  notDiscounted)` looks only at the `trigger: 'code'` entry — an automatic discount neither locks
+  the input nor shows "Eingelöst". Errors by `errorCode` (`data-t-coupon-*` per code, incl.
+  `not-applicable`, `limit-per-email`, `below-min-quantity`, `not-combinable`); `{title}` is
+  filled with `discountTitle`.
+- **Hint** `[data-checkout-coupon-hint]` (`<p class="checkout-coupon__hint" role="status">` inside
+  the coupon fieldset): "Nicht rabattiert: <titles>" when the applied code skipped cart lines.
+  **Always in the DOM, never `hidden`/`display: none`** — empty = nothing to say (a polite live
+  region is announced reliably only when it exists before it is filled). Core CSS only drops its
+  margin while `:empty`.
+- **Stored code** is dropped when a response has a `couponError` and no `trigger: 'code'` entry
+  (`shouldClearStoredCode`) — after calculate **and** on both submit paths (express: before the
+  reconfirm calculate, which gets the error passed on so it stays visible).
+
+## Fulfillment choice (`checkout-fulfillment.ts`, store pickup)
+
+Hooks in `core/components/checkout.njk` (core template, no override):
+
+| Hook | Role |
+|---|---|
+| `[data-checkout-fulfillment]` | `<fieldset hidden>` before the address fieldset; shown only while the calculation lists a pickup method. Legend "Versand oder Abholung" |
+| `[data-checkout-fulfillment-options]` | radios `name="fulfillment"`: `delivery` + one per pickup (`.checkout-shipping__option` look, `is-selected`) |
+| `[data-checkout-pickup-details]` (`id="checkout-pickup-details"`) | address, instructions, "Abholbereit in", hold period of the chosen pickup; each pickup radio's `aria-describedby` |
+| `[data-checkout-fulfillment-status]` | `role="status"` `sr-only` `<p>` **outside** the fieldset, never hidden — announces mode switches |
+| `[data-checkout-address-legend]` | legend text swaps `data-t-address-delivery` ↔ `data-t-address-billing` |
+| `[data-checkout-billing-section]` / `[data-checkout-shipping-section]` | whole fieldsets `hidden` in pickup mode (not their inner divs — a styled `.checkout__section` would stay as an empty box) |
+
+Pickup mode: the main address fields are the billing address (sent as `address.shipping`, no
+`billing`), the billing fields aren't validated, the country select lists every ISO country (tax
+countries first); back on "Versand" a country outside the tax list is cleared and flagged
+(no focus move). A response with pickups but no delivery method switches to pickup once per
+country and announces it; "Versand" then shows "Versand in dieses Land ist nicht möglich."
+The totals label reads "Abholung" (`CheckoutSummary.setShippingLabel`). Express: `setPickup()` on a
+mode change **re-creates** the element (pickup: `shippingAddressRequired: false`,
+`billingAddressRequired: true`; delivery: shipping address + `allowedShippingCountries`) —
+`element.update()` is refused once Stripe holds shipping rates from an earlier answer
+("You must specify `shippingAddressRequired: true` when providing `shippingRates`"); the sheet
+gets the page's calculation (no shipping rates) and the order the billing address; in delivery
+mode the sheet lists delivery methods only (none → the address event is rejected).
+The billing fieldset's name is an `sr-only` first-child `<legend>`; its visible heading is
+`<p class="checkout__billing-heading" aria-hidden="true">` — customers that style
+`.checkout__section legend` style that class too.
+
+## Classes the customer must style
+
+Look classes core emits but never styles (core's only rule: `.form .btn { align-self }` in
+`form.css`):
+
+- **`btn`** — a button or button-like link in core's form and flow views (checkout submit, order
+  withdrawal, the user forms and links, the newsletter views, the withdrawal module's link, the cart
+  sidebar's checkout link). Plain `btn` = the view's main action.
+- **`btn--secondary`** — next to `btn` on a button that isn't the view's main action (the checkout's
+  coupon apply/remove).
+
+The starter's `tests/look-classes.test.ts` keeps a copy of this list (base must style each one,
+core must still render it). If you add a class here or remove one, change that test too.
+
+Both `<button>` and `<a>` carry them — style both alike. States to cover:
+
+- hover, `:focus-visible`, `:disabled`.
+- **Form submit** (user, newsletter, withdrawal): while submitting the script sets `disabled` and
+  swaps `[data-submit-text]` for `[data-submit-loading]` (two `<span>`s in the button, toggled with
+  `hidden`) — the button must not change size noticeably. `user-reset`'s button starts `disabled`
+  and is enabled once the URL has a token.
+- **Checkout submit:** no text swap; `disabled` while totals recalculate and while submitting —
+  `:disabled` must look inactive but stay legible.
+- **`:focus-visible` on a bordered button:** an inset ring in the border's colour sits on the
+  border and vanishes (seen on a bordered `.btn`) — draw it outside or in another colour.
+- **Coupon buttons:** disabled while busy; apply/remove swap via `hidden` (remove starts hidden) —
+  relies on the global `[hidden]` rule.
+
+**Form fields (`form.css`):** core shows focus only through the border (`outline: none` +
+`--field-focus-color`). A site whose `--field-focus-color` equals `--field-border-color` has **no
+visible focus** on fields (WCAG 2.4.7) — keep them different, or let the global `:focus-visible`
+ring reach the fields (with layered imports it beats core's `outline: none`).
+
+**Rule:** every `btn` element also has its **own class** (`<block>__<role>`, e.g.
+`user-login__submit`, `checkout__submit`, `newsletter-signup__submit`) — the shared look goes on
+`.btn`, a one-off change on the own class (no context selectors). **Component controls** keep only
+their component class and are styled with their part: `.add-to-cart` (+ `.is-added`),
+`.qty-control__btn`, `.cart-item__qty-btn`, `.cart-item__remove`, `.cart-sidebar__close`,
+`.cart-toggle`, `.age-gate__btn--confirm|--deny`, `.newsletter-dialog__trigger|__close`,
+`.product-filters__reset`, `.carousel__pause`, `.theme-toggle`, `.embla-thumbs__slide__number`, the lightbox trigger
+`.<cls>__trigger`.
+
+A class core adds later for customers to style goes on this list in the same change. A BEM class of
+one component (`checkout__submit`) is not a look class.

@@ -1,0 +1,11 @@
+{#
+  Each inline script is emitted as its own <script> tag so the per-file sha256
+  hashes produced by config/headers.ts match what the browser sees (CSP). Do
+  not concatenate them into a single <script> — that would invalidate hashes.
+#}
+{%- if coreConfig.manifest.colorScheme != 'light' -%}
+<script>{% include "scripts/inline/theme.js" %}</script>
+{%- endif %}
+{%- if coreConfig.ageGate.enabled and not coreConfig.preview.enabled -%}
+<script>{% include "scripts/inline/age-gate.js" %}</script>
+{%- endif -%}

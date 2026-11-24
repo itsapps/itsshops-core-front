@@ -1,0 +1,34 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { CoreContext } from '../types';
+
+// Bundled into dist/index.js → this is core's dist/
+const coreDist = path.dirname(fileURLToPath(import.meta.url))
+
+export const setupAssets = (ctx: CoreContext) => {
+  const { eleventyConfig, config } = ctx
+  if (config.preview.enabled) return
+
+  const input = eleventyConfig.directories.input
+
+  eleventyConfig.addPassthroughCopy(path.join(input, 'assets/fonts/'))
+
+  eleventyConfig.addPassthroughCopy({
+    [path.join(input, 'assets/images/static/*')]: '/assets/images/'
+  })
+  eleventyConfig.addPassthroughCopy({
+    [path.join(input, 'assets/images/favicon/*')]: '/'
+  })
+  // Sanity Presentation overlay — the preview function renders pages that load it from the deployed
+  // site, so every normal build ships it.
+  eleventyConfig.addPassthroughCopy({
+    [path.join(coreDist, 'assets/visual-editing')]: '/assets/visual-editing'
+  })
+  // Core-shipped legal graphics (harmonised warranty notice) — used by the checkout, the shipping
+  // info module and the order email, so only shops get them.
+  if (config.features.shop.enabled) {
+    eleventyConfig.addPassthroughCopy({
+      [path.join(coreDist, 'assets/legal')]: '/assets/legal'
+    })
+  }
+}

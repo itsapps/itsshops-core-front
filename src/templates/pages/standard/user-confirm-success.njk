@@ -1,0 +1,13 @@
+---
+layout: base.njk
+pagination:
+  data: coreConfig.locales
+  size: 1
+  alias: _locale
+  addAllPagesToCollections: false
+permalink: "{{ cms[_locale].confirmSuccessUrl }}"
+eleventyExcludeFromCollections: true
+noindex: true
+titleKey: staticPages.userConfirmSuccess.title
+---
+{%- include "overridable/user-confirm-success.njk" -%}

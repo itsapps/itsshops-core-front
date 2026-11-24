@@ -1,0 +1,863 @@
+/**
+ * WooCommerce REST API v3 compatibility layer.
+ *
+ * Exposes Sanity orders through a WC-compatible interface so third-party
+ * tools (e.g. wineNET) can consume them without code changes.
+ *
+ * Supported endpoints:
+ *   GET  /wp-json/wc/v3/system_status
+ *   GET  /wp-json/wc/v3/orders
+ *   PUT  /wp-json/wc/v3/orders/:id
+ *
+ * Auth: consumer_key / consumer_secret via query params or Basic auth header.
+ * Env:  WC_CONSUMER_KEY, WC_CONSUMER_SECRET, SANITY_PROJECT_ID, SANITY_DATASET, SANITY_TOKEN
+ *       WC_TIMEZONE (optional, default "Europe/Vienna")
+ */
+
+import type { Context } from '@netlify/functions'
+import { sanityClient } from '../services/sanity'
+import { sendOrderNotification, type SendOrderNotificationOptions } from '../lib/order-notifier'
+import { log } from '../utils/logger'
+import { safeEqual } from '../utils/server-auth'
+import { splitNameForExport } from '../utils/name'
+import { paymentMethodLabel } from '../lib/payment-method'
+import { serverT } from '../utils/i18n'
+import { extractVat } from '../lib/tax'
+import type { OrderPaymentMethod } from '../types/checkout'
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+/**
+ * What the ERP's `PUT {status: completed}` means:
+ * - `'shipped'` (default): the order was dispatched → status `shipped` (+ `notify` mail).
+ * - `'accepted'`: the ERP took the order over (e.g. wineNET when a Vormerkung becomes an
+ *   Auftrag), dispatch comes later. The order stays/becomes `processing`, `erpAcceptedAt` is
+ *   stored and the wc-api keeps reporting `completed` for it, so the ERP sees its own status;
+ *   the shop sets `shipped` in the Studio. `notify` is ignored for `completed` in this mode.
+ */
+export type WcApiCompletedMeans = 'shipped' | 'accepted'
+
+type WcApiConfig = {
+  timezone?: string
+  version?: string
+  /** If provided, sends an orderShipping email when status changes to shipped. */
+  notify?: SendOrderNotificationOptions
+  /** See `WcApiCompletedMeans`. Default `'shipped'`. */
+  completedMeans?: WcApiCompletedMeans
+}
+
+type ResolvedWcApiConfig = {
+  timezone: string
+  version: string
+  completedMeans: WcApiCompletedMeans
+}
+
+export type SanityOrder = {
+  _id: string
+  _createdAt: string
+  orderNumber: string
+  invoiceNumber: string
+  status: string
+  paymentStatus: string
+  paymentIntentId: string
+  /** What was charged (absent on older orders). */
+  payment: OrderPaymentMethod | null
+  /** True when an open (received|processing) withdrawal references this order. */
+  hasOpenWithdrawal: boolean
+  /** When the ERP accepted the order (`completedMeans: 'accepted'`), else null. */
+  erpAcceptedAt: string | null
+  customer: {
+    contactEmail: string
+    locale: string
+    billingAddress: SanityAddress | null
+    shippingAddress: SanityAddress | null
+  }
+  totals: {
+    grandTotal: number
+    subtotal: number
+    shipping: number
+    discount: number
+    totalVat: number
+    vatBreakdown: Array<{ rate: number; net: number; vat: number }> | null
+    currency: string
+  }
+  orderItems: SanityOrderItem[]
+  fulfillment: {
+    methodTitle: string | null
+    methodType: string | null
+    shippingCost: number
+    taxSnapshot: { rate: number; net: number; vat: number } | null
+    trackingCode: string | null
+    packagingLines: Array<{ _key: string; quantity: number; packSize: number; volumes?: number[]; volume?: number; price: number }> | null
+    /** Pickup only. */
+    pickupAddress: { line1: string | null; line2: string | null; zip: string | null; city: string | null; country: string | null } | null
+    pickupInstructions: string | null
+  } | null
+}
+
+type SanityAddress = {
+  name: string | null
+  prename: string | null
+  lastname: string | null
+  line1: string | null
+  line2: string | null
+  zip: string | null
+  city: string | null
+  country: string | null
+  state: string | null
+  phone: string | null
+}
+
+type SanityOrderItem = {
+  _key: string
+  kind: string
+  variantId: string
+  productId: string
+  title: string
+  subtitle: string | null
+  sku: string | null
+  quantity: number
+  price: number
+  vatRate: number
+  vatAmount: number
+  weight: number | null
+  /** Gross cents the discounts took off the whole line (stored allocation); unset = 0. */
+  discount?: number | null
+  /** Bundle contents snapshot (orders from 2026-11 on); `price` = share of one bundle. */
+  bundle?: { items?: SanityOrderBundleItem[] | null } | null
+}
+
+type SanityOrderBundleItem = {
+  _key: string
+  variantId: string
+  productId: string
+  title: string
+  subtitle: string | null
+  sku: string | null
+  quantity: number
+  price: number
+  vatRate: number
+  /** This item's part of the line's `discount` (whole line quantity); unset = 0. */
+  discount?: number | null
+}
+
+/**
+ * One WooCommerce line item before the amounts are computed. A bundle with a stored contents
+ * snapshot becomes one line per item (same `product_id` as the item bought loose; the bundle only
+ * in `meta_data`), so the ERP never sees a bundle article and each line has one VAT rate.
+ */
+type WcLine = {
+  idSource: string
+  productId: string
+  variantId: string
+  sku: string | null
+  name: string
+  quantity: number
+  vatRate: number
+  /** Gross of the whole line, cents (an expanded item: its share × the bundle quantity). */
+  lineGross: number
+  /** Gross discount of the whole line, cents (an expanded item: its own stored part). */
+  discount: number
+  meta: Array<{ key: string; value: string }>
+}
+
+function lineName(title: string, subtitle: string | null | undefined): string {
+  return subtitle ? `${title} - ${subtitle}` : title
+}
+
+export function expandOrderLines(order: Pick<SanityOrder, 'orderNumber' | 'orderItems'>): WcLine[] {
+  return order.orderItems.flatMap((item): WcLine[] => {
+    const base = [
+      { key: '_sanity_product_id', value: item.productId },
+      { key: '_sanity_variant_id', value: item.variantId },
+    ]
+    const items = item.bundle?.items
+    if (item.kind === 'bundle' && items?.length) {
+      return items.map(bi => ({
+        idSource: `${order.orderNumber}:${item._key}:${bi._key}`,
+        productId: bi.productId,
+        variantId: bi.variantId,
+        sku: bi.sku,
+        name: lineName(bi.title, bi.subtitle),
+        quantity: bi.quantity * item.quantity,
+        vatRate: bi.vatRate,
+        lineGross: bi.price * item.quantity,
+        discount: bi.discount ?? 0,
+        meta: [
+          { key: '_sanity_product_id', value: bi.productId },
+          { key: '_sanity_variant_id', value: bi.variantId },
+          { key: '_bundle_title', value: item.title },
+          { key: '_bundle_sku', value: item.sku ?? '' },
+          { key: '_bundle_variant_id', value: item.variantId },
+        ],
+      }))
+    }
+    return [{
+      idSource: `${order.orderNumber}:${item._key}`,
+      productId: item.productId,
+      variantId: item.variantId,
+      sku: item.sku,
+      name: lineName(item.title, item.subtitle),
+      quantity: item.quantity,
+      vatRate: item.vatRate,
+      lineGross: item.price * item.quantity,
+      discount: item.discount ?? 0,
+      meta: base,
+    }]
+  })
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const JSON_HEADERS = { 'content-type': 'application/json' } as const
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS })
+}
+
+function wcError(code: string, message: string, status = 400): Response {
+  return json({ code, message, data: { status } }, status)
+}
+
+/** Extract integer ID from orderNumber (e.g. "TH-000123" → 123). */
+function orderNumberToId(orderNumber: string): number {
+  const match = orderNumber.match(/(\d+)$/)
+  return match ? parseInt(match[1], 10) : 0
+}
+
+/** Pad integer back to 6-digit suffix for GROQ lookup. */
+function idToSuffix(id: number): string {
+  return String(id).padStart(6, '0')
+}
+
+/** Format cents to decimal string (e.g. 1234 → "12.34"). */
+function price(cents: number): string {
+  return (cents / 100).toFixed(2)
+}
+
+/** Format ISO date to WC response format: 2020-01-01T12:01:01 in the given timezone. */
+function formatDate(iso: string, tz: string): string {
+  const d = new Date(iso)
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).formatToParts(d)
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00'
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`
+}
+
+/** Format ISO date to UTC WC format. */
+function formatDateGmt(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`
+}
+
+/** Net cents from gross cents, unrounded (WooCommerce keeps line nets unrounded). */
+function exactNet(grossCents: number, ratePercent: number): number {
+  return ratePercent > 0 ? grossCents / (1 + ratePercent / 100) : grossCents
+}
+
+// ── Status mapping ───────────────────────────────────────────────────────────
+
+const STATUS_TO_WC: Record<string, string> = {
+  created: 'processing',
+  processing: 'processing',
+  shipped: 'completed',
+  delivered: 'completed',
+  canceled: 'cancelled',
+  returned: 'refunded',
+}
+
+const STATUS_FROM_WC: Record<string, string> = {
+  processing: 'processing',
+  completed: 'shipped',
+  cancelled: 'canceled',
+  refunded: 'returned',
+}
+
+const VALID_INTERNAL_STATUSES = new Set(Object.keys(STATUS_TO_WC))
+
+/** Internal statuses before dispatch. */
+const PRE_DISPATCH = ['created', 'processing']
+
+/**
+ * GROQ filter for the requested WC statuses (`GET orders?status=…`), or null for no filter.
+ * Unknown WC statuses (e.g. "pending", "on-hold") are ignored — they have no equivalent in our
+ * system and must not block known statuses; only unknown ones → `false` (nothing, not all).
+ * In `accepted` mode the filter follows the *reported* status: an undispatched order the ERP
+ * accepted is reported `completed`, so it leaves `processing` and joins `completed`.
+ */
+export function statusFilter(
+  requestedWcStatuses: string[],
+  completedMeans: WcApiCompletedMeans,
+): { filter: string | null; params: Record<string, unknown> } {
+  if (requestedWcStatuses.length === 0) return { filter: null, params: {} }
+  const statuses = [...new Set(
+    Object.entries(STATUS_TO_WC)
+      .filter(([, wc]) => requestedWcStatuses.includes(wc))
+      .map(([internal]) => internal),
+  )]
+  if (statuses.length === 0) return { filter: 'false', params: {} }
+  if (completedMeans === 'shipped') return { filter: 'status in $statuses', params: { statuses } }
+  const accepted = `defined(erpAcceptedAt) && status in ${JSON.stringify(PRE_DISPATCH)}`
+  return {
+    filter: `((status in $statuses && !(${accepted})) || ($wantsCompleted && ${accepted}))`,
+    params: { statuses, wantsCompleted: requestedWcStatuses.includes('completed') },
+  }
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+function authenticate(request: Request): boolean {
+  const expectedKey = process.env.WC_CONSUMER_KEY
+  const expectedSecret = process.env.WC_CONSUMER_SECRET
+  if (!expectedKey || !expectedSecret) return false
+
+  const url = new URL(request.url)
+
+  // Try query params first
+  const qKey = url.searchParams.get('consumer_key')
+  const qSecret = url.searchParams.get('consumer_secret')
+  if (qKey && qSecret) {
+    return safeEqual(qKey, expectedKey) && safeEqual(qSecret, expectedSecret)
+  }
+
+  // Try Authorization: Basic header (runs before the handler's try: must never throw)
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Basic ')) {
+    let decoded: string
+    try {
+      decoded = atob(authHeader.slice(6))
+    } catch {
+      return false
+    }
+    // Split at the first ':' only — the secret may contain ':'
+    const sep = decoded.indexOf(':')
+    if (sep === -1) return false
+    const keyOk = safeEqual(decoded.slice(0, sep), expectedKey)
+    const secretOk = safeEqual(decoded.slice(sep + 1), expectedSecret)
+    return keyOk && secretOk
+  }
+
+  return false
+}
+
+// ── Address mapping ──────────────────────────────────────────────────────────
+
+function mapAddress(addr: SanityAddress | null) {
+  if (!addr) return {
+    first_name: '', last_name: '', company: '', address_1: '', address_2: '',
+    city: '', state: '', postcode: '', country: '', phone: '',
+  }
+  const { firstName, lastName } = splitNameForExport(addr)
+  return {
+    first_name: firstName,
+    last_name: lastName,
+    company: '',
+    address_1: addr.line1 ?? '',
+    address_2: addr.line2 ?? '',
+    city: addr.city ?? '',
+    state: addr.state ?? '',
+    postcode: addr.zip ?? '',
+    country: addr.country ?? '',
+    phone: addr.phone ?? '',
+  }
+}
+
+// ── Order mapping ────────────────────────────────────────────────────────────
+
+/**
+ * Shipping-line meta of a pickup order, with WooCommerce's own Local Pickup keys: location
+ * name, its address on one line, the pickup details (instructions).
+ */
+function pickupMeta(orderNumber: string, f: NonNullable<SanityOrder['fulfillment']>) {
+  const a = f.pickupAddress
+  const address = a
+    ? [a.line1, a.line2, [a.zip, a.city].filter(Boolean).join(' '), a.country].filter(Boolean).join(', ')
+    : ''
+  return [
+    { key: 'pickup_location', value: f.methodTitle ?? '' },
+    { key: 'pickup_address', value: address },
+    { key: 'pickup_details', value: f.pickupInstructions ?? '' },
+  ].map(m => ({ id: stableId(`${orderNumber}:shipping:${m.key}`), ...m }))
+}
+
+/** Simple string-to-positive-integer hash for stable IDs. */
+function stableId(s: string): number {
+  let hash = 5381
+  for (let i = 0; i < s.length; i++) hash = ((hash << 5) + hash + s.charCodeAt(i)) >>> 0
+  return (hash % 2_000_000_000) + 1
+}
+
+export function mapOrder(order: SanityOrder, tz: string, completedMeans: WcApiCompletedMeans = 'shipped') {
+  const id = orderNumberToId(order.orderNumber)
+  const t = order.totals
+  const f = order.fulfillment
+
+  // Reported WC status, in precedence order. The internal fulfillment status is
+  // left untouched in Sanity — this only changes what the ERP sees:
+  //   1. Fully refunded → `refunded`. A refund sets paymentStatus only (fulfillment
+  //      status stays e.g. `created`), so without this a refunded-but-unshipped
+  //      order would keep reporting `processing` and get shipped anyway.
+  //   2. `completedMeans: 'accepted'`: a still-undispatched order the ERP accepted →
+  //      `completed`, the status the ERP set itself. Before the withdrawal rule: the list
+  //      filter keeps accepted orders out of the ERP's processing poll, so a `cancelled`
+  //      would never reach it (a withdrawal is cancelled in the ERP by hand).
+  //   3. Open withdrawal on a still-undispatched order → `cancelled`, so the ERP
+  //      (which polls pending/processing/on-hold) drops it from its ship queue.
+  //   4. Otherwise → the normal fulfillment-status mapping.
+  // Partial refunds are intentionally not overridden — such orders may still ship.
+  const isPreDispatch = PRE_DISPATCH.includes(order.status)
+  let reportedStatus: string
+  if (order.paymentStatus === 'refunded') {
+    reportedStatus = 'refunded'
+  } else if (completedMeans === 'accepted' && order.erpAcceptedAt && isPreDispatch) {
+    reportedStatus = 'completed'
+  } else if (order.hasOpenWithdrawal && isPreDispatch) {
+    reportedStatus = 'cancelled'
+  } else {
+    reportedStatus = STATUS_TO_WC[order.status] ?? order.status
+  }
+  // Taxes and line amounts follow WooCommerce (prices entered incl. tax), because the ERP
+  // was built against it — see .claude/architecture/wc-api.md "Rounding":
+  //   - line net = gross minus the *unrounded* tax; `price` = that net / quantity, unrounded
+  //   - line tax is rounded per line; a tax line's `tax_total` = sum of its item line taxes
+  //   - shipping tax is rounded on its own and reported only in `shipping_tax_total`
+  //   - order `total_tax` = sum of all of the above
+  // Our checkout rounds VAT per rate (totals.vatBreakdown), so `total_tax` can differ from the
+  // shop's invoice VAT by a cent on multi-line orders; `total` is always the amount charged.
+  const shippingTax = f?.taxSnapshot?.vat ?? 0
+  const shippingNet = f ? f.shippingCost - shippingTax : 0
+  const shippingRate = f?.taxSnapshot?.rate ?? null
+
+  // Discounted gross per line = its stored allocation (`orderItem.discount` / bundle item
+  // `discount`, written by checkout or the discounts migration): the lines already sum to
+  // `grandTotal - shippingCost` exactly, so no factor and no remainder. Bundles are sent as their
+  // items (see `expandOrderLines`); everything below runs over the expanded lines.
+  const wcLines = expandOrderLines(order)
+  const discountedGrossPerItem = wcLines.map(line => line.lineGross - line.discount)
+
+  // Per line, in cents: exact (unrounded) net and per-line rounded tax, before (subtotal)
+  // and after (total) the discount.
+  const lines = wcLines.map((item, i) => {
+    const gross = item.lineGross
+    const discountedGross = discountedGrossPerItem[i]
+    return {
+      item,
+      subtotalNet: exactNet(gross, item.vatRate),
+      subtotalTax: extractVat(gross, item.vatRate),
+      totalNet: exactNet(discountedGross, item.vatRate),
+      totalTax: extractVat(discountedGross, item.vatRate),
+    }
+  })
+
+  // One tax line per rate (items first, then a shipping-only rate if any). As in WooCommerce,
+  // a rate is per country and its `rate_id` is the same in every order (AT 20 % ≠ DE 20 %);
+  // the tax country is the shipping country, as in checkout — for pickup the pickup location's
+  // country (WC does the same with `_pickup_location_address`). `id` is the tax line's own
+  // number; line `taxes[].id` refer to `rate_id`.
+  const isPickup = f?.methodType === 'pickup'
+  const taxCountry = ((isPickup ? f?.pickupAddress?.country : null)
+    ?? order.customer?.shippingAddress?.country
+    ?? order.customer?.billingAddress?.country ?? '').toUpperCase()
+  const rateId = (rate: number) => stableId(`tax-rate:${taxCountry}:${rate}`)
+  const rates = [...new Set(wcLines.map(line => line.vatRate))]
+  if (shippingRate && !rates.includes(shippingRate)) rates.push(shippingRate)
+  const taxLines = rates.map((rate, i) => ({
+    id: i + 1,
+    rate_code: taxCountry ? `${taxCountry}-${rate}` : `TAX-${rate}`,
+    rate_id: rateId(rate),
+    label: `${rate}%`,
+    compound: false,
+    rate_percent: rate.toFixed(2),
+    tax_total: price(lines.filter(l => l.item.vatRate === rate).reduce((s, l) => s + l.totalTax, 0)),
+    shipping_tax_total: price(rate === shippingRate ? shippingTax : 0),
+  }))
+
+  // Line ids must be unique within the order (the 32-bit hash can clash): on a clash, re-hash
+  // with `:1`, `:2`, … appended — deterministic, so an order always gets the same ids.
+  const usedIds = new Set<number>()
+  const uniqueId = (source: string): number => {
+    let id = stableId(source)
+    for (let n = 1; usedIds.has(id); n++) id = stableId(`${source}:${n}`)
+    usedIds.add(id)
+    return id
+  }
+
+  const itemsTax = lines.reduce((s, l) => s + l.totalTax, 0)
+  // Discount split as WooCommerce reports it: net and tax difference of the line amounts.
+  const discountTotal = lines.reduce((s, l) => s + Math.round(l.subtotalNet) - Math.round(l.totalNet), 0)
+  const discountTax = lines.reduce((s, l) => s + l.subtotalTax - l.totalTax, 0)
+
+  return {
+    id,
+    number: order.orderNumber,
+    status: reportedStatus,
+    currency: t.currency ?? 'EUR',
+    prices_include_tax: true,
+    date_created: formatDate(order._createdAt, tz),
+    date_created_gmt: formatDateGmt(order._createdAt),
+    date_paid: order.paymentStatus === 'succeeded' ? formatDate(order._createdAt, tz) : null,
+    date_paid_gmt: order.paymentStatus === 'succeeded' ? formatDateGmt(order._createdAt) : null,
+    discount_total: price(discountTotal),
+    discount_tax: price(discountTax),  // tax saved by the discount
+    shipping_total: price(shippingNet),
+    shipping_tax: price(shippingTax),
+    total: price(t.grandTotal),
+    total_tax: price(itemsTax + shippingTax),
+    customer_id: 0,
+    customer_note: '',
+    billing: {
+      ...mapAddress(order.customer?.billingAddress),
+      email: order.customer?.contactEmail ?? '',
+    },
+    // Pickup: a copy of billing, as WC's block checkout stores it for Local Pickup (the pickup
+    // location goes into the shipping line's meta, not here).
+    shipping: mapAddress(order.customer?.shippingAddress ?? order.customer?.billingAddress),
+    // Stripe type (card, eps, klarna, …) + readable label ("Visa •••• 4242"); 'stripe' for
+    // older orders without the snapshot.
+    payment_method: order.payment?.type ?? 'stripe',
+    payment_method_title: order.payment
+      ? paymentMethodLabel(order.payment, (key) => serverT('de', key))
+      : 'Stripe',
+    transaction_id: order.paymentIntentId ?? '',
+    meta_data: [],
+    line_items: lines.map(({ item, subtotalNet, subtotalTax, totalNet, totalTax }) => ({
+      id: uniqueId(item.idSource),
+      name: item.name,
+      product_id: stableId(item.productId),
+      variation_id: stableId(item.variantId),
+      quantity: item.quantity,
+      sku: item.sku ?? '',
+      // Net unit price after discount, unrounded number (WC: line total / quantity). Never
+      // the gross price — the ERP adds the VAT to it.
+      price: totalNet / item.quantity / 100,
+      subtotal: price(Math.round(subtotalNet)),
+      subtotal_tax: price(subtotalTax),
+      total: price(Math.round(totalNet)),
+      total_tax: price(totalTax),
+      taxes: [{ id: rateId(item.vatRate), subtotal: price(subtotalTax), total: price(totalTax) }],
+      meta_data: item.meta,
+    })),
+    tax_lines: taxLines,
+    shipping_lines: f ? [{
+      id: 1,
+      // Pickup: WC block checkout's Local Pickup method + its line meta keys.
+      method_id: isPickup ? 'pickup_location' : (f.methodType ?? 'flat_rate'),
+      method_title: f.methodTitle ?? '',
+      ...(isPickup && { meta_data: pickupMeta(order.orderNumber, f) }),
+      total: price(shippingNet),
+      total_tax: price(shippingTax),
+      // WC lists the shipping rate even at 0 tax (free shipping); only no rate → []
+      taxes: shippingRate ? [{
+        id: rateId(shippingRate),
+        total: price(shippingTax),
+        subtotal: price(shippingTax),
+      }] : [],
+    }] : [],
+    fee_lines: [],
+  }
+}
+
+// ── GROQ ─────────────────────────────────────────────────────────────────────
+
+const ORDER_PROJECTION = `{
+  _id, _createdAt,
+  orderNumber, invoiceNumber, status, paymentStatus, paymentIntentId, payment, erpAcceptedAt,
+  "hasOpenWithdrawal": count(*[_type == "orderWithdrawal" && orderRef._ref == ^._id && status in ["received", "processing"]]) > 0,
+  customer { contactEmail, locale, billingAddress, shippingAddress },
+  totals { grandTotal, subtotal, shipping, discount, totalVat, vatBreakdown, currency },
+  orderItems[] {
+    _key, kind, variantId, productId, title, subtitle, sku, quantity, price, vatRate, vatAmount, weight, discount,
+    bundle { items[] { _key, variantId, productId, sku, subtitle, title, quantity, price, vatRate, discount } }
+  },
+  fulfillment {
+    methodTitle, methodType, shippingCost, taxSnapshot, trackingCode, packagingLines,
+    pickupAddress, pickupInstructions
+  }
+}`
+
+// ── Route handlers ───────────────────────────────────────────────────────────
+
+function handleSystemStatus(config: ResolvedWcApiConfig): Response {
+  log.debug('System status')
+  return json({
+    environment: {
+      version: config.version,
+      default_timezone: config.timezone,
+    },
+    settings: {
+      api_enabled: true,
+      currency: 'EUR',
+    },
+  })
+}
+
+async function handleListOrders(
+  request: Request,
+  config: ResolvedWcApiConfig,
+): Promise<Response> {
+  const url = new URL(request.url)
+  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10))
+  const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page') ?? '10', 10)))
+  const statusParam = url.searchParams.get('status') ?? ''
+  const after = url.searchParams.get('after') ?? ''
+  const before = url.searchParams.get('before') ?? ''
+
+  // WC status (or comma-separated list) → GROQ filter
+  const requestedWcStatuses = statusParam ? statusParam.split(',').map(s => s.trim()) : []
+  const status = statusFilter(requestedWcStatuses, config.completedMeans)
+  const filters = ['_type == "order"']
+  const params: Record<string, unknown> = { ...status.params }
+  if (status.filter) filters.push(status.filter)
+  for (const [name, value, op] of [['after', after, '>'], ['before', before, '<']] as const) {
+    if (!value) continue
+    const date = new Date(value)
+    if (isNaN(date.getTime())) {
+      return wcError('rest_invalid_param', `Invalid parameter(s): ${name}`, 400)
+    }
+    filters.push(`_createdAt ${op} $${name}`)
+    params[name] = date.toISOString()
+  }
+
+  const start = (page - 1) * perPage
+  const end = start + perPage
+
+  const base = `*[${filters.join(' && ')}]`
+  const query = `{
+    "orders": ${base} | order(_createdAt desc) [$start...$end] ${ORDER_PROJECTION},
+    "total":  count(${base})
+  }`
+  params.start = start
+  params.end = end
+
+  const { orders, total } = await sanityClient.fetch<{ orders: SanityOrder[]; total: number }>(query, params)
+  const totalPages = Math.ceil(total / perPage)
+
+  log.debug('List orders', {
+    page,
+    perPage,
+    statusFilter: statusParam,
+    after,
+    before,
+    total,
+    totalPages,
+    orders: orders.length,
+  })
+
+  const mapped = orders.map(o => mapOrder(o, config.timezone, config.completedMeans))
+
+  return new Response(JSON.stringify(mapped), {
+    status: 200,
+    headers: {
+      ...JSON_HEADERS,
+      'x-wp-total': String(total),
+      'x-wp-totalpages': String(totalPages),
+    },
+  })
+}
+
+async function handleUpdateOrder(
+  orderId: number,
+  request: Request,
+  context: Context,
+  config: ResolvedWcApiConfig,
+  notify?: SendOrderNotificationOptions,
+): Promise<Response> {
+  let body: Record<string, unknown>
+  try {
+    body = await request.json() as Record<string, unknown>
+  } catch {
+    return wcError('woocommerce_rest_invalid_json', 'Invalid JSON body')
+  }
+
+  const wcStatus = typeof body.status === 'string' ? body.status : null
+  if (!wcStatus) {
+    log.error('Update order: Missing status parameter', { keys: Object.keys(body) })
+    return wcError('woocommerce_rest_missing_status', 'Missing status parameter')
+  }
+
+  const internalStatus = STATUS_FROM_WC[wcStatus] ?? wcStatus
+  if (!VALID_INTERNAL_STATUSES.has(internalStatus)) {
+    log.error('Update order: Invalid status', { wcStatus })
+    return wcError('woocommerce_rest_invalid_status', `Invalid status: ${wcStatus}`)
+  }
+
+  // Find order by numeric suffix
+  const suffix = idToSuffix(orderId)
+  const order = await sanityClient.fetch<SanityOrder | null>(
+    `*[_type == "order" && orderNumber match $suffix][0] ${ORDER_PROJECTION}`,
+    { suffix: `*${suffix}` },
+  )
+
+  if (!order) {
+    log.error('Update order: order not found', { orderId, suffix })
+    return wcError('woocommerce_rest_order_invalid_id', `Order ${orderId} not found`, 404)
+  }
+
+  // Defensive write-side guard: never let the ERP mark an order shipped when it
+  // must not be fulfilled — fully refunded, an open withdrawal, or already
+  // cancelled. The read side already drops such orders from the ERP's poll, but
+  // a poll→ship race could still PUT `completed`; refusing it here prevents both
+  // the bad status change and a shipping email to a withdrawn/refunded customer.
+  // In `accepted` mode the same applies to the ERP accepting it (an Auftrag for a withdrawn order).
+  if (
+    wcStatus === 'completed' &&
+    (order.paymentStatus === 'refunded' || order.hasOpenWithdrawal || order.status === 'canceled')
+  ) {
+    log.warn('Update order: refused ship transition on non-fulfillable order', {
+      orderId,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      hasOpenWithdrawal: order.hasOpenWithdrawal,
+    })
+    return wcError(
+      'woocommerce_rest_order_not_fulfillable',
+      `Order ${orderId} cannot be marked shipped (refunded, withdrawn, or cancelled)`,
+      409,
+    )
+  }
+
+  const now = new Date().toISOString()
+  const historyEntry = (type: 'fulfillment' | 'erp', status: string) => ({
+    _type: 'orderStatusHistory',
+    _key: crypto.randomUUID(),
+    type,
+    status,
+    timestamp: now,
+    source: 'wc-api',
+  })
+
+  if (config.completedMeans === 'accepted' && wcStatus === 'completed') {
+    return acceptOrder(order, now, historyEntry, config)
+  }
+
+  log.debug('Update order', {
+    orderId,
+    wcStatus,
+    internalStatus,
+  })
+
+  const patch = sanityClient
+    .patch(order._id)
+    .set({ status: internalStatus })
+    .append('statusHistory', [historyEntry('fulfillment', internalStatus)])
+  // The ERP took its acceptance back
+  const erpTookBack = config.completedMeans === 'accepted' && wcStatus === 'processing'
+  if (erpTookBack) patch.unset(['erpAcceptedAt'])
+  await patch.commit()
+
+  if (internalStatus === 'shipped' && notify) {
+    context.waitUntil(
+      sendOrderNotification(order._id, 'orderShipping', { ...notify, historySource: 'wc-api' }).catch(err =>
+        log.error('Shipping notification failed', {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
+    )
+  }
+
+  return json(mapOrder(
+    { ...order, status: internalStatus, ...(erpTookBack && { erpAcceptedAt: null }) },
+    config.timezone,
+    config.completedMeans,
+  ))
+}
+
+/**
+ * `PUT completed` in `accepted` mode: the ERP took the order over, it isn't shipped. `created`
+ * → `processing`, every other status stays; `erpAcceptedAt` is set once (a repeat changes
+ * nothing and appends no history). Never sends a mail. Reported back as `completed`.
+ */
+async function acceptOrder(
+  order: SanityOrder,
+  now: string,
+  historyEntry: (type: 'fulfillment' | 'erp', status: string) => Record<string, unknown>,
+  config: ResolvedWcApiConfig,
+): Promise<Response> {
+  const newStatus = order.status === 'created' ? 'processing' : order.status
+  const entries = [
+    ...(order.erpAcceptedAt ? [] : [historyEntry('erp', 'accepted')]),
+    ...(newStatus !== order.status ? [historyEntry('fulfillment', newStatus)] : []),
+  ]
+
+  log.debug('Update order: accepted by ERP', {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    newStatus,
+    repeat: Boolean(order.erpAcceptedAt),
+  })
+
+  const patch = sanityClient.patch(order._id).setIfMissing({ erpAcceptedAt: now })
+  if (newStatus !== order.status) patch.set({ status: newStatus })
+  if (entries.length) patch.append('statusHistory', entries)
+  await patch.commit()
+
+  return json(mapOrder(
+    { ...order, status: newStatus, erpAcceptedAt: order.erpAcceptedAt ?? now },
+    config.timezone,
+    config.completedMeans,
+  ))
+}
+
+// ── Main handler factory ─────────────────────────────────────────────────────
+
+export function createWcApiHandler(userConfig: WcApiConfig = {}) {
+  const config: ResolvedWcApiConfig = {
+    timezone: userConfig.timezone ?? process.env.WC_TIMEZONE ?? 'Europe/Vienna',
+    version: userConfig.version ?? '9.0.0',
+    completedMeans: userConfig.completedMeans ?? 'shipped',
+  }
+
+  return async (request: Request, context: Context): Promise<Response> => {
+    // Auth
+    if (!authenticate(request)) {
+      return wcError('woocommerce_rest_cannot_view', 'Unauthorized', 401)
+    }
+
+    // Parse route: everything after /wp-json/wc/v3/
+    const url = new URL(request.url)
+    const path = url.pathname.replace(/.*\/wp-json\/wc\/v3\/?/, '')
+
+    // Which query params the client sends (names only — consumer_key/secret may be
+    // among them), plus `dp` (decimal places), which this API does not support yet.
+    log.debug('Request', {
+      method: request.method,
+      path,
+      params: [...new Set(url.searchParams.keys())],
+      dp: url.searchParams.get('dp'),
+      userAgent: request.headers.get('user-agent'),
+    })
+
+    try {
+      // GET /system_status
+      if (path === 'system_status' && request.method === 'GET') {
+        return handleSystemStatus(config)
+      }
+
+      // GET /orders
+      if (path === 'orders' && request.method === 'GET') {
+        return handleListOrders(request, config)
+      }
+
+      // PUT /orders/:id
+      const orderMatch = path.match(/^orders\/(\d+)$/)
+      if (orderMatch && request.method === 'PUT') {
+        const id = parseInt(orderMatch[1], 10)
+        return handleUpdateOrder(id, request, context, config, userConfig.notify)
+      }
+
+      log.error('No route found', { method: request.method, path })
+      return wcError('woocommerce_rest_no_route', `No route found for ${request.method} ${path}`, 404)
+    } catch (err) {
+      log.error('Internal server error', { err })
+      return wcError('woocommerce_rest_internal_error', 'Internal server error', 500)
+    }
+  }
+}

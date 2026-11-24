@@ -1,0 +1,151 @@
+import type { ResolveContext, Extensions } from '../../types'
+import type { ResolvedSettings, ResolvedShopSettings, ResolvedCompany, ResolvedAddress, ResolvedShippingMethod } from '../../types/data'
+import { resolveFilterSpecs } from './filters'
+
+export function resolveSettings(
+  raw: any,
+  ctx: ResolveContext,
+  extensions?: Extensions,
+): ResolvedSettings {
+  return {
+    _id:                  raw._id,
+    siteTitle:            ctx.resolveString(raw.siteTitle),
+    siteShortDescription: ctx.resolveString(raw.siteShortDescription),
+    homePageId:           raw.homePage?._ref ?? null,
+    privacyPageId:        raw.privacyPage?._ref ?? null,
+    mainMenus:            (raw.mainMenus  ?? []).map((m: any) => m._ref),
+    footerMenus:          (raw.footerMenus ?? []).map((m: any) => m._ref),
+    gtmId:                raw.gtmId ?? null,
+    company:              raw.company ? resolveCompany(raw.company, ctx, extensions) : null,
+    defaultShareImage:    ctx.resolveBaseImage(raw.defaultShareImage) ?? null,
+  }
+}
+
+function resolveCompany(raw: any, ctx: ResolveContext, extensions?: Extensions): ResolvedCompany {
+  const addr = raw.address
+  const { name, owner, email, phone, vatId, registerNumber, registerCourt, address: _addr, ...rest } = raw
+  const extensionFields = extensions?.resolve?.company?.(rest, ctx) ?? {}
+  return {
+    name:  ctx.resolveString(name),
+    owner: owner ?? '',
+    email: email ?? null,
+    phone: phone ?? null,
+    vatId: vatId ?? null,
+    registerNumber: registerNumber ?? null,
+    registerCourt:  registerCourt  ?? null,
+    address: addr ? {
+      line1:   addr.line1   ?? '',
+      line2:   addr.line2   ?? '',
+      zip:     addr.zip     ?? '',
+      city:    ctx.resolveString(addr.city),
+      country: addr.country ?? '',
+    } satisfies ResolvedAddress : null,
+    ...extensionFields,
+  }
+}
+
+/** Methods serving the shop's home country (`shopSettings.defaultCountry`) come first; otherwise
+ *  creation order is kept. */
+export function resolveShippingMethods(raw: any[], ctx: ResolveContext, homeCountry?: string | null): ResolvedShippingMethod[] {
+  const methods: ResolvedShippingMethod[] = (raw ?? []).map((m: any) => resolveShippingMethod(m, ctx))
+  if (!homeCountry) return methods
+  const servesHome = (m: ResolvedShippingMethod) => (m.countries.includes(homeCountry) ? 0 : 1)
+  return methods.sort((a, b) => servesHome(a) - servesHome(b))
+}
+
+function resolveShippingMethod(m: any, ctx: ResolveContext): ResolvedShippingMethod {
+  const isPickup = m.methodType === 'pickup'
+  const addr = m.pickupAddress
+  const base = {
+    _id:          m._id,
+    title:        ctx.resolveString(m.title),
+    deliveryTime: ctx.resolveString(m.deliveryTime) || null,
+    methodType:   isPickup ? 'pickup' as const : 'delivery' as const,
+    pickupFee:    m.pickupFee ?? null,
+    pickupAddress: isPickup && addr?.line1 ? {
+      line1:   addr.line1 ?? '',
+      line2:   addr.line2 ?? '',
+      zip:     addr.zip ?? '',
+      city:    ctx.resolveString(addr.city),
+      country: addr.country ?? '',
+    } satisfies ResolvedAddress : null,
+    pickupInstructions: isPickup ? ctx.resolveString(m.pickupInstructions) || null : null,
+    pickupHoldDays: isPickup ? m.pickupHoldDays ?? null : null,
+  }
+  // A pickup method has no countries, rates, packaging or threshold — values left over from
+  // before a type switch in the Studio are ignored (as the checkout does).
+  if (isPickup) {
+    return { ...base, freeShippingThreshold: null, countries: [], rates: [], packagingGroups: [] }
+  }
+  return {
+    ...base,
+    freeShippingThreshold: m.freeShippingThreshold ?? null,
+    countries:    (m.countries ?? [])
+      .filter((c: any) => c?.enabled && c.countryCode)
+      .map((c: any) => c.countryCode as string),
+    // Weight rates ascending — "bis X kg: Y"; prices are gross cents, as the checkout charges them.
+    rates: [...(m.rates ?? [])]
+      .filter((r: any) => typeof r?.price === 'number')
+      .sort((a: any, b: any) => (a.maxWeight ?? Infinity) - (b.maxWeight ?? Infinity))
+      .map((r: any) => ({ maxWeight: r.maxWeight ?? null, price: r.price })),
+    // Box types: bottle sizes largest first (caption), boxes by places ascending.
+    packagingGroups: (m.packagingGroups ?? [])
+      .map((g: any) => ({
+        bottles: [...(g.bottles ?? [])]
+          .filter((b: any) => typeof b?.volume === 'number')
+          .sort((a: any, b: any) => b.volume - a.volume)
+          .map((b: any) => ({ volume: b.volume, perPlace: Math.max(1, b.perPlace ?? 1) })),
+        packages: [...(g.packages ?? [])]
+          .filter((p: any) => typeof p?.places === 'number' && typeof p?.price === 'number')
+          .sort((a: any, b: any) => a.places - b.places)
+          .map((p: any) => ({ places: p.places, price: p.price })),
+      }))
+      .filter((g: any) => g.bottles.length && g.packages.length),
+  }
+}
+
+export function resolveShopSettings(raw: any, ctx: ResolveContext): ResolvedShopSettings {
+  return {
+    filters: resolveFilterSpecs(raw.filters, ctx),
+    _id:                     raw._id,
+    shopPageId:              raw.shopPage?._ref ?? null,
+    termsPageId:              raw.termsPage?._ref ?? null,
+    withdrawalPolicyPageId:  raw.withdrawalPolicyPage?._ref ?? null,
+    shippingInfoPageId:      raw.shippingInfoPage?._ref ?? null,
+    defaultCountry:          raw.defaultCountry
+      ? { _id: raw.defaultCountry._id, countryCode: raw.defaultCountry.countryCode ?? '' }
+      : null,
+    freeShippingCalculation: raw.freeShippingCalculation ?? 'beforeDiscount',
+    stockThreshold:          raw.stockThreshold ?? null,
+    defaultTaxCategory:      raw.defaultTaxCategory
+      ? {
+          _id:   raw.defaultTaxCategory._id,
+          title: ctx.resolveString(raw.defaultTaxCategory.title),
+          code:  raw.defaultTaxCategory.code ?? '',
+        }
+      : null,
+    orderNumberPrefix:   raw.orderNumberPrefix   ?? null,
+    invoiceNumberPrefix: raw.invoiceNumberPrefix ?? null,
+    billingAddress: raw.billingAddress ? {
+      line1:   raw.billingAddress.line1   ?? '',
+      line2:   raw.billingAddress.line2   ?? '',
+      zip:     raw.billingAddress.zip     ?? '',
+      city:    ctx.resolveString(raw.billingAddress.city),
+      country: raw.billingAddress.country ?? '',
+    } satisfies ResolvedAddress : null,
+    bankAccount:         raw.bankAccount
+      ? { name: raw.bankAccount.name ?? '', bic: raw.bankAccount.bic ?? '', iban: raw.bankAccount.iban ?? '' }
+      : null,
+    returnAddress: raw.returnAddress?.line1 ? {
+      line1:   raw.returnAddress.line1   ?? '',
+      line2:   raw.returnAddress.line2   ?? '',
+      zip:     raw.returnAddress.zip     ?? '',
+      city:    ctx.resolveString(raw.returnAddress.city),
+      country: raw.returnAddress.country ?? '',
+    } satisfies ResolvedAddress : null,
+    returnShippingBorneBy: raw.returnShippingBorneBy === 'merchant' ? 'merchant' : 'customer',
+    returnPolicyNote:      ctx.resolveString(raw.returnPolicyNote) || null,
+    withdrawalPeriodStart: raw.withdrawalPeriodStart ?? 'multipleGoods',
+    withdrawalExceptions:  raw.withdrawalExceptions ?? [],
+  }
+}

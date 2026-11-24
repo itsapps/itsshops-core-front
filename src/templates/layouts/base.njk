@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="{{ page.lang }}"
+  {%- if coreConfig.formatLocales[page.lang] %} data-format-locale="{{ coreConfig.formatLocales[page.lang] }}"{% endif %}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% include "core/head/seo.njk" %}
+    {%- if not coreConfig.preview.enabled -%}{% include "core/head/schemas.njk" %}{%- endif -%}
+    {% include "core/head/preloads.njk" %}
+    {% include "core/head/css.njk" %}
+    {% include "core/head/favicons.njk" %}
+    {%- include "core/head/js-inline.njk" -%}
+    {% getBundle "html", "head" %}
+  </head>
+
+  <body>
+    <a href="#main" class="skip-link">{{ 'skipLink.title' | trans }}</a>
+    {# {% include "core/partials/dev-nav.njk" %} #}
+    {%- include "overridable/header.njk" -%}
+
+    {#
+      tabindex="-1" makes <main> programmatically focusable without putting it
+      in the tab order, so the skip link above actually delivers focus here.
+      Without it, browsers only relocate the tab starting point — Firefox and
+      Chrome do that reliably, Safari historically did not, and a screen reader
+      gets no announcement that the skip happened. Paired with
+      `main:focus { outline: none }` in global-styles.css.
+    #}
+    <main id="main" tabindex="-1">
+      {{ content | safe }}
+    </main>
+
+    {% include "overridable/footer.njk" %}
+    {%- if coreConfig.features.shop.checkout -%}{%- include "overridable/cart.njk" -%}{%- endif -%}
+    {%- if coreConfig.ageGate.enabled and not coreConfig.preview.enabled -%}{%- include "overridable/age-gate.njk" -%}{%- endif -%}
+
+    {% getBundle "html", "externalJS" %}
+    <script src="/assets/scripts/index.js" type="module"></script>
+
+    {% if coreConfig.preview.enabled %}
+      {% include "core/partials/visual-editing.njk" %}
+    {% endif %}
+  </body>
+</html>

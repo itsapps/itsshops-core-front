@@ -1,0 +1,87 @@
+import { defineConfig } from 'tsup';
+import fsExtra from 'fs-extra';
+import esbuild from 'esbuild';
+const { copySync } = fsExtra;
+
+export default defineConfig({
+  entry: {
+    itsshops: 'src/bin/itsshops.ts',
+    index: 'src/index.ts',
+    core: 'src/core/index.ts',
+    preview: 'src/netlify/functions/preview.ts',
+    'preview-enable': 'src/netlify/functions/preview-enable.ts',
+    'payment-create': 'src/netlify/functions/payment-create.ts',
+    'payment-webhooks': 'src/netlify/functions/payment-webhooks.ts',
+    'payment-refund': 'src/netlify/functions/payment-refund.ts',
+    'order-notify': 'src/netlify/functions/order-notify.ts',
+    'order-withdraw': 'src/netlify/functions/order-withdraw.ts',
+    'order-status': 'src/netlify/functions/order-status.ts',
+    'order-withdraw-notify': 'src/netlify/functions/order-withdraw-notify.ts',
+    'user-register': 'src/netlify/functions/user-register.ts',
+    'user-login': 'src/netlify/functions/user-login.ts',
+    'user-logout': 'src/netlify/functions/user-logout.ts',
+    'user-confirm': 'src/netlify/functions/user-confirm.ts',
+    'user-recover': 'src/netlify/functions/user-recover.ts',
+    'user-reset': 'src/netlify/functions/user-reset.ts',
+    'auth-webhooks': 'src/netlify/functions/auth-webhooks.ts',
+    'newsletter-subscribe': 'src/netlify/functions/newsletter-subscribe.ts',
+    'newsletter-confirm': 'src/netlify/functions/newsletter-confirm.ts',
+    'newsletter-unsubscribe': 'src/netlify/functions/newsletter-unsubscribe.ts',
+    'wc-api': 'src/netlify/functions/wc-api.ts',
+    'supabase-keep-alive': 'src/netlify/functions/supabase-keep-alive.ts',
+    'order-meta-cleanup': 'src/netlify/functions/order-meta-cleanup.ts',
+    'functions-utils': 'src/netlify/functions/utils.ts',
+    'test-utils': 'src/test-utils/index.ts',
+  },
+  format: ['esm'],
+  dts: true,
+  splitting: false,
+  clean: true,
+  sourcemap: true,
+  external: ['esbuild', 'vitest'],
+  noExternal: ['@portabletext/to-html'],
+  onSuccess: async () => {
+    copySync('src/templates',          'dist/templates', { overwrite: true });
+    copySync('src/scripts',            'dist/scripts',   { overwrite: true });
+    copySync('src/shared',             'dist/shared',    { overwrite: true });
+    copySync('src/assets/css/base.css', 'dist/base.css', { overwrite: true });
+    copySync('src/assets/css/carousel.css', 'dist/carousel.css', { overwrite: true });
+    copySync('src/assets/css/theme.css', 'dist/theme.css', { overwrite: true });
+    copySync('src/assets/css/shop.css', 'dist/shop.css', { overwrite: true });
+    copySync('src/assets/css/utilities.css', 'dist/utilities.css', { overwrite: true });
+    copySync('src/assets/css/tailwind-components.css', 'dist/tailwind-components.css', { overwrite: true });
+    copySync('src/assets/css/tailwind-utilities.css', 'dist/tailwind-utilities.css', { overwrite: true });
+    copySync('src/assets/css/reset.css','dist/reset.css', { overwrite: true });
+    copySync('src/assets/css/checkout.css','dist/checkout.css', { overwrite: true });
+    copySync('src/assets/css/form.css','dist/form.css', { overwrite: true });
+    copySync('src/assets/css/product-filter-price.css','dist/product-filter-price.css', { overwrite: true });
+    copySync('src/assets/css/search.css','dist/search.css', { overwrite: true });
+    copySync('src/assets/css/age-gate.css','dist/age-gate.css', { overwrite: true });
+    copySync('src/assets/css/lightbox.css','dist/lightbox.css', { overwrite: true });
+    // Official legal graphics (harmonised warranty notice), served by setupAssets at /assets/legal/
+    copySync('src/assets/legal', 'dist/assets/legal', { overwrite: true });
+
+    // Pre-build core inline scripts into dist/templates so {% include %} works
+    // even when customers have no src/assets/scripts/inline/ of their own.
+    await esbuild.build({
+      entryPoints: ['src/scripts/inline/theme.ts', 'src/scripts/inline/age-gate.ts'],
+      outdir: 'dist/templates/scripts/inline',
+      bundle: true,
+      format: 'iife',
+      target: 'es2017',
+      minify: true,
+    })
+
+    // Sanity Presentation overlay, self-contained (no CDN) — served by setupAssets at
+    // /assets/visual-editing/ (JS + the @sanity/ui CSS it imports) and loaded only in preview renders.
+    await esbuild.build({
+      entryPoints: ['src/preview/visual-editing.ts'],
+      outfile: 'dist/assets/visual-editing/visual-editing.js',
+      bundle: true,
+      format: 'esm',
+      target: 'es2022',
+      minify: true,
+      define: { 'process.env.NODE_ENV': '"production"' },
+    })
+  },
+});
