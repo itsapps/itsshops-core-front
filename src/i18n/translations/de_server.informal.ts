@@ -31,8 +31,10 @@ export default {
       text: "Hier ist Deine Rechnung als PDF im Anhang. Vielen Dank für Deinen Einkauf!",
     },
     orderShipping: {
-      preview: "Es wird nicht mehr lange dauern, bis Du Deine Bestellung in den Händen hast!",
-      text: "Wir freuen uns, Dir mitteilen zu können, daß Deine Bestellung unterwegs ist. Du wirst die Lieferung schon bald in Deinen Händen halten.",
+      preview: "Deine Bestellung ist unterwegs.",
+      text: "Gute Nachricht: Deine Bestellung ist verpackt und auf dem Weg zu Dir.",
+      trackingHint: "Mit der Sendungsnummer kannst Du verfolgen, wo Dein Paket gerade ist.",
+      trackingHintMany: "Mit den Sendungsnummern kannst Du verfolgen, wo Deine Pakete gerade sind.",
     },
     orderDelivered: {
       preview: "Deine Bestellung ist angekommen!",

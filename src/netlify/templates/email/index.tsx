@@ -25,7 +25,7 @@ import { ORDER_SUMMARY_MAIL_TYPES } from '../../types/orderTransitions'
 import type { OrderDocument } from '../../types/checkout'
 import { mailKey } from './mail-keys'
 
-export { mailKey, pickupExtraLines } from './mail-keys'
+export { mailKey, pickupExtraLines, trackingExtraLines } from './mail-keys'
 
 export { EmailLayout } from './EmailLayout'
 export { OrderEmail } from './OrderEmail'

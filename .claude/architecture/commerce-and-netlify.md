@@ -677,6 +677,14 @@ instructions: "Legal texts generated from settings" below.
   `payment_method_title` = that label to Winenet.
 - **Delivery time:** optional `shippingMethod.deliveryTime` (i18n), snapshotted into
   `order.fulfillment.deliveryTime` at checkout.
+- **Tracking numbers** (`lib/tracking.ts`): `fulfillment.trackingCode` may hold several numbers
+  (split at commas, semicolons, whitespace). Delivery orders show them right under the intro text of
+  every order-summary mail (HTML and text part), each linked when the shipping method has a
+  `trackingUrl` template (`https://…{code}…`, number URL-encoded; other templates → no link). The
+  template is read from the method (weak `fulfillment.method` ref) **at send time**, not
+  snapshotted — older orders get links too and a wrong URL can be fixed; a failed lookup logs and
+  sends plain numbers. The shipping mail adds `emails.orderShipping.trackingHint(Many)`
+  (`trackingExtraLines()` in `mail-keys.ts`).
 - **Withdrawal section** in the confirmation is **default on** (`withdrawalNotice`, opt out with
   `false`). It carries the **full generated instructions + model form** (see "Legal texts" below);
   incomplete settings → the short notice + link and a `log.warn`, never a half-filled legal text.

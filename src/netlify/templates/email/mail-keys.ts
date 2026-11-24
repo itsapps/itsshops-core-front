@@ -6,6 +6,7 @@ import type { MailType } from '../../types/orderTransitions'
 import { formatShopDate, shopTimeZone } from '../../utils/i18n'
 import { pickupDeadline, wasReadyForPickup } from '../../../shared/pickup'
 import type { EmailContext } from './types'
+import { trackingCodes } from '../../lib/tracking'
 
 /** Mail types/parts with their own text for pickup orders (`emails.pickup.<mailType>.<part>`). */
 const PICKUP_MAIL_KEYS: Partial<Record<MailType, readonly string[]>> = {
@@ -64,4 +65,20 @@ export function pickupExtraLines(
     return [ctx.t('emails.pickup.deadline', { date: formatShopDate(deadline, ctx.locale, { dateStyle: 'full' }) })]
   }
   return []
+}
+
+/**
+ * Extra line after the main text of the shipping mail of a delivery order with a tracking number
+ * ("you can follow your parcel with the tracking number"). HTML body and plain text alike.
+ */
+export function trackingExtraLines(
+  ctx: Pick<EmailContext, 't'>,
+  mailType: MailType,
+  order: MailKeyOrder,
+): string[] {
+  const f = order.fulfillment
+  if (mailType !== 'orderShipping' || f?.methodType === 'pickup') return []
+  const count = trackingCodes(f?.trackingCode).length
+  if (!count) return []
+  return [ctx.t(count > 1 ? 'emails.orderShipping.trackingHintMany' : 'emails.orderShipping.trackingHint')]
 }

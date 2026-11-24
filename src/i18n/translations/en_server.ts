@@ -97,6 +97,7 @@ export default {
     invoiceNumber: "Invoice number",
     invoiceDate: "Invoice date",
     trackingNumber: "Tracking number",
+    trackingNumbers: "Tracking numbers",
     vatText: "VAT exempt - small business under § 6 Abs. 1 Z 27 UStG",
     payment: {
       types: {
@@ -188,8 +189,10 @@ export default {
     },
     orderShipping: {
       subject: "Order {{orderNumber}} shipped 📦",
-      preview: "Your order will be in your hands before you know it!",
-      text: "We're excited to let you know your order is on its way — you'll be holding your new products very soon.",
+      preview: "Your order is on its way.",
+      text: "Good news: your order is packed and on its way to you.",
+      trackingHint: "You can follow your parcel with the tracking number.",
+      trackingHintMany: "You can follow your parcels with the tracking numbers.",
     },
     orderDelivered: {
       subject: "Order {{orderNumber}} delivered 🏠",

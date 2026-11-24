@@ -97,6 +97,7 @@ export default {
     invoiceNumber: "Rechnungsnummer",
     invoiceDate: "Rechnungsdatum",
     trackingNumber: "Sendungsnummer",
+    trackingNumbers: "Sendungsnummern",
     vatText: "Umsatzsteuerbefreit - Kleinunternehmer gem. § 6 Abs. 1 Z 27 UStG",
     payment: {
       types: {
@@ -188,8 +189,10 @@ export default {
     },
     orderShipping: {
       subject: "Bestellung {{orderNumber}} versendet 📦",
-      preview: "Es wird nicht mehr lange dauern, bis Sie Ihre Bestellung in den Händen haben!",
-      text: "Wir freuen uns, Ihnen mitteilen zu können, daß Ihre Bestellung unterwegs ist. Sie werden die Lieferung schon bald in Ihren Händen halten.",
+      preview: "Ihre Bestellung ist unterwegs.",
+      text: "Gute Nachricht: Ihre Bestellung ist verpackt und auf dem Weg zu Ihnen.",
+      trackingHint: "Mit der Sendungsnummer können Sie verfolgen, wo Ihr Paket gerade ist.",
+      trackingHintMany: "Mit den Sendungsnummern können Sie verfolgen, wo Ihre Pakete gerade sind.",
     },
     orderDelivered: {
       subject: "Bestellung {{orderNumber}} geliefert 🏠",

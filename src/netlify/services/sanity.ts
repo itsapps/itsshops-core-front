@@ -269,6 +269,14 @@ export async function fetchOrderById(
   return doc ?? null
 }
 
+/**
+ * `trackingUrl` template of a shipping method (the order's weak `fulfillment.method` ref). Read at
+ * mail time, not snapshotted: older orders get the link too and a wrong URL can be fixed.
+ */
+export async function fetchShippingTrackingUrl(methodId: string): Promise<string | null> {
+  return sanityClient.fetch<string | null>(`*[_id == $id][0].trackingUrl`, { id: methodId })
+}
+
 export type OrderWithdrawalLookup = {
   _id: string
   orderNumber: string

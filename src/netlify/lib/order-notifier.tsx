@@ -21,14 +21,15 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { render } from '@react-email/render'
 
 import { sendMail } from '../services/email'
-import { appendOrderHistory, fetchEmailSettings, fetchOrderById } from '../services/sanity'
-import { mailKey, pickupExtraLines, refundMailText, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
+import { appendOrderHistory, fetchEmailSettings, fetchOrderById, fetchShippingTrackingUrl } from '../services/sanity'
+import { mailKey, pickupExtraLines, refundMailText, trackingExtraLines, renderMailFor, subjectFor, type EmailTemplateOverrides } from '../templates/email'
 import { latestRefund, refundedTotal } from './order-refunds'
+import { trackingCodes, trackingEntries } from './tracking'
 import { ShopOrderEmail } from '../templates/email/ShopOrderEmail'
 import { InvoicePdf, type InvoicePdfProps } from '../templates/pdf/InvoicePdf'
 import type { EmailContext } from '../templates/email/types'
 import { buildEmailShopSettings } from './email-settings'
-import type { MailType } from '../types/orderTransitions'
+import { ORDER_SUMMARY_MAIL_TYPES, type MailType } from '../types/orderTransitions'
 import { ErrorCode } from '../types/errors'
 import { countryName, formatPrice as fmtPrice, serverT } from '../utils/i18n'
 import { log } from '../utils/logger'
@@ -226,11 +227,24 @@ export async function sendOrderNotification(
     }
   }
 
+  // Tracking links: the shipping method's URL template, only when there is a number to link.
+  // A failed lookup is logged and the mail goes out with the plain numbers.
+  let trackingUrl: string | undefined
+  const methodId = order.fulfillment?.method?._ref
+  if (methodId && order.fulfillment.methodType !== 'pickup' && trackingCodes(order.fulfillment.trackingCode).length) {
+    try {
+      trackingUrl = (await fetchShippingTrackingUrl(methodId)) ?? undefined
+    } catch (error) {
+      log.warn('Tracking URL lookup failed, sending the numbers without links', { orderId, error })
+    }
+  }
+
   const ctx: EmailContext = {
     locale,
     t: (key, params) => serverT(locale, key, params),
     formatPrice: (cents) => fmtPrice(cents, locale),
     settings,
+    ...(trackingUrl && { trackingUrl }),
     ...(withdrawUrl && { withdrawUrl }),
     ...(withdrawUrl && mailType === 'orderConfirmation' && {
       withdrawalInstructions: withdrawalInstructionsFor(settings, locale, withdrawUrl),
@@ -246,8 +260,19 @@ export async function sendOrderNotification(
   const intro =
     refundAmount !== undefined
       ? refundMailText(ctx, mailType, order, refundAmount)
-      : [ctx.t(mailKey(mailType, order, 'text')), ...pickupExtraLines(ctx, mailType, order)].join('\n')
-  const text = customerMessage ? `${intro}\n\n${customerMessage}` : intro
+      : [
+          ctx.t(mailKey(mailType, order, 'text')),
+          ...pickupExtraLines(ctx, mailType, order),
+          ...trackingExtraLines(ctx, mailType, order),
+        ].join('\n')
+  // The order-summary mails show the tracking numbers (refund mails don't) — the text part too.
+  const tracking = ORDER_SUMMARY_MAIL_TYPES.includes(mailType) ? trackingEntries(order.fulfillment, ctx.trackingUrl) : []
+  const trackingText = tracking.length
+    ? `\n\n${ctx.t(tracking.length > 1 ? 'emails.trackingNumbers' : 'emails.trackingNumber')}:\n${tracking
+        .map((e) => (e.url ? `${e.code} – ${e.url}` : e.code))
+        .join('\n')}`
+    : ''
+  const text = customerMessage ? `${intro}${trackingText}\n\n${customerMessage}` : `${intro}${trackingText}`
 
   const wantsInvoice = options.attachInvoice === true || MAIL_TYPES_WITH_INVOICE.includes(mailType)
   let attachment: { filename: string; data: Buffer; contentType: string } | undefined

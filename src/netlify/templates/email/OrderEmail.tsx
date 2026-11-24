@@ -10,7 +10,8 @@ import { paymentMethodLabel } from '../../lib/payment-method'
 import { formatShopDate } from '../../utils/i18n'
 import { bundleItemLines } from '../../lib/order-item-display'
 import type { WithdrawalInstructions, WithdrawalRichText } from '../../../shared/withdrawal-instructions'
-import { mailKey, pickupExtraLines } from './mail-keys'
+import { mailKey, pickupExtraLines, trackingExtraLines } from './mail-keys'
+import { trackingEntries } from '../../lib/tracking'
 
 export function AddressBlock({
   title,
@@ -332,7 +333,9 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
   const bodyLines = [
     ...t(mailKey(mailType, order, 'text')).split('\n'),
     ...pickupExtraLines(ctx, mailType, order),
+    ...trackingExtraLines(ctx, mailType, order),
   ]
+  const tracking = trackingEntries(fulfillment, ctx.trackingUrl)
   const headline = t('emails.headline', { customerName: customer.billingAddress.name })
 
   return (
@@ -344,6 +347,23 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
             {line}
           </EmailText>
         ))}
+        {tracking.length > 0 && (
+          <EmailText style={{ marginTop: '16px' }}>
+            {t(tracking.length > 1 ? 'emails.trackingNumbers' : 'emails.trackingNumber')}:{' '}
+            {tracking.map((entry, i) => (
+              <React.Fragment key={entry.code}>
+                {i > 0 && ', '}
+                {entry.url ? (
+                  <Link href={entry.url} style={{ color: colors.text, textDecoration: 'underline' }}>
+                    <strong>{entry.code}</strong>
+                  </Link>
+                ) : (
+                  <strong>{entry.code}</strong>
+                )}
+              </React.Fragment>
+            ))}
+          </EmailText>
+        )}
         <CustomerMessage text={customerMessage} />
       </Section>
 
@@ -375,14 +395,6 @@ export function OrderEmail({ ctx, order, mailType, customerMessage }: OrderEmail
       <TotalsBlock totals={totals} ctx={ctx} methodType={fulfillment.methodType} appliedDiscounts={order.appliedDiscounts} />
 
       <OrderDetails ctx={ctx} order={order} />
-
-      {fulfillment.trackingCode && fulfillment.methodType !== 'pickup' && (
-        <Section style={{ marginTop: '24px' }}>
-          <EmailText>
-            {t('emails.trackingNumber')}: <strong>{fulfillment.trackingCode}</strong>
-          </EmailText>
-        </Section>
-      )}
 
       {/* Addresses */}
       <AddressesSection ctx={ctx} order={order} style={{ margin: '48px 0' }} />

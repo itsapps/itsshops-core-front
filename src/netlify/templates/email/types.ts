@@ -108,6 +108,11 @@ export type EmailContext = {
    * module). Absent when settings are incomplete → the mail falls back to the short notice.
    */
   withdrawalInstructions?: WithdrawalInstructions | null
+  /**
+   * The shipping method's `trackingUrl` template (`https://…{code}…`) — links each tracking
+   * number. Only loaded when the order has one; absent → the numbers are shown without a link.
+   */
+  trackingUrl?: string
 }
 
 export type OrderEmailProps = {

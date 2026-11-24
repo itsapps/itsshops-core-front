@@ -4,6 +4,18 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a customer to production".
 
+## Unreleased
+
+- **Tracking links in the order mails:** each number in `fulfillment.trackingCode` (several may be
+  entered, separated by commas) links to the carrier's tracking page when the shipping method has a
+  `trackingUrl` (core-back, e.g. `https://tracking.dpd.de/status/de_DE/parcel/{code}`). The numbers
+  now sit right under the intro text (HTML and plain-text part) instead of below the order details.
+  Needs core-back with `shippingMethod.trackingUrl`; without it the numbers show as before, unlinked.
+- **Shipping mail text** rewritten (de formal/informal, en): "Ihre Bestellung ist verpackt und auf
+  dem Weg zu Ihnen." plus a hint to follow the parcel when there is a tracking number (new keys
+  `emails.orderShipping.trackingHint` / `trackingHintMany`, `emails.trackingNumbers`).
+  **Upgrading:** a shop that overrides `emails.orderShipping.preview/text` keeps its own wording.
+
 ## 6.1.0
 
 **Fresh public repository.** The git history before 6.1.0 is archived; older tags can no longer be

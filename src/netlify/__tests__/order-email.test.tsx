@@ -4,16 +4,18 @@ vi.mock('../services/sanity', () => ({
   fetchOrderById: vi.fn(),
   fetchEmailSettings: vi.fn(),
   appendOrderHistory: vi.fn(),
+  fetchShippingTrackingUrl: vi.fn(async () => null),
   // imported by lib/order-refunds (the notifier uses its real latestRefund)
   fetchOrderRevision: vi.fn(),
   writeOrderRefunds: vi.fn(),
 }))
 vi.mock('../services/email', () => ({ sendMail: vi.fn(async () => ({ id: 'msg-1' })) }))
 
-import { appendOrderHistory, fetchOrderById, fetchEmailSettings, type EmailSettingsQueryResult } from '../services/sanity'
+import { appendOrderHistory, fetchOrderById, fetchEmailSettings, fetchShippingTrackingUrl, type EmailSettingsQueryResult } from '../services/sanity'
 import { sendMail } from '../services/email'
 import { sendOrderNotification, sendShopOrderNotification, studioOrderUrlFor } from '../lib/order-notifier'
 import { buildEmailShopSettings } from '../lib/email-settings'
+import { trackingCodes, trackingLink } from '../lib/tracking'
 import type { OrderDocument } from '../types/checkout'
 
 const rawSettings = (over: Partial<EmailSettingsQueryResult> = {}): EmailSettingsQueryResult => ({
@@ -681,5 +683,68 @@ describe('pickup orders', () => {
     expect(textOf(html)).toContain('ABHOLUNG – nicht versenden')
     expect(textOf(html)).toContain('+41 44 1234567')
     expect(text.startsWith('ABHOLUNG – nicht versenden')).toBe(true)
+  })
+})
+
+describe('tracking numbers', () => {
+  const DPD = 'https://tracking.dpd.de/status/de_DE/parcel/{code}'
+  const shipped = (trackingCode: string | undefined, over: Partial<OrderDocument['fulfillment']> = {}) =>
+    order({ status: 'shipped', fulfillment: { ...order().fulfillment, trackingCode, ...over } })
+
+  beforeEach(() => {
+    vi.stubEnv('URL', 'https://shop.example')
+    vi.stubEnv('SHOP_FORMALITY', '')
+    vi.mocked(fetchEmailSettings).mockResolvedValue(rawSettings())
+    vi.mocked(fetchShippingTrackingUrl).mockReset().mockResolvedValue(null)
+    vi.mocked(sendMail).mockClear()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('splits several numbers, links each via the method template (HTML and text)', async () => {
+    vi.mocked(fetchShippingTrackingUrl).mockResolvedValue(DPD)
+    vi.mocked(fetchOrderById).mockResolvedValue(shipped('0123, 0456'))
+    await sendOrderNotification('o1', 'orderShipping')
+    expect(fetchShippingTrackingUrl).toHaveBeenCalledWith('sm1')
+    const { html, text } = await sent()
+    expect(html).toContain('href="https://tracking.dpd.de/status/de_DE/parcel/0123"')
+    expect(html).toContain('href="https://tracking.dpd.de/status/de_DE/parcel/0456"')
+    expect(textOf(html)).toContain('Sendungsnummern:')
+    expect(textOf(html)).toContain('Mit den Sendungsnummern können Sie verfolgen')
+    expect(text).toContain('Sendungsnummern:\n0123 – https://tracking.dpd.de/status/de_DE/parcel/0123\n0456 – ')
+  })
+
+  it('without a template: the plain number, no link', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(shipped('0123'))
+    await sendOrderNotification('o1', 'orderShipping')
+    const { html, text } = await sent()
+    expect(textOf(html)).toContain('Sendungsnummer: 0123')
+    expect(textOf(html)).toContain('Mit der Sendungsnummer können Sie verfolgen')
+    expect(html).not.toContain('parcel/')
+    expect(text).toContain('Sendungsnummer:\n0123')
+  })
+
+  it('no number: no lookup, no tracking line, no hint', async () => {
+    vi.mocked(fetchOrderById).mockResolvedValue(shipped(undefined))
+    await sendOrderNotification('o1', 'orderShipping')
+    expect(fetchShippingTrackingUrl).not.toHaveBeenCalled()
+    const { html } = await sent()
+    expect(textOf(html)).not.toContain('Sendungsnummer')
+    expect(textOf(html)).toContain('Gute Nachricht: Ihre Bestellung ist verpackt und auf dem Weg zu Ihnen.')
+  })
+
+  it('a failed lookup still sends the mail with the plain number', async () => {
+    vi.mocked(fetchShippingTrackingUrl).mockRejectedValue(new Error('down'))
+    vi.mocked(fetchOrderById).mockResolvedValue(shipped('0123'))
+    await sendOrderNotification('o1', 'orderShipping')
+    expect(textOf((await sent()).html)).toContain('Sendungsnummer: 0123')
+  })
+
+  it('helpers: separators, encoding, only https templates with {code}', () => {
+    expect(trackingCodes(' 01, 02;03  04 ')).toEqual(['01', '02', '03', '04'])
+    expect(trackingCodes(undefined)).toEqual([])
+    expect(trackingLink('https://x.example/?n={code}', 'A B/1')).toBe('https://x.example/?n=A%20B%2F1')
+    expect(trackingLink('http://x.example/{code}', '1')).toBeUndefined()
+    expect(trackingLink('https://x.example/', '1')).toBeUndefined()
+    expect(trackingLink('  ', '1')).toBeUndefined()
   })
 })
