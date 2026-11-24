@@ -193,7 +193,7 @@ customer extension only for customer-specific data. After a core-back change, ru
 |---|---|---|
 | core-front | `~/Documents/programming/jamstack/itsshops-core-front` | this repo — Eleventy plugin/library |
 | core-back | `~/Documents/programming/jamstack/itsshops-core-back` | Sanity Studio plugin (`createItsshopsWorkspaces`) |
-| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest), assembled with its `scripts/assemble.mjs`, never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `2.0.0`, fits core-front 6.x / core-back 7.x) |
+| itsshops-starter | `~/Documents/programming/jamstack/itsshops-starter` | parts library for new customer projects (base, variants, feature + module packages, manifest), assembled with its `scripts/assemble.mjs`, never installed (private `itsapps/itsshops-starter`; release tags + `CHANGELOG.md`, current `2.1.0`, fits core-front 6.x / core-back 7.x) |
 | customers | `~/Documents/programming/web/<customer>/…` | customer frontends + backends, each with its own `CLAUDE.md` |
 
 Customers consume core via `npm link`. A customer frontend registers the plugin in
