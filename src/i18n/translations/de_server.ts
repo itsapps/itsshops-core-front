@@ -164,7 +164,7 @@ export default {
       withdrawalLink: "Vertrag widerrufen",
     },
     orderConfirmation: {
-      subject: "Bestellbestätigung {{orderNumber}} 🍷",
+      subject: "Bestellbestätigung {{orderNumber}}",
       preview: "Danke für Ihren Einkauf!",
       text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung ist bei uns eingegangen und wird in Kürze bearbeitet.",
     },
@@ -178,14 +178,14 @@ export default {
       pickupBanner: "ABHOLUNG – nicht versenden",
     },
     orderProcessing: {
-      subject: "Bestellung {{orderNumber}} in Bearbeitung ⚙️",
+      subject: "Bestellung {{orderNumber}} in Bearbeitung",
       preview: "Ihre Bestellung wird nun bearbeitet.",
       text: "Vielen Dank für Ihren Einkauf. Ihre Bestellung wird nun bearbeitet und in Kürze versendet.",
     },
     orderInvoice: {
       subject: "Rechnung – Bestellung {{orderNumber}} 💶",
       preview: "Ihre Rechnung als PDF im Anhang",
-      text: "Hier ist Ihre Rechnung als PDF im Anhang. Vielen Dank für Ihren Einkauf!",
+      text: "Im Anhang finden Sie Ihre Rechnung als PDF. Vielen Dank für Ihren Einkauf!",
     },
     orderShipping: {
       subject: "Bestellung {{orderNumber}} versendet 📦",
@@ -197,10 +197,10 @@ export default {
     orderDelivered: {
       subject: "Bestellung {{orderNumber}} geliefert 🏠",
       preview: "Ihre Bestellung ist angekommen!",
-      text: "Vielen Dank für den Einkauf und viel Spass mit Ihren neuen Produkten!",
+      text: "Ihre Bestellung ist bei Ihnen angekommen. Wir wünschen viel Freude damit!",
     },
     orderReturned: {
-      subject: "Retoure angekommen – Bestellung {{orderNumber}} 🏠",
+      subject: "Retoure angekommen – Bestellung {{orderNumber}}",
       preview: "Ihre Rücksendung ist bei uns eingegangen.",
       text: "Ihre Rücksendung ist bei uns eingegangen – vielen Dank! Wir prüfen die Ware und kümmern uns um die weitere Abwicklung.\nSofern eine Rückerstattung ansteht, erhalten Sie diese in Kürze über das ursprünglich verwendete Zahlungsmittel.",
     },
@@ -241,7 +241,7 @@ export default {
     orderRefunded: {
       subject: "Zahlung zurückerstattet – Bestellung {{orderNumber}} 💶",
       preview: "Wir haben Ihre Zahlung zurückerstattet.",
-      text: "Wir haben Ihnen für Ihre Bestellung {{orderNumber}} {{amount}} in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Ihrem Konto sichtbar ist. Bei Fragen können Sie sich jederzeit bei uns melden.",
+      text: "Wir haben Ihnen für Ihre Bestellung {{orderNumber}} den vollen Betrag von {{amount}} zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Ihrem Konto sichtbar ist. Bei Fragen können Sie sich jederzeit bei uns melden.",
       textRemainder: "Wir haben Ihnen für Ihre Bestellung {{orderNumber}} den Restbetrag von {{amount}} zurückerstattet; damit ist Ihre Zahlung von {{total}} vollständig erstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Ihrem Konto sichtbar ist. Bei Fragen können Sie sich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
@@ -258,7 +258,7 @@ export default {
       unsubscribe: "Vom Newsletter abmelden",
     },
     userConfirmation: {
-      subject: "Kundenregistrierung 👤",
+      subject: "Bitte bestätigen Sie Ihr Kundenkonto",
       preview: "Registrierung bestätigen",
       headline: "Hallo!",
       text: "Bitte folgen Sie dem Link, um Ihr Kundenkonto zu bestätigen.",
@@ -266,9 +266,9 @@ export default {
     },
     userInvitation: {
       subject: "Sie sind eingeladen! 🎉",
-      preview: "Sie sind eingeladen, unserem Webshop beizutreten",
+      preview: "Sie wurden eingeladen, ein Kundenkonto anzulegen",
       headline: "Willkommen!",
-      text: "Sie sind eingeladen, unserem Webshop beizutreten. Klicken Sie auf den folgenden Link, um Ihr Passwort zu setzen und loszulegen.",
+      text: "Sie wurden eingeladen, ein Kundenkonto in unserem Shop anzulegen. Klicken Sie auf den folgenden Link, um Ihr Passwort zu setzen und loszulegen.",
       urlTitle: "Passwort setzen",
     },
     userReset: {
@@ -282,7 +282,7 @@ export default {
       subject: "Widerruf erhalten – Bestellung {{orderNumber}}",
       preview: "Wir haben Ihren Widerruf erhalten.",
       headline: "Hallo {{name}}!",
-      intro: "wir bestätigen den Eingang Ihrer Widerrufserklärung. Folgende Angaben haben wir am {{date}} erhalten:",
+      intro: "Wir bestätigen den Eingang Ihrer Widerrufserklärung. Folgende Angaben haben wir am {{date}} erhalten:",
       unmatched: "Wir konnten Ihre Angaben nicht automatisch einer Bestellung zuordnen. Wir prüfen Ihre Erklärung und melden uns bei Ihnen.",
       submitted: {
         name: "Name",

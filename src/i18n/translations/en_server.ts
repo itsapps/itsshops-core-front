@@ -164,9 +164,9 @@ export default {
       withdrawalLink: "Withdraw from contract here",
     },
     orderConfirmation: {
-      subject: "Order confirmation {{orderNumber}} 🍷",
+      subject: "Order confirmation {{orderNumber}}",
       preview: "Thanks for shopping with us!",
-      text: "Thank you for your order. We are pleased to confirm your order with the number",
+      text: "Thank you for your order. We have received it and will process it shortly.",
     },
     shopOrderConfirmation: {
       subject: "New order {{orderNumber}} – {{customerName}}",
@@ -178,14 +178,14 @@ export default {
       pickupBanner: "PICKUP – do not ship",
     },
     orderProcessing: {
-      subject: "Order {{orderNumber}} in progress ⚙️",
+      subject: "Order {{orderNumber}} in progress",
       preview: "Your order is now being processed.",
-      text: "Thank you for your order. We are pleased to confirm your order with the number",
+      text: "Thank you for your order. It is now being processed and will be shipped shortly.",
     },
     orderInvoice: {
       subject: "Invoice – order {{orderNumber}} 💶",
-      preview: "Your invoice as PDF attachment",
-      text: "Here is your invoice as PDF attachment. Thank you for your order!",
+      preview: "Your invoice is attached as a PDF",
+      text: "Please find your invoice attached as a PDF. Thank you for your order!",
     },
     orderShipping: {
       subject: "Order {{orderNumber}} shipped 📦",
@@ -197,10 +197,10 @@ export default {
     orderDelivered: {
       subject: "Order {{orderNumber}} delivered 🏠",
       preview: "Your order has been delivered!",
-      text: "Thank you for your order, we hope you enjoy your new products!",
+      text: "Your order has arrived. We hope you enjoy it!",
     },
     orderReturned: {
-      subject: "Return received – order {{orderNumber}} 🏠",
+      subject: "Return received – order {{orderNumber}}",
       preview: "We've received your return.",
       text: "We've received your return — thank you! We'll check the goods and take care of the rest.\nIf a refund is due, you'll receive it shortly via your original payment method.",
     },
@@ -240,7 +240,7 @@ export default {
     orderRefunded: {
       subject: "Payment refunded – order {{orderNumber}} 💶",
       preview: "We've refunded your payment.",
-      text: "We've refunded {{amount}} for your order {{orderNumber}} to you in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
+      text: "We've refunded the full amount of {{amount}} for your order {{orderNumber}}. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
       textRemainder: "We've refunded the remaining {{amount}} for your order {{orderNumber}}, so your payment of {{total}} has now been refunded in full. The amount will be credited back to your original payment method.\nDepending on your bank or card provider, it may take a few business days to appear on your account. If you have any questions, just get in touch.",
     },
     orderRefundedPartially: {
@@ -257,7 +257,7 @@ export default {
       unsubscribe: "Unsubscribe from the newsletter",
     },
     userConfirmation: {
-      subject: "Customer registration 👤",
+      subject: "Please confirm your customer account",
       preview: "Confirm registration",
       headline: "Hi there!",
       text: "Please follow the link to confirm your customer account.",
@@ -265,13 +265,13 @@ export default {
     },
     userInvitation: {
       subject: "You're invited! 🎉",
-      preview: "You've been invited to join our webshop",
+      preview: "You've been invited to create a customer account",
       headline: "Welcome!",
-      text: "You've been invited to join our webshop. Click the link below to set your password and get started.",
-      urlTitle: "Set Your Password",
+      text: "You've been invited to create a customer account in our shop. Click the link below to set your password and get started.",
+      urlTitle: "Set your password",
     },
     userReset: {
-      subject: "Reset passwort 🪪",
+      subject: "Reset password 🪪",
       preview: "Set a new password",
       headline: "Hi there!",
       text: "Please follow the link to set a new password for your customer account.",
@@ -281,7 +281,7 @@ export default {
       subject: "Withdrawal received – order {{orderNumber}}",
       preview: "We have received your withdrawal.",
       headline: "Hello {{name}}!",
-      intro: "we confirm receipt of your declaration of withdrawal. We received the following details on {{date}}:",
+      intro: "We confirm receipt of your declaration of withdrawal. We received the following details on {{date}}:",
       unmatched: "We could not automatically match your details to an order. We will review your declaration and get back to you.",
       submitted: {
         name: "Name",

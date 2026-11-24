@@ -315,7 +315,7 @@ export default {
     userConfirmSuccess: {
       title: "Willkommen!",
       description: "Benutzer erfolgreich bestätigt",
-      info: "Ihr Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!",
+      info: "Ihr Kundenkonto wurde erfolgreich aktiviert. Viel Spaß beim Einkaufen!",
     },
     userRecover: {
       title: "Passwort zurücksetzen",

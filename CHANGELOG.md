@@ -15,6 +15,12 @@ Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a cus
   dem Weg zu Ihnen." plus a hint to follow the parcel when there is a tracking number (new keys
   `emails.orderShipping.trackingHint` / `trackingHintMany`, `emails.trackingNumbers`).
   **Upgrading:** a shop that overrides `emails.orderShipping.preview/text` keeps its own wording.
+- **Mail texts reworked** (de formal/informal, en): English confirmation and processing texts were
+  a cut-off sentence ("…confirm your order with the number") — now complete; "Reset passwort" typo;
+  no 🍷 (not every shop sells wine), ⚙️ or 🏠 (return) in subjects; delivered, invoice, full
+  refund, invitation ("Kundenkonto anlegen" instead of "Webshop beitreten") and registration
+  subject reworded; withdrawal receipt intro capitalised after the "Hallo …!" headline; "Spaß"
+  spelling (also the account-activated page). **Upgrading:** overridden keys keep their wording.
 
 ## 6.1.0
 

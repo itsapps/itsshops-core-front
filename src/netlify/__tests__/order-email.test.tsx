@@ -329,7 +329,7 @@ describe('refund mails', () => {
     await sendOrderNotification('o1', 'orderRefunded')
     const { html, text } = await sent()
     expect(textOf(html)).toContain('30,00')
-    expect(textOf(html)).toContain('in voller Höhe')
+    expect(textOf(html)).toContain('den vollen Betrag von 30,00')
     expect(text).toContain('30,00')
   })
 
@@ -369,7 +369,7 @@ describe('refund mails', () => {
     await sendOrderNotification('o1', 'orderShipping')
     expect((await sent()).subject).toBe('Bestellung 000042 versendet 📦')
     await sendOrderNotification('o1', 'orderConfirmation')
-    expect((await sent()).subject).toBe('Bestellbestätigung 000042 🍷')
+    expect((await sent()).subject).toBe('Bestellbestätigung 000042')
   })
 
   it('names the order in the subject, the body and the plain-text part', async () => {

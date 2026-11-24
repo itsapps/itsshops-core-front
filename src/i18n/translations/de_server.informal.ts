@@ -28,7 +28,7 @@ export default {
     },
     orderInvoice: {
       preview: "Deine Rechnung als PDF im Anhang",
-      text: "Hier ist Deine Rechnung als PDF im Anhang. Vielen Dank für Deinen Einkauf!",
+      text: "Im Anhang findest Du Deine Rechnung als PDF. Vielen Dank für Deinen Einkauf!",
     },
     orderShipping: {
       preview: "Deine Bestellung ist unterwegs.",
@@ -38,7 +38,7 @@ export default {
     },
     orderDelivered: {
       preview: "Deine Bestellung ist angekommen!",
-      text: "Vielen Dank für den Einkauf und viel Spass mit deinen neuen Produkten!",
+      text: "Deine Bestellung ist bei Dir angekommen. Wir wünschen viel Freude damit!",
     },
     orderReturned: {
       preview: "Deine Rücksendung ist bei uns eingegangen.",
@@ -74,7 +74,7 @@ export default {
     },
     orderRefunded: {
       preview: "Wir haben Deine Zahlung zurückerstattet.",
-      text: "Wir haben Dir für Deine Bestellung {{orderNumber}} {{amount}} in voller Höhe zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
+      text: "Wir haben Dir für Deine Bestellung {{orderNumber}} den vollen Betrag von {{amount}} zurückerstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
       textRemainder: "Wir haben Dir für Deine Bestellung {{orderNumber}} den Restbetrag von {{amount}} zurückerstattet; damit ist Deine Zahlung von {{total}} vollständig erstattet. Die Gutschrift erfolgt über das ursprünglich verwendete Zahlungsmittel.\nJe nach Bank oder Kartenanbieter kann es einige Werktage dauern, bis der Betrag wieder auf Deinem Konto sichtbar ist. Bei Fragen kannst Du Dich jederzeit bei uns melden.",
     },
     orderRefundedPartially: {
@@ -86,13 +86,14 @@ export default {
       text: "Bitte bestätige mit einem Klick, dass Du unseren Newsletter erhalten möchtest. Wenn Du Dich nicht angemeldet hast, kannst Du diese E-Mail einfach ignorieren.",
     },
     userConfirmation: {
+      subject: "Bitte bestätige Dein Kundenkonto",
       headline: "Hi!",
       text: "Bitte folge dem Link, um Dein Kundenkonto zu bestätigen.",
     },
     userInvitation: {
       subject: "Du bist eingeladen! 🎉",
-      preview: "Du bist eingeladen, unserem Webshop beizutreten",
-      text: "Du bist eingeladen, unserem Webshop beizutreten. Klicke auf den folgenden Link, um Dein Passwort zu setzen und loszulegen.",
+      preview: "Du wurdest eingeladen, ein Kundenkonto anzulegen",
+      text: "Du wurdest eingeladen, ein Kundenkonto in unserem Shop anzulegen. Klicke auf den folgenden Link, um Dein Passwort zu setzen und loszulegen.",
     },
     userReset: {
       headline: "Hi!",
@@ -100,7 +101,7 @@ export default {
     },
     orderWithdrawalCustomer: {
       preview: "Wir haben Deinen Widerruf erhalten.",
-      intro: "wir bestätigen den Eingang Deiner Widerrufserklärung. Folgende Angaben haben wir am {{date}} erhalten:",
+      intro: "Wir bestätigen den Eingang Deiner Widerrufserklärung. Folgende Angaben haben wir am {{date}} erhalten:",
       unmatched: "Wir konnten Deine Angaben nicht automatisch einer Bestellung zuordnen. Wir prüfen Deine Erklärung und melden uns bei Dir.",
       returnInstructions: "Bitte sende die Ware innerhalb von 14 Tagen zurück an: {{address}}.",
       returnCost: {

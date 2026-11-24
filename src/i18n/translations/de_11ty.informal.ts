@@ -39,7 +39,7 @@ export default {
       info: "Du bekommst in Kürze eine E-Mail, um deinen Account zu aktivieren.",
     },
     userConfirmSuccess: {
-      info: "Dein Kundenkonto wurde erfolgreich aktiviert. Viel Spass beim Einkaufen!",
+      info: "Dein Kundenkonto wurde erfolgreich aktiviert. Viel Spaß beim Einkaufen!",
     },
     userRecover: {
       description: "Passwort für deinen Account zurücksetzen",
