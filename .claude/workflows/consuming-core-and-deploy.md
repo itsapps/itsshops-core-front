@@ -18,6 +18,10 @@ No committish is given, so the **exact commit is pinned only in `package-lock.js
 ```
 
 Core builds itself on install via its `prepare` script, so the customer gets built `dist/`.
+The package also ships core's docs (`CLAUDE.md`, `.claude/{architecture,decisions,workflows}`), so a
+customer's `CLAUDE.md` imports them with `@node_modules/@itsapps/itsshops-core-front/CLAUDE.md`
+(or `-core-back`) — that works installed and `npm link`ed, for any developer, and shows the docs of
+exactly the pinned version.
 The core repos are **public GitHub repos** — there is **no npm registry**. The lockfile currently
 resolves them over `git+ssh` (the dev machine's git remote), but since they're public they can
 equally be fetched over HTTPS, so no registry auth or deploy key is required to install them.
