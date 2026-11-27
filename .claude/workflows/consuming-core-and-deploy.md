@@ -192,8 +192,9 @@ owner**. So pushes are split by branch:
 
 - **`main`** (and feature work) → pushed via `origin` as the **developer's own GitHub user** (the dev
   is a collaborator on the customer's repo). `main` is not a Netlify deploy branch → no build.
-- **New features go on a `feature/<slug>` branch** in every repo they touch — core and customer
-  (owner's rule, 2026-11-05) — not straight on `main`. A customer's `staging` may be merged from
+- **New features go on a `feature/<slug>` branch, bug fixes on `fix/<slug>`** (no other prefixes,
+  no bare names) in every repo they touch — core and customer (owner's rule, 2026-11-05; `fix/`
+  2026-11-27) — not straight on `main`. A customer's `staging` may be merged from
   the feature branch for testing (its lockfile may pin a core commit from core's pushed feature
   branch); merge to `main` once it's tested, then delete the branch. Docs-only fixes may go to `main`.
   Merge a core branch that customers pin by **fast-forward or merge commit, never squash/rebase**:

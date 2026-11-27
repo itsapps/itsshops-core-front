@@ -63,6 +63,12 @@ No dev server here — develop against a consumer project that has `npm link`ed 
 `npm run build` ran (or while `npm run dev` is watching) — then restart the consumer's dev server.
 **Do not use yalc** to push/publish.
 
+**Git workflow:** new features on a `feature/<slug>` branch, bug fixes on `fix/<slug>` (no other
+prefixes, no bare names) — in every repo the work touches; merged to `main` once tested (fast-forward
+or merge commit, never squash/rebase — customers pin the commits), then the branch is deleted
+locally and on GitHub. Docs-only fixes may go to `main`. Owner's rule, 2026-11-05 (`fix/`
+2026-11-27); details: `.claude/workflows/consuming-core-and-deploy.md`.
+
 ## Accessibility (non-negotiable)
 
 Accessibility is a core quality requirement, not a nice-to-have. Every template, component, and
