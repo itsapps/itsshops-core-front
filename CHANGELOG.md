@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a customer to production".
 
-## Unreleased
+## 6.2.0
 
 - **Variant → product fallbacks made consistent** (reference table: `data-layer.md` →
   "Variant → product fallbacks"):
