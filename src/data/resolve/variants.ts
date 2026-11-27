@@ -82,7 +82,7 @@ function deduplicateSlug(slug: string, used: Set<string>): string {
   return unique
 }
 
-function mergeSeоFallback(variantSeo: any, productSeo: any): any {
+function mergeSeoFallback(variantSeo: any, productSeo: any): any {
   if (!variantSeo && !productSeo) return null
   if (!variantSeo) return productSeo
   if (!productSeo) return variantSeo
@@ -436,7 +436,7 @@ export function resolveVariants(
       bundleItemsTotal: bundleItemsTotal(variant, variant.price ?? product.price ?? 0, rawVariantMap, productMap),
       image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
       productImage:   ctx.resolveLocaleAltImage(product.image),
-      seo:            ctx.resolveSeo(mergeSeоFallback(variant.seo, product.seo)),
+      seo:            ctx.resolveSeo(mergeSeoFallback(variant.seo, product.seo)),
       categories,
       manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
         _id:  m._id,
