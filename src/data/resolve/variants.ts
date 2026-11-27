@@ -7,6 +7,7 @@ import { formatVolumeMl } from '../../filters'
 import { buildFilterAttributes, accumulateFilterGroups, mergeBundleFilterAttributes, type FilterAccumulator } from './filters'
 import { intlLocale } from '../../i18n/format-locale'
 import { matchesSelector, withAncestors, type DiscountInput, type SelectorLine } from '../../shared/discounts'
+import { effectiveCompareAtPrice } from '../../shared/variant-fallbacks'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -46,6 +47,7 @@ function generateVariantSlug(
   locale: Locale,
   defaultLocale: Locale,
 ): string {
+  // Own variant title wins in every locale; the page title depends on it too — keep both on this rule.
   const title = stegaClean(
     resolveString(variant.title, locale, defaultLocale)
     || resolveString(product.title, locale, defaultLocale)
@@ -297,6 +299,7 @@ export function resolveVariants(
     const filterAttributes = buildFilterAttributes(kind, wine, rawOpts, ctx, categories)
     if (filterAcc) accumulateFilterGroups(filterAcc, kind, wine, rawOpts, ctx, categories)
     
+    // Own variant title wins in every locale; the slug depends on it — keep both on this rule.
     const title = ctx.resolveString(variant.title) || ctx.resolveString(product.title)
 
     // Variant axes: the dimensions a product varies along — option groups for
@@ -432,13 +435,13 @@ export function resolveVariants(
       sku:            variant.sku ?? '',
       kind,
       price:          variant.price ?? product.price ?? 0,
-      compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice ?? null,
+      compareAtPrice: effectiveCompareAtPrice(variant, product),
       bundleItemsTotal: bundleItemsTotal(variant, variant.price ?? product.price ?? 0, rawVariantMap, productMap),
       image:          ctx.resolveLocaleAltImage(variant.image) ?? ctx.resolveLocaleAltImage(product.image),
       productImage:   ctx.resolveLocaleAltImage(product.image),
       seo:            ctx.resolveSeo(mergeSeoFallback(variant.seo, product.seo)),
       categories,
-      manufacturers: (variant.manufacturers ?? product.manufacturers ?? []).map((m: any) => ({
+      manufacturers: ((variant.manufacturers?.length ? variant.manufacturers : product.manufacturers) ?? []).map((m: any) => ({
         _id:  m._id,
         name: ctx.resolveString(m.name),
       })),
@@ -483,7 +486,7 @@ export function resolveVariants(
           },
         }]
       }),
-      description:    ctx.resolveString(variant.description) || ctx.resolveString(product.description) || null,
+      description:    ctx.resolveInherited(variant.description, product.description) || null,
       // Variant's own list replaces the product's (no merge); incomplete lines are dropped.
       specifications: ((variant.specifications?.length ? variant.specifications : product.specifications) ?? [])
         .map((s: any) => ({ label: ctx.resolveString(s.label), value: ctx.resolveString(s.value) }))

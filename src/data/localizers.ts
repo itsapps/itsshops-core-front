@@ -4,6 +4,8 @@ import type { ResolvedCarousel, ResolvedImage, ResolvedSeo } from '../types/data
 /** Locale-bound localizer functions — pre-applied with (locale, defaultLocale). */
 export type BoundLocalizers = {
   resolveString:         (arr: LocalizedStringArray) => string
+  /** Variant field with product fallback, locale-first (`resolveInheritedString`). */
+  resolveInherited:      (variantArr: LocalizedStringArray, productArr: LocalizedStringArray) => string
   resolveLocaleValue:    (arr: any) => any
   resolveImage:          (raw: { image?: any[]; alt?: any[] } | null | undefined) => ResolvedImage | null
   resolveLocaleAltImage: (raw: any) => ResolvedImage | null
@@ -40,6 +42,31 @@ export function resolveString(
     arr.find(e => e.language === defaultLocale)?.value ??
     arr[0]?.value ??
     ''
+  )
+}
+
+/**
+ * A variant's localized string with the product's as fallback, locale before document:
+ * variant[locale] → product[locale] → variant[default] → product[default] → variant[first] →
+ * product[first]. Blank entries are skipped. Used for `description`; titles keep
+ * `resolveString` per document (own variant title wins in every locale, the slug follows it).
+ */
+export function resolveInheritedString(
+  variantArr: LocalizedStringArray,
+  productArr: LocalizedStringArray,
+  locale: Locale,
+  defaultLocale: Locale,
+): string {
+  const filled = (arr: LocalizedStringArray) =>
+    (arr ?? []).filter(e => typeof e?.value === 'string' && e.value.trim() !== '')
+  const v = filled(variantArr)
+  const p = filled(productArr)
+  const pick = (arr: typeof v, lng: Locale) => arr.find(e => e.language === lng)?.value
+  return (
+    pick(v, locale) ?? pick(p, locale)
+    ?? pick(v, defaultLocale) ?? pick(p, defaultLocale)
+    ?? v[0]?.value ?? p[0]?.value
+    ?? ''
   )
 }
 

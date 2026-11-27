@@ -6,6 +6,26 @@ Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a cus
 
 ## Unreleased
 
+- **Variant → product fallbacks made consistent** (reference table: `data-layer.md` →
+  "Variant → product fallbacks"):
+  - **Manufacturers:** a variant whose manufacturer list was emptied (`[]`) now shows the
+    product's manufacturers instead of none — on the page and for manufacturer discounts at
+    checkout.
+  - **Compare-at price:** a variant with its **own price** no longer inherits the product's
+    compare-at price (a "was" price could show *below* the current price). A variant without own
+    price inherits both as before. A compare-at price is only emitted when it is higher than the
+    price (resolver + `productPrice` macro). Discounts with the "has compare-at price" criterion
+    no longer match variants with an own price that relied on the product's compare-at price.
+  - **Description, non-default locales:** the variant's description falls back to the product's
+    in the **same locale** before the default locale (variant[en] → product[en] → variant[de] →
+    product[de] → …; blank entries skipped). A variant with only a German description now shows
+    the product's English text on the English page — and the meta description follows. Titles
+    and variant URLs are unchanged (own variant title still wins in every locale).
+  - New `ctx.resolveInherited(variantArr, productArr)` on `ResolveContext` for resolve hooks.
+  - Internal: `mergeSeoFallback` renamed to plain ASCII.
+  **Upgrading:** nothing to change; check product pages in non-default locales and variants with
+  own price under a product with compare-at price.
+
 - **Tracking links in the order mails:** each number in `fulfillment.trackingCode` (several may be
   entered, separated by commas) links to the carrier's tracking page when the shipping method has a
   `trackingUrl` (core-back, e.g. `https://tracking.dpd.de/status/de_DE/parcel/{code}`). The numbers

@@ -52,6 +52,7 @@ describe('resolveVariants — bundle filter attributes', () => {
     const ctx = {
       locale: 'de', defaultLocale: 'de', units: { volume: 'ml' },
       resolveString: (x: unknown) => (typeof x === 'string' ? x : ''),
+      resolveInherited: () => '',
       resolveLocaleAltImage: () => null, resolveSeo: () => ({}), translate: (k: string) => k,
     }
     const acc: FilterAccumulator = new Map()

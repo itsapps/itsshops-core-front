@@ -11,30 +11,33 @@ import { findTaxRate, extractVat, splitBundlePrice } from './tax'
 import { resolveLocalizedTitle, resolveVariantWeight, resolveBundleWeight } from './shipping'
 import { composeSubtitle, type SubtitleFormat } from './order-item-display'
 import { withAncestors, type SelectorLine } from '../../shared/discounts'
+import { effectiveCompareAtPrice } from '../../shared/variant-fallbacks'
 
 type CategoryParents = Map<string, string | null | undefined> | Record<string, string | null | undefined>
 
 /**
  * What the discount selector sees of a top-level line: the variant's categories if non-empty,
  * else the product's (as `data/resolve/variants.ts`), plus their ancestors; manufacturers with
- * the same fallback (already coalesced in the query); compare-at price against the effective
- * price. Bundle items are never matched (a bundle matches by its own fields).
+ * the same fallback (non-empty own list, else the product's — resolved in the query); the
+ * compare-at price per `effectiveCompareAtPrice` (own price → own compare-at only). Bundle items are never matched (a bundle matches by its own fields).
  */
 export function selectorLineFromVariant(
   variant: SanityVariantResult,
-  price: number,
   categoryParents: CategoryParents = {},
 ): SelectorLine {
   const own = variant.categoryIds?.filter(Boolean) ?? []
   const categoryIds = own.length > 0 ? own : variant.productCategoryIds?.filter(Boolean) ?? []
-  const compareAt = variant.compareAtPrice ?? variant.productCompareAtPrice
+  const compareAt = effectiveCompareAtPrice(
+    { price: variant.price, compareAtPrice: variant.compareAtPrice },
+    { price: variant.productPrice, compareAtPrice: variant.productCompareAtPrice },
+  )
   return {
     variantId: variant._id,
     productId: variant.productId ?? '',
     kind: variant.kind,
     categoryIds: withAncestors(categoryIds, categoryParents),
     manufacturerIds: variant.manufacturerIds?.filter(Boolean) ?? [],
-    hasCompareAtPrice: typeof compareAt === 'number' && compareAt > price,
+    hasCompareAtPrice: compareAt !== null,
   }
 }
 
@@ -159,7 +162,7 @@ export function validateCart(
       wine,
       options,
       bundleItems,
-      selector: selectorLineFromVariant(variant, price, categoryParents),
+      selector: selectorLineFromVariant(variant, categoryParents),
     }
 
     validatedItems.push(item)

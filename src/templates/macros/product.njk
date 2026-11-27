@@ -23,7 +23,7 @@
 {#- No price (status `unavailable`) → nothing, never "€0,00". -#}
 {%- if product.price %}
 <div class="{{ class }}">
-  {%- if product.compareAtPrice %}
+  {%- if product.compareAtPrice and product.compareAtPrice > product.price %}
     <s class="{{ class }}-compare">
       <span class="sr-only">{{ 'product.price.was' | trans({ lng: product.locale }) }}: </span>{{ product.compareAtPrice | formatPrice(product.locale) }}
     </s>

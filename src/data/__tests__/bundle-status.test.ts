@@ -62,6 +62,7 @@ describe('resolveVariants follows the effective status', () => {
     const ctx = {
       locale: 'de', defaultLocale: 'de', units: { volume: 'ml' },
       resolveString: (v: unknown) => (typeof v === 'string' ? v : ''),
+      resolveInherited: () => '',
       resolveLocaleAltImage: () => null,
       resolveSeo: () => ({}),
       translate: (k: string) => k,
@@ -85,6 +86,7 @@ describe('resolveVariants — grantsFreeShipping', () => {
   const ctx = {
     locale: 'de', defaultLocale: 'de', units: { volume: 'ml' },
     resolveString: (v: unknown) => (typeof v === 'string' ? v : ''),
+    resolveInherited: () => '',
     resolveLocaleAltImage: () => null,
     resolveSeo: () => ({}),
     translate: (k: string) => k,

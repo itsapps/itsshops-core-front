@@ -1,5 +1,5 @@
 import type { Locale, ResolveContext, TranslatorFunction } from '../../types'
-import { resolveString, resolveLocaleValue, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo, resolveCarousel } from '../localizers'
+import { resolveString, resolveInheritedString, resolveLocaleValue, resolveImage, resolveLocaleAltImage, resolveBaseImage, resolveSeo, resolveCarousel } from '../localizers'
 import { resolvePortableText } from '../portableText'
 
 export function makeCtx(
@@ -13,6 +13,7 @@ export function makeCtx(
     defaultLocale,
     units,
     resolveString:         (arr) => resolveString(arr, locale, defaultLocale),
+    resolveInherited:      (variantArr, productArr) => resolveInheritedString(variantArr, productArr, locale, defaultLocale),
     resolveImage:          (raw) => resolveImage(raw, locale, defaultLocale),
     resolveLocaleAltImage: (raw) => resolveLocaleAltImage(raw, locale, defaultLocale),
     resolveBaseImage:      (raw) => resolveBaseImage(raw),

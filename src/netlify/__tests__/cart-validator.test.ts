@@ -217,6 +217,16 @@ describe('validateCart', () => {
       expect(validate(makeVariant()).selector.hasCompareAtPrice).toBe(false)
     })
 
+    it("own price: the product's compare-at price doesn't apply", () => {
+      expect(validate(makeVariant({ price: 1200, compareAtPrice: null, productPrice: 1000, productCompareAtPrice: 1500 })).selector.hasCompareAtPrice).toBe(false)
+      expect(validate(makeVariant({ price: 1200, compareAtPrice: 1500, productCompareAtPrice: null })).selector.hasCompareAtPrice).toBe(true)
+    })
+
+    it('manufacturer ids stay as the query delivers them', () => {
+      expect(validate(makeVariant({ manufacturerIds: ['m1', 'm2'] })).selector.manufacturerIds).toEqual(['m1', 'm2'])
+      expect(validate(makeVariant({ manufacturerIds: null })).selector.manufacturerIds).toEqual([])
+    })
+
     it('ignores client-sent selector fields', () => {
       expect(validate(makeVariant(), { selector: { kind: 'bundle' }, kind: 'bundle' }).selector.kind).toBe('wine')
     })

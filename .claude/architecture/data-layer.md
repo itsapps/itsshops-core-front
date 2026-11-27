@@ -46,7 +46,8 @@ schema types — only the resolved shapes it consumes. Customers generate their 
 
 `makeCtx(locale, defaultLocale, translate, units)` returns the `ResolveContext` threaded into every
 resolver and every customer `extensions.resolve.*` hook. It bundles the locale-bound helpers:
-`resolveString`, `resolveImage`, `resolveLocaleAltImage`, `resolveBaseImage`, `resolveSeo`,
+`resolveString`, `resolveInherited` (variant field with product fallback, locale first — see
+"Variant → product fallbacks"), `resolveImage`, `resolveLocaleAltImage`, `resolveBaseImage`, `resolveSeo`,
 `resolveCarousel`, `resolvePortableText`, `resolveActions`, `resolveLocaleValue`, plus `locale`,
 `defaultLocale`, `units`, and `translate`. A customer hook uses these so the fields it returns are
 already locale-resolved and consistent with core output — see [extending.md](extending.md).
@@ -76,6 +77,9 @@ with examples) see [extending.md](extending.md); this section is the query-build
 Replaces the old `src/data/locale.ts`. Exports `resolveString`, `resolveImage`,
 `resolveLocaleAltImage`, `resolveBaseImage` (re-exported from `src/index.ts`). These collapse
 Sanity's internationalized-array / locale-object fields down to a single locale's plain value.
+`resolveString` order: locale → default locale → first entry (an entry with `''` stops it).
+`resolveInheritedString(variantArr, productArr, locale, defaultLocale)` merges two documents
+locale-first and skips blank entries (bound as `ctx.resolveInherited`).
 
 ## Variant resolution (`src/data/resolve/variants.ts`)
 
@@ -113,15 +117,42 @@ The largest resolver. `resolveVariants` does, per variant:
   warns about the disabled criterion). `commerce-and-netlify.md` → "Discounts"; `bundleItemsTotal` (`bundleItemsTotal()`:
   bundles only, items' single prices × quantity when above the bundle price, else null —
   `templates-and-assets.md` → "Bundle: sum of single prices").
-- **Description**: `description` (core-back `i18nText`, any kind) → plain string or `null`, variant's
-  else product's. Rendered by the `productDescription` macro with the `paragraphs` filter; for wines
-  it beats `wine.description` (VinoFact), which is the macro's fallback. Also the first fallback for
-  `seo.metaDescription` (whitespace collapsed), before the wine description.
+- **Description**: `description` (core-back `i18nText`, any kind) → plain string or `null`, by
+  `ctx.resolveInherited` (O2 order: variant[locale] → product[locale] → variant[default] →
+  product[default] → variant[first] → product[first], blank entries skipped — so a variant with
+  only a German text shows the product's English one on the English page). `product.description`
+  is the product's own text (`resolveString`). Rendered by the `productDescription` macro with the
+  `paragraphs` filter; for wines it beats `wine.description` (VinoFact), which is the macro's
+  fallback. Also the first fallback for `seo.metaDescription` (whitespace collapsed), before the
+  wine description.
 - **Specifications**: `specifications` (core-back `productSpecification` label/value pairs, any
   kind) → `ResolvedSpecification[]` of plain strings; the variant's non-empty list replaces the
   product's, lines missing a label or value are dropped. Rendered by the `productSpecifications`
   macro (`macros/product.njk`) in the core product container, after the kind-specific details.
 - **Resolve hook**: `extensions.resolve.variant` / `.product` output is merged in last.
+
+### Variant → product fallbacks
+
+An empty variant field means "use the product's value". **This table is the reference**; the
+Studio hints (core-back, `productVariant.fields.*.description`) describe the same rules. "Set" means:
+number → `typeof === 'number'` (0 is set); array → `length > 0`; i18n string → an entry with a
+non-blank `value`; image → `asset`; reference → `_ref`.
+
+| Field | Build (`resolve/variants.ts`) | Checkout (`services/sanity.ts` `CHECKOUT_QUERY`, `lib/cart-validator.ts`) |
+|---|---|---|
+| `title` | `resolveString` per document: variant[locale → default → first], else product. A variant's own title wins in every locale; the **slug** (`generateVariantSlug`) follows the same rule — keep both on it (no URL changes) | same (only when the cart sends no title) |
+| `description` | `resolveInherited`, locale first (see "Description") | — |
+| `specifications` | variant list if non-empty, else product's (replaces) | — |
+| `price` | `variant ?? product ?? 0` (none → status `unavailable`) | `variant.price ?? productPrice` |
+| `compareAtPrice` | `effectiveCompareAtPrice` (`shared/variant-fallbacks.ts`): own price → own compare-at only; no own price → variant ?? product; only when > the effective price, else `null` | same helper, for the `hasCompareAtPrice` discount criterion |
+| `taxCategory` | variant → product (`taxCategoryId`) | variant → product → `shopSettings.defaultTaxCategory` |
+| `categories` | variant list if non-empty, else product's — **replaces, doesn't add** | same |
+| `manufacturers` | variant list if non-empty, else product's (an emptied list is `[]`) | GROQ `select(count(manufacturers) > 0 => …, product->manufacturers)` |
+| `weight` | `variant ?? product` | `resolveVariantWeight`: same, wines estimate from volume |
+| `image` | variant (with `asset`), else product | — |
+| `seo` | per sub-field (`mergeSeoFallback`; i18n sub-fields by `length`, not locale-first — out of scope so far) | — |
+
+The `productPrice` macro also guards `compareAtPrice > price` (data from customer resolve hooks).
 
 ## `CmsLocaleData` assembly & well-known URLs
 

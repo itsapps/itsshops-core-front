@@ -55,7 +55,8 @@ const CHECKOUT_QUERY = `{
     // Discount selector (top-level lines only — bundle items are never matched).
     "categoryIds": categories[]._ref,
     "productCategoryIds": product->categories[]._ref,
-    "manufacturerIds": coalesce(manufacturers, product->manufacturers)[]._ref,
+    // Non-empty own list, else the product's (an emptied list is [], which coalesce would keep).
+    "manufacturerIds": select(count(manufacturers) > 0 => manufacturers, product->manufacturers)[]._ref,
     compareAtPrice,
     "productCompareAtPrice": product->compareAtPrice,
     "taxCategoryCode": taxCategory->code.current,
