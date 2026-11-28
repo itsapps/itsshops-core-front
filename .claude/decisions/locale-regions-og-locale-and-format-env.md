@@ -10,7 +10,7 @@ Core used the bare language (`de`, `en`) everywhere. Two places need a region: `
 formatting without a region gives US-style English dates and no Austrian formats ("Jänner"). Prices
 and dates are formatted at build time, in the browser and in at least six function entry points
 (order, withdrawal, webhook, status, refund, newsletter/auth mails). Functions never see
-`itsshops.config` — each wrapper passes hand-copied options. Plan: handbook `plans/locale-regions.md`.
+`itsshops.config` — each wrapper passes hand-copied options.
 
 ## Decision
 
