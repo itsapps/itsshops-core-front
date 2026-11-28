@@ -84,7 +84,7 @@ For an ERP whose `completed` means "I took the order over", not "shipped" (wineN
 The ERP keeps seeing its own status, so its poll never gets the order back (whatever its
 de-duplication does); internally the order stays undispatched and the shop ships it in the Studio
 (status dialog → `shipped`, tracking code, shipping mail). Why: ADR
-`decisions/wc-api-erp-completed-reported-back.md`; plan handbook `plans/wc-api-erp-completed-accepted.md`.
+`decisions/wc-api-erp-completed-reported-back.md`.
 - **`PUT completed`:** same 409 guard (refunded / open withdrawal / `canceled`); `created` →
   `processing`, every other status stays (`shipped`, `delivered`, … are never moved);
   `setIfMissing({ erpAcceptedAt: now })` on the order. History only on the first accept:

@@ -11,7 +11,7 @@ same rule, the obvious next step looked like moving it into core's `base.css`.
 
 ## Decision
 Core ships no global focus ring. The starter's base `global-styles.css` carries it, and a starter
-check keeps it there (plan `customer-starter.md`, parts C + E).
+check keeps it there (starter `CLAUDE.md`).
 - It is design: colour, line style and offset depend on the site, and every customer has places
   where the general ring doesn't fit (header links, a video toggle, shop buttons
   and `.btn`, form fields). That is customer CSS ("copied, not imported").
