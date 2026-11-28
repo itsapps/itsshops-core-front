@@ -4,7 +4,7 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a customer to production".
 
-## Unreleased
+## 6.3.0
 
 - **Removed: the webhook transition for an `orderMeta` written before 6.0.0** (`appliedCoupons`,
   reason `product` / `coupon`). `buildOrder` takes the `orderMeta` as stored;
