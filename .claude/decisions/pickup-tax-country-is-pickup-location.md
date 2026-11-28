@@ -14,7 +14,7 @@ or block sales.
 
 - A pickup order's VAT country is the pickup method's `pickupAddress.country` (fallback
   `shopSettings.defaultCountry`) — the place of supply where the customer takes the goods (owner
-  decision 4, plan `store-pickup.md`). WooCommerce does the same for Local Pickup
+  decision). WooCommerce does the same for Local Pickup
   (`ShippingController::filter_order_tax_location`).
 - Pickup is open to every country (decision 12): there are no per-country rates and no
   destination excise for goods collected at the shop. Delivery keeps the tax-country list.

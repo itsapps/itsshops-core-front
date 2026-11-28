@@ -23,7 +23,7 @@ its own feature flag.
 - **Why a core-back flag at all** (owner, 2026-11-17; not recorded at first): without it every
   variant of every checkout shop would carry the "Versandkostenfrei" checkbox. Shops that never use
   it would get editor clutter with a costly failure mode — one stray tick makes whole orders ship
-  free. Contrast: store pickup has no flag (plan `store-pickup.md`), since it only adds a list
+  free. Contrast: store pickup has no flag, since it only adds a list
   entry to the shipping method type and nothing can be switched on by accident.
 - **The data is the switch in core-front:** it reads the field whatever the core-back flag says
   (missing → false). Turning the flag off only hides the field; unset the field on every variant

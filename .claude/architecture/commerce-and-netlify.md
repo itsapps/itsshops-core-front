@@ -334,7 +334,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   (the build prices every product page). A bundle's weight = its items' `resolveVariantWeight`
   (explicit weight first, wine estimated) × item qty — the same per-item weight as
   `bundleItems[].weight`, so markup = checkout.
-- **Store pickup** (click & collect; plan handbook `plans/store-pickup.md`). A pickup location is a
+- **Store pickup** (click & collect). A pickup location is a
   `shippingMethod` with `methodType: 'pickup'` (core-back: `pickupFee`, `pickupAddress`,
   `pickupInstructions`, `pickupHoldDays`). **No feature flag — the data is the switch:** a
   published pickup method makes the checkout offer it.
