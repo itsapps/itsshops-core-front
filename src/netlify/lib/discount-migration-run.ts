@@ -1,7 +1,6 @@
 // Runs the discounts migration against one dataset (`itsshops sanity migrate-discounts`). Plans
 // everything first (preflight + every conversion + every check), writes only when nothing failed
 // and the caller didn't ask for a dry run. Idempotent: a second run finds nothing left to do.
-// Plan: `.claude/plans/discounts-model.md` → Migration.
 import {
   couponToDiscount,
   discountMigrationHistoryEntry,

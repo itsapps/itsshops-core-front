@@ -1,8 +1,6 @@
 // Discounts migration (core-back 7.0.0 / core-front 6.0.0): pure conversions from the coupon /
-// product-free-shipping shapes to the discount model. Used by `itsshops sanity
-// migrate-discounts` and, for unpaid old-shape `orderMeta`, by the payment webhook. Never
-// changes an amount: totals, prices and VAT stay as stored. Plan:
-// `.claude/plans/discounts-model.md` → Migration.
+// product-free-shipping shapes to the discount model, used by the one-off `itsshops sanity
+// migrate-discounts`. Never changes an amount: totals, prices and VAT stay as stored.
 
 type Ref = { _type: 'reference'; _ref: string; _weak?: boolean; _key?: string }
 type I18nValue = { _key: string; _type?: string; language?: string; value?: string }
@@ -269,7 +267,7 @@ export interface OrderDiscountMigration {
 }
 
 /**
- * Step 3 for one order (or an old-shape `orderMeta`): line discounts by the old wc-api
+ * Step 3 for one order: line discounts by the old wc-api
  * algorithm, `appliedCoupons` → `appliedDiscounts`, reason `product` / `coupon` → `discount`
  * (+ a "Versandkostenfrei durch Produkt" entry without ref or amount for `product`). `null` when
  * the document has nothing to migrate. Amounts are never touched — check with
@@ -361,25 +359,6 @@ export function verifyOrderDiscountMigration(before: OrderLike, migration: Order
     problems.push(`line discounts sum to ${total}, totals.discount is ${before.totals.discount}`)
   }
   return problems
-}
-
-/**
- * The webhook transition (until 30 days after the last live shop's release): an unpaid
- * `orderMeta` written by the old frontend → the new shape, so the order is created as a migrated
- * one. Documents already in the new shape come back unchanged.
- */
-export function convertLegacyOrderMeta<T extends OrderLike>(meta: T): T {
-  const migration = migrateOrderDiscounts(meta)
-  if (!migration) return meta
-  const { appliedCoupons: _old, ...rest } = meta
-  return {
-    ...rest,
-    orderItems: migration.orderItems,
-    ...(migration.appliedDiscounts.length > 0 && { appliedDiscounts: migration.appliedDiscounts }),
-    ...(migration.freeShippingReason && meta.fulfillment && {
-      fulfillment: { ...meta.fulfillment, freeShippingReason: migration.freeShippingReason },
-    }),
-  } as unknown as T
 }
 
 /** The `system` history entry a migrated order gets. */

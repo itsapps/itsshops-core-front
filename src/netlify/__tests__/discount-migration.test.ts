@@ -7,7 +7,6 @@ import {
   legacyLineDiscounts,
   migrateOrderDiscounts,
   verifyOrderDiscountMigration,
-  convertLegacyOrderMeta,
   discountMigrationHistoryEntry,
   PRODUCT_FREE_SHIPPING_DISCOUNT_ID,
   type LegacyCoupon,
@@ -224,23 +223,6 @@ describe('verifyOrderDiscountMigration catches mismatches', () => {
     const m = migrateOrderDiscounts(order, key)!
     m.orderItems[0].bundle!.items![0] = { ...m.orderItems[0].bundle!.items![0], discount: 0 }
     expect(verifyOrderDiscountMigration(order, m).some(p => p.includes('bundle items sum'))).toBe(true)
-  })
-})
-
-describe('convertLegacyOrderMeta (webhook transition)', () => {
-  it('converts an old-shape orderMeta and drops appliedCoupons', () => {
-    const meta = byNumber('000103')
-    const converted = convertLegacyOrderMeta(meta)
-    expect(converted.appliedCoupons).toBeUndefined()
-    expect(converted.appliedDiscounts?.length).toBe(2)
-    expect(converted.fulfillment?.freeShippingReason).toBe('discount')
-    expect(converted.orderItems.reduce((s, i) => s + (i.discount ?? 0), 0)).toBe(meta.totals.discount)
-    expect(converted.totals).toEqual(meta.totals)
-  })
-
-  it('returns a new-shape document unchanged', () => {
-    const meta = { ...byNumber('000008'), appliedCoupons: undefined, appliedDiscounts: [{}] }
-    expect(convertLegacyOrderMeta(meta)).toBe(meta)
   })
 })
 

@@ -130,17 +130,4 @@ describe('payment-webhooks — order creation, discount increments', () => {
     await succeed()
     expect(vi.mocked(s.commitOrderTransaction).mock.calls[0][0].discountIncrements).toEqual([{ discountId: 'discount-c1', by: 1 }])
   })
-
-  it('an old-shape orderMeta (appliedCoupons) is created as a migrated order and counts the new id', async () => {
-    const s = await sanity()
-    vi.mocked(s.fetchOrderMeta).mockResolvedValue(orderMeta({
-      totals: { _type: 'orderTotals', subtotal: 2000, shipping: 0, discount: 200, grandTotal: 1800, totalVat: 207, vatBreakdown: [], currency: 'EUR' },
-      appliedCoupons: [{ _key: 'c', _type: 'appliedCoupon', couponRef: { _type: 'reference', _ref: 'coupon-x', _weak: true }, code: 'TEN', discountType: 'percent', value: 10, discountAmount: 200 }],
-    }) as never)
-    await succeed()
-    const { doc, discountIncrements } = vi.mocked(s.commitOrderTransaction).mock.calls[0][0]
-    expect(discountIncrements).toEqual([{ discountId: 'discount-coupon-x', by: 1 }])
-    expect(doc).not.toHaveProperty('appliedCoupons')
-    expect(doc.orderItems[0].discount).toBe(200)
-  })
 })

@@ -338,8 +338,8 @@ export function createPaymentHandler(config: ServerConfig = {}) {
       })
 
       orderMetaDoc.paymentIntentId = intent.id
-      // Replace, not merge: a discount dropped since the last submit (or an old-frontend
-      // `appliedCoupons`) must not survive in the stored document.
+      // Replace, not merge: a discount dropped since the last submit must not survive in the
+      // stored document.
       await createOrderMeta(orderMetaId, orderMetaDoc)
 
       log.info('PaymentIntent updated', { paymentIntentId: intent.id, requestId })

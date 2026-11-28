@@ -370,35 +370,6 @@ describe('buildOrderMeta — discounts', () => {
   })
 })
 
-describe('buildOrder — old-shape orderMeta (webhook transition)', () => {
-  it('converts appliedCoupons + reason to the discount shape', () => {
-    const meta = buildOrderMeta(makeInput())
-    const legacy = {
-      ...meta,
-      totals: { ...meta.totals, discount: 300, grandTotal: meta.totals.grandTotal - 300 },
-      appliedCoupons: [{
-        _key: 'c', _type: 'appliedCoupon', couponRef: { _type: 'reference', _ref: 'coupon-1', _weak: true },
-        code: 'TEN', discountType: 'percent', value: 10, discountAmount: 300,
-      }],
-    }
-    const order = buildOrder({ orderMeta: legacy as never, orderNumber: '1', invoiceNumber: '1' })
-    expect(order).not.toHaveProperty('appliedCoupons')
-    expect(order.appliedDiscounts).toEqual([expect.objectContaining({
-      discountRef: { _type: 'reference', _ref: 'discount-coupon-1', _weak: true }, code: 'TEN', trigger: 'code', target: 'order', amount: 300,
-    })])
-    expect(order.orderItems.reduce((s, i) => s + (i.discount ?? 0), 0)).toBe(300)
-  })
-
-  it('a product reason becomes discount + a ref-less entry', () => {
-    const meta = buildOrderMeta(makeInput())
-    const legacy = { ...meta, fulfillment: { ...meta.fulfillment, shippingCost: 0, freeShippingReason: 'product' } }
-    const order = buildOrder({ orderMeta: legacy as never, orderNumber: '1', invoiceNumber: '1' })
-    expect(order.fulfillment.freeShippingReason).toBe('discount')
-    expect(order.appliedDiscounts).toEqual([expect.objectContaining({ title: 'Versandkostenfrei durch Produkt', target: 'shipping' })])
-    expect(order.appliedDiscounts![0]).not.toHaveProperty('discountRef')
-  })
-})
-
 describe('formatOrderNumber', () => {
   it('formats with prefix', () => {
     expect(formatOrderNumber('ORD-', 42)).toBe('ORD-000042')

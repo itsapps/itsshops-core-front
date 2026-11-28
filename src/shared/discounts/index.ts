@@ -1,4 +1,4 @@
-// Discount pipeline (pure, browser-safe) — checkout and build. Plan: `.claude/plans/discounts-model.md`.
+// Discount pipeline (pure, browser-safe) — checkout and build.
 export * from './types'
 export { matchesSelector, matchesCriteria, hasCriteria, isExcluded, withAncestors } from './selector'
 export { allocateLargestRemainder, allocateToChildren } from './allocate'

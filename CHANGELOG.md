@@ -4,6 +4,22 @@ Versions are git tags (no `v` prefix); customers pin them in `package.json`
 (`github:itsapps/itsshops-core-front#<tag>`). **Upgrading** lists what a customer must change.
 Releasing: `.claude/workflows/consuming-core-and-deploy.md` → "Releasing a customer to production".
 
+## Unreleased
+
+- **Removed: the webhook transition for an `orderMeta` written before 6.0.0** (`appliedCoupons`,
+  reason `product` / `coupon`). `buildOrder` takes the `orderMeta` as stored;
+  `convertLegacyOrderMeta` is gone. The `itsshops sanity migrate-discounts` CLI stays.
+  **Upgrading:** a shop whose checkout was live before 6.0.0 must have no unpaid old-shape
+  `orderMeta` left — such a checkout, paid now, would become an order without its discount. Check
+  (must print `[]`), or wait 30 days after its 6.0.0 release (`order-meta-cleanup`):
+
+  ```bash
+  npx itsshops sanity -e .env.production query '*[_type == "orderMeta" && coalesce(count(appliedDiscounts), 0) == 0 && coalesce(count(orderItems[discount > 0]), 0) == 0 && (coalesce(count(appliedCoupons), 0) > 0 || fulfillment.freeShippingReason in ["product", "coupon"] || totals.discount > 0) && !defined(*[_type == "order" && paymentIntentId == ^.paymentIntentId][0]._id)]._id'
+  ```
+
+  A shop on a version before 6.0.0 runs `migrate-discounts` first (see 6.0.0). Pair with
+  core-back's release that drops the legacy order fields.
+
 ## 6.2.0
 
 - **Variant → product fallbacks made consistent** (reference table: `data-layer.md` →

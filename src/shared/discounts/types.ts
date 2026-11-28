@@ -1,5 +1,5 @@
 // Discount pipeline types. Pure and browser-safe: used by checkout (`payment-create`) and the
-// build (derived `grantsFreeShipping`). Plan: `.claude/plans/discounts-model.md`.
+// build (derived `grantsFreeShipping`).
 
 export type ProductKind = 'wine' | 'physical' | 'digital' | 'bundle'
 

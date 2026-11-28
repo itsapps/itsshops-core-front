@@ -314,9 +314,6 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   - **Response:** `appliedDiscounts` (`{ title, code?, trigger, target, amount }`, apply order),
     `notDiscountedVariantIds` (lines the applied code skipped — the checkout hint), `couponError`
     (+ `discountTitle`).
-  - **Webhook transition** (remove ≥ 30 days after the last live shop's 6.0.0 release):
-    `buildOrder` converts an old-shape `orderMeta` (`appliedCoupons`, reason `product`/`coupon`)
-    with `convertLegacyOrderMeta` (`discount-migration.ts`).
 - **Why shipping was free** → `fulfillment.freeShippingReason` (`threshold` / `discount`, Studio
   order view only). `resolveShippingMethods` sets `freeReason: 'threshold'` (server only);
   `freeShippingReason(selected, waived)` adds `discount` when a shipping discount waived a

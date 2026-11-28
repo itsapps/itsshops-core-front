@@ -17,7 +17,6 @@ import type {
 import type { AddressInput } from '../types/api'
 import type { AppliedDiscountResult, LineDiscount } from '../../shared/discounts'
 import { findTaxRate } from './tax'
-import { convertLegacyOrderMeta, type OrderLike } from './discount-migration'
 import type { SanityTaxRuleResult } from '../types/checkout'
 
 function generateKey(): string {
@@ -264,10 +263,7 @@ export type BuildOrderInput = {
 
 export function buildOrder(input: BuildOrderInput): OrderDocument {
   const now = new Date().toISOString()
-  // Transition (remove ≥ 30 days after the last live shop's 6.0.0 release — an unpaid
-  // `orderMeta` lives that long): an `orderMeta` written by the old frontend (`appliedCoupons`,
-  // reason `product`/`coupon`) becomes a migrated order.
-  const orderMeta = convertLegacyOrderMeta(input.orderMeta as unknown as OrderLike) as unknown as OrderMetaDocument
+  const { orderMeta } = input
 
   return {
     _type: 'order',

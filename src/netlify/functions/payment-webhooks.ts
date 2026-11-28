@@ -85,7 +85,6 @@ async function handlePaymentSucceeded(
   log.debug('OrderMeta loaded', {
     orderMetaId,
     appliedDiscounts: orderMeta.appliedDiscounts?.length ?? 0,
-    legacyCoupons: (orderMeta as { appliedCoupons?: unknown[] }).appliedCoupons?.length ?? 0,
   })
 
   const { invoiceNumber, orderNumberPrefix, invoiceNumberPrefix } = await getNextInvoiceNumber()

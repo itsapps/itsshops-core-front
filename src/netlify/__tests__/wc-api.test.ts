@@ -11,7 +11,7 @@ import { sendOrderNotification } from '../lib/order-notifier'
 import { calculateTotals } from '../lib/totals'
 import { extractVat } from '../lib/tax'
 import { evaluateDiscounts, type DiscountResult } from '../../shared/discounts'
-import { convertLegacyOrderMeta, type OrderLike } from '../lib/discount-migration'
+import { migrateOrderDiscounts, type OrderLike } from '../lib/discount-migration'
 import legacy from './fixtures/wc-api-legacy-orders.json'
 
 type Item = { price: number; quantity: number; vatRate: number }
@@ -491,13 +491,28 @@ describe('wc-api PUT orders/:id', () => {
   })
 })
 
+/** An old-shape order as `itsshops sanity migrate-discounts` patches it. */
+function migrated(order: OrderLike): OrderLike {
+  const m = migrateOrderDiscounts(order)
+  if (!m) return order
+  const { appliedCoupons: _old, ...rest } = order
+  return {
+    ...rest,
+    orderItems: m.orderItems,
+    ...(m.appliedDiscounts.length > 0 && { appliedDiscounts: m.appliedDiscounts }),
+    ...(m.freeShippingReason && order.fulfillment && {
+      fulfillment: { ...order.fulfillment, freeShippingReason: m.freeShippingReason },
+    }),
+  }
+}
+
 describe('wc-api — orders migrated from the coupon shape', () => {
   const fixtures = legacy as unknown as { order: SanityOrder & OrderLike; wc: unknown }[]
   it.each(fixtures.map(f => [f.order.orderNumber, f] as const))(
     'order %s: mapOrder(migrated) equals what wineNET already received',
     (_n, f) => {
-      const migrated = convertLegacyOrderMeta(structuredClone(f.order)) as unknown as SanityOrder
-      expect(JSON.stringify(map(migrated))).toBe(JSON.stringify(f.wc))
+      const order = migrated(structuredClone(f.order)) as unknown as SanityOrder
+      expect(JSON.stringify(map(order))).toBe(JSON.stringify(f.wc))
     },
   )
 })
