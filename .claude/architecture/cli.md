@@ -82,7 +82,7 @@ SANITY_DATASET=development itsshops sanity count order
   - one transaction holds all IDs; for very large deletes (thousands of docs) it may hit Sanity's
     request-size limit — split by type then.
 - `migrate-discounts` (`src/netlify/lib/discount-migration-run.ts`, pure conversions in
-  `discount-migration.ts`; plan `discounts-model.md` → Migration): reads `raw` (the preflight must
+  `discount-migration.ts`): reads `raw` (the preflight must
   see drafts) and first **plans** every step — 0. refuse while a `drafts.*`/`versions.*` coupon or
   flagged variant exists; 1. each coupon → `discount-<old _id>` (create-if-missing + delete the
   coupon, one transaction each); 2. flagged variants → `discount-product-free-shipping` (kind

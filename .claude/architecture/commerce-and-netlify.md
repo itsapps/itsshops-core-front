@@ -252,7 +252,7 @@ Pure-ish logic, covered by `src/netlify/__tests__/` (vitest — `npm run test`):
   re-resolves shipping with the items + order discounts subtracted (`payment-create.ts` pass 2),
   so a discount can push an order back under the threshold. The same default is used by the
   schema.org shipping details and the `cms` settings.
-- **Discounts** (plan handbook `plans/discounts-model.md`, ADR `discounts-model.md`; core-back
+- **Discounts** (ADR `decisions/discounts-model.md`; core-back
   `discount` document). One pure pipeline in `src/shared/discounts/` —
   `evaluateDiscounts(PipelineInput): DiscountResult` — shared by checkout and the build:
   - **Data:** `CHECKOUT_QUERY` reads `codeDiscount` (the typed code, any state — only with
