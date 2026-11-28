@@ -59,6 +59,10 @@ SANITY_DATASET=development itsshops sanity count order
 
 ## `sanity` commands — env & safety
 
+- **GROQ gotcha:** `count()` of a missing array is `null`, and `null == 0` / `!(null > 0)` are not
+  `true` — a filter like `count(appliedDiscounts) == 0` silently matches nothing on documents
+  without the field. Use `coalesce(count(x), 0) == 0`.
+
 - Need `SANITY_PROJECT_ID`, `SANITY_DATASET`, `SANITY_TOKEN`. A customer **frontend** `.env` has
   them (core-front reads them for content). A customer **backend** `.env` does not — it uses
   `SANITY_STUDIO_*` names — so from a backend folder add the three vars or point `-e` at a file
